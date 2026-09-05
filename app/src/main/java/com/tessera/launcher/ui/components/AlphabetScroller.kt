@@ -6,9 +6,12 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,7 +49,8 @@ fun AlphabetScroller(
         modifier = modifier
             .fillMaxHeight()
             .width(26.dp)
-            .padding(vertical = 12.dp)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(top = 24.dp, bottom = 16.dp)
             .onGloballyPositioned { coordinates ->
                 columnHeightPx = coordinates.size.height.coerceAtLeast(1)
             }

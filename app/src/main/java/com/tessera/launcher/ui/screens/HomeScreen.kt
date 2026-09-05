@@ -23,9 +23,12 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -168,6 +171,7 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                     .padding(bottom = if (uiState.isWidgetExpanded) 310.dp else 84.dp)
             ) {
                 Box(modifier = Modifier.weight(1f)) {
@@ -235,7 +239,7 @@ fun HomeScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(WindowInsets.navigationBars.asPaddingValues()),
+                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Painel Expansível de Widgets (Staggered)

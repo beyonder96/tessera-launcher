@@ -123,7 +123,7 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isSearchExpanded = true,
-                isWidgetExpanded = true
+                isWidgetExpanded = false
             )
         }
     }
@@ -145,7 +145,8 @@ class MainViewModel(
             it.copy(
                 searchQuery = query,
                 isDrawerOpen = if (query.isNotBlank()) true else it.isDrawerOpen,
-                isSearchExpanded = true
+                isSearchExpanded = true,
+                isWidgetExpanded = false
             )
         }
         applyFilter(query)
@@ -193,7 +194,8 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isDrawerOpen = true,
-                isSearchExpanded = true
+                isSearchExpanded = true,
+                isWidgetExpanded = false
             )
         }
     }
@@ -221,7 +223,14 @@ class MainViewModel(
     }
 
     fun toggleWidgets() {
-        _uiState.update { it.copy(isWidgetExpanded = !it.isWidgetExpanded) }
+        _uiState.update {
+            val willExpand = !it.isWidgetExpanded
+            it.copy(
+                isWidgetExpanded = willExpand,
+                isDrawerOpen = if (willExpand) false else it.isDrawerOpen,
+                searchQuery = if (willExpand) "" else it.searchQuery
+            )
+        }
     }
 
     // Gestão de Widgets da Barra
