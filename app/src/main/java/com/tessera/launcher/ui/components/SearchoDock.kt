@@ -1,6 +1,5 @@
 package com.tessera.launcher.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Row
@@ -14,7 +13,9 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -33,7 +34,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.DarkSurface
-import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -44,8 +44,11 @@ fun SearchoDock(
     searchQuery: String,
     onQueryChange: (String) -> Unit,
     isWidgetExpanded: Boolean,
+    isGeminiAnimating: Boolean,
     onToggleWidgets: () -> Unit,
     onSearchFocused: () -> Unit,
+    onCollapseSearch: () -> Unit,
+    onOpenSettings: () -> Unit,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier
 ) {
@@ -54,14 +57,14 @@ fun SearchoDock(
     Surface(
         shape = PillShape,
         color = DarkSurface,
-        border = BorderStroke(1.dp, DarkSurfaceBorder),
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp, vertical = 8.dp)
+            .geminiBorder(isAnimating = isGeminiAnimating, shape = PillShape, borderWidth = 1.5.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Search,
@@ -134,18 +137,52 @@ fun SearchoDock(
                         )
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Outlined.Widgets,
-                    contentDescription = "Alternar widgets",
-                    tint = if (isWidgetExpanded) TextPrimary else TextTertiary,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onToggleWidgets
-                        )
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Widgets,
+                        contentDescription = "Alternar widgets",
+                        tint = if (isWidgetExpanded) TextPrimary else TextTertiary,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onToggleWidgets
+                            )
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Configurações da Launcher",
+                        tint = TextTertiary,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onOpenSettings
+                            )
+                    )
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Icon(
+                        imageVector = Icons.Outlined.KeyboardArrowDown,
+                        contentDescription = "Recolher barra para lupa",
+                        tint = TextTertiary,
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onCollapseSearch
+                            )
+                    )
+                }
             }
         }
     }

@@ -1,13 +1,18 @@
 package com.tessera.launcher.ui.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tessera.launcher.data.helper.CalendarHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.preference.LauncherPreferences
+import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.repository.AppRepository
+import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
-import com.tessera.launcher.ui.state.MediaState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,10 +23,20 @@ import java.text.Normalizer
 
 class MainViewModel(
     private val appRepository: AppRepository,
-    private val systemInfoHelper: SystemInfoHelper
+    private val systemInfoHelper: SystemInfoHelper,
+    private val calendarHelper: CalendarHelper,
+    private val preferences: LauncherPreferences
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LauncherUiState())
+    private val _uiState = MutableStateFlow(
+        LauncherUiState(
+            enabledWidgets = preferences.getEnabledWidgets(),
+            defaultMusicApp = preferences.getDefaultMusicPackage(),
+            defaultCalendarApp = preferences.getDefaultCalendarPackage(),
+            hostedWidgetIds = preferences.getHostedWidgetIds(),
+            isAmoledMode = preferences.isAmoledMode()
+        )
+    )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
 
     private var allApps: List<AppInfo> = emptyList()
@@ -29,6 +44,8 @@ class MainViewModel(
     init {
         observeInstalledApps()
         observeSystemInfo()
+        observeMediaService()
+        refreshCalendarAndPermissions()
     }
 
     private fun observeInstalledApps() {
@@ -71,11 +88,62 @@ class MainViewModel(
         }
     }
 
+    private fun observeMediaService() {
+        viewModelScope.launch {
+            TesseraMediaService.mediaState.collect { mediaInfo ->
+                _uiState.update { it.copy(mediaPlayback = mediaInfo) }
+            }
+        }
+    }
+
+    fun refreshCalendarAndPermissions() {
+        val hasCalendar = calendarHelper.hasCalendarPermission()
+        val nextEvent = if (hasCalendar) calendarHelper.getNextUpcomingEvent() else null
+        _uiState.update {
+            it.copy(
+                hasCalendarPermission = hasCalendar,
+                nextCalendarEvent = nextEvent
+            )
+        }
+    }
+
+    fun checkNotificationAccess(context: Context) {
+        val hasAccess = TesseraMediaService.isNotificationAccessGranted(context)
+        _uiState.update { it.copy(hasNotificationAccess = hasAccess) }
+    }
+
+    fun expandSearch() {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isGeminiAnimating = true,
+                    isSearchExpanded = true,
+                    isWidgetExpanded = true
+                )
+            }
+            delay(1200)
+            _uiState.update { it.copy(isGeminiAnimating = false) }
+        }
+    }
+
+    fun collapseSearch() {
+        _uiState.update {
+            it.copy(
+                isSearchExpanded = false,
+                isWidgetExpanded = false,
+                isDrawerOpen = false,
+                searchQuery = ""
+            )
+        }
+        applyFilter("")
+    }
+
     fun onSearchQueryChange(query: String) {
         _uiState.update {
             it.copy(
                 searchQuery = query,
-                isDrawerOpen = if (query.isNotBlank()) true else it.isDrawerOpen
+                isDrawerOpen = if (query.isNotBlank()) true else it.isDrawerOpen,
+                isSearchExpanded = true
             )
         }
         applyFilter(query)
@@ -93,7 +161,6 @@ class MainViewModel(
             }
         }
 
-        // Pré-computa o mapa O(1) de Letra -> Índice inicial na LazyColumn
         val letterMap = mutableMapOf<Char, Int>()
         val availableLetters = mutableListOf<Char>()
         filtered.forEachIndexed { index, app ->
@@ -121,7 +188,12 @@ class MainViewModel(
     }
 
     fun openDrawer() {
-        _uiState.update { it.copy(isDrawerOpen = true) }
+        _uiState.update {
+            it.copy(
+                isDrawerOpen = true,
+                isSearchExpanded = true
+            )
+        }
     }
 
     fun closeDrawer() {
@@ -150,22 +222,120 @@ class MainViewModel(
         _uiState.update { it.copy(isWidgetExpanded = !it.isWidgetExpanded) }
     }
 
+    // Gestão de Widgets da Barra
+    fun toggleWidget(type: WidgetType) {
+        val current = _uiState.value.enabledWidgets.toMutableList()
+        if (current.contains(type)) {
+            current.remove(type)
+        } else {
+            current.add(type)
+        }
+        preferences.setEnabledWidgets(current)
+        _uiState.update { it.copy(enabledWidgets = current) }
+    }
+
+    fun moveWidgetUp(type: WidgetType) {
+        val current = _uiState.value.enabledWidgets.toMutableList()
+        val index = current.indexOf(type)
+        if (index > 0) {
+            current.removeAt(index)
+            current.add(index - 1, type)
+            preferences.setEnabledWidgets(current)
+            _uiState.update { it.copy(enabledWidgets = current) }
+        }
+    }
+
+    fun moveWidgetDown(type: WidgetType) {
+        val current = _uiState.value.enabledWidgets.toMutableList()
+        val index = current.indexOf(type)
+        if (index >= 0 && index < current.size - 1) {
+            current.removeAt(index)
+            current.add(index + 1, type)
+            preferences.setEnabledWidgets(current)
+            _uiState.update { it.copy(enabledWidgets = current) }
+        }
+    }
+
+    // Configurações da Launcher
+    fun openSettings() {
+        _uiState.update { it.copy(isSettingsOpen = true) }
+    }
+
+    fun closeSettings() {
+        _uiState.update { it.copy(isSettingsOpen = false) }
+    }
+
+    fun setDefaultMusicApp(pkg: String?) {
+        preferences.setDefaultMusicPackage(pkg)
+        _uiState.update { it.copy(defaultMusicApp = pkg) }
+    }
+
+    fun setDefaultCalendarApp(pkg: String?) {
+        preferences.setDefaultCalendarPackage(pkg)
+        _uiState.update { it.copy(defaultCalendarApp = pkg) }
+    }
+
+    fun setAmoledMode(enabled: Boolean) {
+        preferences.setAmoledMode(enabled)
+        _uiState.update { it.copy(isAmoledMode = enabled) }
+    }
+
+    // Gestão de Widgets Nativos do Android
+    fun onNativeWidgetAdded(widgetId: Int) {
+        preferences.addHostedWidgetId(widgetId)
+        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
+    }
+
+    fun onNativeWidgetRemoved(widgetId: Int) {
+        preferences.removeHostedWidgetId(widgetId)
+        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
+    }
+
+    // Controles de Mídia Reais
+    fun togglePlayPauseMedia() {
+        TesseraMediaService.togglePlayPause()
+    }
+
+    fun skipNextMedia() {
+        TesseraMediaService.skipNext()
+    }
+
+    fun skipPreviousMedia() {
+        TesseraMediaService.skipPrevious()
+    }
+
+    fun launchDefaultMusicApp() {
+        val pkg = _uiState.value.defaultMusicApp
+            ?: _uiState.value.mediaPlayback.packageName
+        if (!pkg.isNullOrBlank()) {
+            appRepository.launchApp(pkg)
+        }
+    }
+
+    fun launchCalendarApp() {
+        calendarHelper.openCalendar(_uiState.value.defaultCalendarApp)
+    }
+
     fun handleBackPress(): Boolean {
         val state = _uiState.value
         return when {
-            state.searchQuery.isNotEmpty() -> {
-                onSearchQueryChange("")
+            state.isSettingsOpen -> {
+                closeSettings()
                 true
             }
-            state.isWidgetExpanded -> {
-                setWidgetsExpanded(false)
+            state.searchQuery.isNotEmpty() -> {
+                onSearchQueryChange("")
                 true
             }
             state.isDrawerOpen -> {
                 closeDrawer()
                 true
             }
-            else -> false // Já está na Home limpa, BackHandler intercepta sem fechar launcher
+            state.isSearchExpanded -> {
+                collapseSearch()
+                true
+            }
+            else -> false // Já está na Home limpa, consome evento
         }
     }
 
@@ -175,29 +345,6 @@ class MainViewModel(
 
     fun reloadApps() {
         observeInstalledApps()
-    }
-
-    // Ações de Mídia Mock v1
-    fun togglePlayPause() {
-        _uiState.update {
-            it.copy(mediaState = it.mediaState.copy(isPlaying = !it.mediaState.isPlaying))
-        }
-    }
-
-    fun skipNext() {
-        val tracks = listOf(
-            MediaState("Ambient Echoes", "Searcho Sessions", true, 0.15f),
-            MediaState("Subtle Drift", "Mono Architecture", true, 0.45f),
-            MediaState("Minimal Focus", "Komorebi Pulse", true, 0.80f)
-        )
-        val next = tracks.random()
-        _uiState.update { it.copy(mediaState = next) }
-    }
-
-    fun skipPrevious() {
-        _uiState.update {
-            it.copy(mediaState = it.mediaState.copy(progress = 0f))
-        }
     }
 
     private fun normalizeString(text: String): String {

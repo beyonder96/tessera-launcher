@@ -1,6 +1,9 @@
 package com.tessera.launcher.ui.state
 
+import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.preference.WidgetType
+import com.tessera.launcher.data.service.MediaPlaybackInfo
 
 sealed interface AppsListState {
     data object Loading : AppsListState
@@ -8,13 +11,6 @@ sealed interface AppsListState {
     data class Empty(val query: String) : AppsListState
     data class Error(val message: String) : AppsListState
 }
-
-data class MediaState(
-    val title: String = "Ambient Echoes",
-    val artist: String = "Searcho Sessions",
-    val isPlaying: Boolean = false,
-    val progress: Float = 0.42f
-)
 
 data class LauncherUiState(
     val appsState: AppsListState = AppsListState.Loading,
@@ -24,9 +20,20 @@ data class LauncherUiState(
     val availableLetters: List<Char> = emptyList(),
     val isDrawerOpen: Boolean = false,
     val isWidgetExpanded: Boolean = false,
+    val isSearchExpanded: Boolean = false,
+    val isGeminiAnimating: Boolean = false,
     val batteryPercentage: Int = 100,
     val isCharging: Boolean = false,
     val formattedTime: String = "--:--",
     val formattedDate: String = "---",
-    val mediaState: MediaState = MediaState()
+    val mediaPlayback: MediaPlaybackInfo = MediaPlaybackInfo(),
+    val hasNotificationAccess: Boolean = false,
+    val hasCalendarPermission: Boolean = false,
+    val nextCalendarEvent: CalendarEventInfo? = null,
+    val enabledWidgets: List<WidgetType> = listOf(WidgetType.CALENDAR, WidgetType.BATTERY, WidgetType.MEDIA),
+    val defaultMusicApp: String? = null,
+    val defaultCalendarApp: String? = null,
+    val hostedWidgetIds: List<Int> = emptyList(),
+    val isSettingsOpen: Boolean = false,
+    val isAmoledMode: Boolean = true
 )

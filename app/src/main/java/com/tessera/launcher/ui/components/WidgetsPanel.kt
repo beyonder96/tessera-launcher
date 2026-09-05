@@ -21,6 +21,9 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.GraphicEq
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.SkipNext
@@ -38,25 +41,37 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.tessera.launcher.ui.state.MediaState
+import androidx.compose.ui.unit.sp
+import com.tessera.launcher.data.helper.CalendarEventInfo
+import com.tessera.launcher.data.preference.WidgetType
+import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceVariant
+import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 
 @Composable
 fun WidgetsPanel(
+    enabledWidgets: List<WidgetType>,
     batteryPercentage: Int,
     isCharging: Boolean,
     currentTime: String,
     currentDate: String,
-    mediaState: MediaState,
+    nextCalendarEvent: CalendarEventInfo?,
+    hasCalendarPermission: Boolean,
+    onRequestCalendarPermission: () -> Unit,
+    onCalendarClick: () -> Unit,
+    mediaPlayback: MediaPlaybackInfo,
+    hasNotificationAccess: Boolean,
+    onRequestNotificationAccess: () -> Unit,
     onTogglePlayPause: () -> Unit,
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
+    onOpenMusicApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -65,132 +80,305 @@ fun WidgetsPanel(
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Linha 1: Cartão de Data/Relógio e Cartão de Bateria
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Mini-card Data e Relógio (60% da largura)
-            Surface(
-                modifier = Modifier
-                    .weight(1.3f)
-                    .height(96.dp),
-                shape = CardShape,
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = currentTime,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary
-                        )
-                        Icon(
-                            imageVector = Icons.Outlined.CalendarToday,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Text(
-                        text = currentDate,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+        enabledWidgets.forEach { widgetType ->
+            when (widgetType) {
+                WidgetType.BATTERY -> {
+                    BatteryWidgetCard(
+                        batteryPercentage = batteryPercentage,
+                        isCharging = isCharging
+                    )
+                }
+                WidgetType.CALENDAR -> {
+                    CalendarWidgetCard(
+                        currentTime = currentTime,
+                        currentDate = currentDate,
+                        nextCalendarEvent = nextCalendarEvent,
+                        hasPermission = hasCalendarPermission,
+                        onRequestPermission = onRequestCalendarPermission,
+                        onCalendarClick = onCalendarClick
+                    )
+                }
+                WidgetType.MEDIA -> {
+                    MediaWidgetCard(
+                        mediaPlayback = mediaPlayback,
+                        hasNotificationAccess = hasNotificationAccess,
+                        onRequestAccess = onRequestNotificationAccess,
+                        onTogglePlayPause = onTogglePlayPause,
+                        onSkipNext = onSkipNext,
+                        onSkipPrevious = onSkipPrevious,
+                        onOpenMusicApp = onOpenMusicApp
                     )
                 }
             }
+        }
+    }
+}
 
-            // Mini-card Bateria e Sinais (40% da largura)
-            Surface(
+@Composable
+private fun BatteryWidgetCard(
+    batteryPercentage: Int,
+    isCharging: Boolean
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp),
+        shape = CardShape,
+        color = DarkSurface,
+        border = BorderStroke(1.dp, DarkSurfaceBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(96.dp),
-                shape = CardShape,
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(DarkSurfaceVariant),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                Icon(
+                    imageVector = when {
+                        isCharging -> Icons.Outlined.BatteryChargingFull
+                        batteryPercentage <= 15 -> Icons.Outlined.BatteryAlert
+                        else -> Icons.Outlined.BatteryStd
+                    },
+                    contentDescription = "Bateria",
+                    tint = if (isCharging) TextPrimary else TextSecondary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        text = if (isCharging) "Bateria Carregando" else "Nível de Bateria",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "$batteryPercentage%",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                LinearProgressIndicator(
+                    progress = { batteryPercentage / 100f },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .clip(CircleShape),
+                    color = TextPrimary,
+                    trackColor = DarkSurfaceBorder
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarWidgetCard(
+    currentTime: String,
+    currentDate: String,
+    nextCalendarEvent: CalendarEventInfo?,
+    hasPermission: Boolean,
+    onRequestPermission: () -> Unit,
+    onCalendarClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    if (hasPermission) onCalendarClick() else onRequestPermission()
+                }
+            ),
+        shape = CardShape,
+        color = DarkSurface,
+        border = BorderStroke(1.dp, DarkSurfaceBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(DarkSurfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CalendarToday,
+                    contentDescription = "Calendário",
+                    tint = TextPrimary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = currentTime,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = currentDate,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                if (!hasPermission) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "$batteryPercentage%",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = TextPrimary
-                        )
-                        Icon(
-                            imageVector = when {
-                                isCharging -> Icons.Outlined.BatteryChargingFull
-                                batteryPercentage <= 15 -> Icons.Outlined.BatteryAlert
-                                else -> Icons.Outlined.BatteryStd
-                            },
-                            contentDescription = "Bateria",
-                            tint = if (isCharging) TextPrimary else TextSecondary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = if (isCharging) "Carregando" else "Bateria",
+                            text = "Toque para sincronizar Google Agenda",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
-                        LinearProgressIndicator(
-                            progress = { batteryPercentage / 100f },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(3.dp)
-                                .clip(CircleShape),
-                            color = TextPrimary,
-                            trackColor = DarkSurfaceBorder
-                        )
                     }
+                } else if (nextCalendarEvent != null) {
+                    Text(
+                        text = "Próximo: ${nextCalendarEvent.title} (${nextCalendarEvent.timeFormatted})",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                } else {
+                    Text(
+                        text = "Sem eventos restantes hoje",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
                 }
             }
         }
+    }
+}
 
-        // Linha 2: Mini-card de Mídia Interativo
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(84.dp),
-            shape = CardShape,
-            color = DarkSurface,
-            border = BorderStroke(1.dp, DarkSurfaceBorder)
-        ) {
+@Composable
+private fun MediaWidgetCard(
+    mediaPlayback: MediaPlaybackInfo,
+    hasNotificationAccess: Boolean,
+    onRequestAccess: () -> Unit,
+    onTogglePlayPause: () -> Unit,
+    onSkipNext: () -> Unit,
+    onSkipPrevious: () -> Unit,
+    onOpenMusicApp: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = CardShape,
+        color = DarkSurface,
+        border = BorderStroke(1.dp, DarkSurfaceBorder)
+    ) {
+        if (!hasNotificationAccess) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onRequestAccess
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(DarkSurfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Notifications,
+                        contentDescription = "Acesso a Notificações",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Controle de Mídia do Sistema",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Toque para conceder acesso às notificações",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                }
+
+                Surface(
+                    shape = PillShape,
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, DarkSurfaceBorder)
+                ) {
+                    Text(
+                        text = "Conceder",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextPrimary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Ícone / Capa monocromática
+                // Ícone de abertura do app de música
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CardShape)
-                        .background(DarkSurfaceVariant),
+                        .background(DarkSurfaceVariant)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onOpenMusicApp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.GraphicEq,
-                        contentDescription = "Mídia",
+                        contentDescription = "Abrir app de música",
                         tint = TextPrimary,
                         modifier = Modifier.size(20.dp)
                     )
@@ -198,13 +386,17 @@ fun WidgetsPanel(
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // Info da Faixa
                 Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onOpenMusicApp
+                        )
                 ) {
                     Text(
-                        text = mediaState.title,
+                        text = mediaPlayback.title,
                         style = MaterialTheme.typography.titleSmall,
                         color = TextPrimary,
                         maxLines = 1,
@@ -212,7 +404,7 @@ fun WidgetsPanel(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = mediaState.artist,
+                        text = mediaPlayback.artist,
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary,
                         maxLines = 1,
@@ -220,7 +412,7 @@ fun WidgetsPanel(
                     )
                 }
 
-                // Controles de Reprodução
+                // Controles de Reprodução Reais
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -228,10 +420,11 @@ fun WidgetsPanel(
                     Icon(
                         imageVector = Icons.Outlined.SkipPrevious,
                         contentDescription = "Anterior",
-                        tint = TextSecondary,
+                        tint = if (mediaPlayback.hasActiveSession) TextSecondary else TextTertiary,
                         modifier = Modifier
                             .size(20.dp)
                             .clickable(
+                                enabled = mediaPlayback.hasActiveSession,
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                                 onClick = onSkipPrevious
@@ -246,13 +439,19 @@ fun WidgetsPanel(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = onTogglePlayPause
+                                onClick = {
+                                    if (mediaPlayback.hasActiveSession) {
+                                        onTogglePlayPause()
+                                    } else {
+                                        onOpenMusicApp()
+                                    }
+                                }
                             )
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = if (mediaState.isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
-                                contentDescription = if (mediaState.isPlaying) "Pausar" else "Reproduzir",
+                                imageVector = if (mediaPlayback.isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                contentDescription = if (mediaPlayback.isPlaying) "Pausar" else "Reproduzir",
                                 tint = TextPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -262,10 +461,11 @@ fun WidgetsPanel(
                     Icon(
                         imageVector = Icons.Outlined.SkipNext,
                         contentDescription = "Próximo",
-                        tint = TextSecondary,
+                        tint = if (mediaPlayback.hasActiveSession) TextSecondary else TextTertiary,
                         modifier = Modifier
                             .size(20.dp)
                             .clickable(
+                                enabled = mediaPlayback.hasActiveSession,
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                                 onClick = onSkipNext

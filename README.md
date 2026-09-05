@@ -13,17 +13,29 @@
   - Cantos arredondados generosos (`26.dp` para a cápsula e `18.dp` para cartões de widgets).
   - Ícones monocromáticos processados via GPU com `ColorMatrix` no Compose.
 
-- **Navegação Vertical Ágil (Niagara Style):**
-  - Tela inicial limpa e sem distrações visuais.
-  - Gesto de *swipe-up* em qualquer ponto da tela para abrir a gaveta de aplicativos.
-  - Indexador vertical A–Z na borda direita com busca $O(1)$ pré-computada para rolagem instantânea e tátil sem jank.
+- **Lupa Flutuante com Animação Estilo Gemini:**
+  - Na tela inicial, exibe apenas a elegante Lupa flutuante (Searcho FAB).
+  - Ao ser clicada, suas bordas executam uma animação fluida de brilho perimétrico em gradiente (estilo Gemini glow) enquanto se expande para a barra completa e revela os widgets.
 
-- **Searcho Dock & Painel de Widgets Expansível:**
-  - Doca flutuante inferior com busca em tempo real.
-  - Painel de mini-cards expansível:
-    - ⚡ **Bateria & Sinais:** Nível percentual, status de carregamento e barra de progresso.
-    - 📅 **Data & Relógio:** Hora e data por extenso com tipografia limpa.
-    - 🎵 **Mídia:** Mini-card interativo de áudio com controles de reprodução.
+- **Suporte a Widgets Nativos do Android (`AppWidgetHost`):**
+  - Área central 100% limpa por padrão (sem relógio fixo intrusivo).
+  - Suporte completo a hospedar widgets de qualquer aplicativo instalado no Android (relógios de terceiros, notas, previsão do tempo) com remoção via clique longo.
+
+- **Painel de Widgets Modular & Personalizável:**
+  - ⚡ **Bateria & Sinais:** Nível percentual, indicador de carregamento e barra de progresso.
+  - 📅 **Data & Google Agenda:** Exibe data atual e sincroniza compromissos reais via `CalendarContract`, com toque abrindo o aplicativo de calendário escolhido.
+  - 🎵 **Mídia Real do Sistema:** Conectado ao `NotificationListenerService` e `MediaSessionManager`, exibindo título e artista em reprodução no Android (Spotify, YouTube Music, etc.) com controles reais de Play/Pause, faixa seguinte e anterior.
+  - 🔄 **Reordenação e Ativação/Desativação:** Organize e personalize a ordem dos mini-cards diretamente no menu de configurações.
+
+- **Menu de Configurações da Launcher:**
+  - Definição do player de música e aplicativo de calendário padrão.
+  - Gerenciamento de permissões do sistema (Acesso a Notificações e Calendário com botão de 1 clique).
+  - Alternância entre fundo Preto Puro AMOLED e modo Translúcido.
+  - Adição de novos widgets nativos do sistema.
+
+- **Navegação Vertical Ágil (Niagara Style):**
+  - Gesto de *swipe-up* em qualquer ponto da tela para abrir a gaveta de aplicativos.
+  - Indexador vertical A–Z na borda direita com busca $O(1)$ pré-computada para rolagem instantânea sem jank.
 
 - **Arquitetura Reativa & Resiliente:**
   - `AppRepository` assíncrono com Coroutines (`Dispatchers.IO`) e escuta reativa a instalações/desinstalações de apps via `BroadcastReceiver`.
@@ -38,6 +50,7 @@
 - **UI Toolkit:** Jetpack Compose (BOM 2026.03.01)
 - **Material Design:** Material 3 + Material Icons Extended
 - **Arquitetura:** MVVM / Unidirectional Data Flow (StateFlow + Coroutines)
+- **Widgets:** Android `AppWidgetHost` & `AppWidgetManager`
 - **Compilador:** AGP 9.0+ & Gradle 9.1
 - **Target SDK:** Android 16 (API 36) | **Min SDK:** Android 8.0 (API 26)
 
@@ -45,9 +58,9 @@
 
 ## 📲 Download & Instalação do APK
 
-Você pode obter o APK pronto para instalação no seu Android:
-- 📦 **Arquivo no repositório:** [`apk/tessera-launcher-v1.0.0-debug.apk`](apk/tessera-launcher-v1.0.0-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.0.0](https://github.com/beyonder96/tessera-launcher/releases)
+Você pode obter o APK compilado pronto para instalação no seu Android:
+- 📦 **Arquivo no repositório:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.1.0](https://github.com/beyonder96/tessera-launcher/releases)
 
 ---
 
