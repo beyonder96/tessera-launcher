@@ -12,7 +12,6 @@ import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -33,7 +32,8 @@ class MainViewModel(
             enabledWidgets = preferences.getEnabledWidgets(),
             defaultMusicApp = preferences.getDefaultMusicPackage(),
             defaultCalendarApp = preferences.getDefaultCalendarPackage(),
-            hostedWidgetIds = preferences.getHostedWidgetIds(),
+            photoWidgetUri = preferences.getPhotoWidgetUri(),
+            isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
             isAmoledMode = preferences.isAmoledMode()
         )
     )
@@ -59,6 +59,13 @@ class MainViewModel(
                 }
                 .collect { apps ->
                     allApps = apps
+                    // Auto-seleciona Spotify como app de música se instalado e nenhum outro configurado
+                    if (preferences.getDefaultMusicPackage() == null) {
+                        val hasSpotify = apps.any { it.packageName == "com.spotify.music" }
+                        if (hasSpotify) {
+                            setDefaultMusicApp("com.spotify.music")
+                        }
+                    }
                     applyFilter(_uiState.value.searchQuery)
                 }
         }
@@ -113,16 +120,11 @@ class MainViewModel(
     }
 
     fun expandSearch() {
-        viewModelScope.launch {
-            _uiState.update {
-                it.copy(
-                    isGeminiAnimating = true,
-                    isSearchExpanded = true,
-                    isWidgetExpanded = true
-                )
-            }
-            delay(1200)
-            _uiState.update { it.copy(isGeminiAnimating = false) }
+        _uiState.update {
+            it.copy(
+                isSearchExpanded = true,
+                isWidgetExpanded = true
+            )
         }
     }
 
@@ -256,6 +258,17 @@ class MainViewModel(
         }
     }
 
+    // Moldura de Foto
+    fun setPhotoWidgetUri(uriString: String?) {
+        preferences.setPhotoWidgetUri(uriString)
+        _uiState.update { it.copy(photoWidgetUri = uriString) }
+    }
+
+    fun setPhotoWidgetEnabled(enabled: Boolean) {
+        preferences.setPhotoWidgetEnabled(enabled)
+        _uiState.update { it.copy(isPhotoWidgetEnabled = enabled) }
+    }
+
     // Configurações da Launcher
     fun openSettings() {
         _uiState.update { it.copy(isSettingsOpen = true) }
@@ -280,17 +293,6 @@ class MainViewModel(
         _uiState.update { it.copy(isAmoledMode = enabled) }
     }
 
-    // Gestão de Widgets Nativos do Android
-    fun onNativeWidgetAdded(widgetId: Int) {
-        preferences.addHostedWidgetId(widgetId)
-        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
-    }
-
-    fun onNativeWidgetRemoved(widgetId: Int) {
-        preferences.removeHostedWidgetId(widgetId)
-        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
-    }
-
     // Controles de Mídia Reais
     fun togglePlayPauseMedia() {
         TesseraMediaService.togglePlayPause()
@@ -305,10 +307,16 @@ class MainViewModel(
     }
 
     fun launchDefaultMusicApp() {
-        val pkg = _uiState.value.defaultMusicApp
-            ?: _uiState.value.mediaPlayback.packageName
-        if (!pkg.isNullOrBlank()) {
-            appRepository.launchApp(pkg)
+        val targetPkg = _uiState.value.defaultMusicApp ?: "com.spotify.music"
+        val result = appRepository.launchApp(targetPkg)
+        if (result.isFailure) {
+            // Se o app padrão não abrir, tenta qualquer app de música disponível
+            val musicApp = allApps.firstOrNull {
+                TesseraMediaService.KNOWN_MUSIC_PACKAGES.contains(it.packageName)
+            }
+            if (musicApp != null) {
+                appRepository.launchApp(musicApp.packageName)
+            }
         }
     }
 
@@ -335,7 +343,7 @@ class MainViewModel(
                 collapseSearch()
                 true
             }
-            else -> false // Já está na Home limpa, consome evento
+            else -> false // Home limpa, consome evento
         }
     }
 

@@ -6,7 +6,6 @@ import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
@@ -16,16 +15,35 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 data class MediaPlaybackInfo(
-    val title: String = "Nenhuma mídia reproduzindo",
-    val artist: String = "Toque para abrir reprodutor",
+    val title: String = "Spotify",
+    val artist: String = "Toque para abrir e reproduzir",
     val isPlaying: Boolean = false,
-    val packageName: String? = null,
+    val packageName: String? = "com.spotify.music",
     val hasActiveSession: Boolean = false
 )
 
 class TesseraMediaService : NotificationListenerService() {
 
     companion object {
+        val KNOWN_MUSIC_PACKAGES = setOf(
+            "com.spotify.music",
+            "com.google.android.apps.youtube.music",
+            "com.deezer.android.app",
+            "com.apple.android.music",
+            "com.amazon.mp3",
+            "com.soundcloud.android",
+            "com.audiomack",
+            "com.maxmpz.audioplayer"
+        )
+
+        val IGNORED_MEDIA_PACKAGES = setOf(
+            "ai.perplexity.app",
+            "com.android.chrome",
+            "com.google.android.googlequicksearchbox",
+            "org.mozilla.firefox",
+            "com.microsoft.emmx"
+        )
+
         private val _mediaState = MutableStateFlow(MediaPlaybackInfo())
         val mediaState: StateFlow<MediaPlaybackInfo> = _mediaState.asStateFlow()
 
@@ -85,9 +103,7 @@ class TesseraMediaService : NotificationListenerService() {
             mediaSessionManager?.addOnActiveSessionsChangedListener(sessionsChangedListener, component)
             val controllers = mediaSessionManager?.getActiveSessions(component)
             updateActiveController(controllers)
-        } catch (_: SecurityException) {
-            // Permissão ainda não concedida
-        }
+        } catch (_: SecurityException) {}
     }
 
     override fun onListenerDisconnected() {
@@ -107,10 +123,26 @@ class TesseraMediaService : NotificationListenerService() {
 
         activeController?.unregisterCallback(controllerCallback)
 
-        // Prioriza o controller que está tocando
-        val selected = list?.firstOrNull {
-            it.playbackState?.state == PlaybackState.STATE_PLAYING
-        } ?: list?.firstOrNull()
+        // 1. Procura primeiro sessão de app de música tocando (ex: Spotify tocando)
+        var selected = list?.firstOrNull {
+            it.playbackState?.state == PlaybackState.STATE_PLAYING &&
+                    KNOWN_MUSIC_PACKAGES.contains(it.packageName)
+        }
+
+        // 2. Procura qualquer sessão tocando que NÃO seja ignorada (navegadores/IA)
+        if (selected == null) {
+            selected = list?.firstOrNull {
+                it.playbackState?.state == PlaybackState.STATE_PLAYING &&
+                        !IGNORED_MEDIA_PACKAGES.contains(it.packageName)
+            }
+        }
+
+        // 3. Procura sessão de app de música pausada
+        if (selected == null) {
+            selected = list?.firstOrNull {
+                KNOWN_MUSIC_PACKAGES.contains(it.packageName)
+            }
+        }
 
         activeController = selected
         selected?.registerCallback(controllerCallback, handler)
@@ -121,10 +153,10 @@ class TesseraMediaService : NotificationListenerService() {
         val controller = activeController
         if (controller == null) {
             _mediaState.value = MediaPlaybackInfo(
-                title = "Nenhuma mídia reproduzindo",
-                artist = "Toque para abrir reprodutor",
+                title = "Spotify",
+                artist = "Toque para abrir e reproduzir",
                 isPlaying = false,
-                packageName = null,
+                packageName = "com.spotify.music",
                 hasActiveSession = false
             )
             return
@@ -136,12 +168,12 @@ class TesseraMediaService : NotificationListenerService() {
 
         val title = metadata?.getString(MediaMetadata.METADATA_KEY_TITLE)
             ?: metadata?.getString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE)
-            ?: "Reprodução Ativa"
+            ?: "Mídia em Reprodução"
 
         val artist = metadata?.getString(MediaMetadata.METADATA_KEY_ARTIST)
             ?: metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST)
             ?: metadata?.getString(MediaMetadata.METADATA_KEY_AUTHOR)
-            ?: controller.packageName
+            ?: "Spotify"
 
         _mediaState.value = MediaPlaybackInfo(
             title = title,

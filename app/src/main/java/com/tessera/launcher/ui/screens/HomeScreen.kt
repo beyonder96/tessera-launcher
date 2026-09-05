@@ -1,7 +1,5 @@
 package com.tessera.launcher.ui.screens
 
-import android.appwidget.AppWidgetHost
-import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
@@ -15,6 +13,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -54,9 +53,8 @@ import com.tessera.launcher.ui.components.AppListEmptyState
 import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
 import com.tessera.launcher.ui.components.AppListSkeleton
-import com.tessera.launcher.ui.components.NativeWidgetHostContainer
-import com.tessera.launcher.ui.components.SearchoDock
-import com.tessera.launcher.ui.components.SearchoFloatingButton
+import com.tessera.launcher.ui.components.PhotoWidget
+import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.theme.DarkBackground
@@ -67,9 +65,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     viewModel: MainViewModel,
-    appWidgetHost: AppWidgetHost?,
-    appWidgetManager: AppWidgetManager?,
-    onPickNativeWidget: () -> Unit,
+    onPickPhoto: () -> Unit,
     onRequestCalendarPermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -81,7 +77,6 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Observa retorno ao app para atualizar permissões de notificação e calendário
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -95,7 +90,6 @@ fun HomeScreen(
         }
     }
 
-    // BackHandler estrito de Launcher: nunca encerra a aplicação
     BackHandler(enabled = true) {
         val handled = viewModel.handleBackPress()
         if (handled) {
@@ -103,7 +97,6 @@ fun HomeScreen(
         }
     }
 
-    // Fecha o teclado se a busca recolher
     LaunchedEffect(uiState.isSearchExpanded) {
         if (!uiState.isSearchExpanded) {
             focusManager.clearFocus()
@@ -139,24 +132,25 @@ fun HomeScreen(
                 )
             }
     ) {
-        // Área Central da Tela Inicial (Widgets Nativos do Android ou limpo)
+        // Centro da Tela Inicial: Moldura de Foto Minimalista
         if (!uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 100.dp),
+                    .padding(bottom = 120.dp),
                 contentAlignment = Alignment.Center
             ) {
-                NativeWidgetHostContainer(
-                    appWidgetHost = appWidgetHost,
-                    appWidgetManager = appWidgetManager,
-                    hostedWidgetIds = uiState.hostedWidgetIds,
-                    onRemoveWidget = { id -> viewModel.onNativeWidgetRemoved(id) }
-                )
+                if (uiState.isPhotoWidgetEnabled) {
+                    PhotoWidget(
+                        photoUriString = uiState.photoWidgetUri,
+                        onPickPhoto = onPickPhoto,
+                        onRemovePhoto = { viewModel.setPhotoWidgetUri(null) }
+                    )
+                }
             }
         }
 
-        // Gaveta Vertical de Aplicativos (Niagara Style)
+        // Gaveta Vertical de Aplicativos (Resultados no Rodapé para Uso com Uma Mão)
         AnimatedVisibility(
             visible = uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
             enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
@@ -174,9 +168,8 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = if (uiState.isWidgetExpanded) 280.dp else 96.dp)
+                    .padding(bottom = if (uiState.isWidgetExpanded) 310.dp else 84.dp)
             ) {
-                // Lista de Aplicativos
                 Box(modifier = Modifier.weight(1f)) {
                     when (val state = uiState.appsState) {
                         is AppsListState.Loading -> {
@@ -192,9 +185,11 @@ fun HomeScreen(
                             )
                         }
                         is AppsListState.Success -> {
+                            // Arrangement.Bottom ancora os resultados mais próximos ao polegar na busca!
                             LazyColumn(
                                 state = listState,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                             ) {
                                 items(
                                     items = uiState.filteredApps,
@@ -218,7 +213,7 @@ fun HomeScreen(
                     }
                 }
 
-                // Seletor Vertical A-Z (Indexação O(1) rápida)
+                // Indexador A-Z Niagara
                 if (uiState.appsState is AppsListState.Success && uiState.searchQuery.isEmpty()) {
                     AlphabetScroller(
                         availableLetters = uiState.availableLetters.toSet(),
@@ -235,7 +230,7 @@ fun HomeScreen(
             }
         }
 
-        // Rodapé Flutuante: Lupa (FAB) ou Barra Searcho Expandida
+        // Rodapé Fixo: Doca Morfológica Searcho e Painel de Widgets
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -243,7 +238,7 @@ fun HomeScreen(
                 .padding(WindowInsets.navigationBars.asPaddingValues()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Painel Expansível de Widgets (Acima da Barra)
+            // Painel Expansível de Widgets (Staggered)
             AnimatedVisibility(
                 visible = uiState.isSearchExpanded && uiState.isWidgetExpanded,
                 enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
@@ -282,35 +277,24 @@ fun HomeScreen(
                 )
             }
 
-            // Transição entre Botão de Lupa (FAB) e Barra de Pesquisa Completa
-            if (!uiState.isSearchExpanded) {
-                SearchoFloatingButton(
-                    isGeminiAnimating = uiState.isGeminiAnimating,
-                    onClick = {
-                        viewModel.expandSearch()
-                        focusRequester.requestFocus()
-                    },
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-            } else {
-                SearchoDock(
-                    searchQuery = uiState.searchQuery,
-                    onQueryChange = { viewModel.onSearchQueryChange(it) },
-                    isWidgetExpanded = uiState.isWidgetExpanded,
-                    isGeminiAnimating = uiState.isGeminiAnimating,
-                    onToggleWidgets = { viewModel.toggleWidgets() },
-                    onSearchFocused = {
-                        viewModel.openDrawer()
-                        viewModel.setWidgetsExpanded(true)
-                    },
-                    onCollapseSearch = { viewModel.collapseSearch() },
-                    onOpenSettings = { viewModel.openSettings() },
-                    focusRequester = focusRequester
-                )
-            }
+            // Doca Morfológica Contínua (Lupa <-> Barra Searcho)
+            SearchoMorphingDock(
+                isExpanded = uiState.isSearchExpanded,
+                searchQuery = uiState.searchQuery,
+                onQueryChange = { viewModel.onSearchQueryChange(it) },
+                isWidgetExpanded = uiState.isWidgetExpanded,
+                onToggleWidgets = { viewModel.toggleWidgets() },
+                onExpandClick = {
+                    viewModel.expandSearch()
+                    focusRequester.requestFocus()
+                },
+                onCollapseClick = { viewModel.collapseSearch() },
+                onOpenSettings = { viewModel.openSettings() },
+                focusRequester = focusRequester
+            )
         }
 
-        // Painel / Tela de Configurações da Launcher
+        // Painel de Configurações da Launcher
         AnimatedVisibility(
             visible = uiState.isSettingsOpen,
             enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
@@ -318,7 +302,7 @@ fun HomeScreen(
         ) {
             SettingsScreen(
                 viewModel = viewModel,
-                onPickNativeWidget = onPickNativeWidget,
+                onPickPhoto = onPickPhoto,
                 onRequestCalendarPermission = onRequestCalendarPermission
             )
         }

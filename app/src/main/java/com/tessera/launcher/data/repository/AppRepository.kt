@@ -124,7 +124,12 @@ class AppRepository(
             addDataScheme("package")
         }
 
-        context.registerReceiver(packageChangeReceiver, filter)
+        androidx.core.content.ContextCompat.registerReceiver(
+            context,
+            packageChangeReceiver,
+            filter,
+            androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+        )
 
         awaitClose {
             try {

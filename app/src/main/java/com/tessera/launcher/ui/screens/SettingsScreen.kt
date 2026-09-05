@@ -1,11 +1,11 @@
 package com.tessera.launcher.ui.screens
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,13 +24,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
@@ -39,7 +39,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,12 +46,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
+import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkSurface
@@ -67,17 +68,18 @@ import com.tessera.launcher.ui.viewmodel.MainViewModel
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
-    onPickNativeWidget: () -> Unit,
+    onPickPhoto: () -> Unit,
     onRequestCalendarPermission: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var selectingAppForType by remember { mutableStateOf<String?>(null) } // "music" or "calendar"
+    var selectingAppForType by remember { mutableStateOf<String?>(null) }
 
     if (selectingAppForType != null) {
         AppSelectionDialog(
             apps = uiState.filteredApps,
+            filterType = selectingAppForType!!,
             onDismiss = { selectingAppForType = null },
             onSelect = { app ->
                 if (selectingAppForType == "music") {
@@ -135,7 +137,79 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Seção 1: Widgets da Barra Searcho
+            // Seção 1: Moldura de Foto Central
+            SectionHeader(title = "Moldura de Foto na Tela Inicial", icon = Icons.Outlined.Image)
+            Surface(
+                shape = CardShape,
+                color = DarkSurface,
+                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Exibir Moldura de Foto", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                            Text(
+                                text = if (uiState.photoWidgetUri != null) "Foto configurada" else "Nenhuma foto selecionada",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextSecondary
+                            )
+                        }
+                        Switch(
+                            checked = uiState.isPhotoWidgetEnabled,
+                            onCheckedChange = { viewModel.setPhotoWidgetEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = TextPrimary,
+                                checkedTrackColor = DarkSurfaceVariant,
+                                uncheckedThumbColor = TextSecondary,
+                                uncheckedTrackColor = DarkSurface
+                            )
+                        )
+                    }
+
+                    if (uiState.isPhotoWidgetEnabled) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                shape = PillShape,
+                                color = DarkSurfaceVariant,
+                                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                                modifier = Modifier.clickable { onPickPhoto() }
+                            ) {
+                                Text(
+                                    text = if (uiState.photoWidgetUri == null) "Escolher Foto" else "Trocar Foto",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextPrimary,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+
+                            if (uiState.photoWidgetUri != null) {
+                                Surface(
+                                    shape = PillShape,
+                                    color = Color.Transparent,
+                                    border = BorderStroke(1.dp, DarkSurfaceBorder),
+                                    modifier = Modifier.clickable { viewModel.setPhotoWidgetUri(null) }
+                                ) {
+                                    Text(
+                                        text = "Remover Foto",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = TextSecondary,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Seção 2: Widgets da Barra Searcho
             SectionHeader(title = "Widgets da Barra de Pesquisa", icon = Icons.Outlined.Widgets)
             Surface(
                 shape = CardShape,
@@ -199,53 +273,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Seção 2: Widgets Nativos da Tela Inicial
-            SectionHeader(title = "Widgets Nativos do Android", icon = Icons.Outlined.Add)
-            Surface(
-                shape = CardShape,
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Adicione widgets de outros aplicativos (relógios, notas, previsão do tempo) à sua tela inicial.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Surface(
-                        shape = PillShape,
-                        color = DarkSurfaceVariant,
-                        border = BorderStroke(1.dp, DarkSurfaceBorder),
-                        modifier = Modifier.clickable {
-                            viewModel.closeSettings()
-                            onPickNativeWidget()
-                        }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Add,
-                                contentDescription = null,
-                                tint = TextPrimary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Adicionar Widget do Sistema",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = TextPrimary
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
             // Seção 3: Aplicativos Padrão
             SectionHeader(title = "Serviços & Aplicativos Padrão", icon = Icons.Outlined.Today)
             Surface(
@@ -266,7 +293,7 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "App de Música Padrão", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                             Text(
-                                text = uiState.defaultMusicApp ?: "Automático (último em reprodução)",
+                                text = uiState.defaultMusicApp ?: "Spotify (Padrão)",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextSecondary
                             )
@@ -297,7 +324,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Seção 4: Permissões
+            // Seção 4: Permissões e Desbloqueio Android 13+
             SectionHeader(title = "Permissões do Sistema", icon = Icons.Outlined.Notifications)
             Surface(
                 shape = CardShape,
@@ -315,7 +342,7 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "Acesso a Notificações (Mídia)", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                             Text(
-                                text = if (uiState.hasNotificationAccess) "Autorizado" else "Necessário para ler faixa e pausar áudio",
+                                text = if (uiState.hasNotificationAccess) "Autorizado" else "Necessário para ler o que está tocando",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (uiState.hasNotificationAccess) TextPrimary else TextTertiary
                             )
@@ -341,6 +368,35 @@ fun SettingsScreen(
                         }
                     }
 
+                    // Atalho para Configurações Restritas (Android 13+)
+                    if (!uiState.hasNotificationAccess) {
+                        Surface(
+                            shape = PillShape,
+                            color = DarkSurfaceVariant,
+                            border = BorderStroke(1.dp, DarkSurfaceBorder),
+                            modifier = Modifier.clickable {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = Uri.fromParts("package", context.packageName, null)
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                                context.startActivity(intent)
+                            }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Outlined.Security, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Desbloquear Configurações Restritas (3 Pontinhos)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+                    }
+
                     // Calendário
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -350,7 +406,7 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "Leitura do Calendário", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                             Text(
-                                text = if (uiState.hasCalendarPermission) "Autorizado" else "Necessário para sincronizar compromissos",
+                                text = if (uiState.hasCalendarPermission) "Autorizado" else "Sincroniza eventos do Google Agenda",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = if (uiState.hasCalendarPermission) TextPrimary else TextTertiary
                             )
@@ -394,7 +450,7 @@ fun SettingsScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Fundo Preto Puro AMOLED", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                         Text(
-                            text = if (uiState.isAmoledMode) "Preto puro #000000" else "Translúcido (exibe wallpaper)",
+                            text = if (uiState.isAmoledMode) "Preto puro #050505" else "Translúcido (exibe wallpaper)",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
@@ -432,9 +488,18 @@ private fun SectionHeader(title: String, icon: androidx.compose.ui.graphics.vect
 @Composable
 private fun AppSelectionDialog(
     apps: List<AppInfo>,
+    filterType: String,
     onDismiss: () -> Unit,
     onSelect: (AppInfo) -> Unit
 ) {
+    val sortedApps = remember(apps, filterType) {
+        if (filterType == "music") {
+            apps.sortedByDescending { TesseraMediaService.KNOWN_MUSIC_PACKAGES.contains(it.packageName) }
+        } else {
+            apps
+        }
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = CardShape,
@@ -446,7 +511,7 @@ private fun AppSelectionDialog(
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Selecione o Aplicativo",
+                    text = if (filterType == "music") "Selecione o App de Música" else "Selecione o App de Calendário",
                     style = MaterialTheme.typography.titleMedium,
                     color = TextPrimary
                 )
@@ -457,19 +522,28 @@ private fun AppSelectionDialog(
                         .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    apps.forEach { app ->
+                    sortedApps.forEach { app ->
+                        val isPriority = filterType == "music" && TesseraMediaService.KNOWN_MUSIC_PACKAGES.contains(app.packageName)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable { onSelect(app) }
                                 .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
                                 text = app.label,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = TextPrimary
+                                color = if (isPriority) TextPrimary else TextSecondary
                             )
+                            if (isPriority) {
+                                Text(
+                                    text = "Música",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     }
                 }

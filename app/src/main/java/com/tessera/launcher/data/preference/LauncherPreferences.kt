@@ -20,6 +20,24 @@ class LauncherPreferences(context: Context) {
         private const val KEY_DEFAULT_CALENDAR_PKG = "default_calendar_package"
         private const val KEY_HOSTED_WIDGET_IDS = "hosted_widget_ids"
         private const val KEY_AMOLED_MODE = "amoled_mode"
+        private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
+        private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
+    }
+
+    fun getPhotoWidgetUri(): String? {
+        return prefs.getString(KEY_PHOTO_WIDGET_URI, null)
+    }
+
+    fun setPhotoWidgetUri(uri: String?) {
+        prefs.edit().putString(KEY_PHOTO_WIDGET_URI, uri).apply()
+    }
+
+    fun isPhotoWidgetEnabled(): Boolean {
+        return prefs.getBoolean(KEY_PHOTO_WIDGET_ENABLED, true)
+    }
+
+    fun setPhotoWidgetEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_PHOTO_WIDGET_ENABLED, enabled).apply()
     }
 
     fun getEnabledWidgets(): List<WidgetType> {

@@ -21,7 +21,6 @@ data class LauncherUiState(
     val isDrawerOpen: Boolean = false,
     val isWidgetExpanded: Boolean = false,
     val isSearchExpanded: Boolean = false,
-    val isGeminiAnimating: Boolean = false,
     val batteryPercentage: Int = 100,
     val isCharging: Boolean = false,
     val formattedTime: String = "--:--",
@@ -33,7 +32,8 @@ data class LauncherUiState(
     val enabledWidgets: List<WidgetType> = listOf(WidgetType.CALENDAR, WidgetType.BATTERY, WidgetType.MEDIA),
     val defaultMusicApp: String? = null,
     val defaultCalendarApp: String? = null,
-    val hostedWidgetIds: List<Int> = emptyList(),
+    val photoWidgetUri: String? = null,
+    val isPhotoWidgetEnabled: Boolean = true,
     val isSettingsOpen: Boolean = false,
     val isAmoledMode: Boolean = true
 )
