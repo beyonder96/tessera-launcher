@@ -43,7 +43,15 @@
 
 ---
 
-## 🚀 Como Compilar e Instalar
+## 📲 Download & Instalação do APK
+
+Você pode obter o APK pronto para instalação no seu Android:
+- 📦 **Arquivo no repositório:** [`apk/tessera-launcher-v1.0.0-debug.apk`](apk/tessera-launcher-v1.0.0-debug.apk)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.0.0](https://github.com/beyonder96/tessera-launcher/releases)
+
+---
+
+## 🚀 Como Compilar do Código-Fonte
 
 ### Pré-requisitos
 - JDK 17
