@@ -25,7 +25,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Widgets
@@ -65,7 +64,6 @@ fun SearchoMorphingDock(
     isWidgetExpanded: Boolean,
     onToggleWidgets: () -> Unit,
     onExpandClick: () -> Unit,
-    onCollapseClick: () -> Unit,
     onOpenSettings: () -> Unit,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier
@@ -157,7 +155,7 @@ fun SearchoMorphingDock(
                         decorationBox = { innerTextField ->
                             if (searchQuery.isEmpty()) {
                                 Text(
-                                    text = "Searcho...",
+                                    text = "Tessera...",
                                     color = TextSecondary,
                                     fontSize = 15.sp,
                                     fontFamily = FontFamily.SansSerif
@@ -211,19 +209,6 @@ fun SearchoMorphingDock(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null,
                                         onClick = onOpenSettings
-                                    )
-                            )
-
-                            Icon(
-                                imageVector = Icons.Outlined.KeyboardArrowDown,
-                                contentDescription = "Recolher para lupa",
-                                tint = TextTertiary,
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onCollapseClick
                                     )
                             )
                         }

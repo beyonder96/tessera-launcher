@@ -5,8 +5,9 @@ import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -52,10 +53,12 @@ private fun drawableToBitmap(drawable: Drawable): Bitmap {
     return bitmap
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppListItem(
     app: AppInfo,
     onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val monoColorFilter = remember {
@@ -69,10 +72,11 @@ fun AppListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
+            .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = Color(0x22FFFFFF)),
-                onClick = onClick
+                onClick = onClick,
+                onLongClick = onLongClick
             )
             .padding(horizontal = 24.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically

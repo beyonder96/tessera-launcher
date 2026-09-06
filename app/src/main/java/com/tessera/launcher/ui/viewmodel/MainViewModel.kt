@@ -12,6 +12,8 @@ import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,6 +42,7 @@ class MainViewModel(
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
 
     private var allApps: List<AppInfo> = emptyList()
+    private var autoLaunchJob: Job? = null
 
     init {
         observeInstalledApps()
@@ -129,6 +132,7 @@ class MainViewModel(
     }
 
     fun collapseSearch() {
+        autoLaunchJob?.cancel()
         _uiState.update {
             it.copy(
                 isSearchExpanded = false,
@@ -154,12 +158,14 @@ class MainViewModel(
 
     private fun applyFilter(query: String) {
         val trimmed = query.trim()
+        autoLaunchJob?.cancel()
+
         val filtered = if (trimmed.isEmpty()) {
             allApps
         } else {
-            val normalizedQuery = normalizeString(trimmed)
+            val normalizedQuery = AppInfo.normalize(trimmed)
             allApps.filter { app ->
-                normalizeString(app.label).contains(normalizedQuery) ||
+                app.normalizedLabel.contains(normalizedQuery) ||
                         app.packageName.contains(trimmed, ignoreCase = true)
             }
         }
@@ -187,6 +193,15 @@ class MainViewModel(
                 letterIndexMap = letterMap,
                 availableLetters = availableLetters
             )
+        }
+
+        // Auto-launch se houver exatamente 1 aplicativo correspondente ao digitar
+        if (trimmed.isNotEmpty() && filtered.size == 1) {
+            val singleApp = filtered.first()
+            autoLaunchJob = viewModelScope.launch {
+                delay(150)
+                launchApp(singleApp.packageName)
+            }
         }
     }
 
@@ -357,7 +372,11 @@ class MainViewModel(
     }
 
     fun launchApp(packageName: String): Result<Unit> {
-        return appRepository.launchApp(packageName)
+        val result = appRepository.launchApp(packageName)
+        if (result.isSuccess) {
+            collapseSearch()
+        }
+        return result
     }
 
     fun reloadApps() {

@@ -1,6 +1,7 @@
 package com.tessera.launcher.ui.screens
 
 import android.content.Intent
+import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -12,7 +13,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +40,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -51,7 +55,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.ui.components.AlphabetScroller
+import com.tessera.launcher.ui.components.AppContextMenu
 import com.tessera.launcher.ui.components.AppListEmptyState
 import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
@@ -79,6 +85,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
+    var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -135,18 +142,35 @@ fun HomeScreen(
                 )
             }
     ) {
-        // Centro da Tela Inicial: Moldura de Foto Minimalista
+        // Centro da Tela Inicial: Moldura de Foto Minimalista (Toque fecha busca se expandida)
         if (!uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 120.dp),
+                    .padding(bottom = 120.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            if (uiState.isSearchExpanded) {
+                                viewModel.collapseSearch()
+                                focusManager.clearFocus()
+                            }
+                        }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
-                        onPickPhoto = onPickPhoto,
+                        onPickPhoto = {
+                            if (uiState.isSearchExpanded) {
+                                viewModel.collapseSearch()
+                                focusManager.clearFocus()
+                            } else {
+                                onPickPhoto()
+                            }
+                        },
                         onRemovePhoto = { viewModel.setPhotoWidgetUri(null) }
                     )
                 }
@@ -209,7 +233,11 @@ fun HomeScreen(
                                                     Toast.LENGTH_SHORT
                                                 ).show()
                                             }
-                                        }
+                                        },
+                                        onLongClick = {
+                                            selectedAppForMenu = app
+                                        },
+                                        modifier = Modifier.animateItem()
                                     )
                                 }
                             }
@@ -281,7 +309,7 @@ fun HomeScreen(
                 )
             }
 
-            // Doca Morfológica Contínua (Lupa <-> Barra Searcho)
+            // Doca Morfológica Contínua (Lupa <-> Barra Tessera)
             SearchoMorphingDock(
                 isExpanded = uiState.isSearchExpanded,
                 searchQuery = uiState.searchQuery,
@@ -292,7 +320,6 @@ fun HomeScreen(
                     viewModel.expandSearch()
                     focusRequester.requestFocus()
                 },
-                onCollapseClick = { viewModel.collapseSearch() },
                 onOpenSettings = { viewModel.openSettings() },
                 focusRequester = focusRequester
             )
@@ -308,6 +335,28 @@ fun HomeScreen(
                 viewModel = viewModel,
                 onPickPhoto = onPickPhoto,
                 onRequestCalendarPermission = onRequestCalendarPermission
+            )
+        }
+
+        // Menu de Contexto do Aplicativo (Informações & Desinstalação)
+        selectedAppForMenu?.let { app ->
+            AppContextMenu(
+                app = app,
+                onDismiss = { selectedAppForMenu = null },
+                onOpenAppSettings = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.parse("package:${app.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                },
+                onUninstallApp = {
+                    val intent = Intent(Intent.ACTION_DELETE).apply {
+                        data = Uri.parse("package:${app.packageName}")
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
             )
         }
     }
