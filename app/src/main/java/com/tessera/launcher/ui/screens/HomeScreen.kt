@@ -171,7 +171,8 @@ fun HomeScreen(
                                 onPickPhoto()
                             }
                         },
-                        onRemovePhoto = { viewModel.setPhotoWidgetUri(null) }
+                        onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
+                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
                     )
                 }
             }
@@ -305,6 +306,7 @@ fun HomeScreen(
                     onSkipNext = { viewModel.skipNextMedia() },
                     onSkipPrevious = { viewModel.skipPreviousMedia() },
                     onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
+                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
@@ -321,7 +323,8 @@ fun HomeScreen(
                     focusRequester.requestFocus()
                 },
                 onOpenSettings = { viewModel.openSettings() },
-                focusRequester = focusRequester
+                focusRequester = focusRequester,
+                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
             )
         }
 

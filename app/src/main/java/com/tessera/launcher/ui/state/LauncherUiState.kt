@@ -35,5 +35,6 @@ data class LauncherUiState(
     val photoWidgetUri: String? = null,
     val isPhotoWidgetEnabled: Boolean = true,
     val isSettingsOpen: Boolean = false,
-    val isAmoledMode: Boolean = true
+    val isAmoledMode: Boolean = true,
+    val isLiquidGlassEnabled: Boolean = true
 )

@@ -9,6 +9,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -36,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -51,6 +54,8 @@ import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceBorderHover
+import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.LiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -66,6 +71,7 @@ fun SearchoMorphingDock(
     onExpandClick: () -> Unit,
     onOpenSettings: () -> Unit,
     focusRequester: FocusRequester,
+    isLiquidGlass: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val configuration = LocalConfiguration.current
@@ -82,24 +88,37 @@ fun SearchoMorphingDock(
         label = "dock_width"
     )
 
+    val dockShape = PillShape
+    val dockBorder = if (isLiquidGlass) {
+        BorderStroke(1.dp, LiquidGlassBorderBrush)
+    } else {
+        BorderStroke(1.dp, if (isExpanded) DarkSurfaceBorderHover else DarkSurfaceBorder)
+    }
+    val dockBackground = if (isLiquidGlass) {
+        Modifier.background(LiquidGlassSurfaceBrush)
+    } else {
+        Modifier.background(DarkSurface)
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            shape = PillShape,
-            color = DarkSurface,
-            border = BorderStroke(1.dp, if (isExpanded) DarkSurfaceBorderHover else DarkSurfaceBorder),
+        Box(
             modifier = Modifier
                 .width(animatedWidth)
                 .height(60.dp)
                 .shadow(
-                    elevation = if (isExpanded) 12.dp else 6.dp,
-                    shape = PillShape,
-                    ambientColor = Color.Black.copy(alpha = 0.5f)
+                    elevation = if (isExpanded) 14.dp else 8.dp,
+                    shape = dockShape,
+                    ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.5f),
+                    spotColor = if (isLiquidGlass) Color(0x55000000) else Color.Black.copy(alpha = 0.5f)
                 )
+                .border(dockBorder, dockShape)
+                .clip(dockShape)
+                .then(dockBackground)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,

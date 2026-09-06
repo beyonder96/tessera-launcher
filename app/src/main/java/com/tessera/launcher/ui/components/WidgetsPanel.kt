@@ -3,6 +3,7 @@ package com.tessera.launcher.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +55,8 @@ import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceVariant
+import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.LiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -76,6 +80,7 @@ fun WidgetsPanel(
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
     onOpenMusicApp: () -> Unit,
+    isLiquidGlass: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -89,7 +94,8 @@ fun WidgetsPanel(
                 WidgetType.BATTERY -> {
                     BatteryWidgetCard(
                         batteryPercentage = batteryPercentage,
-                        isCharging = isCharging
+                        isCharging = isCharging,
+                        isLiquidGlass = isLiquidGlass
                     )
                 }
                 WidgetType.CALENDAR -> {
@@ -99,7 +105,8 @@ fun WidgetsPanel(
                         nextCalendarEvent = nextCalendarEvent,
                         hasPermission = hasCalendarPermission,
                         onRequestPermission = onRequestCalendarPermission,
-                        onCalendarClick = onCalendarClick
+                        onCalendarClick = onCalendarClick,
+                        isLiquidGlass = isLiquidGlass
                     )
                 }
                 WidgetType.MEDIA -> {
@@ -110,7 +117,8 @@ fun WidgetsPanel(
                         onTogglePlayPause = onTogglePlayPause,
                         onSkipNext = onSkipNext,
                         onSkipPrevious = onSkipPrevious,
-                        onOpenMusicApp = onOpenMusicApp
+                        onOpenMusicApp = onOpenMusicApp,
+                        isLiquidGlass = isLiquidGlass
                     )
                 }
             }
@@ -121,15 +129,26 @@ fun WidgetsPanel(
 @Composable
 private fun BatteryWidgetCard(
     batteryPercentage: Int,
-    isCharging: Boolean
+    isCharging: Boolean,
+    isLiquidGlass: Boolean = true
 ) {
-    Surface(
+    val cardBorder = if (isLiquidGlass) BorderStroke(1.dp, LiquidGlassBorderBrush) else BorderStroke(1.dp, DarkSurfaceBorder)
+    val cardBg = if (isLiquidGlass) Modifier.background(LiquidGlassSurfaceBrush) else Modifier.background(DarkSurface)
+    val iconBg = if (isLiquidGlass) Color(0x33FFFFFF) else DarkSurfaceVariant
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
-        shape = CardShape,
-        color = DarkSurface,
-        border = BorderStroke(1.dp, DarkSurfaceBorder)
+            .height(72.dp)
+            .shadow(
+                elevation = if (isLiquidGlass) 10.dp else 4.dp,
+                shape = CardShape,
+                ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.4f),
+                spotColor = if (isLiquidGlass) Color(0x4D000000) else Color.Black.copy(alpha = 0.4f)
+            )
+            .border(cardBorder, CardShape)
+            .clip(CardShape)
+            .then(cardBg)
     ) {
         Row(
             modifier = Modifier
@@ -141,7 +160,7 @@ private fun BatteryWidgetCard(
                 modifier = Modifier
                     .size(36.dp)
                     .clip(CircleShape)
-                    .background(DarkSurfaceVariant),
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -199,21 +218,32 @@ private fun CalendarWidgetCard(
     nextCalendarEvent: CalendarEventInfo?,
     hasPermission: Boolean,
     onRequestPermission: () -> Unit,
-    onCalendarClick: () -> Unit
+    onCalendarClick: () -> Unit,
+    isLiquidGlass: Boolean = true
 ) {
-    Surface(
+    val cardBorder = if (isLiquidGlass) BorderStroke(1.dp, LiquidGlassBorderBrush) else BorderStroke(1.dp, DarkSurfaceBorder)
+    val cardBg = if (isLiquidGlass) Modifier.background(LiquidGlassSurfaceBrush) else Modifier.background(DarkSurface)
+    val iconBg = if (isLiquidGlass) Color(0x33FFFFFF) else DarkSurfaceVariant
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(
+                elevation = if (isLiquidGlass) 10.dp else 4.dp,
+                shape = CardShape,
+                ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.4f),
+                spotColor = if (isLiquidGlass) Color(0x4D000000) else Color.Black.copy(alpha = 0.4f)
+            )
+            .border(cardBorder, CardShape)
+            .clip(CardShape)
+            .then(cardBg)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {
                     if (hasPermission) onCalendarClick() else onRequestPermission()
                 }
-            ),
-        shape = CardShape,
-        color = DarkSurface,
-        border = BorderStroke(1.dp, DarkSurfaceBorder)
+            )
     ) {
         Row(
             modifier = Modifier
@@ -225,7 +255,7 @@ private fun CalendarWidgetCard(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(DarkSurfaceVariant),
+                    .background(iconBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -297,13 +327,25 @@ private fun MediaWidgetCard(
     onTogglePlayPause: () -> Unit,
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
-    onOpenMusicApp: () -> Unit
+    onOpenMusicApp: () -> Unit,
+    isLiquidGlass: Boolean = true
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = CardShape,
-        color = DarkSurface,
-        border = BorderStroke(1.dp, DarkSurfaceBorder)
+    val cardBorder = if (isLiquidGlass) BorderStroke(1.dp, LiquidGlassBorderBrush) else BorderStroke(1.dp, DarkSurfaceBorder)
+    val cardBg = if (isLiquidGlass) Modifier.background(LiquidGlassSurfaceBrush) else Modifier.background(DarkSurface)
+    val iconBg = if (isLiquidGlass) Color(0x33FFFFFF) else DarkSurfaceVariant
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (isLiquidGlass) 10.dp else 4.dp,
+                shape = CardShape,
+                ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.4f),
+                spotColor = if (isLiquidGlass) Color(0x4D000000) else Color.Black.copy(alpha = 0.4f)
+            )
+            .border(cardBorder, CardShape)
+            .clip(CardShape)
+            .then(cardBg)
     ) {
         if (!hasNotificationAccess) {
             Row(

@@ -22,6 +22,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_AMOLED_MODE = "amoled_mode"
         private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
         private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
+        private const val KEY_LIQUID_GLASS_MODE = "liquid_glass_mode"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -98,5 +99,13 @@ class LauncherPreferences(context: Context) {
 
     fun setAmoledMode(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_AMOLED_MODE, enabled).apply()
+    }
+
+    fun isLiquidGlassEnabled(): Boolean {
+        return prefs.getBoolean(KEY_LIQUID_GLASS_MODE, true)
+    }
+
+    fun setLiquidGlassEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_LIQUID_GLASS_MODE, enabled).apply()
     }
 }

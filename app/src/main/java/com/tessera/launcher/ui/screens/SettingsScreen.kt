@@ -145,6 +145,7 @@ fun SettingsScreen(
         "developer" -> DeveloperDialog(
             appsCount = uiState.filteredApps.size,
             hasNotificationAccess = uiState.hasNotificationAccess,
+            isLiquidGlass = uiState.isLiquidGlassEnabled,
             onDismiss = { activeDialog = null }
         )
     }
@@ -905,6 +906,38 @@ private fun CustomizationDialog(
                     Text(text = "Alterar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
                 }
 
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Modo Liquid Glass (iOS 27 Style)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Modo Liquid Glass (iOS 27)",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (uiState.isLiquidGlassEnabled) "Ativo (vidro translúcido & reflexo de luz)" else "Desativado (estilo opaco sólido)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = uiState.isLiquidGlassEnabled,
+                        onCheckedChange = { viewModel.setLiquidGlassEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = TextPrimary,
+                            checkedTrackColor = DarkSurfaceVariant,
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurface
+                        )
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Surface(
@@ -965,10 +998,15 @@ private fun TransparencyDialog(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun DeveloperDialog(appsCount: Int, hasNotificationAccess: Boolean, onDismiss: () -> Unit) {
+private fun DeveloperDialog(
+    appsCount: Int,
+    hasNotificationAccess: Boolean,
+    isLiquidGlass: Boolean,
+    onDismiss: () -> Unit
+) {
     SimpleInfoDialog(
         title = "Desenvolvedor",
-        message = "Tessera Launcher v1.4.0\nCompilação: Release/Debug Estável\nApps indexados: $appsCount\nServiço de Mídia: ${if (hasNotificationAccess) "Ativo" else "Inativo"}\nArquitetura: Jetpack Compose + Kotlin Coroutines",
+        message = "Tessera Launcher v1.5.0\nCompilação: Release/Debug Estável\nApps indexados: $appsCount\nServiço de Mídia: ${if (hasNotificationAccess) "Ativo" else "Inativo"}\nModo Liquid Glass: ${if (isLiquidGlass) "Ativo" else "Inativo"}\nArquitetura: Jetpack Compose + Kotlin Coroutines",
         onDismiss = onDismiss
     )
 }

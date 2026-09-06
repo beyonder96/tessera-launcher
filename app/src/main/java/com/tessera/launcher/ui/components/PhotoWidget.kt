@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -49,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.LiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -61,6 +65,7 @@ fun PhotoWidget(
     photoUriString: String?,
     onPickPhoto: () -> Unit,
     onRemovePhoto: () -> Unit,
+    isLiquidGlass: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -144,12 +149,32 @@ fun PhotoWidget(
         )
     }
 
-    Surface(
+    val frameShape = RoundedCornerShape(24.dp)
+    val frameBorder = if (isLiquidGlass) {
+        BorderStroke(1.dp, LiquidGlassBorderBrush)
+    } else {
+        BorderStroke(1.dp, DarkSurfaceBorder)
+    }
+    val frameBackground = if (isLiquidGlass) {
+        Modifier.background(LiquidGlassSurfaceBrush)
+    } else {
+        Modifier.background(DarkSurface)
+    }
+
+    Box(
         modifier = modifier
             .sizeIn(maxWidth = 260.dp, maxHeight = 280.dp)
             .fillMaxWidth(0.72f)
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(24.dp))
+            .shadow(
+                elevation = if (isLiquidGlass) 12.dp else 6.dp,
+                shape = frameShape,
+                ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.4f),
+                spotColor = if (isLiquidGlass) Color(0x4D000000) else Color.Black.copy(alpha = 0.4f)
+            )
+            .border(frameBorder, frameShape)
+            .clip(frameShape)
+            .then(frameBackground)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -160,10 +185,7 @@ fun PhotoWidget(
                         onPickPhoto()
                     }
                 }
-            ),
-        shape = RoundedCornerShape(24.dp),
-        color = DarkSurface,
-        border = BorderStroke(1.dp, DarkSurfaceBorder)
+            )
     ) {
         if (bitmap != null) {
             Box(modifier = Modifier.fillMaxSize()) {

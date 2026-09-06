@@ -36,7 +36,8 @@ class MainViewModel(
             defaultCalendarApp = preferences.getDefaultCalendarPackage(),
             photoWidgetUri = preferences.getPhotoWidgetUri(),
             isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
-            isAmoledMode = preferences.isAmoledMode()
+            isAmoledMode = preferences.isAmoledMode(),
+            isLiquidGlassEnabled = preferences.isLiquidGlassEnabled()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -315,6 +316,11 @@ class MainViewModel(
     fun setAmoledMode(enabled: Boolean) {
         preferences.setAmoledMode(enabled)
         _uiState.update { it.copy(isAmoledMode = enabled) }
+    }
+
+    fun setLiquidGlassEnabled(enabled: Boolean) {
+        preferences.setLiquidGlassEnabled(enabled)
+        _uiState.update { it.copy(isLiquidGlassEnabled = enabled) }
     }
 
     // Controles de Mídia Reais
