@@ -72,7 +72,7 @@ fun SearchoMorphingDock(
     val screenWidth = configuration.screenWidthDp.dp
     val focusManager = LocalFocusManager.current
 
-    val targetWidth = if (isExpanded) screenWidth - 48.dp else 56.dp
+    val targetWidth = if (isExpanded) screenWidth - 40.dp else 60.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
         animationSpec = spring(
@@ -94,7 +94,7 @@ fun SearchoMorphingDock(
             border = BorderStroke(1.dp, if (isExpanded) DarkSurfaceBorderHover else DarkSurfaceBorder),
             modifier = Modifier
                 .width(animatedWidth)
-                .height(52.dp)
+                .height(60.dp)
                 .shadow(
                     elevation = if (isExpanded) 12.dp else 6.dp,
                     shape = PillShape,
@@ -114,38 +114,38 @@ fun SearchoMorphingDock(
                 // Estado Recolhido: Apenas a Lupa Centralizada
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(60.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = "Expandir pesquisa",
                         tint = TextPrimary,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             } else {
-                // Estado Expandido: Barra Searcho Completa
+                // Estado Expandido: Barra Searcho Completa (60dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
+                        .padding(horizontal = 18.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = "Buscar",
                         tint = TextSecondary,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(22.dp)
                     )
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
 
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = onQueryChange,
                         textStyle = TextStyle(
                             color = TextPrimary,
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontFamily = FontFamily.SansSerif
                         ),
                         cursorBrush = SolidColor(TextPrimary),
@@ -157,7 +157,7 @@ fun SearchoMorphingDock(
                                 Text(
                                     text = "Tessera...",
                                     color = TextSecondary,
-                                    fontSize = 15.sp,
+                                    fontSize = 16.sp,
                                     fontFamily = FontFamily.SansSerif
                                 )
                             }

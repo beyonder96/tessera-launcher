@@ -2,6 +2,8 @@ package com.tessera.launcher.data.service
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSessionManager
@@ -19,7 +21,8 @@ data class MediaPlaybackInfo(
     val artist: String = "Toque para abrir e reproduzir",
     val isPlaying: Boolean = false,
     val packageName: String? = "com.spotify.music",
-    val hasActiveSession: Boolean = false
+    val hasActiveSession: Boolean = false,
+    val artwork: Bitmap? = null
 )
 
 class TesseraMediaService : NotificationListenerService() {
@@ -175,12 +178,24 @@ class TesseraMediaService : NotificationListenerService() {
             ?: metadata?.getString(MediaMetadata.METADATA_KEY_AUTHOR)
             ?: "Spotify"
 
+        val artwork: Bitmap? = metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+            ?: metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART)
+            ?: metadata?.description?.iconBitmap
+            ?: metadata?.description?.iconUri?.let { uri ->
+                runCatching {
+                    contentResolver.openInputStream(uri)?.use { stream ->
+                        BitmapFactory.decodeStream(stream)
+                    }
+                }.getOrNull()
+            }
+
         _mediaState.value = MediaPlaybackInfo(
             title = title,
             artist = artist,
             isPlaying = isPlaying,
             packageName = controller.packageName,
-            hasActiveSession = true
+            hasActiveSession = true,
+            artwork = artwork
         )
     }
 }
