@@ -72,6 +72,7 @@ import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
@@ -98,11 +99,37 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    when (uiState.currentSettingsScreen) {
+        SettingsSubScreen.SEARCH -> {
+            SearchSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                onNavigateToWidgetsCenter = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
+                },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.WIDGETS_CENTER -> {
+            WidgetsCenterScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.MAIN -> {
+            // Continua exibição principal
+        }
+    }
+
     var activeDialog by remember { mutableStateOf<String?>(null) }
     var selectingAppForType by remember { mutableStateOf<String?>(null) }
 
     when (activeDialog) {
-        "search" -> SearchSettingsDialog(onDismiss = { activeDialog = null })
         "extras" -> ExtrasDialog(
             viewModel = viewModel,
             enabledWidgets = uiState.enabledWidgets,
@@ -229,7 +256,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Search,
                         title = "Busca",
                         subtitle = "Escolha o que aparece quando você busca.",
-                        onClick = { activeDialog = "search" }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) }
                     )
 
                     ItemDivider()
@@ -959,15 +986,6 @@ private fun CustomizationDialog(
             }
         }
     }
-}
-
-@Composable
-private fun SearchSettingsDialog(onDismiss: () -> Unit) {
-    SimpleInfoDialog(
-        title = "Busca",
-        message = "A busca do Tessera Launcher filtra seus aplicativos com alta velocidade, auto-abertura inteligente quando há correspondência única exata e posicionamento ergonômico acima do teclado.",
-        onDismiss = onDismiss
-    )
 }
 
 @Composable

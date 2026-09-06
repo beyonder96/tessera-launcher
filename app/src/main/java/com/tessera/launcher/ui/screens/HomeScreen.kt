@@ -63,6 +63,7 @@ import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
 import com.tessera.launcher.ui.components.AppListSkeleton
 import com.tessera.launcher.ui.components.PhotoWidget
+import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppsListState
@@ -142,12 +143,12 @@ fun HomeScreen(
                 )
             }
     ) {
-        // Centro da Tela Inicial: Moldura de Foto Minimalista (Toque fecha busca se expandida)
+        // Centro da Tela Inicial: Moldura de Foto Minimalista (Menor e mais baixa, perto da lupa)
         if (!uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = 120.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -157,8 +158,7 @@ fun HomeScreen(
                                 focusManager.clearFocus()
                             }
                         }
-                    ),
-                contentAlignment = Alignment.Center
+                    )
             ) {
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
@@ -172,7 +172,10 @@ fun HomeScreen(
                             }
                         },
                         onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
-                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 88.dp)
                     )
                 }
             }
@@ -240,6 +243,16 @@ fun HomeScreen(
                                         },
                                         modifier = Modifier.animateItem()
                                     )
+                                }
+
+                                if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled) {
+                                    item {
+                                        SearchExternalActions(
+                                            query = uiState.searchQuery,
+                                            isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                            modifier = Modifier.padding(top = 8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -316,11 +329,11 @@ fun HomeScreen(
                 isExpanded = uiState.isSearchExpanded,
                 searchQuery = uiState.searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChange(it) },
-                isWidgetExpanded = uiState.isWidgetExpanded,
-                onToggleWidgets = { viewModel.toggleWidgets() },
                 onExpandClick = {
                     viewModel.expandSearch()
-                    focusRequester.requestFocus()
+                    if (uiState.isAutoOpenKeyboard) {
+                        focusRequester.requestFocus()
+                    }
                 },
                 onOpenSettings = { viewModel.openSettings() },
                 focusRequester = focusRequester,

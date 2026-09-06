@@ -145,6 +145,15 @@ fun AppListEmptyState(
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextSecondary
             )
+
+            if (query.isNotBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                SearchExternalActions(
+                    query = query,
+                    isLiquidGlass = false,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }

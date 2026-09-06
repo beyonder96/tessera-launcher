@@ -12,6 +12,12 @@ sealed interface AppsListState {
     data class Error(val message: String) : AppsListState
 }
 
+enum class SettingsSubScreen {
+    MAIN,
+    SEARCH,
+    WIDGETS_CENTER
+}
+
 data class LauncherUiState(
     val appsState: AppsListState = AppsListState.Loading,
     val searchQuery: String = "",
@@ -36,5 +42,19 @@ data class LauncherUiState(
     val isPhotoWidgetEnabled: Boolean = true,
     val isSettingsOpen: Boolean = false,
     val isAmoledMode: Boolean = true,
-    val isLiquidGlassEnabled: Boolean = true
+    val isLiquidGlassEnabled: Boolean = true,
+    val currentSettingsScreen: SettingsSubScreen = SettingsSubScreen.MAIN,
+    val isAutoOpenKeyboard: Boolean = true,
+    val isAutoLaunchEnabled: Boolean = true,
+    val isCollapseDockEnabled: Boolean = true,
+    val isExactSearchEnabled: Boolean = false,
+    val isAppShortcutsEnabled: Boolean = true,
+    val isWebSearchEnabled: Boolean = true,
+    val isContactsSearchEnabled: Boolean = false,
+    val isMessagesSearchEnabled: Boolean = false,
+    val isCalculatorCardEnabled: Boolean = true,
+    val isDinoWidgetEnabled: Boolean = false,
+    val isNotesWidgetEnabled: Boolean = false,
+    val isSwitchOnMusicPlayEnabled: Boolean = true,
+    val defaultWidgetCardIndex: Int = 0
 )

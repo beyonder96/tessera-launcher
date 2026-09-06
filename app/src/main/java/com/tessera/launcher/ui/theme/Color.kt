@@ -11,13 +11,13 @@ val DarkSurfaceVariant = Color(0xFF18181A)
 val DarkSurfaceBorder = Color(0xFF222224)
 val DarkSurfaceBorderHover = Color(0xFF333336)
 
-// Liquid Glass Tokens (Estilo iOS 27 / VisionOS)
-val LiquidGlassBackground = Color(0x381A1C22)
-val LiquidGlassBackgroundHover = Color(0x4D20242E)
+// Liquid Glass Tokens (Estilo iOS 27 / VisionOS - Frosted Dark Glass de Alto Contraste)
+val LiquidGlassBackground = Color(0xEB12141A)
+val LiquidGlassBackgroundHover = Color(0xF2181B24)
 val LiquidGlassSurfaceBrush = Brush.verticalGradient(
     colors = listOf(
-        Color(0x522A2E38),
-        Color(0x2E161820)
+        Color(0xEE161822),
+        Color(0xE00E1015)
     )
 )
 val LiquidGlassBorderBrush = Brush.verticalGradient(

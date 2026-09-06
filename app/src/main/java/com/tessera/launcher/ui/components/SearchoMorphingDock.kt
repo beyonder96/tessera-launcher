@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -66,13 +68,13 @@ fun SearchoMorphingDock(
     isExpanded: Boolean,
     searchQuery: String,
     onQueryChange: (String) -> Unit,
-    isWidgetExpanded: Boolean,
-    onToggleWidgets: () -> Unit,
     onExpandClick: () -> Unit,
     onOpenSettings: () -> Unit,
     focusRequester: FocusRequester,
-    isLiquidGlass: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isWidgetExpanded: Boolean = false,
+    onToggleWidgets: () -> Unit = {},
+    isLiquidGlass: Boolean = true
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -127,13 +129,14 @@ fun SearchoMorphingDock(
                             onExpandClick()
                         }
                     }
-                )
+                ),
+            contentAlignment = Alignment.Center
         ) {
             if (!isExpanded) {
                 // Estado Recolhido: Apenas a Lupa Centralizada
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(60.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Search,
@@ -143,12 +146,12 @@ fun SearchoMorphingDock(
                     )
                 }
             } else {
-                // Estado Expandido: Barra Searcho Completa (60dp)
+                // Estado Expandido: Barra Searcho Completa (60dp com Alinhamento Perfeito)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp)
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Search,
@@ -172,18 +175,24 @@ fun SearchoMorphingDock(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                         decorationBox = { innerTextField ->
-                            if (searchQuery.isEmpty()) {
-                                Text(
-                                    text = "Tessera...",
-                                    color = TextSecondary,
-                                    fontSize = 16.sp,
-                                    fontFamily = FontFamily.SansSerif
-                                )
+                            Box(
+                                modifier = Modifier.fillMaxHeight(),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Tessera...",
+                                        color = TextSecondary,
+                                        fontSize = 16.sp,
+                                        fontFamily = FontFamily.SansSerif
+                                    )
+                                }
+                                innerTextField()
                             }
-                            innerTextField()
                         },
                         modifier = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .focusRequester(focusRequester)
                     )
 
@@ -193,7 +202,7 @@ fun SearchoMorphingDock(
                             contentDescription = "Limpar busca",
                             tint = TextSecondary,
                             modifier = Modifier
-                                .size(18.dp)
+                                .size(20.dp)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -201,36 +210,18 @@ fun SearchoMorphingDock(
                                 )
                         )
                     } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Widgets,
-                                contentDescription = "Widgets",
-                                tint = if (isWidgetExpanded) TextPrimary else TextTertiary,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onToggleWidgets
-                                    )
-                            )
-
-                            Icon(
-                                imageVector = Icons.Outlined.Settings,
-                                contentDescription = "Configurações",
-                                tint = TextTertiary,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = onOpenSettings
-                                    )
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "Configurações",
+                            tint = TextTertiary,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = onOpenSettings
+                                )
+                        )
                     }
                 }
             }

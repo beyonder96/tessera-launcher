@@ -23,6 +23,19 @@ class LauncherPreferences(context: Context) {
         private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
         private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
         private const val KEY_LIQUID_GLASS_MODE = "liquid_glass_mode"
+        private const val KEY_AUTO_OPEN_KEYBOARD = "auto_open_keyboard"
+        private const val KEY_AUTO_LAUNCH_APP = "auto_launch_app"
+        private const val KEY_COLLAPSE_DOCK = "collapse_dock"
+        private const val KEY_EXACT_APP_SEARCH = "exact_app_search"
+        private const val KEY_SHOW_APP_SHORTCUTS = "show_app_shortcuts"
+        private const val KEY_WEB_SEARCH_ENABLED = "web_search_enabled"
+        private const val KEY_SEARCH_CONTACTS = "search_contacts"
+        private const val KEY_SEARCH_MESSAGES = "search_messages"
+        private const val KEY_CALCULATOR_CARD = "calculator_card"
+        private const val KEY_WIDGET_DINO = "widget_dino"
+        private const val KEY_WIDGET_NOTES = "widget_notes"
+        private const val KEY_SWITCH_ON_MUSIC_PLAY = "switch_on_music_play"
+        private const val KEY_DEFAULT_WIDGET_CARD_INDEX = "default_widget_card_index"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -108,4 +121,43 @@ class LauncherPreferences(context: Context) {
     fun setLiquidGlassEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_LIQUID_GLASS_MODE, enabled).apply()
     }
+
+    fun isAutoOpenKeyboard(): Boolean = prefs.getBoolean(KEY_AUTO_OPEN_KEYBOARD, true)
+    fun setAutoOpenKeyboard(enabled: Boolean) = prefs.edit().putBoolean(KEY_AUTO_OPEN_KEYBOARD, enabled).apply()
+
+    fun isAutoLaunchEnabled(): Boolean = prefs.getBoolean(KEY_AUTO_LAUNCH_APP, true)
+    fun setAutoLaunchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_AUTO_LAUNCH_APP, enabled).apply()
+
+    fun isCollapseDockEnabled(): Boolean = prefs.getBoolean(KEY_COLLAPSE_DOCK, true)
+    fun setCollapseDockEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_COLLAPSE_DOCK, enabled).apply()
+
+    fun isExactSearchEnabled(): Boolean = prefs.getBoolean(KEY_EXACT_APP_SEARCH, false)
+    fun setExactSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_EXACT_APP_SEARCH, enabled).apply()
+
+    fun isAppShortcutsEnabled(): Boolean = prefs.getBoolean(KEY_SHOW_APP_SHORTCUTS, true)
+    fun setAppShortcutsEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SHOW_APP_SHORTCUTS, enabled).apply()
+
+    fun isWebSearchEnabled(): Boolean = prefs.getBoolean(KEY_WEB_SEARCH_ENABLED, true)
+    fun setWebSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_WEB_SEARCH_ENABLED, enabled).apply()
+
+    fun isContactsSearchEnabled(): Boolean = prefs.getBoolean(KEY_SEARCH_CONTACTS, false)
+    fun setContactsSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SEARCH_CONTACTS, enabled).apply()
+
+    fun isMessagesSearchEnabled(): Boolean = prefs.getBoolean(KEY_SEARCH_MESSAGES, false)
+    fun setMessagesSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SEARCH_MESSAGES, enabled).apply()
+
+    fun isCalculatorCardEnabled(): Boolean = prefs.getBoolean(KEY_CALCULATOR_CARD, true)
+    fun setCalculatorCardEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_CALCULATOR_CARD, enabled).apply()
+
+    fun isDinoWidgetEnabled(): Boolean = prefs.getBoolean(KEY_WIDGET_DINO, false)
+    fun setDinoWidgetEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_WIDGET_DINO, enabled).apply()
+
+    fun isNotesWidgetEnabled(): Boolean = prefs.getBoolean(KEY_WIDGET_NOTES, false)
+    fun setNotesWidgetEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_WIDGET_NOTES, enabled).apply()
+
+    fun isSwitchOnMusicPlayEnabled(): Boolean = prefs.getBoolean(KEY_SWITCH_ON_MUSIC_PLAY, true)
+    fun setSwitchOnMusicPlayEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SWITCH_ON_MUSIC_PLAY, enabled).apply()
+
+    fun getDefaultWidgetCardIndex(): Int = prefs.getInt(KEY_DEFAULT_WIDGET_CARD_INDEX, 0)
+    fun setDefaultWidgetCardIndex(index: Int) = prefs.edit().putInt(KEY_DEFAULT_WIDGET_CARD_INDEX, index).apply()
 }

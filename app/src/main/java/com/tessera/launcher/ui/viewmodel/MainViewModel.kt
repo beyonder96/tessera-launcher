@@ -12,6 +12,7 @@ import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.ui.state.SettingsSubScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +38,20 @@ class MainViewModel(
             photoWidgetUri = preferences.getPhotoWidgetUri(),
             isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
             isAmoledMode = preferences.isAmoledMode(),
-            isLiquidGlassEnabled = preferences.isLiquidGlassEnabled()
+            isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
+            isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
+            isAutoLaunchEnabled = preferences.isAutoLaunchEnabled(),
+            isCollapseDockEnabled = preferences.isCollapseDockEnabled(),
+            isExactSearchEnabled = preferences.isExactSearchEnabled(),
+            isAppShortcutsEnabled = preferences.isAppShortcutsEnabled(),
+            isWebSearchEnabled = preferences.isWebSearchEnabled(),
+            isContactsSearchEnabled = preferences.isContactsSearchEnabled(),
+            isMessagesSearchEnabled = preferences.isMessagesSearchEnabled(),
+            isCalculatorCardEnabled = preferences.isCalculatorCardEnabled(),
+            isDinoWidgetEnabled = preferences.isDinoWidgetEnabled(),
+            isNotesWidgetEnabled = preferences.isNotesWidgetEnabled(),
+            isSwitchOnMusicPlayEnabled = preferences.isSwitchOnMusicPlayEnabled(),
+            defaultWidgetCardIndex = preferences.getDefaultWidgetCardIndex()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -127,7 +141,7 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isSearchExpanded = true,
-                isWidgetExpanded = false
+                isWidgetExpanded = true
             )
         }
     }
@@ -146,12 +160,13 @@ class MainViewModel(
     }
 
     fun onSearchQueryChange(query: String) {
+        val hasQuery = query.isNotBlank()
         _uiState.update {
             it.copy(
                 searchQuery = query,
-                isDrawerOpen = if (query.isNotBlank()) true else it.isDrawerOpen,
+                isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
-                isWidgetExpanded = false
+                isWidgetExpanded = !hasQuery
             )
         }
         applyFilter(query)
@@ -161,13 +176,21 @@ class MainViewModel(
         val trimmed = query.trim()
         autoLaunchJob?.cancel()
 
+        val isExact = _uiState.value.isExactSearchEnabled
         val filtered = if (trimmed.isEmpty()) {
             allApps
         } else {
             val normalizedQuery = AppInfo.normalize(trimmed)
-            allApps.filter { app ->
-                app.normalizedLabel.contains(normalizedQuery) ||
-                        app.packageName.contains(trimmed, ignoreCase = true)
+            if (isExact) {
+                allApps.filter { app ->
+                    app.normalizedLabel.equals(normalizedQuery, ignoreCase = true) ||
+                            app.label.equals(trimmed, ignoreCase = true)
+                }
+            } else {
+                allApps.filter { app ->
+                    app.normalizedLabel.contains(normalizedQuery) ||
+                            app.packageName.contains(trimmed, ignoreCase = true)
+                }
             }
         }
 
@@ -196,8 +219,8 @@ class MainViewModel(
             )
         }
 
-        // Auto-launch se houver exatamente 1 aplicativo correspondente ao digitar
-        if (trimmed.isNotEmpty() && filtered.size == 1) {
+        // Auto-launch se habilitado e houver exatamente 1 aplicativo correspondente ao digitar
+        if (_uiState.value.isAutoLaunchEnabled && trimmed.isNotEmpty() && filtered.size == 1) {
             val singleApp = filtered.first()
             autoLaunchJob = viewModelScope.launch {
                 delay(150)
@@ -294,13 +317,103 @@ class MainViewModel(
         _uiState.update { it.copy(isPhotoWidgetEnabled = enabled) }
     }
 
-    // Configurações da Launcher
+    // Configurações da Launcher e Subtelas
     fun openSettings() {
-        _uiState.update { it.copy(isSettingsOpen = true) }
+        _uiState.update {
+            it.copy(
+                isSettingsOpen = true,
+                currentSettingsScreen = SettingsSubScreen.MAIN
+            )
+        }
     }
 
     fun closeSettings() {
-        _uiState.update { it.copy(isSettingsOpen = false) }
+        _uiState.update {
+            it.copy(
+                isSettingsOpen = false,
+                currentSettingsScreen = SettingsSubScreen.MAIN
+            )
+        }
+    }
+
+    fun navigateToSettingsSubScreen(screen: SettingsSubScreen) {
+        _uiState.update { it.copy(currentSettingsScreen = screen) }
+    }
+
+    fun navigateBackSettings() {
+        _uiState.update {
+            when (it.currentSettingsScreen) {
+                SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
+                SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
+            }
+        }
+    }
+
+    fun setAutoOpenKeyboard(enabled: Boolean) {
+        preferences.setAutoOpenKeyboard(enabled)
+        _uiState.update { it.copy(isAutoOpenKeyboard = enabled) }
+    }
+
+    fun setAutoLaunchEnabled(enabled: Boolean) {
+        preferences.setAutoLaunchEnabled(enabled)
+        _uiState.update { it.copy(isAutoLaunchEnabled = enabled) }
+    }
+
+    fun setCollapseDockEnabled(enabled: Boolean) {
+        preferences.setCollapseDockEnabled(enabled)
+        _uiState.update { it.copy(isCollapseDockEnabled = enabled) }
+    }
+
+    fun setExactSearchEnabled(enabled: Boolean) {
+        preferences.setExactSearchEnabled(enabled)
+        _uiState.update { it.copy(isExactSearchEnabled = enabled) }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun setAppShortcutsEnabled(enabled: Boolean) {
+        preferences.setAppShortcutsEnabled(enabled)
+        _uiState.update { it.copy(isAppShortcutsEnabled = enabled) }
+    }
+
+    fun setWebSearchEnabled(enabled: Boolean) {
+        preferences.setWebSearchEnabled(enabled)
+        _uiState.update { it.copy(isWebSearchEnabled = enabled) }
+    }
+
+    fun setContactsSearchEnabled(enabled: Boolean) {
+        preferences.setContactsSearchEnabled(enabled)
+        _uiState.update { it.copy(isContactsSearchEnabled = enabled) }
+    }
+
+    fun setMessagesSearchEnabled(enabled: Boolean) {
+        preferences.setMessagesSearchEnabled(enabled)
+        _uiState.update { it.copy(isMessagesSearchEnabled = enabled) }
+    }
+
+    fun setCalculatorCardEnabled(enabled: Boolean) {
+        preferences.setCalculatorCardEnabled(enabled)
+        _uiState.update { it.copy(isCalculatorCardEnabled = enabled) }
+    }
+
+    fun setDinoWidgetEnabled(enabled: Boolean) {
+        preferences.setDinoWidgetEnabled(enabled)
+        _uiState.update { it.copy(isDinoWidgetEnabled = enabled) }
+    }
+
+    fun setNotesWidgetEnabled(enabled: Boolean) {
+        preferences.setNotesWidgetEnabled(enabled)
+        _uiState.update { it.copy(isNotesWidgetEnabled = enabled) }
+    }
+
+    fun setSwitchOnMusicPlayEnabled(enabled: Boolean) {
+        preferences.setSwitchOnMusicPlayEnabled(enabled)
+        _uiState.update { it.copy(isSwitchOnMusicPlayEnabled = enabled) }
+    }
+
+    fun setDefaultWidgetCardIndex(index: Int) {
+        preferences.setDefaultWidgetCardIndex(index)
+        _uiState.update { it.copy(defaultWidgetCardIndex = index) }
     }
 
     fun setDefaultMusicApp(pkg: String?) {
@@ -358,7 +471,7 @@ class MainViewModel(
         val state = _uiState.value
         return when {
             state.isSettingsOpen -> {
-                closeSettings()
+                navigateBackSettings()
                 true
             }
             state.searchQuery.isNotEmpty() -> {

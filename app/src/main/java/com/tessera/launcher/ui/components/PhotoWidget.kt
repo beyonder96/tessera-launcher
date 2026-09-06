@@ -163,11 +163,11 @@ fun PhotoWidget(
 
     Box(
         modifier = modifier
-            .sizeIn(maxWidth = 260.dp, maxHeight = 280.dp)
-            .fillMaxWidth(0.72f)
+            .sizeIn(maxWidth = 180.dp, maxHeight = 180.dp)
+            .fillMaxWidth(0.48f)
             .aspectRatio(1f)
             .shadow(
-                elevation = if (isLiquidGlass) 12.dp else 6.dp,
+                elevation = if (isLiquidGlass) 10.dp else 5.dp,
                 shape = frameShape,
                 ambientColor = if (isLiquidGlass) Color(0x33000000) else Color.Black.copy(alpha = 0.4f),
                 spotColor = if (isLiquidGlass) Color(0x4D000000) else Color.Black.copy(alpha = 0.4f)
