@@ -160,4 +160,13 @@ class LauncherPreferences(context: Context) {
 
     fun getDefaultWidgetCardIndex(): Int = prefs.getInt(KEY_DEFAULT_WIDGET_CARD_INDEX, 0)
     fun setDefaultWidgetCardIndex(index: Int) = prefs.edit().putInt(KEY_DEFAULT_WIDGET_CARD_INDEX, index).apply()
+
+    fun getNotesRaw(): String = prefs.getString("notes_data", "Comprar café:::false|||Planejar projeto:::true") ?: ""
+    fun setNotesRaw(raw: String) = prefs.edit().putString("notes_data", raw).apply()
+
+    fun getIconShape(): String = prefs.getString("icon_shape", "DEFAULT") ?: "DEFAULT"
+    fun setIconShape(shape: String) = prefs.edit().putString("icon_shape", shape).apply()
+
+    fun getSelectedIconPack(): String? = prefs.getString("selected_icon_pack", null)
+    fun setSelectedIconPack(pkg: String?) = prefs.edit().putString("selected_icon_pack", pkg).apply()
 }

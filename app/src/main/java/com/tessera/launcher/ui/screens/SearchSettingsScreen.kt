@@ -77,6 +77,7 @@ fun SearchSettingsScreen(
     uiState: LauncherUiState,
     onBack: () -> Unit,
     onNavigateToWidgetsCenter: () -> Unit,
+    onRequestContactsPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -258,9 +259,14 @@ fun SearchSettingsScreen(
                     SearchToggleRow(
                         icon = Icons.Outlined.People,
                         title = "Busca de Contatos",
-                        subtitle = "Encontre e ligue para contatos pela barra de busca.",
+                        subtitle = if (uiState.hasContactsPermission) "Encontre e ligue para contatos pela barra de busca." else "Toque para autorizar e buscar contatos na barra",
                         checked = uiState.isContactsSearchEnabled,
-                        onCheckedChange = { viewModel.setContactsSearchEnabled(it) }
+                        onCheckedChange = { enable ->
+                            viewModel.setContactsSearchEnabled(enable)
+                            if (enable && !uiState.hasContactsPermission) {
+                                onRequestContactsPermission()
+                            }
+                        }
                     )
 
                     HorizontalDivider(color = SearchDividerColor, thickness = 1.dp)

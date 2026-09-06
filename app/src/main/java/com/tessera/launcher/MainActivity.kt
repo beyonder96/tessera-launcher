@@ -14,6 +14,9 @@ import com.tessera.launcher.ui.theme.TesseraTheme
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 import com.tessera.launcher.ui.viewmodel.MainViewModelFactory
 
+import android.os.Build
+import android.view.WindowManager
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: MainViewModel
@@ -40,9 +43,23 @@ class MainActivity : ComponentActivity() {
         viewModel.refreshCalendarAndPermissions()
     }
 
+    // Launcher de Permissão de Contatos
+    private val contactsPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.setContactsPermissionGranted(isGranted)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            window.attributes = window.attributes.apply {
+                blurBehindRadius = 45
+            }
+        }
 
         val factory = MainViewModelFactory(this)
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
@@ -58,6 +75,9 @@ class MainActivity : ComponentActivity() {
                     },
                     onRequestCalendarPermission = {
                         calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+                    },
+                    onRequestContactsPermission = {
+                        contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
                     }
                 )
             }

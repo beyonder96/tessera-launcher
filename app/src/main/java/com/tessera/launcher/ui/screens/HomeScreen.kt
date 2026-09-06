@@ -29,7 +29,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -46,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -55,6 +58,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tessera.launcher.data.helper.ContactInfo
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.ui.components.AlphabetScroller
 import com.tessera.launcher.ui.components.AppContextMenu
@@ -62,6 +66,7 @@ import com.tessera.launcher.ui.components.AppListEmptyState
 import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
 import com.tessera.launcher.ui.components.AppListSkeleton
+import com.tessera.launcher.ui.components.CalculatorCard
 import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
@@ -69,7 +74,20 @@ import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkBackgroundTranslucent
+import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
 @Composable
@@ -77,6 +95,7 @@ fun HomeScreen(
     viewModel: MainViewModel,
     onPickPhoto: () -> Unit,
     onRequestCalendarPermission: () -> Unit,
+    onRequestContactsPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -144,7 +163,8 @@ fun HomeScreen(
             }
     ) {
         // Centro da Tela Inicial: Moldura de Foto Minimalista (Menor e mais baixa, perto da lupa)
-        if (!uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
+        // Fica oculta quando a busca ou drawer estiverem abertos
+        if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -179,6 +199,27 @@ fun HomeScreen(
                     )
                 }
             }
+        }
+
+        // Camada de Foco e Desfoque de Fundo para dar destaque à busca e gaveta
+        AnimatedVisibility(
+            visible = uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
+            enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.58f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            viewModel.collapseSearch()
+                            focusManager.clearFocus()
+                        }
+                    )
+            )
         }
 
         // Gaveta Vertical de Aplicativos (Resultados no Rodapé para Uso com Uma Mão)
@@ -223,12 +264,53 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                             ) {
+                                // Cartão da Calculadora no topo da busca instantânea
+                                uiState.calculatorResult?.let { result ->
+                                    item(key = "calc_result") {
+                                        CalculatorCard(
+                                            query = uiState.searchQuery,
+                                            result = result,
+                                            isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                            modifier = Modifier
+                                                .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                .animateItem()
+                                        )
+                                    }
+                                }
+
+                                // Contatos encontrados
+                                if (uiState.matchingContacts.isNotEmpty()) {
+                                    item(key = "contacts_header") {
+                                        Text(
+                                            text = "CONTATOS",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp
+                                            ),
+                                            color = TextSecondary,
+                                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                    items(
+                                        items = uiState.matchingContacts,
+                                        key = { "contact_${it.name}_${it.phoneNumber}" }
+                                    ) { contact ->
+                                        ContactListItem(
+                                            contact = contact,
+                                            onClick = { viewModel.callContact(contact.phoneNumber) },
+                                            modifier = Modifier.animateItem()
+                                        )
+                                    }
+                                }
+
                                 items(
                                     items = uiState.filteredApps,
                                     key = { it.packageName }
                                 ) { app ->
                                     AppListItem(
                                         app = app,
+                                        iconShape = uiState.iconShape,
                                         onClick = {
                                             viewModel.launchApp(app.packageName).onFailure { error ->
                                                 Toast.makeText(
@@ -319,6 +401,20 @@ fun HomeScreen(
                     onSkipNext = { viewModel.skipNextMedia() },
                     onSkipPrevious = { viewModel.skipPreviousMedia() },
                     onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
+                    defaultWidgetCardIndex = uiState.defaultWidgetCardIndex,
+                    isDinoWidgetEnabled = uiState.isDinoWidgetEnabled,
+                    isNotesWidgetEnabled = uiState.isNotesWidgetEnabled,
+                    isSwitchOnMusicPlayEnabled = uiState.isSwitchOnMusicPlayEnabled,
+                    isTorchOn = uiState.isTorchOn,
+                    ringerMode = uiState.ringerMode,
+                    onToggleTorch = { viewModel.toggleTorch() },
+                    onOpenWifi = { viewModel.openWifiSettings() },
+                    onOpenBluetooth = { viewModel.openBluetoothSettings() },
+                    onCycleRingerMode = { viewModel.cycleRingerMode() },
+                    notesTasks = uiState.notesTasks,
+                    onAddNoteTask = { viewModel.addNoteTask(it) },
+                    onToggleNoteTask = { viewModel.toggleNoteTask(it) },
+                    onRemoveNoteTask = { viewModel.removeNoteTask(it) },
                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -326,7 +422,7 @@ fun HomeScreen(
 
             // Doca Morfológica Contínua (Lupa <-> Barra Tessera)
             SearchoMorphingDock(
-                isExpanded = uiState.isSearchExpanded,
+                isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
                 searchQuery = uiState.searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChange(it) },
                 onExpandClick = {
@@ -350,7 +446,8 @@ fun HomeScreen(
             SettingsScreen(
                 viewModel = viewModel,
                 onPickPhoto = onPickPhoto,
-                onRequestCalendarPermission = onRequestCalendarPermission
+                onRequestCalendarPermission = onRequestCalendarPermission,
+                onRequestContactsPermission = onRequestContactsPermission
             )
         }
 
@@ -375,5 +472,67 @@ fun HomeScreen(
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun ContactListItem(
+    contact: ContactInfo,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 24.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF222632)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = null,
+                tint = TextPrimary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = contact.name,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                ),
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = contact.phoneNumber,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                maxLines = 1
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Outlined.Phone,
+            contentDescription = "Ligar",
+            tint = TextPrimary,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }

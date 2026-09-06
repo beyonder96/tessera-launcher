@@ -80,25 +80,69 @@ fun WidgetsPanel(
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
     onOpenMusicApp: () -> Unit,
-    isLiquidGlass: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    defaultWidgetCardIndex: Int = 0,
+    isDinoWidgetEnabled: Boolean = false,
+    isNotesWidgetEnabled: Boolean = false,
+    isSwitchOnMusicPlayEnabled: Boolean = true,
+    isTorchOn: Boolean = false,
+    ringerMode: Int = 2,
+    onToggleTorch: () -> Unit = {},
+    onOpenWifi: () -> Unit = {},
+    onOpenBluetooth: () -> Unit = {},
+    onCycleRingerMode: () -> Unit = {},
+    notesTasks: List<NoteTask> = emptyList(),
+    onAddNoteTask: (String) -> Unit = {},
+    onToggleNoteTask: (Long) -> Unit = {},
+    onRemoveNoteTask: (Long) -> Unit = {},
+    isLiquidGlass: Boolean = true
 ) {
+    val cardsToRender = remember(
+        defaultWidgetCardIndex,
+        isDinoWidgetEnabled,
+        isNotesWidgetEnabled,
+        mediaPlayback.isPlaying,
+        isSwitchOnMusicPlayEnabled
+    ) {
+        val list = mutableListOf<Int>()
+
+        // Prioriza player se música estiver tocando e auto-switch ativado
+        if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
+            list.add(2)
+        }
+
+        // Cartão padrão selecionado na Central de Widgets
+        if (!list.contains(defaultWidgetCardIndex)) {
+            list.add(defaultWidgetCardIndex)
+        }
+
+        // Utilitário Dino se ativado
+        if (isDinoWidgetEnabled && !list.contains(5)) {
+            list.add(5)
+        }
+
+        // Utilitário Notas se ativado
+        if (isNotesWidgetEnabled && !list.contains(6)) {
+            list.add(6)
+        }
+
+        // Complementa com Calendário/Data se houver apenas um card isolado
+        if (list.size == 1 && defaultWidgetCardIndex > 2) {
+            list.add(0)
+        }
+
+        list
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        enabledWidgets.forEach { widgetType ->
-            when (widgetType) {
-                WidgetType.BATTERY -> {
-                    BatteryWidgetCard(
-                        batteryPercentage = batteryPercentage,
-                        isCharging = isCharging,
-                        isLiquidGlass = isLiquidGlass
-                    )
-                }
-                WidgetType.CALENDAR -> {
+        cardsToRender.forEach { cardType ->
+            when (cardType) {
+                0 -> {
                     CalendarWidgetCard(
                         currentTime = currentTime,
                         currentDate = currentDate,
@@ -109,7 +153,14 @@ fun WidgetsPanel(
                         isLiquidGlass = isLiquidGlass
                     )
                 }
-                WidgetType.MEDIA -> {
+                1 -> {
+                    BatteryWidgetCard(
+                        batteryPercentage = batteryPercentage,
+                        isCharging = isCharging,
+                        isLiquidGlass = isLiquidGlass
+                    )
+                }
+                2 -> {
                     MediaWidgetCard(
                         mediaPlayback = mediaPlayback,
                         hasNotificationAccess = hasNotificationAccess,
@@ -118,6 +169,36 @@ fun WidgetsPanel(
                         onSkipNext = onSkipNext,
                         onSkipPrevious = onSkipPrevious,
                         onOpenMusicApp = onOpenMusicApp,
+                        isLiquidGlass = isLiquidGlass
+                    )
+                }
+                3 -> {
+                    QuickActionsWidgetCard(
+                        isTorchOn = isTorchOn,
+                        ringerMode = ringerMode,
+                        onToggleTorch = onToggleTorch,
+                        onOpenWifi = onOpenWifi,
+                        onOpenBluetooth = onOpenBluetooth,
+                        onCycleRingerMode = onCycleRingerMode,
+                        isLiquidGlass = isLiquidGlass
+                    )
+                }
+                4 -> {
+                    VerseFocusWidgetCard(
+                        isLiquidGlass = isLiquidGlass
+                    )
+                }
+                5 -> {
+                    DinoWidgetCard(
+                        isLiquidGlass = isLiquidGlass
+                    )
+                }
+                6 -> {
+                    NotesWidgetCard(
+                        tasks = notesTasks,
+                        onAddTask = onAddNoteTask,
+                        onToggleTask = onToggleNoteTask,
+                        onRemoveTask = onRemoveNoteTask,
                         isLiquidGlass = isLiquidGlass
                     )
                 }

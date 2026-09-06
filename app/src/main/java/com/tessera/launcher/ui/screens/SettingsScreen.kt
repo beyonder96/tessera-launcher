@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -94,6 +95,7 @@ fun SettingsScreen(
     viewModel: MainViewModel,
     onPickPhoto: () -> Unit,
     onRequestCalendarPermission: () -> Unit,
+    onRequestContactsPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -108,6 +110,7 @@ fun SettingsScreen(
                 onNavigateToWidgetsCenter = {
                     viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
                 },
+                onRequestContactsPermission = onRequestContactsPermission,
                 modifier = modifier
             )
             return
@@ -580,6 +583,28 @@ private fun openDefaultLauncherSettings(context: Context) {
     }
 }
 
+private fun getInstalledIconPacks(context: Context): List<Pair<String, String>> {
+    val pm = context.packageManager
+    val iconPacks = mutableListOf<Pair<String, String>>()
+    val intentActions = listOf(
+        "com.novalauncher.THEME",
+        "org.adw.launcher.THEMES",
+        "com.gau.go.launcherex.theme"
+    )
+    for (action in intentActions) {
+        val intent = Intent(action)
+        val resolveInfos = pm.queryIntentActivities(intent, 0)
+        for (info in resolveInfos) {
+            val pkg = info.activityInfo.packageName
+            val label = info.loadLabel(pm).toString()
+            if (!iconPacks.any { it.first == pkg }) {
+                iconPacks.add(pkg to label)
+            }
+        }
+    }
+    return iconPacks
+}
+
 @Composable
 private fun PermissionsDialog(
     hasNotificationAccess: Boolean,
@@ -963,6 +988,83 @@ private fun CustomizationDialog(
                             uncheckedTrackColor = DarkSurface
                         )
                     )
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Estilo dos Ícones
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Estilo dos Ícones",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Formato e acabamento dos ícones da lista de apps",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val shapes = listOf(
+                            "DEFAULT" to "Padrão",
+                            "MONOCHROME" to "Mono",
+                            "CIRCLE" to "Círculo",
+                            "SQUIRCLE" to "Squircle"
+                        )
+                        shapes.forEach { (shapeKey, label) ->
+                            val isSelected = uiState.iconShape == shapeKey
+                            Surface(
+                                shape = PillShape,
+                                color = if (isSelected) Color.White else DarkSurfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { viewModel.setIconShape(shapeKey) }
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.Black else TextSecondary,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 11.sp
+                                    ),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Pacote de Ícones
+                val dialogContext = LocalContext.current
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val packs = getInstalledIconPacks(dialogContext)
+                            if (packs.isEmpty()) {
+                                Toast.makeText(dialogContext, "Nenhum pacote de ícones adicional instalado. Usando ícones padrão do sistema.", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(dialogContext, "Pacotes disponíveis: ${packs.joinToString { it.second }}", Toast.LENGTH_LONG).show()
+                            }
+                        },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Pacote de Ícones", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = uiState.selectedIconPack ?: "Padrão do Sistema",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Text(text = "Verificar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))

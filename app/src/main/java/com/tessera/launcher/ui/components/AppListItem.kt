@@ -59,10 +59,24 @@ fun AppListItem(
     app: AppInfo,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconShape: String = "DEFAULT"
 ) {
-    val monoColorFilter = remember {
-        ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+    val shape = remember(iconShape) {
+        when (iconShape) {
+            "CIRCLE" -> androidx.compose.foundation.shape.CircleShape
+            "SQUIRCLE" -> androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+            "ROUNDED" -> androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            else -> IconShape
+        }
+    }
+
+    val colorFilter = remember(iconShape) {
+        if (iconShape == "MONOCHROME") {
+            ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
+        } else {
+            null
+        }
     }
 
     val imageBitmap: ImageBitmap? = remember(app.icon) {
@@ -83,24 +97,24 @@ fun AppListItem(
     ) {
         if (imageBitmap != null) {
             Surface(
-                shape = IconShape,
+                shape = shape,
                 color = DarkSurfaceVariant,
                 modifier = Modifier.size(40.dp)
             ) {
                 androidx.compose.foundation.Image(
                     bitmap = imageBitmap,
                     contentDescription = app.label,
-                    colorFilter = monoColorFilter,
+                    colorFilter = colorFilter,
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(IconShape)
+                        .clip(shape)
                 )
             }
         } else {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(IconShape)
+                    .clip(shape)
                     .background(DarkSurfaceVariant),
                 contentAlignment = Alignment.Center
             ) {

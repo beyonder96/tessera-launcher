@@ -1,9 +1,11 @@
 package com.tessera.launcher.ui.state
 
 import com.tessera.launcher.data.helper.CalendarEventInfo
+import com.tessera.launcher.data.helper.ContactInfo
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
+import com.tessera.launcher.ui.components.NoteTask
 
 sealed interface AppsListState {
     data object Loading : AppsListState
@@ -56,5 +58,13 @@ data class LauncherUiState(
     val isDinoWidgetEnabled: Boolean = false,
     val isNotesWidgetEnabled: Boolean = false,
     val isSwitchOnMusicPlayEnabled: Boolean = true,
-    val defaultWidgetCardIndex: Int = 0
+    val defaultWidgetCardIndex: Int = 0,
+    val isTorchOn: Boolean = false,
+    val ringerMode: Int = 2,
+    val notesTasks: List<NoteTask> = emptyList(),
+    val hasContactsPermission: Boolean = false,
+    val matchingContacts: List<ContactInfo> = emptyList(),
+    val calculatorResult: String? = null,
+    val iconShape: String = "DEFAULT",
+    val selectedIconPack: String? = null
 )

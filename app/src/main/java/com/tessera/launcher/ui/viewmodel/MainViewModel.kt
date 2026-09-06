@@ -4,12 +4,16 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tessera.launcher.data.helper.CalendarHelper
+import com.tessera.launcher.data.helper.ContactSearchHelper
+import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
+import com.tessera.launcher.ui.components.MathEvaluator
+import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.state.SettingsSubScreen
@@ -23,11 +27,29 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.Normalizer
 
+private fun parseNotes(raw: String): List<NoteTask> {
+    if (raw.isBlank()) return emptyList()
+    return raw.split("|||").mapIndexedNotNull { index, item ->
+        val parts = item.split(":::")
+        if (parts.isNotEmpty() && parts[0].isNotBlank()) {
+            val text = parts[0]
+            val done = parts.getOrNull(1)?.toBooleanStrictOrNull() ?: false
+            NoteTask(id = index.toLong() + 1, text = text, isDone = done)
+        } else null
+    }
+}
+
+private fun serializeNotes(tasks: List<NoteTask>): String {
+    return tasks.joinToString("|||") { "${it.text}:::${it.isDone}" }
+}
+
 class MainViewModel(
     private val appRepository: AppRepository,
     private val systemInfoHelper: SystemInfoHelper,
     private val calendarHelper: CalendarHelper,
-    private val preferences: LauncherPreferences
+    private val preferences: LauncherPreferences,
+    private val quickSettingsHelper: QuickSettingsHelper,
+    private val contactSearchHelper: ContactSearchHelper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -51,7 +73,13 @@ class MainViewModel(
             isDinoWidgetEnabled = preferences.isDinoWidgetEnabled(),
             isNotesWidgetEnabled = preferences.isNotesWidgetEnabled(),
             isSwitchOnMusicPlayEnabled = preferences.isSwitchOnMusicPlayEnabled(),
-            defaultWidgetCardIndex = preferences.getDefaultWidgetCardIndex()
+            defaultWidgetCardIndex = preferences.getDefaultWidgetCardIndex(),
+            isTorchOn = quickSettingsHelper.isTorchOn.value,
+            ringerMode = quickSettingsHelper.ringerMode.value,
+            hasContactsPermission = contactSearchHelper.hasContactsPermission(),
+            notesTasks = parseNotes(preferences.getNotesRaw()),
+            iconShape = preferences.getIconShape(),
+            selectedIconPack = preferences.getSelectedIconPack()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -63,6 +91,7 @@ class MainViewModel(
         observeInstalledApps()
         observeSystemInfo()
         observeMediaService()
+        observeQuickSettings()
         refreshCalendarAndPermissions()
     }
 
@@ -121,6 +150,19 @@ class MainViewModel(
         }
     }
 
+    private fun observeQuickSettings() {
+        viewModelScope.launch {
+            quickSettingsHelper.isTorchOn.collect { on ->
+                _uiState.update { it.copy(isTorchOn = on) }
+            }
+        }
+        viewModelScope.launch {
+            quickSettingsHelper.ringerMode.collect { mode ->
+                _uiState.update { it.copy(ringerMode = mode) }
+            }
+        }
+    }
+
     fun refreshCalendarAndPermissions() {
         val hasCalendar = calendarHelper.hasCalendarPermission()
         val nextEvent = if (hasCalendar) calendarHelper.getNextUpcomingEvent() else null
@@ -153,7 +195,9 @@ class MainViewModel(
                 isSearchExpanded = false,
                 isWidgetExpanded = false,
                 isDrawerOpen = false,
-                searchQuery = ""
+                searchQuery = "",
+                calculatorResult = null,
+                matchingContacts = emptyList()
             )
         }
         applyFilter("")
@@ -161,9 +205,23 @@ class MainViewModel(
 
     fun onSearchQueryChange(query: String) {
         val hasQuery = query.isNotBlank()
+        val calcResult = if (_uiState.value.isCalculatorCardEnabled && hasQuery) {
+            MathEvaluator.evaluate(query)
+        } else {
+            null
+        }
+
+        val contacts = if (_uiState.value.isContactsSearchEnabled && _uiState.value.hasContactsPermission && hasQuery) {
+            contactSearchHelper.searchContacts(query)
+        } else {
+            emptyList()
+        }
+
         _uiState.update {
             it.copy(
                 searchQuery = query,
+                calculatorResult = calcResult,
+                matchingContacts = contacts,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
                 isWidgetExpanded = !hasQuery
@@ -243,7 +301,9 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isDrawerOpen = false,
-                searchQuery = ""
+                searchQuery = "",
+                calculatorResult = null,
+                matchingContacts = emptyList()
             )
         }
         applyFilter("")
@@ -500,6 +560,75 @@ class MainViewModel(
 
     fun reloadApps() {
         observeInstalledApps()
+    }
+
+    // Ações Rápidas (Quick Settings)
+    fun toggleTorch() {
+        quickSettingsHelper.toggleTorch()
+    }
+
+    fun openWifiSettings() {
+        quickSettingsHelper.openWifiSettings()
+    }
+
+    fun openBluetoothSettings() {
+        quickSettingsHelper.openBluetoothSettings()
+    }
+
+    fun cycleRingerMode() {
+        quickSettingsHelper.cycleRingerMode()
+    }
+
+    // Busca e Chamada de Contatos
+    fun checkContactsPermission() {
+        val hasPerm = contactSearchHelper.hasContactsPermission()
+        _uiState.update { it.copy(hasContactsPermission = hasPerm) }
+    }
+
+    fun setContactsPermissionGranted(granted: Boolean) {
+        _uiState.update { it.copy(hasContactsPermission = granted) }
+        if (granted && _uiState.value.searchQuery.isNotBlank()) {
+            val contacts = contactSearchHelper.searchContacts(_uiState.value.searchQuery)
+            _uiState.update { it.copy(matchingContacts = contacts) }
+        }
+    }
+
+    fun callContact(phoneNumber: String) {
+        contactSearchHelper.callContact(phoneNumber)
+    }
+
+    // Gestão de Tarefas e Notas
+    fun addNoteTask(text: String) {
+        val current = _uiState.value.notesTasks.toMutableList()
+        val nextId = (current.maxOfOrNull { it.id } ?: 0L) + 1L
+        current.add(NoteTask(id = nextId, text = text, isDone = false))
+        preferences.setNotesRaw(serializeNotes(current))
+        _uiState.update { it.copy(notesTasks = current) }
+    }
+
+    fun toggleNoteTask(id: Long) {
+        val current = _uiState.value.notesTasks.map { task ->
+            if (task.id == id) task.copy(isDone = !task.isDone) else task
+        }
+        preferences.setNotesRaw(serializeNotes(current))
+        _uiState.update { it.copy(notesTasks = current) }
+    }
+
+    fun removeNoteTask(id: Long) {
+        val current = _uiState.value.notesTasks.filterNot { it.id == id }
+        preferences.setNotesRaw(serializeNotes(current))
+        _uiState.update { it.copy(notesTasks = current) }
+    }
+
+    // Estilo e Pacotes de Ícones
+    fun setIconShape(shape: String) {
+        preferences.setIconShape(shape)
+        _uiState.update { it.copy(iconShape = shape) }
+    }
+
+    fun setSelectedIconPack(packageName: String?) {
+        preferences.setSelectedIconPack(packageName)
+        _uiState.update { it.copy(selectedIconPack = packageName) }
     }
 
     private fun normalizeString(text: String): String {
