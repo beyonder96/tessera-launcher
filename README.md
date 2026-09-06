@@ -61,7 +61,7 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.1](https://github.com/beyonder96/tessera-launcher/releases)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.1)
 
 ### 🆕 Novidades na v1.7.1
 - **Widgets Horizontais:** Navegação lateral (`HorizontalPager`) suave entre todos os 7 widgets (Agenda, Bateria, Player de música, Ações rápidas, Frase do dia, Dino e Notas).
