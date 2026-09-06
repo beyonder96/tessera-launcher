@@ -17,8 +17,39 @@ sealed interface AppsListState {
 enum class SettingsSubScreen {
     MAIN,
     SEARCH,
-    WIDGETS_CENTER
+    WIDGETS_CENTER,
+    EXTRAS,
+    FOLDERS,
+    SEARCHOS
 }
+
+data class AppFolder(
+    val id: Long,
+    val name: String,
+    val packageNames: List<String> = emptyList()
+)
+
+data class SearchoItem(
+    val id: String,
+    val title: String,
+    val prefix: String,
+    val iconType: String
+)
+
+val DEFAULT_SEARCHOS_LIST = listOf(
+    SearchoItem("tasks", "Tarefas", "@t", "tasks"),
+    SearchoItem("notes", "Notas", "@n", "notes"),
+    SearchoItem("quick_actions", "Ações rápidas", "@s", "quick_actions"),
+    SearchoItem("send_message", "Enviar mensagem", "@msg", "send_message"),
+    SearchoItem("keep", "Google Keep", "@kp", "keep"),
+    SearchoItem("messages", "Mensagens", "@sms", "messages"),
+    SearchoItem("whatsapp", "Mensagens do WhatsApp", "@wa", "whatsapp"),
+    SearchoItem("telegram", "Mensagens do Telegram", "@tg", "telegram"),
+    SearchoItem("notifications", "Notificações", "@ntf", "notifications"),
+    SearchoItem("contacts", "Contatos", "@con", "contacts"),
+    SearchoItem("activity", "Sua atividade", "@fd", "activity"),
+    SearchoItem("obsidian", "Obsidian", "@ob", "obsidian")
+)
 
 data class LauncherUiState(
     val appsState: AppsListState = AppsListState.Loading,
@@ -66,5 +97,9 @@ data class LauncherUiState(
     val matchingContacts: List<ContactInfo> = emptyList(),
     val calculatorResult: String? = null,
     val iconShape: String = "DEFAULT",
-    val selectedIconPack: String? = null
+    val selectedIconPack: String? = null,
+    val isShowStatusBarEnabled: Boolean = true,
+    val searchoActivationSymbol: String = "@",
+    val searchosList: List<SearchoItem> = DEFAULT_SEARCHOS_LIST,
+    val appFolders: List<AppFolder> = emptyList()
 )

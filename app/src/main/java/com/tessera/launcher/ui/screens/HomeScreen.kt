@@ -135,11 +135,17 @@ fun HomeScreen(
 
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
 
+    val statusBarTopPadding = if (uiState.isShowStatusBarEnabled) {
+        WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    } else {
+        0.dp
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(if (uiState.isAmoledMode) DarkBackground else DarkBackgroundTranslucent)
-            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(top = statusBarTopPadding)
             .pointerInput(uiState.isDrawerOpen) {
                 detectVerticalDragGestures(
                     onDragStart = { dragAccumulator = 0f },

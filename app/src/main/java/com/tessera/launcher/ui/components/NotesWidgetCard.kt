@@ -37,8 +37,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -66,6 +69,8 @@ fun NotesWidgetCard(
     isLiquidGlass: Boolean = true
 ) {
     var newTaskText by remember { mutableStateOf("") }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val border = if (isLiquidGlass) {
         BorderStroke(1.dp, LiquidGlassBorderBrush)
@@ -182,18 +187,28 @@ fun NotesWidgetCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo para Adicionar Nova Tarefa
+            // Campo para Adicionar Nova Tarefa com suporte a clique amplo e ativação do teclado
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(42.dp)
                     .background(Color(0xFF161820), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .border(BorderStroke(1.dp, Color(0xFF242732)), RoundedCornerShape(8.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            focusRequester.requestFocus()
+                            keyboardController?.show()
+                        }
+                    )
+                    .padding(horizontal = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
                     value = newTaskText,
                     onValueChange = { newTaskText = it },
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 12.sp),
+                    textStyle = TextStyle(color = TextPrimary, fontSize = 13.sp),
                     cursorBrush = SolidColor(TextPrimary),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -207,11 +222,13 @@ fun NotesWidgetCard(
                     ),
                     decorationBox = { innerTextField ->
                         if (newTaskText.isEmpty()) {
-                            Text("Nova tarefa...", color = TextTertiary, fontSize = 12.sp)
+                            Text("Nova anotação ou tarefa...", color = TextTertiary, fontSize = 13.sp)
                         }
                         innerTextField()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .focusRequester(focusRequester)
                 )
 
                 if (newTaskText.isNotBlank()) {
@@ -220,7 +237,7 @@ fun NotesWidgetCard(
                         contentDescription = "Adicionar",
                         tint = Color.White,
                         modifier = Modifier
-                            .size(18.dp)
+                            .size(20.dp)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,

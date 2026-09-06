@@ -62,6 +62,15 @@ import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+
 @Composable
 fun WidgetsPanel(
     enabledWidgets: List<WidgetType>,
@@ -97,51 +106,29 @@ fun WidgetsPanel(
     onRemoveNoteTask: (Long) -> Unit = {},
     isLiquidGlass: Boolean = true
 ) {
-    val cardsToRender = remember(
-        defaultWidgetCardIndex,
-        isDinoWidgetEnabled,
-        isNotesWidgetEnabled,
-        mediaPlayback.isPlaying,
-        isSwitchOnMusicPlayEnabled
-    ) {
-        val list = mutableListOf<Int>()
+    val initialPage = remember {
+        if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) 2
+        else defaultWidgetCardIndex.coerceIn(0, 6)
+    }
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { 7 })
 
-        // Prioriza player se música estiver tocando e auto-switch ativado
+    LaunchedEffect(mediaPlayback.isPlaying) {
         if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
-            list.add(2)
+            pagerState.animateScrollToPage(2)
         }
-
-        // Cartão padrão selecionado na Central de Widgets
-        if (!list.contains(defaultWidgetCardIndex)) {
-            list.add(defaultWidgetCardIndex)
-        }
-
-        // Utilitário Dino se ativado
-        if (isDinoWidgetEnabled && !list.contains(5)) {
-            list.add(5)
-        }
-
-        // Utilitário Notas se ativado
-        if (isNotesWidgetEnabled && !list.contains(6)) {
-            list.add(6)
-        }
-
-        // Complementa com Calendário/Data se houver apenas um card isolado
-        if (list.size == 1 && defaultWidgetCardIndex > 2) {
-            list.add(0)
-        }
-
-        list
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        cardsToRender.forEach { cardType ->
-            when (cardType) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 20.dp),
+            pageSpacing = 12.dp
+        ) { page ->
+            when (page) {
                 0 -> {
                     CalendarWidgetCard(
                         currentTime = currentTime,
@@ -202,6 +189,32 @@ fun WidgetsPanel(
                         isLiquidGlass = isLiquidGlass
                     )
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Indicadores de navegação horizontal sutis e minimalistas (Dots)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(7) { index ->
+                val isSelected = pagerState.currentPage == index
+                val dotWidth by animateDpAsState(
+                    targetValue = if (isSelected) 14.dp else 4.dp,
+                    animationSpec = tween(180, easing = FastOutSlowInEasing),
+                    label = "dot_width"
+                )
+                Box(
+                    modifier = Modifier
+                        .height(3.dp)
+                        .width(dotWidth)
+                        .clip(CircleShape)
+                        .background(
+                            if (isSelected) Color.White else Color.White.copy(alpha = 0.25f)
+                        )
+                )
             }
         }
     }

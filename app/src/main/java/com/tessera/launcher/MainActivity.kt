@@ -17,6 +17,13 @@ import com.tessera.launcher.ui.viewmodel.MainViewModelFactory
 import android.os.Build
 import android.view.WindowManager
 
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
 class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: MainViewModel
@@ -65,6 +72,19 @@ class MainActivity : ComponentActivity() {
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 
         setContent {
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            LaunchedEffect(uiState.isShowStatusBarEnabled) {
+                val insetsController = WindowCompat.getInsetsController(window, window.decorView)
+                if (uiState.isShowStatusBarEnabled) {
+                    insetsController.show(WindowInsetsCompat.Type.statusBars())
+                } else {
+                    insetsController.hide(WindowInsetsCompat.Type.statusBars())
+                    insetsController.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            }
+
             TesseraTheme {
                 HomeScreen(
                     viewModel = viewModel,

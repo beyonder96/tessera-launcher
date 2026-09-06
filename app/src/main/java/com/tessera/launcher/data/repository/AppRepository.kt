@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Process
 import android.os.UserManager
+import com.tessera.launcher.data.helper.IconPackHelper
 import com.tessera.launcher.data.model.AppInfo
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -23,10 +24,11 @@ import java.util.Locale
 
 class AppRepository(
     private val context: Context,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    val iconPackHelper: IconPackHelper = IconPackHelper(context)
 ) {
 
-    suspend fun loadApps(): List<AppInfo> = withContext(ioDispatcher) {
+    suspend fun loadApps(iconPackPackage: String? = null): List<AppInfo> = withContext(ioDispatcher) {
         val appsList = mutableListOf<AppInfo>()
         val packageManager = context.packageManager
 
@@ -42,10 +44,15 @@ class AppRepository(
                     if (pkgName == context.packageName) continue // Não listar o próprio launcher
 
                     val label = activity.label.toString()
-                    val icon = try {
+                    val defaultIcon = try {
                         activity.getBadgedIcon(0)
                     } catch (_: Exception) {
                         null
+                    }
+                    val icon = if (!iconPackPackage.isNullOrBlank()) {
+                        iconPackHelper.getIconForApp(pkgName, activity.name, iconPackPackage) ?: defaultIcon
+                    } else {
+                        defaultIcon
                     }
 
                     appsList.add(
@@ -68,10 +75,15 @@ class AppRepository(
                 if (pkgName == context.packageName) continue
 
                 val label = resolveInfo.loadLabel(packageManager).toString()
-                val icon = try {
+                val defaultIcon = try {
                     resolveInfo.loadIcon(packageManager)
                 } catch (_: Exception) {
                     null
+                }
+                val icon = if (!iconPackPackage.isNullOrBlank()) {
+                    iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, iconPackPackage) ?: defaultIcon
+                } else {
+                    defaultIcon
                 }
 
                 appsList.add(
@@ -97,10 +109,10 @@ class AppRepository(
      * Observa mudanças nos aplicativos instalados/desinstalados/atualizados
      * emitindo uma nova lista automaticamente via BroadcastReceiver.
      */
-    fun observeApps(): Flow<List<AppInfo>> = callbackFlow {
+    fun observeApps(iconPackPackage: String? = null): Flow<List<AppInfo>> = callbackFlow {
         // Envia carga inicial
         launch(ioDispatcher) {
-            trySend(loadApps())
+            trySend(loadApps(iconPackPackage))
         }
 
         val packageChangeReceiver = object : BroadcastReceiver() {
@@ -111,7 +123,7 @@ class AppRepository(
                     action == Intent.ACTION_PACKAGE_CHANGED
                 ) {
                     launch(ioDispatcher) {
-                        trySend(loadApps())
+                        trySend(loadApps(iconPackPackage))
                     }
                 }
             }

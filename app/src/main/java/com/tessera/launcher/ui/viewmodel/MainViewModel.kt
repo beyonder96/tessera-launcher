@@ -12,10 +12,14 @@ import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
+import com.tessera.launcher.data.helper.IconPackInfo
 import com.tessera.launcher.ui.components.MathEvaluator
 import com.tessera.launcher.ui.components.NoteTask
+import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
+import com.tessera.launcher.ui.state.DEFAULT_SEARCHOS_LIST
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.ui.state.SearchoItem
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,6 +45,36 @@ private fun parseNotes(raw: String): List<NoteTask> {
 
 private fun serializeNotes(tasks: List<NoteTask>): String {
     return tasks.joinToString("|||") { "${it.text}:::${it.isDone}" }
+}
+
+private fun parseFolders(raw: String): List<AppFolder> {
+    if (raw.isBlank()) return emptyList()
+    return raw.split(";;;").mapIndexedNotNull { idx, item ->
+        val parts = item.split(":::")
+        if (parts.isNotEmpty() && parts[0].isNotBlank()) {
+            val name = parts[0]
+            val pkgs = if (parts.size > 1 && parts[1].isNotBlank()) parts[1].split(",") else emptyList()
+            AppFolder(id = idx.toLong() + 1, name = name, packageNames = pkgs)
+        } else null
+    }
+}
+
+private fun serializeFolders(folders: List<AppFolder>): String {
+    return folders.joinToString(";;;") { "${it.name}:::${it.packageNames.joinToString(",")}" }
+}
+
+private fun parseSearchos(raw: String): List<SearchoItem> {
+    if (raw.isBlank()) return DEFAULT_SEARCHOS_LIST
+    return raw.split(";;;").mapNotNull { item ->
+        val parts = item.split(":::")
+        if (parts.size >= 4) {
+            SearchoItem(id = parts[0], title = parts[1], prefix = parts[2], iconType = parts[3])
+        } else null
+    }.ifEmpty { DEFAULT_SEARCHOS_LIST }
+}
+
+private fun serializeSearchos(items: List<SearchoItem>): String {
+    return items.joinToString(";;;") { "${it.id}:::${it.title}:::${it.prefix}:::${it.iconType}" }
 }
 
 class MainViewModel(
@@ -79,7 +113,11 @@ class MainViewModel(
             hasContactsPermission = contactSearchHelper.hasContactsPermission(),
             notesTasks = parseNotes(preferences.getNotesRaw()),
             iconShape = preferences.getIconShape(),
-            selectedIconPack = preferences.getSelectedIconPack()
+            selectedIconPack = preferences.getSelectedIconPack(),
+            isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
+            searchoActivationSymbol = preferences.getSearchoActivationSymbol(),
+            searchosList = parseSearchos(preferences.getSearchosRaw()),
+            appFolders = parseFolders(preferences.getFoldersRaw())
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -98,7 +136,7 @@ class MainViewModel(
     private fun observeInstalledApps() {
         viewModelScope.launch {
             _uiState.update { it.copy(appsState = AppsListState.Loading) }
-            appRepository.observeApps()
+            appRepository.observeApps(preferences.getSelectedIconPack())
                 .catch { error ->
                     _uiState.update {
                         it.copy(appsState = AppsListState.Error(error.localizedMessage ?: "Erro ao carregar aplicativos"))
@@ -115,6 +153,16 @@ class MainViewModel(
                     }
                     applyFilter(_uiState.value.searchQuery)
                 }
+        }
+    }
+
+    fun reloadAppsWithIconPack(pack: String?) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(appsState = AppsListState.Loading) }
+            val apps = runCatching { appRepository.loadApps(pack) }.getOrDefault(allApps)
+            allApps = apps
+            applyFilter(_uiState.value.searchQuery)
+            _uiState.update { it.copy(appsState = AppsListState.Success(apps)) }
         }
     }
 
@@ -403,6 +451,9 @@ class MainViewModel(
     fun navigateBackSettings() {
         _uiState.update {
             when (it.currentSettingsScreen) {
+                SettingsSubScreen.FOLDERS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.SEARCHOS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.EXTRAS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
@@ -629,6 +680,59 @@ class MainViewModel(
     fun setSelectedIconPack(packageName: String?) {
         preferences.setSelectedIconPack(packageName)
         _uiState.update { it.copy(selectedIconPack = packageName) }
+        reloadAppsWithIconPack(packageName)
+    }
+
+    fun getInstalledIconPacks(): List<IconPackInfo> {
+        return appRepository.iconPackHelper.getInstalledIconPacks()
+    }
+
+    // Barra de Status do Sistema
+    fun setShowStatusBarEnabled(enabled: Boolean) {
+        preferences.setShowStatusBarEnabled(enabled)
+        _uiState.update { it.copy(isShowStatusBarEnabled = enabled) }
+    }
+
+    // Gestão de Pastas
+    fun createFolder(name: String, appPackages: List<String> = emptyList()) {
+        val current = _uiState.value.appFolders.toMutableList()
+        val nextId = (current.maxOfOrNull { it.id } ?: 0L) + 1L
+        current.add(AppFolder(id = nextId, name = name, packageNames = appPackages))
+        preferences.setFoldersRaw(serializeFolders(current))
+        _uiState.update { it.copy(appFolders = current) }
+    }
+
+    fun removeFolder(id: Long) {
+        val current = _uiState.value.appFolders.filterNot { it.id == id }
+        preferences.setFoldersRaw(serializeFolders(current))
+        _uiState.update { it.copy(appFolders = current) }
+    }
+
+    // Gestão de Searchos
+    fun removeSearcho(id: String) {
+        val current = _uiState.value.searchosList.filterNot { it.id == id }
+        preferences.setSearchosRaw(serializeSearchos(current))
+        _uiState.update { it.copy(searchosList = current) }
+    }
+
+    fun addSearcho(title: String, prefix: String, iconType: String = "tasks") {
+        val current = _uiState.value.searchosList.toMutableList()
+        val cleanPrefix = if (prefix.startsWith("@")) prefix else "@$prefix"
+        current.add(
+            SearchoItem(
+                id = "searcho_${System.currentTimeMillis()}",
+                title = title,
+                prefix = cleanPrefix,
+                iconType = iconType
+            )
+        )
+        preferences.setSearchosRaw(serializeSearchos(current))
+        _uiState.update { it.copy(searchosList = current) }
+    }
+
+    fun setSearchoActivationSymbol(symbol: String) {
+        preferences.setSearchoActivationSymbol(symbol)
+        _uiState.update { it.copy(searchoActivationSymbol = symbol) }
     }
 
     private fun normalizeString(text: String): String {

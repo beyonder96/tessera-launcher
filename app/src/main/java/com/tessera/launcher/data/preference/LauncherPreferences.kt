@@ -36,6 +36,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_WIDGET_NOTES = "widget_notes"
         private const val KEY_SWITCH_ON_MUSIC_PLAY = "switch_on_music_play"
         private const val KEY_DEFAULT_WIDGET_CARD_INDEX = "default_widget_card_index"
+        private const val KEY_SHOW_STATUS_BAR = "show_status_bar"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -169,4 +170,16 @@ class LauncherPreferences(context: Context) {
 
     fun getSelectedIconPack(): String? = prefs.getString("selected_icon_pack", null)
     fun setSelectedIconPack(pkg: String?) = prefs.edit().putString("selected_icon_pack", pkg).apply()
+
+    fun isShowStatusBarEnabled(): Boolean = prefs.getBoolean(KEY_SHOW_STATUS_BAR, true)
+    fun setShowStatusBarEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SHOW_STATUS_BAR, enabled).apply()
+
+    fun getSearchoActivationSymbol(): String = prefs.getString("searcho_symbol", "@") ?: "@"
+    fun setSearchoActivationSymbol(symbol: String) = prefs.edit().putString("searcho_symbol", symbol).apply()
+
+    fun getFoldersRaw(): String = prefs.getString("folders_data", "") ?: ""
+    fun setFoldersRaw(raw: String) = prefs.edit().putString("folders_data", raw).apply()
+
+    fun getSearchosRaw(): String = prefs.getString("searchos_data", "") ?: ""
+    fun setSearchosRaw(raw: String) = prefs.edit().putString("searchos_data", raw).apply()
 }

@@ -59,8 +59,16 @@
 ## 📲 Download & Instalação do APK
 
 Você pode obter o APK compilado pronto para instalação no seu Android:
-- 📦 **Arquivo no repositório:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.1.0](https://github.com/beyonder96/tessera-launcher/releases)
+- 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
+- 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.1](https://github.com/beyonder96/tessera-launcher/releases)
+
+### 🆕 Novidades na v1.7.1
+- **Widgets Horizontais:** Navegação lateral (`HorizontalPager`) suave entre todos os 7 widgets (Agenda, Bateria, Player de música, Ações rápidas, Frase do dia, Dino e Notas).
+- **Notas & Diário:** Correção do teclado virtual do Android abrindo de forma imediata com delegação de foco ampla.
+- **Visual Limpo (Ocultar Barra de Status):** Nova opção em Extras para esconder o relógio, bateria e ícones do sistema via insets nativos.
+- **Pacotes de Ícones (Icon Packs):** Suporte completo à detecção e aplicação real de pacotes de ícones instalados com preview e seleção simplificada.
+- **Central de Extras, Pastas e Searchos:** Novas telas dedicadas para agrupamento de pastas e gerenciamento de prefixos rápidos de busca.
 
 ---
 

@@ -6,8 +6,12 @@ import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import com.tessera.launcher.data.helper.IconPackInfo
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -117,6 +121,42 @@ fun SettingsScreen(
         }
         SettingsSubScreen.WIDGETS_CENTER -> {
             WidgetsCenterScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.EXTRAS -> {
+            ExtrasScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                onNavigateToFolders = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS)
+                },
+                onNavigateToSearchos = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCHOS)
+                },
+                onOpenHiddenApps = {
+                    Toast.makeText(context, "Apps ocultos: recurso de proteção de aplicativos.", Toast.LENGTH_SHORT).show()
+                },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.FOLDERS -> {
+            FoldersScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.SEARCHOS -> {
+            SearchosScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
@@ -269,7 +309,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Extension,
                         title = "Extras",
                         subtitle = "Pastas, apps ocultos e Tesseras",
-                        onClick = { activeDialog = "extras" }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) }
                     )
 
                     ItemDivider()
@@ -1041,30 +1081,39 @@ private fun CustomizationDialog(
                 HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
 
                 // Pacote de Ícones
-                val dialogContext = LocalContext.current
+                var showIconPackSelector by remember { mutableStateOf(false) }
+                val installedPacks = remember { viewModel.getInstalledIconPacks() }
+                val currentPackName = remember(uiState.selectedIconPack, installedPacks) {
+                    installedPacks.find { it.packageName == uiState.selectedIconPack }?.label
+                        ?: uiState.selectedIconPack
+                        ?: "Padrão do Sistema"
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            val packs = getInstalledIconPacks(dialogContext)
-                            if (packs.isEmpty()) {
-                                Toast.makeText(dialogContext, "Nenhum pacote de ícones adicional instalado. Usando ícones padrão do sistema.", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(dialogContext, "Pacotes disponíveis: ${packs.joinToString { it.second }}", Toast.LENGTH_LONG).show()
-                            }
-                        },
+                        .clickable { showIconPackSelector = true },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Pacote de Ícones", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
                         Text(
-                            text = uiState.selectedIconPack ?: "Padrão do Sistema",
+                            text = currentPackName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary
                         )
                     }
-                    Text(text = "Verificar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                    Text(text = "Alterar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                }
+
+                if (showIconPackSelector) {
+                    IconPackSelectionDialog(
+                        installedPacks = installedPacks,
+                        selectedPackage = uiState.selectedIconPack,
+                        onSelectPack = { viewModel.setSelectedIconPack(it) },
+                        onDismiss = { showIconPackSelector = false }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -1237,6 +1286,184 @@ private fun AppSelectionDialog(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconPackSelectionDialog(
+    installedPacks: List<IconPackInfo>,
+    selectedPackage: String?,
+    onSelectPack: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(22.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Pacote de Ícones",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+
+                Text(
+                    text = "Escolha o pacote de ícones a ser aplicado a todos os aplicativos:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+
+                // Opção 1: Padrão do Sistema
+                val isDefaultSelected = selectedPackage.isNullOrBlank()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDefaultSelected) Color(0xFF1E202A) else Color.Transparent)
+                        .clickable {
+                            onSelectPack(null)
+                            onDismiss()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF282B36)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Palette,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "Padrão do Sistema",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isDefaultSelected) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        color = TextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (isDefaultSelected) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = "Selecionado",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                if (installedPacks.isEmpty()) {
+                    Text(
+                        text = "Nenhum pacote de ícones adicional instalado no dispositivo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                } else {
+                    installedPacks.forEach { pack ->
+                        val isPackSelected = selectedPackage == pack.packageName
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isPackSelected) Color(0xFF1E202A) else Color.Transparent)
+                                .clickable {
+                                    onSelectPack(pack.packageName)
+                                    onDismiss()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (pack.icon != null) {
+                                Image(
+                                    bitmap = pack.icon.toBitmap(64, 64).asImageBitmap(),
+                                    contentDescription = pack.label,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF282B36)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Palette,
+                                        contentDescription = null,
+                                        tint = TextPrimary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = pack.label,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = if (isPackSelected) FontWeight.Bold else FontWeight.Normal
+                                ),
+                                color = TextPrimary,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isPackSelected) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "Selecionado",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Fechar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
                 }
             }
         }
