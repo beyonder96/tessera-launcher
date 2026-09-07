@@ -70,6 +70,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -146,9 +148,20 @@ fun WidgetsPanel(
     }
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { pageCount })
 
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     LaunchedEffect(mediaPlayback.isPlaying) {
         if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
             pagerState.animateScrollToPage(3)
+        }
+    }
+
+    // Se o usuário deslizar o widget para o lado, fecha o teclado e limpa o foco
+    LaunchedEffect(pagerState.isScrollInProgress) {
+        if (pagerState.isScrollInProgress) {
+            keyboardController?.hide()
+            focusManager.clearFocus()
         }
     }
 

@@ -61,15 +61,15 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.3)
 
-### 🆕 Novidades na v1.7.2
-- ⛅ **Previsão do Tempo & Clima:** Novo widget de clima em tempo real integrado com a API Open-Meteo, geocodificação reversa de localização nativa e conversão °C / °F.
-- 🎛️ **Dock Integrado com Widgets:** Visual unificado com os widgets compactos na parte superior do mesmo cartão do dock, indicador animado de páginas e barra de busca integrada com botão de configurações destacado.
-- ⚙️ **Configuração por Toque Longo nos Widgets:** Bottom sheets dedicados para customização rápida ao pressionar e segurar cada cartão (Diário/Tarefas, Player de Mídia, Bateria/Sistema, Agenda e Clima).
-- 🛡️ **Painel de Permissões & Idiomas:** Nova tela de auditoria de permissões do sistema (inclusive localização) e suporte a múltiplos idiomas com badges minimalistas.
-- 🎨 **Customização Avançada:** Seletor de cores sólidas para wallpaper, variações de formato de ícone, estilos da barra de pesquisa e suporte a fontes externas (.ttf/.otf).
-- 🖤 **AMOLED Deep Black:** Preto profundo (#000000) nos fundos de tela com detalhes contrastantes de acordo com o design system.
+### 🆕 Novidades na v1.7.3
+- 🔍 **Comportamento Aprimorado da Lupa:** Abertura da lupa expande a barra e widgets na Home sem pular para a lista de aplicativos. Deslizar o carrossel de widgets lateralmente fecha o teclado instantaneamente.
+- 📱 **Gesto de Deslizar para Cima (Swipe Up):** Deslizar para cima na tela inicial abre a gaveta de aplicativos com foco imediato no teclado virtual.
+- ⚙️ **Fechamento Automático do Teclado:** Teclado recolhido automaticamente ao tocar no botão de configurações da barra de pesquisa.
+- 🔒 **Apps Ocultos Turbinado:** Ícones reais dos aplicativos em alta definição, barra de busca rápida, zero piscada/reset de rolagem ao alternar apps, seção de Acesso Rápido no topo e ocultação real em todo o sistema.
+- 🧮 **Modo Calculadora Isolado (@calc):** Foco exclusivo no resultado matemático ao digitar `@calc`, ocultando contatos, arquivos e chips para evitar poluição visual.
+- ♿ **Serviço de Acessibilidade do Tessera:** Implementado serviço nativo para execução confiável de gestos do sistema (Bloqueio de Tela via `GLOBAL_ACTION_LOCK_SCREEN`, Notificações e Configurações Rápidas).
 
 ---
 

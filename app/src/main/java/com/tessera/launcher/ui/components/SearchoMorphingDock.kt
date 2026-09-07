@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
@@ -82,6 +83,7 @@ fun SearchoMorphingDock(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val isSplit = searchBarStyle.startsWith("split_")
 
@@ -295,7 +297,11 @@ fun SearchoMorphingDock(
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
-                                            onClick = onOpenSettings
+                                            onClick = {
+                                                keyboardController?.hide()
+                                                focusManager.clearFocus()
+                                                onOpenSettings()
+                                            }
                                         )
                                 )
                             }
@@ -322,7 +328,11 @@ fun SearchoMorphingDock(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = onOpenSettings
+                                onClick = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    onOpenSettings()
+                                }
                             ),
                         contentAlignment = Alignment.Center
                     ) {

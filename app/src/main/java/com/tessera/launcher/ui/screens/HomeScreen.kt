@@ -219,7 +219,12 @@ fun HomeScreen(
                                     ) {
                                         viewModel.executeGestureAction(uiState.swipeUpAction, context)
                                     } else {
+                                        viewModel.expandSearch()
                                         viewModel.openDrawer()
+                                        try {
+                                            focusRequester.requestFocus()
+                                            keyboardController?.show()
+                                        } catch (_: Exception) {}
                                     }
                                 }
                             } else { // Deslizar para BAIXO
@@ -259,28 +264,11 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {
-                            if (uiState.isSearchExpanded) {
-                                viewModel.collapseSearch()
-                                focusManager.clearFocus()
-                            }
-                        }
-                    )
             ) {
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
-                        onPickPhoto = {
-                            if (uiState.isSearchExpanded) {
-                                viewModel.collapseSearch()
-                                focusManager.clearFocus()
-                            } else {
-                                onPickPhoto()
-                            }
-                        },
+                        onPickPhoto = { onPickPhoto() },
                         onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier
@@ -366,7 +354,7 @@ fun HomeScreen(
                                     }
 
                                     // Contatos
-                                    if (uiState.matchingContacts.isNotEmpty()) {
+                                    if (uiState.calculatorResult == null && uiState.matchingContacts.isNotEmpty()) {
                                         item(key = "contacts_header") {
                                             Text(
                                                 text = "CONTATOS",
@@ -391,7 +379,7 @@ fun HomeScreen(
                                     }
 
                                     // Arquivos
-                                    if (uiState.matchingFiles.isNotEmpty()) {
+                                    if (uiState.calculatorResult == null && uiState.matchingFiles.isNotEmpty()) {
                                         item(key = "files_header") {
                                             Text(
                                                 text = "ARQUIVOS",
@@ -456,8 +444,16 @@ fun HomeScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                             ) {
-                                // Chips do SearchOS quando digitar @
-                                if (uiState.searchQuery.startsWith("@") || uiState.searchQuery == "@") {
+                                // Modo Calculadora isolado (@calc)
+                                val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
+                                val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
+                                val isFilesMode = uiState.searchQuery.startsWith("@files", ignoreCase = true)
+
+                                // Chips do SearchOS quando digitar @ isolado ou prefixo inicial sem espaço
+                                val showSearchosChips = !isCalcMode && !isContactsMode && !isFilesMode &&
+                                        (uiState.searchQuery == "@" || (uiState.searchQuery.startsWith("@") && !uiState.searchQuery.contains(" ")))
+
+                                if (showSearchosChips) {
                                     item(key = "searchos_chips") {
                                         SearchosChipsRow(
                                             searchosList = uiState.searchosList,
@@ -480,8 +476,8 @@ fun HomeScreen(
                                     }
                                 }
 
-                                // Contatos encontrados
-                                if (uiState.matchingContacts.isNotEmpty()) {
+                                // Contatos encontrados (oculto em modo calculadora ou arquivos)
+                                if (!isCalcMode && !isFilesMode && uiState.matchingContacts.isNotEmpty()) {
                                     item(key = "contacts_header") {
                                         Text(
                                             text = "CONTATOS",
@@ -505,8 +501,8 @@ fun HomeScreen(
                                     }
                                 }
 
-                                // Arquivos encontrados
-                                if (uiState.matchingFiles.isNotEmpty()) {
+                                // Arquivos encontrados (oculto em modo calculadora ou contatos)
+                                if (!isCalcMode && !isContactsMode && uiState.matchingFiles.isNotEmpty()) {
                                     item(key = "files_header") {
                                         Text(
                                             text = "ARQUIVOS",
@@ -531,23 +527,26 @@ fun HomeScreen(
                                 }
 
                                 // Cartão de Pasta encontrada na busca (Screenshot media_1788774600763.png)
-                                matchingFolder?.let { folder ->
-                                    item(key = "folder_card_${folder.id}") {
-                                        FolderSearchCard(
-                                            folder = folder,
-                                            allApps = allApps,
-                                            onAppClick = { app -> viewModel.launchApp(app.packageName) },
-                                            onAppLongClick = { app -> selectedAppForMenu = app },
-                                            isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
-                                        )
+                                if (!isCalcMode) {
+                                    matchingFolder?.let { folder ->
+                                        item(key = "folder_card_${folder.id}") {
+                                            FolderSearchCard(
+                                                folder = folder,
+                                                allApps = allApps,
+                                                onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                onAppLongClick = { app -> selectedAppForMenu = app },
+                                                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                                            )
+                                        }
                                     }
                                 }
 
-                                // Aplicativos filtrados
-                                items(
-                                    items = uiState.filteredApps,
-                                    key = { it.packageName }
-                                ) { app ->
+                                // Aplicativos filtrados (ocultos em modo calculadora/contatos/arquivos)
+                                if (!isCalcMode && !isContactsMode && !isFilesMode) {
+                                    items(
+                                        items = uiState.filteredApps,
+                                        key = { it.packageName }
+                                    ) { app ->
                                     AppListItem(
                                         app = app,
                                         iconShape = uiState.iconShape,
@@ -567,8 +566,9 @@ fun HomeScreen(
                                         }
                                     )
                                 }
+                            }
 
-                                // Pílula externa de pesquisa (Google + Apps)
+                            // Pílula externa de pesquisa (Google + Apps)
                                 if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled) {
                                     item {
                                         SearchExternalActions(
@@ -618,9 +618,12 @@ fun HomeScreen(
                 onQueryChange = { viewModel.onSearchQueryChange(it) },
                 onExpandClick = {
                     viewModel.expandSearch()
-                    viewModel.openDrawer()
                 },
-                onOpenSettings = { viewModel.openSettings() },
+                onOpenSettings = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    viewModel.openSettings()
+                },
                 focusRequester = focusRequester,
                 searchBarStyle = uiState.searchBarStyle,
                 searchBarTextType = uiState.searchBarTextType,

@@ -12,6 +12,7 @@ import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.repository.AppRepository
 import com.tessera.launcher.data.service.TesseraMediaService
+import com.tessera.launcher.data.service.TesseraAccessibilityService
 import com.tessera.launcher.data.helper.IconPackInfo
 import com.tessera.launcher.ui.components.MathEvaluator
 import com.tessera.launcher.ui.components.NoteTask
@@ -205,11 +206,10 @@ class MainViewModel(
     fun observeInstalledApps() {
         viewModelScope.launch {
             _uiState.update { it.copy(appsState = AppsListState.Loading) }
-            val hiddenSet = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
             appRepository.observeApps(
                 iconPackPackage = preferences.getSelectedIconPack(),
                 customIcons = _uiState.value.customAppIcons,
-                hiddenPackages = hiddenSet
+                hiddenPackages = emptySet()
             )
                 .catch { error ->
                     _uiState.update {
@@ -225,6 +225,7 @@ class MainViewModel(
                             setDefaultMusicApp("com.spotify.music")
                         }
                     }
+                    _uiState.update { it.copy(allInstalledApps = apps) }
                     applyFilter(_uiState.value.searchQuery)
                 }
         }
@@ -340,7 +341,7 @@ class MainViewModel(
                     searchQuery = ""
                 )
             }
-            observeInstalledApps()
+            applyFilter("")
             return
         }
 
@@ -354,15 +355,35 @@ class MainViewModel(
             null
         }
 
-        // 3. SearchOS: Contatos via @con ou busca geral se habilitado
+        // Se for comando @calc, isola 100% a calculadora (sem contatos, sem arquivos, sem apps)
+        if (isCalcCommand) {
+            autoLaunchJob?.cancel()
+            _uiState.update {
+                it.copy(
+                    searchQuery = query,
+                    calculatorResult = calcResult,
+                    matchingContacts = emptyList(),
+                    matchingFiles = emptyList(),
+                    filteredApps = emptyList(),
+                    appsState = AppsListState.Success(emptyList()),
+                    isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
+                    isSearchExpanded = true,
+                    isWidgetExpanded = !hasQuery
+                )
+            }
+            return
+        }
+
+        // 3. SearchOS: Contatos via @con ou busca geral se habilitado (não buscar se for outro comando @)
         val isContactsCommand = query.startsWith("@con", ignoreCase = true) ||
                 query.startsWith("${symbol}con", ignoreCase = true)
+        val isOtherCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isContactsCommand
         val contactsQuery = if (isContactsCommand) {
             query.substringAfter("con", "").trim()
         } else {
             query
         }
-        val contacts = if ((isContactsCommand || _uiState.value.isContactsSearchEnabled) &&
+        val contacts = if (!isOtherCommand && (isContactsCommand || _uiState.value.isContactsSearchEnabled) &&
             _uiState.value.hasContactsPermission && contactsQuery.isNotBlank()
         ) {
             contactSearchHelper.searchContacts(contactsQuery)
@@ -373,12 +394,13 @@ class MainViewModel(
         // 4. SearchOS: Arquivos via @files ou busca geral de arquivos
         val isFilesCommand = query.startsWith("@files", ignoreCase = true) ||
                 query.startsWith("${symbol}files", ignoreCase = true)
+        val isOtherFilesCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isFilesCommand
         val filesQuery = if (isFilesCommand) {
             query.substringAfter("files", "").trim()
         } else {
             query
         }
-        val files = if ((isFilesCommand || _uiState.value.isFilesSearchEnabled) && filesQuery.length >= 2) {
+        val files = if (!isOtherFilesCommand && (isFilesCommand || _uiState.value.isFilesSearchEnabled) && filesQuery.length >= 2) {
             fileSearchHelper.searchFiles(filesQuery)
         } else {
             emptyList()
@@ -387,7 +409,7 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 searchQuery = query,
-                calculatorResult = calcResult,
+                calculatorResult = null,
                 matchingContacts = contacts,
                 matchingFiles = files,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
@@ -396,8 +418,7 @@ class MainViewModel(
             )
         }
 
-        // Se for comando @calc, isola a calculadora e previne auto-launch de apps
-        if (isCalcCommand) {
+        if (isContactsCommand || isFilesCommand) {
             autoLaunchJob?.cancel()
             _uiState.update {
                 it.copy(
@@ -416,17 +437,20 @@ class MainViewModel(
         autoLaunchJob?.cancel()
 
         val isExact = _uiState.value.isExactSearchEnabled
+        val hiddenPkgs = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
+        val visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
+
         val filtered = if (trimmed.isEmpty()) {
-            allApps
+            visibleApps
         } else {
             val normalizedQuery = AppInfo.normalize(trimmed)
             if (isExact) {
-                allApps.filter { app ->
+                visibleApps.filter { app ->
                     app.normalizedLabel.equals(normalizedQuery, ignoreCase = true) ||
                             app.label.equals(trimmed, ignoreCase = true)
                 }
             } else {
-                allApps.filter { app ->
+                visibleApps.filter { app ->
                     app.normalizedLabel.contains(normalizedQuery) ||
                             app.packageName.contains(trimmed, ignoreCase = true)
                 }
@@ -873,12 +897,27 @@ class MainViewModel(
                 }
             }
             actionKey == "notifications" -> {
-                try {
-                    val statusBarService = context.getSystemService("statusbar")
-                    val statusBarManager = Class.forName("android.app.StatusBarManager")
-                    val method = statusBarManager.getMethod("expandNotificationsPanel")
-                    method.invoke(statusBarService)
-                } catch (_: Exception) {
+                val opened = TesseraAccessibilityService.openNotifications()
+                if (!opened) {
+                    try {
+                        val statusBarService = context.getSystemService("statusbar")
+                        val statusBarManager = Class.forName("android.app.StatusBarManager")
+                        val method = statusBarManager.getMethod("expandNotificationsPanel")
+                        method.invoke(statusBarService)
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+            actionKey == "quick_settings" -> {
+                val opened = TesseraAccessibilityService.openQuickSettings()
+                if (!opened) {
+                    try {
+                        val statusBarService = context.getSystemService("statusbar")
+                        val statusBarManager = Class.forName("android.app.StatusBarManager")
+                        val method = statusBarManager.getMethod("expandSettingsPanel")
+                        method.invoke(statusBarService)
+                    } catch (_: Exception) {
+                    }
                 }
             }
             actionKey == "open_keyboard" -> {
@@ -886,7 +925,19 @@ class MainViewModel(
                 openDrawer()
             }
             actionKey == "lock_screen" -> {
-                android.widget.Toast.makeText(context, "Bloqueio de tela acionado", android.widget.Toast.LENGTH_SHORT).show()
+                val locked = TesseraAccessibilityService.lockScreen()
+                if (!locked) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Ative o Serviço de Acessibilidade do Tessera para bloquear a tela",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    runCatching {
+                        context.startActivity(android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        })
+                    }
+                }
             }
             actionKey.startsWith("app:") -> {
                 val pkg = actionKey.removePrefix("app:")
@@ -1003,19 +1054,19 @@ class MainViewModel(
         if (current.contains(pkg)) current.remove(pkg) else current.add(pkg)
         preferences.setHiddenAppsPackages(current)
         _uiState.update { it.copy(hiddenAppsPackages = current) }
-        observeInstalledApps()
+        applyFilter(_uiState.value.searchQuery)
     }
     fun unlockHiddenAppsWithPin(pin: String): Boolean {
         if (pin == _uiState.value.hiddenAppsPin || _uiState.value.hiddenAppsPin.isEmpty()) {
             _uiState.update { it.copy(isPinUnlocked = true) }
-            observeInstalledApps()
+            applyFilter(_uiState.value.searchQuery)
             return true
         }
         return false
     }
     fun lockHiddenApps() {
         _uiState.update { it.copy(isPinUnlocked = false) }
-        observeInstalledApps()
+        applyFilter(_uiState.value.searchQuery)
     }
 
     // Ícones Customizados Individuais

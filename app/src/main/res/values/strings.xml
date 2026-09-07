@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Tessera Launcher</string>
+    <string name="accessibility_service_description">Permite que o Tessera Launcher execute gestos do sistema, como bloquear a tela, expandir a barra de notificações e abrir configurações rápidas.</string>
 </resources>

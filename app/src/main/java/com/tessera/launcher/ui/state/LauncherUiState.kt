@@ -159,6 +159,7 @@ data class LauncherUiState(
     val matchingFiles: List<FileSearchResult> = emptyList(),
 
     // Apps Ocultos & PIN
+    val allInstalledApps: List<AppInfo> = emptyList(),
     val hiddenAppsPin: String = "",
     val hiddenAppsPackages: Set<String> = emptySet(),
     val isPinUnlocked: Boolean = false,
