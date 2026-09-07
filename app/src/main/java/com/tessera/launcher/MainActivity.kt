@@ -57,6 +57,13 @@ class MainActivity : ComponentActivity() {
         viewModel.setContactsPermissionGranted(isGranted)
     }
 
+    // Launcher de Permissão de Localização
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.updateLocationPermission(isGranted)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -98,6 +105,9 @@ class MainActivity : ComponentActivity() {
                     },
                     onRequestContactsPermission = {
                         contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+                    },
+                    onRequestLocationPermission = {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
                     }
                 )
             }

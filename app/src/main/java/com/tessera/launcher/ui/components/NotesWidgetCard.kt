@@ -82,6 +82,7 @@ fun NotesWidgetCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(115.dp)
             .border(border, CardShape)
             .clip(CardShape)
             .background(background)

@@ -4,12 +4,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 // Paleta Monocromática Ultra-Polida - Searcho & Niagara Style
-val DarkBackground = Color(0xFF050505)
+val DarkBackground = Color(0xFF000000)
 val DarkBackgroundTranslucent = Color.Transparent
-val DarkSurface = Color(0xFF121214)
-val DarkSurfaceVariant = Color(0xFF18181A)
-val DarkSurfaceBorder = Color(0xFF222224)
-val DarkSurfaceBorderHover = Color(0xFF333336)
+val AmoledBlack = Color(0xFF000000)
+val AmoledCardBackground = Color(0xFF0C0C0F)
+val AmoledCardBorder = Color(0xFF1C1C24)
+val DarkSurface = Color(0xFF0F0F12)
+val DarkSurfaceVariant = Color(0xFF17171C)
+val DarkSurfaceBorder = Color(0xFF1E1E24)
+val DarkSurfaceBorderHover = Color(0xFF2E2E38)
 
 // Liquid Glass Tokens (Estilo iOS 27 / VisionOS - Frosted Glass Translúcido com Difração de Luz)
 val LiquidGlassBackground = Color(0x75141720)

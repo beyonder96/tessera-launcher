@@ -61,14 +61,15 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.2)
 
-### 🆕 Novidades na v1.7.1
-- **Widgets Horizontais:** Navegação lateral (`HorizontalPager`) suave entre todos os 7 widgets (Agenda, Bateria, Player de música, Ações rápidas, Frase do dia, Dino e Notas).
-- **Notas & Diário:** Correção do teclado virtual do Android abrindo de forma imediata com delegação de foco ampla.
-- **Visual Limpo (Ocultar Barra de Status):** Nova opção em Extras para esconder o relógio, bateria e ícones do sistema via insets nativos.
-- **Pacotes de Ícones (Icon Packs):** Suporte completo à detecção e aplicação real de pacotes de ícones instalados com preview e seleção simplificada.
-- **Central de Extras, Pastas e Searchos:** Novas telas dedicadas para agrupamento de pastas e gerenciamento de prefixos rápidos de busca.
+### 🆕 Novidades na v1.7.2
+- ⛅ **Previsão do Tempo & Clima:** Novo widget de clima em tempo real integrado com a API Open-Meteo, geocodificação reversa de localização nativa e conversão °C / °F.
+- 🎛️ **Dock Integrado com Widgets:** Visual unificado com os widgets compactos na parte superior do mesmo cartão do dock, indicador animado de páginas e barra de busca integrada com botão de configurações destacado.
+- ⚙️ **Configuração por Toque Longo nos Widgets:** Bottom sheets dedicados para customização rápida ao pressionar e segurar cada cartão (Diário/Tarefas, Player de Mídia, Bateria/Sistema, Agenda e Clima).
+- 🛡️ **Painel de Permissões & Idiomas:** Nova tela de auditoria de permissões do sistema (inclusive localização) e suporte a múltiplos idiomas com badges minimalistas.
+- 🎨 **Customização Avançada:** Seletor de cores sólidas para wallpaper, variações de formato de ícone, estilos da barra de pesquisa e suporte a fontes externas (.ttf/.otf).
+- 🖤 **AMOLED Deep Black:** Preto profundo (#000000) nos fundos de tela com detalhes contrastantes de acordo com o design system.
 
 ---
 

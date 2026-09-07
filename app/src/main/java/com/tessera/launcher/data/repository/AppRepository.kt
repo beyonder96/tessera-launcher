@@ -11,6 +11,7 @@ import android.os.Process
 import android.os.UserManager
 import com.tessera.launcher.data.helper.IconPackHelper
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.state.AppShortcutItem
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
@@ -28,7 +29,11 @@ class AppRepository(
     val iconPackHelper: IconPackHelper = IconPackHelper(context)
 ) {
 
-    suspend fun loadApps(iconPackPackage: String? = null): List<AppInfo> = withContext(ioDispatcher) {
+    suspend fun loadApps(
+        iconPackPackage: String? = null,
+        customIcons: Map<String, String> = emptyMap(),
+        hiddenPackages: Set<String> = emptySet()
+    ): List<AppInfo> = withContext(ioDispatcher) {
         val appsList = mutableListOf<AppInfo>()
         val packageManager = context.packageManager
 
@@ -42,6 +47,7 @@ class AppRepository(
                 for (activity in activityList) {
                     val pkgName = activity.applicationInfo.packageName
                     if (pkgName == context.packageName) continue // Não listar o próprio launcher
+                    if (hiddenPackages.contains(pkgName)) continue // Ocultar apps protegidos
 
                     val label = activity.label.toString()
                     val defaultIcon = try {
@@ -49,11 +55,12 @@ class AppRepository(
                     } catch (_: Exception) {
                         null
                     }
-                    val icon = if (!iconPackPackage.isNullOrBlank()) {
-                        iconPackHelper.getIconForApp(pkgName, activity.name, iconPackPackage) ?: defaultIcon
-                    } else {
-                        defaultIcon
-                    }
+
+                    // Prioridade do ícone: 1. Ícone customizado individual, 2. Icon Pack global, 3. Padrão
+                    val customPack = customIcons[pkgName]?.substringBefore(":::")
+                    val customIcon = if (!customPack.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, activity.name, customPack) else null
+                    val packIcon = if (!iconPackPackage.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, activity.name, iconPackPackage) else null
+                    val icon = customIcon ?: packIcon ?: defaultIcon
 
                     appsList.add(
                         AppInfo(
@@ -73,6 +80,7 @@ class AppRepository(
             for (resolveInfo in resolveInfos) {
                 val pkgName = resolveInfo.activityInfo.packageName
                 if (pkgName == context.packageName) continue
+                if (hiddenPackages.contains(pkgName)) continue
 
                 val label = resolveInfo.loadLabel(packageManager).toString()
                 val defaultIcon = try {
@@ -80,11 +88,10 @@ class AppRepository(
                 } catch (_: Exception) {
                     null
                 }
-                val icon = if (!iconPackPackage.isNullOrBlank()) {
-                    iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, iconPackPackage) ?: defaultIcon
-                } else {
-                    defaultIcon
-                }
+                val customPack = customIcons[pkgName]?.substringBefore(":::")
+                val customIcon = if (!customPack.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, customPack) else null
+                val packIcon = if (!iconPackPackage.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, iconPackPackage) else null
+                val icon = customIcon ?: packIcon ?: defaultIcon
 
                 appsList.add(
                     AppInfo(
@@ -109,10 +116,14 @@ class AppRepository(
      * Observa mudanças nos aplicativos instalados/desinstalados/atualizados
      * emitindo uma nova lista automaticamente via BroadcastReceiver.
      */
-    fun observeApps(iconPackPackage: String? = null): Flow<List<AppInfo>> = callbackFlow {
+    fun observeApps(
+        iconPackPackage: String? = null,
+        customIcons: Map<String, String> = emptyMap(),
+        hiddenPackages: Set<String> = emptySet()
+    ): Flow<List<AppInfo>> = callbackFlow {
         // Envia carga inicial
         launch(ioDispatcher) {
-            trySend(loadApps(iconPackPackage))
+            trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
         }
 
         val packageChangeReceiver = object : BroadcastReceiver() {
@@ -123,7 +134,7 @@ class AppRepository(
                     action == Intent.ACTION_PACKAGE_CHANGED
                 ) {
                     launch(ioDispatcher) {
-                        trySend(loadApps(iconPackPackage))
+                        trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
                     }
                 }
             }
@@ -156,5 +167,52 @@ class AppRepository(
         } ?: throw IllegalStateException("Não foi possível inicializar o aplicativo: $packageName")
 
         context.startActivity(launchIntent)
+    }
+
+    /**
+     * Consulta atalhos de apps do Android (Dynamic, Pinned e Manifest)
+     */
+    fun getAppShortcuts(packageName: String): List<AppShortcutItem> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) return emptyList()
+        val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps ?: return emptyList()
+        if (!launcherApps.hasShortcutHostPermission()) return emptyList()
+
+        return try {
+            val query = LauncherApps.ShortcutQuery().apply {
+                setQueryFlags(
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED or
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST
+                )
+                setPackage(packageName)
+            }
+            val shortcuts = launcherApps.getShortcuts(query, Process.myUserHandle()) ?: emptyList()
+            shortcuts.map { shortcut ->
+                val iconDrawable = try {
+                    launcherApps.getShortcutIconDrawable(shortcut, context.resources.displayMetrics.densityDpi)
+                } catch (_: Exception) {
+                    null
+                }
+                AppShortcutItem(
+                    id = shortcut.id,
+                    packageName = shortcut.activity?.packageName ?: packageName,
+                    shortLabel = shortcut.shortLabel?.toString() ?: "",
+                    longLabel = shortcut.longLabel?.toString(),
+                    icon = iconDrawable
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun launchShortcut(packageName: String, shortcutId: String): Result<Unit> = runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                ?: throw IllegalStateException("LauncherApps não disponível")
+            launcherApps.startShortcut(packageName, shortcutId, null, null, Process.myUserHandle())
+        } else {
+            throw UnsupportedOperationException("Atalhos requerem Android 7.1+")
+        }
     }
 }

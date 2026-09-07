@@ -21,6 +21,7 @@ import com.tessera.launcher.ui.state.DEFAULT_SEARCHOS_LIST
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.state.SearchoItem
 import com.tessera.launcher.ui.state.SettingsSubScreen
+import com.tessera.launcher.ui.state.WidgetConfigType
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -77,13 +78,30 @@ private fun serializeSearchos(items: List<SearchoItem>): String {
     return items.joinToString(";;;") { "${it.id}:::${it.title}:::${it.prefix}:::${it.iconType}" }
 }
 
+private fun parseCustomIcons(raw: String): Map<String, String> {
+    if (raw.isBlank()) return emptyMap()
+    return raw.split("|||").mapNotNull { item ->
+        val parts = item.split(":::")
+        if (parts.size >= 2 && parts[0].isNotBlank()) {
+            parts[0] to parts[1]
+        } else null
+    }.toMap()
+}
+
+private fun serializeCustomIcons(map: Map<String, String>): String {
+    return map.entries.joinToString("|||") { "${it.key}:::${it.value}" }
+}
+
 class MainViewModel(
     private val appRepository: AppRepository,
     private val systemInfoHelper: SystemInfoHelper,
     private val calendarHelper: CalendarHelper,
     private val preferences: LauncherPreferences,
     private val quickSettingsHelper: QuickSettingsHelper,
-    private val contactSearchHelper: ContactSearchHelper
+    private val contactSearchHelper: ContactSearchHelper,
+    private val fileSearchHelper: com.tessera.launcher.data.helper.FileSearchHelper,
+    private val messageSearchHelper: com.tessera.launcher.data.helper.MessageSearchHelper,
+    private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -117,7 +135,57 @@ class MainViewModel(
             isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
             searchoActivationSymbol = preferences.getSearchoActivationSymbol(),
             searchosList = parseSearchos(preferences.getSearchosRaw()),
-            appFolders = parseFolders(preferences.getFoldersRaw())
+            appFolders = parseFolders(preferences.getFoldersRaw()),
+
+            // Gestos
+            isDoubleTapEnabled = preferences.isDoubleTapEnabled(),
+            doubleTapAction = preferences.getDoubleTapAction(),
+            isHoldEnabled = preferences.isHoldEnabled(),
+            holdAction = preferences.getHoldAction(),
+            isSwipeDownEnabled = preferences.isSwipeDownEnabled(),
+            swipeDownAction = preferences.getSwipeDownAction(),
+            isSwipeUpEnabled = preferences.isSwipeUpEnabled(),
+            swipeUpAction = preferences.getSwipeUpAction(),
+            isSwipeLeftEnabled = preferences.isSwipeLeftEnabled(),
+            swipeLeftAction = preferences.getSwipeLeftAction(),
+            isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
+            swipeRightAction = preferences.getSwipeRightAction(),
+
+            // Busca em Apps & Arquivos
+            inAppSearchPackages = preferences.getInAppSearchPackages(),
+            isFilesSearchEnabled = preferences.isFilesSearchEnabled(),
+
+            // Apps Ocultos & PIN
+            hiddenAppsPin = preferences.getHiddenAppsPin(),
+            hiddenAppsPackages = preferences.getHiddenAppsPackages(),
+
+            // Ícones Customizados
+            customAppIcons = parseCustomIcons(preferences.getCustomAppIconsRaw()),
+
+            // Customização Avançada
+            searchBarStyle = preferences.getSearchBarStyle(),
+            searchBarTextType = preferences.getSearchBarTextType(),
+            searchBarCustomText = preferences.getSearchBarCustomText(),
+            fontFamilyType = preferences.getFontFamilyType(),
+            customFontPath = preferences.getCustomFontPath(),
+            isSystemWallpaperEnabled = preferences.isSystemWallpaperEnabled(),
+            solidWallpaperColor = preferences.getSolidWallpaperColor(),
+            solidWallpaperTarget = preferences.getSolidWallpaperTarget(),
+            isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
+            isHideAppLabelsEnabled = preferences.isHideAppLabelsEnabled(),
+            selectedLanguage = preferences.getSelectedLanguage(),
+
+            // Clima & Localização
+            hasLocationPermission = weatherHelper.hasLocationPermission(),
+            isWeatherCelsius = preferences.isWeatherCelsius(),
+
+            // Configurações & Estilos dos Widgets
+            batteryWidgetStyle = preferences.getBatteryWidgetStyle(),
+            mediaWidgetStyle = preferences.getMediaWidgetStyle(),
+            notesWidgetFilter = preferences.getNotesWidgetFilter(),
+            calendarHowFarAhead = preferences.getCalendarHowFarAhead(),
+            calendarHideFinished = preferences.isCalendarHideFinished(),
+            calendarIs24hFormat = preferences.isCalendar24hFormat()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -131,12 +199,18 @@ class MainViewModel(
         observeMediaService()
         observeQuickSettings()
         refreshCalendarAndPermissions()
+        refreshWeather()
     }
 
-    private fun observeInstalledApps() {
+    fun observeInstalledApps() {
         viewModelScope.launch {
             _uiState.update { it.copy(appsState = AppsListState.Loading) }
-            appRepository.observeApps(preferences.getSelectedIconPack())
+            val hiddenSet = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
+            appRepository.observeApps(
+                iconPackPackage = preferences.getSelectedIconPack(),
+                customIcons = _uiState.value.customAppIcons,
+                hiddenPackages = hiddenSet
+            )
                 .catch { error ->
                     _uiState.update {
                         it.copy(appsState = AppsListState.Error(error.localizedMessage ?: "Erro ao carregar aplicativos"))
@@ -245,7 +319,8 @@ class MainViewModel(
                 isDrawerOpen = false,
                 searchQuery = "",
                 calculatorResult = null,
-                matchingContacts = emptyList()
+                matchingContacts = emptyList(),
+                matchingFiles = emptyList()
             )
         }
         applyFilter("")
@@ -253,14 +328,58 @@ class MainViewModel(
 
     fun onSearchQueryChange(query: String) {
         val hasQuery = query.isNotBlank()
-        val calcResult = if (_uiState.value.isCalculatorCardEnabled && hasQuery) {
-            MathEvaluator.evaluate(query)
+        val symbol = _uiState.value.searchoActivationSymbol
+        val trimmed = query.trim()
+
+        // 1. Verificação de PIN para desbloqueio de apps ocultos
+        val pin = _uiState.value.hiddenAppsPin
+        if (pin.isNotEmpty() && trimmed == pin) {
+            _uiState.update {
+                it.copy(
+                    isPinUnlocked = true,
+                    searchQuery = ""
+                )
+            }
+            observeInstalledApps()
+            return
+        }
+
+        // 2. Calculadora: Ativada EXCLUSIVAMENTE via @calc <expressão>
+        val isCalcCommand = query.startsWith("@calc", ignoreCase = true) ||
+                query.startsWith("${symbol}calc", ignoreCase = true)
+        val calcResult = if (isCalcCommand) {
+            val expr = query.substringAfter("calc", "").trim()
+            if (expr.isNotEmpty()) MathEvaluator.evaluate(expr) else null
         } else {
             null
         }
 
-        val contacts = if (_uiState.value.isContactsSearchEnabled && _uiState.value.hasContactsPermission && hasQuery) {
-            contactSearchHelper.searchContacts(query)
+        // 3. SearchOS: Contatos via @con ou busca geral se habilitado
+        val isContactsCommand = query.startsWith("@con", ignoreCase = true) ||
+                query.startsWith("${symbol}con", ignoreCase = true)
+        val contactsQuery = if (isContactsCommand) {
+            query.substringAfter("con", "").trim()
+        } else {
+            query
+        }
+        val contacts = if ((isContactsCommand || _uiState.value.isContactsSearchEnabled) &&
+            _uiState.value.hasContactsPermission && contactsQuery.isNotBlank()
+        ) {
+            contactSearchHelper.searchContacts(contactsQuery)
+        } else {
+            emptyList()
+        }
+
+        // 4. SearchOS: Arquivos via @files ou busca geral de arquivos
+        val isFilesCommand = query.startsWith("@files", ignoreCase = true) ||
+                query.startsWith("${symbol}files", ignoreCase = true)
+        val filesQuery = if (isFilesCommand) {
+            query.substringAfter("files", "").trim()
+        } else {
+            query
+        }
+        val files = if ((isFilesCommand || _uiState.value.isFilesSearchEnabled) && filesQuery.length >= 2) {
+            fileSearchHelper.searchFiles(filesQuery)
         } else {
             emptyList()
         }
@@ -270,11 +389,25 @@ class MainViewModel(
                 searchQuery = query,
                 calculatorResult = calcResult,
                 matchingContacts = contacts,
+                matchingFiles = files,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
                 isWidgetExpanded = !hasQuery
             )
         }
+
+        // Se for comando @calc, isola a calculadora e previne auto-launch de apps
+        if (isCalcCommand) {
+            autoLaunchJob?.cancel()
+            _uiState.update {
+                it.copy(
+                    filteredApps = emptyList(),
+                    appsState = AppsListState.Success(emptyList())
+                )
+            }
+            return
+        }
+
         applyFilter(query)
     }
 
@@ -349,9 +482,11 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isDrawerOpen = false,
+                isSearchExpanded = false,
                 searchQuery = "",
                 calculatorResult = null,
-                matchingContacts = emptyList()
+                matchingContacts = emptyList(),
+                matchingFiles = emptyList()
             )
         }
         applyFilter("")
@@ -453,7 +588,12 @@ class MainViewModel(
             when (it.currentSettingsScreen) {
                 SettingsSubScreen.FOLDERS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
                 SettingsSubScreen.SEARCHOS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.HIDDEN_APPS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
                 SettingsSubScreen.EXTRAS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.GESTURES -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.CUSTOMIZATION -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.PERMISSIONS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.IN_APP_SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
                 SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
@@ -702,10 +842,63 @@ class MainViewModel(
         _uiState.update { it.copy(appFolders = current) }
     }
 
+    fun updateFolder(id: Long, name: String, appPackages: List<String>) {
+        val current = _uiState.value.appFolders.toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index != -1) {
+            current[index] = current[index].copy(name = name, packageNames = appPackages)
+            preferences.setFoldersRaw(serializeFolders(current))
+            _uiState.update { it.copy(appFolders = current) }
+        }
+    }
+
     fun removeFolder(id: Long) {
         val current = _uiState.value.appFolders.filterNot { it.id == id }
         preferences.setFoldersRaw(serializeFolders(current))
         _uiState.update { it.copy(appFolders = current) }
+    }
+
+    fun openSms(address: String) {
+        messageSearchHelper.openSmsConversation(address)
+    }
+
+    fun executeGestureAction(actionKey: String, context: Context) {
+        when {
+            actionKey == "launcher_settings" -> openSettings()
+            actionKey == "system_settings" -> {
+                runCatching {
+                    context.startActivity(android.content.Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    })
+                }
+            }
+            actionKey == "notifications" -> {
+                try {
+                    val statusBarService = context.getSystemService("statusbar")
+                    val statusBarManager = Class.forName("android.app.StatusBarManager")
+                    val method = statusBarManager.getMethod("expandNotificationsPanel")
+                    method.invoke(statusBarService)
+                } catch (_: Exception) {
+                }
+            }
+            actionKey == "open_keyboard" -> {
+                expandSearch()
+                openDrawer()
+            }
+            actionKey == "lock_screen" -> {
+                android.widget.Toast.makeText(context, "Bloqueio de tela acionado", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            actionKey.startsWith("app:") -> {
+                val pkg = actionKey.removePrefix("app:")
+                launchApp(pkg)
+            }
+            actionKey.startsWith("shortcut:") -> {
+                val parts = actionKey.removePrefix("shortcut:").split(":::")
+                if (parts.size >= 2) {
+                    launchShortcut(parts[0], parts[1])
+                }
+            }
+        }
     }
 
     // Gestão de Searchos
@@ -733,6 +926,339 @@ class MainViewModel(
     fun setSearchoActivationSymbol(symbol: String) {
         preferences.setSearchoActivationSymbol(symbol)
         _uiState.update { it.copy(searchoActivationSymbol = symbol) }
+    }
+
+    // Gestão de Gestos
+    fun setDoubleTapEnabled(enabled: Boolean) {
+        preferences.setDoubleTapEnabled(enabled)
+        _uiState.update { it.copy(isDoubleTapEnabled = enabled) }
+    }
+    fun setDoubleTapAction(action: String) {
+        preferences.setDoubleTapAction(action)
+        _uiState.update { it.copy(doubleTapAction = action) }
+    }
+    fun setHoldEnabled(enabled: Boolean) {
+        preferences.setHoldEnabled(enabled)
+        _uiState.update { it.copy(isHoldEnabled = enabled) }
+    }
+    fun setHoldAction(action: String) {
+        preferences.setHoldAction(action)
+        _uiState.update { it.copy(holdAction = action) }
+    }
+    fun setSwipeDownEnabled(enabled: Boolean) {
+        preferences.setSwipeDownEnabled(enabled)
+        _uiState.update { it.copy(isSwipeDownEnabled = enabled) }
+    }
+    fun setSwipeDownAction(action: String) {
+        preferences.setSwipeDownAction(action)
+        _uiState.update { it.copy(swipeDownAction = action) }
+    }
+    fun setSwipeUpEnabled(enabled: Boolean) {
+        preferences.setSwipeUpEnabled(enabled)
+        _uiState.update { it.copy(isSwipeUpEnabled = enabled) }
+    }
+    fun setSwipeUpAction(action: String) {
+        preferences.setSwipeUpAction(action)
+        _uiState.update { it.copy(swipeUpAction = action) }
+    }
+    fun setSwipeLeftEnabled(enabled: Boolean) {
+        preferences.setSwipeLeftEnabled(enabled)
+        _uiState.update { it.copy(isSwipeLeftEnabled = enabled) }
+    }
+    fun setSwipeLeftAction(action: String) {
+        preferences.setSwipeLeftAction(action)
+        _uiState.update { it.copy(swipeLeftAction = action) }
+    }
+    fun setSwipeRightEnabled(enabled: Boolean) {
+        preferences.setSwipeRightEnabled(enabled)
+        _uiState.update { it.copy(isSwipeRightEnabled = enabled) }
+    }
+    fun setSwipeRightAction(action: String) {
+        preferences.setSwipeRightAction(action)
+        _uiState.update { it.copy(swipeRightAction = action) }
+    }
+
+    // Busca em Apps & Arquivos
+    fun toggleInAppSearchPackage(pkg: String) {
+        val current = _uiState.value.inAppSearchPackages.toMutableSet()
+        if (current.contains(pkg)) current.remove(pkg) else current.add(pkg)
+        preferences.setInAppSearchPackages(current)
+        _uiState.update { it.copy(inAppSearchPackages = current) }
+    }
+    fun setFilesSearchEnabled(enabled: Boolean) {
+        preferences.setFilesSearchEnabled(enabled)
+        _uiState.update { it.copy(isFilesSearchEnabled = enabled) }
+    }
+    fun openFile(uriString: String, mimeType: String?) {
+        fileSearchHelper.openFile(uriString, mimeType)
+    }
+
+    // Apps Ocultos & PIN
+    fun setHiddenAppsPin(pin: String) {
+        preferences.setHiddenAppsPin(pin)
+        _uiState.update { it.copy(hiddenAppsPin = pin) }
+    }
+    fun toggleHiddenApp(pkg: String) {
+        val current = _uiState.value.hiddenAppsPackages.toMutableSet()
+        if (current.contains(pkg)) current.remove(pkg) else current.add(pkg)
+        preferences.setHiddenAppsPackages(current)
+        _uiState.update { it.copy(hiddenAppsPackages = current) }
+        observeInstalledApps()
+    }
+    fun unlockHiddenAppsWithPin(pin: String): Boolean {
+        if (pin == _uiState.value.hiddenAppsPin || _uiState.value.hiddenAppsPin.isEmpty()) {
+            _uiState.update { it.copy(isPinUnlocked = true) }
+            observeInstalledApps()
+            return true
+        }
+        return false
+    }
+    fun lockHiddenApps() {
+        _uiState.update { it.copy(isPinUnlocked = false) }
+        observeInstalledApps()
+    }
+
+    // Ícones Customizados Individuais
+    fun setCustomAppIcon(packageName: String, iconPackPackage: String?) {
+        val current = _uiState.value.customAppIcons.toMutableMap()
+        if (iconPackPackage.isNullOrBlank()) {
+            current.remove(packageName)
+        } else {
+            current[packageName] = iconPackPackage
+        }
+        preferences.setCustomAppIconsRaw(serializeCustomIcons(current))
+        _uiState.update { it.copy(customAppIcons = current) }
+        observeInstalledApps()
+    }
+    fun removeCustomAppIcon(packageName: String) {
+        setCustomAppIcon(packageName, null)
+    }
+
+    // Atalhos de Aplicativos
+    fun getAppShortcuts(packageName: String) = appRepository.getAppShortcuts(packageName)
+    fun launchShortcut(packageName: String, shortcutId: String) = appRepository.launchShortcut(packageName, shortcutId)
+
+    // Customização Avançada
+    fun setSearchBarStyle(style: String) {
+        preferences.setSearchBarStyle(style)
+        _uiState.update { it.copy(searchBarStyle = style) }
+    }
+
+    fun setSearchBarTextType(type: String) {
+        preferences.setSearchBarTextType(type)
+        _uiState.update { it.copy(searchBarTextType = type) }
+    }
+
+    fun setSearchBarCustomText(text: String) {
+        preferences.setSearchBarCustomText(text)
+        _uiState.update { it.copy(searchBarCustomText = text) }
+    }
+
+    fun setFontFamilyType(type: String) {
+        preferences.setFontFamilyType(type)
+        _uiState.update { it.copy(fontFamilyType = type) }
+    }
+
+    fun setCustomFontPath(path: String) {
+        preferences.setCustomFontPath(path)
+        _uiState.update { it.copy(customFontPath = path) }
+    }
+
+    fun setSystemWallpaperEnabled(enabled: Boolean) {
+        preferences.setSystemWallpaperEnabled(enabled)
+        _uiState.update { it.copy(isSystemWallpaperEnabled = enabled) }
+    }
+
+    fun setSolidWallpaperColor(hex: String) {
+        preferences.setSolidWallpaperColor(hex)
+        _uiState.update { it.copy(solidWallpaperColor = hex) }
+    }
+
+    fun setSolidWallpaperTarget(target: String) {
+        preferences.setSolidWallpaperTarget(target)
+        _uiState.update { it.copy(solidWallpaperTarget = target) }
+    }
+
+    fun applySolidWallpaper(colorHex: String, target: String, context: Context) {
+        setSolidWallpaperColor(colorHex)
+        setSolidWallpaperTarget(target)
+        try {
+            val wallpaperManager = android.app.WallpaperManager.getInstance(context)
+            val color = android.graphics.Color.parseColor(colorHex)
+            val bitmap = android.graphics.Bitmap.createBitmap(1080, 1920, android.graphics.Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(bitmap)
+            canvas.drawColor(color)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                val flag = when (target) {
+                    "home" -> android.app.WallpaperManager.FLAG_SYSTEM
+                    "lock" -> android.app.WallpaperManager.FLAG_LOCK
+                    else -> android.app.WallpaperManager.FLAG_SYSTEM or android.app.WallpaperManager.FLAG_LOCK
+                }
+                wallpaperManager.setBitmap(bitmap, null, true, flag)
+            } else {
+                wallpaperManager.setBitmap(bitmap)
+            }
+        } catch (_: Exception) {
+        }
+    }
+
+    fun importCustomFont(uri: android.net.Uri, context: Context) {
+        viewModelScope.launch {
+            try {
+                val fontsDir = java.io.File(context.filesDir, "fonts")
+                if (!fontsDir.exists()) fontsDir.mkdirs()
+                val destFile = java.io.File(fontsDir, "custom_font_${System.currentTimeMillis()}.ttf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                if (destFile.exists() && destFile.length() > 0) {
+                    setCustomFontPath(destFile.absolutePath)
+                    setFontFamilyType("custom")
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun setThemedIconsEnabled(enabled: Boolean) {
+        preferences.setThemedIconsEnabled(enabled)
+        _uiState.update { it.copy(isThemedIconsEnabled = enabled) }
+    }
+
+    fun setHideAppLabelsEnabled(enabled: Boolean) {
+        preferences.setHideAppLabelsEnabled(enabled)
+        _uiState.update { it.copy(isHideAppLabelsEnabled = enabled) }
+    }
+
+    fun setSelectedLanguage(lang: String) {
+        preferences.setSelectedLanguage(lang)
+        _uiState.update { it.copy(selectedLanguage = lang) }
+    }
+
+    fun setLanguageModalOpen(open: Boolean) {
+        _uiState.update { it.copy(isLanguageModalOpen = open) }
+    }
+
+    fun refreshAllPermissions(context: Context) {
+        val pm = context.packageManager
+        val isDefault = try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME)
+            val resolve = pm.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            resolve?.activityInfo?.packageName == context.packageName
+        } catch (_: Exception) { false }
+
+        val hasSms = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.READ_SMS
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        val hasMusic = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_MEDIA_AUDIO
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        val hasImages = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_MEDIA_IMAGES
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        } else {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        val hasA11y = try {
+            val enabledServices = android.provider.Settings.Secure.getString(
+                context.contentResolver,
+                android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+            ) ?: ""
+            enabledServices.contains(context.packageName)
+        } catch (_: Exception) { false }
+
+        _uiState.update {
+            it.copy(
+                isDefaultLauncher = isDefault,
+                hasSmsPermission = hasSms,
+                hasMusicPermission = hasMusic,
+                hasMediaImagesPermission = hasImages,
+                hasAccessibilityService = hasA11y,
+                hasContactsPermission = contactSearchHelper.hasContactsPermission(),
+                hasNotificationAccess = TesseraMediaService.isNotificationAccessGranted(context)
+            )
+        }
+    }
+
+    fun refreshWeather() {
+        viewModelScope.launch {
+            val hasPerm = weatherHelper.hasLocationPermission()
+            _uiState.update { it.copy(hasLocationPermission = hasPerm) }
+            val weather = weatherHelper.fetchWeather(isCelsius = _uiState.value.isWeatherCelsius)
+            if (weather != null) {
+                _uiState.update { it.copy(weatherInfo = weather) }
+            }
+        }
+    }
+
+    fun updateLocationPermission(hasPermission: Boolean) {
+        _uiState.update { it.copy(hasLocationPermission = hasPermission) }
+        if (hasPermission) {
+            refreshWeather()
+        }
+    }
+
+    fun setWeatherCelsius(isCelsius: Boolean) {
+        preferences.setWeatherCelsius(isCelsius)
+        _uiState.update { state ->
+            val updatedWeather = state.weatherInfo?.copy(isCelsius = isCelsius)
+            state.copy(
+                isWeatherCelsius = isCelsius,
+                weatherInfo = updatedWeather
+            )
+        }
+    }
+
+    fun openWidgetConfig(type: WidgetConfigType) {
+        _uiState.update { it.copy(activeWidgetConfigModal = type) }
+    }
+
+    fun closeWidgetConfig() {
+        _uiState.update { it.copy(activeWidgetConfigModal = null) }
+    }
+
+    fun setBatteryWidgetStyle(style: String) {
+        preferences.setBatteryWidgetStyle(style)
+        _uiState.update { it.copy(batteryWidgetStyle = style) }
+    }
+
+    fun setMediaWidgetStyle(style: String) {
+        preferences.setMediaWidgetStyle(style)
+        _uiState.update { it.copy(mediaWidgetStyle = style) }
+    }
+
+    fun setNotesWidgetFilter(filter: String) {
+        preferences.setNotesWidgetFilter(filter)
+        _uiState.update { it.copy(notesWidgetFilter = filter) }
+    }
+
+    fun setCalendarHowFarAhead(days: Int) {
+        preferences.setCalendarHowFarAhead(days)
+        _uiState.update { it.copy(calendarHowFarAhead = days) }
+    }
+
+    fun setCalendarHideFinished(hide: Boolean) {
+        preferences.setCalendarHideFinished(hide)
+        _uiState.update { it.copy(calendarHideFinished = hide) }
+    }
+
+    fun setCalendarIs24hFormat(is24h: Boolean) {
+        preferences.setCalendar24hFormat(is24h)
+        _uiState.update { it.copy(calendarIs24hFormat = is24h) }
     }
 
     private fun normalizeString(text: String): String {

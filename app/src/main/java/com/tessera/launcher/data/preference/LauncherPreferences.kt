@@ -6,7 +6,8 @@ import android.content.SharedPreferences
 enum class WidgetType(val displayName: String) {
     BATTERY("Bateria & Sinais"),
     CALENDAR("Data & Calendário"),
-    MEDIA("Player de Mídia")
+    MEDIA("Player de Mídia"),
+    WEATHER("Clima & Temperatura")
 }
 
 class LauncherPreferences(context: Context) {
@@ -37,6 +38,53 @@ class LauncherPreferences(context: Context) {
         private const val KEY_SWITCH_ON_MUSIC_PLAY = "switch_on_music_play"
         private const val KEY_DEFAULT_WIDGET_CARD_INDEX = "default_widget_card_index"
         private const val KEY_SHOW_STATUS_BAR = "show_status_bar"
+
+        // Gestos
+        private const val KEY_GESTURE_DOUBLE_TAP_ENABLED = "gesture_double_tap_enabled"
+        private const val KEY_GESTURE_DOUBLE_TAP_ACTION = "gesture_double_tap_action"
+        private const val KEY_GESTURE_HOLD_ENABLED = "gesture_hold_enabled"
+        private const val KEY_GESTURE_HOLD_ACTION = "gesture_hold_action"
+        private const val KEY_GESTURE_SWIPE_DOWN_ENABLED = "gesture_swipe_down_enabled"
+        private const val KEY_GESTURE_SWIPE_DOWN_ACTION = "gesture_swipe_down_action"
+        private const val KEY_GESTURE_SWIPE_UP_ENABLED = "gesture_swipe_up_enabled"
+        private const val KEY_GESTURE_SWIPE_UP_ACTION = "gesture_swipe_up_action"
+        private const val KEY_GESTURE_SWIPE_LEFT_ENABLED = "gesture_swipe_left_enabled"
+        private const val KEY_GESTURE_SWIPE_LEFT_ACTION = "gesture_swipe_left_action"
+        private const val KEY_GESTURE_SWIPE_RIGHT_ENABLED = "gesture_swipe_right_enabled"
+        private const val KEY_GESTURE_SWIPE_RIGHT_ACTION = "gesture_swipe_right_action"
+
+        // Busca em Apps & Arquivos
+        private const val KEY_IN_APP_SEARCH_PACKAGES = "in_app_search_packages"
+        private const val KEY_SEARCH_FILES = "search_files"
+
+        // Apps Ocultos & PIN
+        private const val KEY_HIDDEN_APPS_PIN = "hidden_apps_pin"
+        private const val KEY_HIDDEN_APPS_PACKAGES = "hidden_apps_packages"
+
+        // Ícones Customizados Individuais
+        private const val KEY_CUSTOM_APP_ICONS = "custom_app_icons"
+
+        // Customização Avançada
+        private const val KEY_SEARCH_BAR_STYLE = "search_bar_style"
+        private const val KEY_SEARCH_BAR_TEXT_TYPE = "search_bar_text_type"
+        private const val KEY_SEARCH_BAR_CUSTOM_TEXT = "search_bar_custom_text"
+        private const val KEY_FONT_FAMILY_TYPE = "font_family_type"
+        private const val KEY_CUSTOM_FONT_PATH = "custom_font_path"
+        private const val KEY_SYSTEM_WALLPAPER_ENABLED = "system_wallpaper_enabled"
+        private const val KEY_SOLID_WALLPAPER_COLOR = "solid_wallpaper_color"
+        private const val KEY_SOLID_WALLPAPER_TARGET = "solid_wallpaper_target"
+        private const val KEY_THEMED_ICONS_ENABLED = "themed_icons_enabled"
+        private const val KEY_HIDE_APP_LABELS_ENABLED = "hide_app_labels_enabled"
+        private const val KEY_SELECTED_LANGUAGE = "selected_language"
+
+        // Configurações de Widgets
+        private const val KEY_BATTERY_WIDGET_STYLE = "battery_widget_style"
+        private const val KEY_MEDIA_WIDGET_STYLE = "media_widget_style"
+        private const val KEY_NOTES_WIDGET_FILTER = "notes_widget_filter"
+        private const val KEY_CALENDAR_HOW_FAR_AHEAD = "calendar_how_far_ahead"
+        private const val KEY_CALENDAR_HIDE_FINISHED = "calendar_hide_finished"
+        private const val KEY_CALENDAR_IS_24H = "calendar_is_24h"
+        private const val KEY_WEATHER_IS_CELSIUS = "weather_is_celsius"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -182,4 +230,117 @@ class LauncherPreferences(context: Context) {
 
     fun getSearchosRaw(): String = prefs.getString("searchos_data", "") ?: ""
     fun setSearchosRaw(raw: String) = prefs.edit().putString("searchos_data", raw).apply()
+
+    // Gestos
+    fun isDoubleTapEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_DOUBLE_TAP_ENABLED, true)
+    fun setDoubleTapEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_DOUBLE_TAP_ENABLED, enabled).apply()
+
+    fun getDoubleTapAction(): String = prefs.getString(KEY_GESTURE_DOUBLE_TAP_ACTION, "lock_screen") ?: "lock_screen"
+    fun setDoubleTapAction(action: String) = prefs.edit().putString(KEY_GESTURE_DOUBLE_TAP_ACTION, action).apply()
+
+    fun isHoldEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_HOLD_ENABLED, false)
+    fun setHoldEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_HOLD_ENABLED, enabled).apply()
+
+    fun getHoldAction(): String = prefs.getString(KEY_GESTURE_HOLD_ACTION, "launcher_settings") ?: "launcher_settings"
+    fun setHoldAction(action: String) = prefs.edit().putString(KEY_GESTURE_HOLD_ACTION, action).apply()
+
+    fun isSwipeDownEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_DOWN_ENABLED, true)
+    fun setSwipeDownEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_DOWN_ENABLED, enabled).apply()
+
+    fun getSwipeDownAction(): String = prefs.getString(KEY_GESTURE_SWIPE_DOWN_ACTION, "notifications") ?: "notifications"
+    fun setSwipeDownAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_DOWN_ACTION, action).apply()
+
+    fun isSwipeUpEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_UP_ENABLED, true)
+    fun setSwipeUpEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_UP_ENABLED, enabled).apply()
+
+    fun getSwipeUpAction(): String = prefs.getString(KEY_GESTURE_SWIPE_UP_ACTION, "open_keyboard") ?: "open_keyboard"
+    fun setSwipeUpAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_UP_ACTION, action).apply()
+
+    fun isSwipeLeftEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_LEFT_ENABLED, false)
+    fun setSwipeLeftEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_LEFT_ENABLED, enabled).apply()
+
+    fun getSwipeLeftAction(): String = prefs.getString(KEY_GESTURE_SWIPE_LEFT_ACTION, "launcher_settings") ?: "launcher_settings"
+    fun setSwipeLeftAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_LEFT_ACTION, action).apply()
+
+    fun isSwipeRightEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_RIGHT_ENABLED, false)
+    fun setSwipeRightEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_RIGHT_ENABLED, enabled).apply()
+
+    fun getSwipeRightAction(): String = prefs.getString(KEY_GESTURE_SWIPE_RIGHT_ACTION, "system_settings") ?: "system_settings"
+    fun setSwipeRightAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_RIGHT_ACTION, action).apply()
+
+    // Busca em Apps & Arquivos
+    fun getInAppSearchPackages(): Set<String> {
+        val defaultSet = setOf("com.google.android.youtube", "com.android.vending", "com.spotify.music", "com.google.android.apps.maps")
+        return prefs.getStringSet(KEY_IN_APP_SEARCH_PACKAGES, defaultSet) ?: defaultSet
+    }
+    fun setInAppSearchPackages(pkgs: Set<String>) = prefs.edit().putStringSet(KEY_IN_APP_SEARCH_PACKAGES, pkgs).apply()
+
+    fun isFilesSearchEnabled(): Boolean = prefs.getBoolean(KEY_SEARCH_FILES, true)
+    fun setFilesSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SEARCH_FILES, enabled).apply()
+
+    // Apps Ocultos & PIN
+    fun getHiddenAppsPin(): String = prefs.getString(KEY_HIDDEN_APPS_PIN, "") ?: ""
+    fun setHiddenAppsPin(pin: String) = prefs.edit().putString(KEY_HIDDEN_APPS_PIN, pin).apply()
+
+    fun getHiddenAppsPackages(): Set<String> = prefs.getStringSet(KEY_HIDDEN_APPS_PACKAGES, emptySet()) ?: emptySet()
+    fun setHiddenAppsPackages(pkgs: Set<String>) = prefs.edit().putStringSet(KEY_HIDDEN_APPS_PACKAGES, pkgs).apply()
+
+    // Ícones Customizados Individuais
+    fun getCustomAppIconsRaw(): String = prefs.getString(KEY_CUSTOM_APP_ICONS, "") ?: ""
+    fun setCustomAppIconsRaw(raw: String) = prefs.edit().putString(KEY_CUSTOM_APP_ICONS, raw).apply()
+
+    // Customização Avançada
+    fun getSearchBarStyle(): String = prefs.getString(KEY_SEARCH_BAR_STYLE, "split_pill") ?: "split_pill"
+    fun setSearchBarStyle(style: String) = prefs.edit().putString(KEY_SEARCH_BAR_STYLE, style).apply()
+
+    fun getSearchBarTextType(): String = prefs.getString(KEY_SEARCH_BAR_TEXT_TYPE, "app_name") ?: "app_name"
+    fun setSearchBarTextType(type: String) = prefs.edit().putString(KEY_SEARCH_BAR_TEXT_TYPE, type).apply()
+
+    fun getSearchBarCustomText(): String = prefs.getString(KEY_SEARCH_BAR_CUSTOM_TEXT, "Searcho...") ?: "Searcho..."
+    fun setSearchBarCustomText(text: String) = prefs.edit().putString(KEY_SEARCH_BAR_CUSTOM_TEXT, text).apply()
+
+    fun getFontFamilyType(): String = prefs.getString(KEY_FONT_FAMILY_TYPE, "searcho") ?: "searcho"
+    fun setFontFamilyType(type: String) = prefs.edit().putString(KEY_FONT_FAMILY_TYPE, type).apply()
+
+    fun getCustomFontPath(): String = prefs.getString(KEY_CUSTOM_FONT_PATH, "") ?: ""
+    fun setCustomFontPath(path: String) = prefs.edit().putString(KEY_CUSTOM_FONT_PATH, path).apply()
+
+    fun isSystemWallpaperEnabled(): Boolean = prefs.getBoolean(KEY_SYSTEM_WALLPAPER_ENABLED, false)
+    fun setSystemWallpaperEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SYSTEM_WALLPAPER_ENABLED, enabled).apply()
+
+    fun getSolidWallpaperColor(): String = prefs.getString(KEY_SOLID_WALLPAPER_COLOR, "#000000") ?: "#000000"
+    fun setSolidWallpaperColor(hex: String) = prefs.edit().putString(KEY_SOLID_WALLPAPER_COLOR, hex).apply()
+
+    fun getSolidWallpaperTarget(): String = prefs.getString(KEY_SOLID_WALLPAPER_TARGET, "both") ?: "both"
+    fun setSolidWallpaperTarget(target: String) = prefs.edit().putString(KEY_SOLID_WALLPAPER_TARGET, target).apply()
+
+    fun isThemedIconsEnabled(): Boolean = prefs.getBoolean(KEY_THEMED_ICONS_ENABLED, false)
+    fun setThemedIconsEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_THEMED_ICONS_ENABLED, enabled).apply()
+
+    fun isHideAppLabelsEnabled(): Boolean = prefs.getBoolean(KEY_HIDE_APP_LABELS_ENABLED, false)
+    fun setHideAppLabelsEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_HIDE_APP_LABELS_ENABLED, enabled).apply()
+
+    fun getSelectedLanguage(): String = prefs.getString(KEY_SELECTED_LANGUAGE, "PT") ?: "PT"
+    fun setSelectedLanguage(lang: String) = prefs.edit().putString(KEY_SELECTED_LANGUAGE, lang).apply()
+
+    fun getBatteryWidgetStyle(): String = prefs.getString(KEY_BATTERY_WIDGET_STYLE, "cards_3") ?: "cards_3"
+    fun setBatteryWidgetStyle(style: String) = prefs.edit().putString(KEY_BATTERY_WIDGET_STYLE, style).apply()
+
+    fun getMediaWidgetStyle(): String = prefs.getString(KEY_MEDIA_WIDGET_STYLE, "classic") ?: "classic"
+    fun setMediaWidgetStyle(style: String) = prefs.edit().putString(KEY_MEDIA_WIDGET_STYLE, style).apply()
+
+    fun getNotesWidgetFilter(): String = prefs.getString(KEY_NOTES_WIDGET_FILTER, "all") ?: "all"
+    fun setNotesWidgetFilter(filter: String) = prefs.edit().putString(KEY_NOTES_WIDGET_FILTER, filter).apply()
+
+    fun getCalendarHowFarAhead(): Int = prefs.getInt(KEY_CALENDAR_HOW_FAR_AHEAD, 7)
+    fun setCalendarHowFarAhead(days: Int) = prefs.edit().putInt(KEY_CALENDAR_HOW_FAR_AHEAD, days).apply()
+
+    fun isCalendarHideFinished(): Boolean = prefs.getBoolean(KEY_CALENDAR_HIDE_FINISHED, true)
+    fun setCalendarHideFinished(hide: Boolean) = prefs.edit().putBoolean(KEY_CALENDAR_HIDE_FINISHED, hide).apply()
+
+    fun isCalendar24hFormat(): Boolean = prefs.getBoolean(KEY_CALENDAR_IS_24H, true)
+    fun setCalendar24hFormat(is24h: Boolean) = prefs.edit().putBoolean(KEY_CALENDAR_IS_24H, is24h).apply()
+
+    fun isWeatherCelsius(): Boolean = prefs.getBoolean(KEY_WEATHER_IS_CELSIUS, true)
+    fun setWeatherCelsius(isCelsius: Boolean) = prefs.edit().putBoolean(KEY_WEATHER_IS_CELSIUS, isCelsius).apply()
 }

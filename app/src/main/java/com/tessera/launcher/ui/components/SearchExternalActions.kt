@@ -18,9 +18,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,75 +38,121 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
-import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.LiquidGlassBackground
 import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
 
 @Composable
 fun SearchExternalActions(
     query: String,
+    inAppSearchPackages: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
     isLiquidGlass: Boolean = true
 ) {
     val context = LocalContext.current
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ExternalSearchChip(
-            label = "Google",
-            icon = Icons.Outlined.Language,
-            isLiquidGlass = isLiquidGlass,
-            modifier = Modifier.weight(1f),
-            onClick = { launchGoogleSearch(context, query) }
-        )
-
-        ExternalSearchChip(
-            label = "Play Store",
-            icon = Icons.Outlined.ShoppingBag,
-            isLiquidGlass = isLiquidGlass,
-            modifier = Modifier.weight(1.1f),
-            onClick = { launchPlayStoreSearch(context, query) }
-        )
-
-        ExternalSearchChip(
-            label = "YouTube",
-            icon = Icons.Outlined.PlayArrow,
-            isLiquidGlass = isLiquidGlass,
-            modifier = Modifier.weight(1f),
-            onClick = { launchYouTubeSearch(context, query) }
-        )
-    }
-}
-
-@Composable
-private fun ExternalSearchChip(
-    label: String,
-    icon: ImageVector,
-    isLiquidGlass: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
     val border = if (isLiquidGlass) {
         BorderStroke(1.dp, LiquidGlassBorderBrush)
     } else {
         BorderStroke(1.dp, DarkSurfaceBorder)
     }
-    val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurfaceVariant
+    val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurface
 
+    // Pílula unificada conforme Screenshot media_1788774600763.png
     Box(
         modifier = modifier
-            .height(38.dp)
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .height(52.dp)
             .border(border, PillShape)
             .clip(PillShape)
             .background(background)
+            .padding(horizontal = 16.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Lado Esquerdo: Pesquisar "$query" no Google
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { launchGoogleSearch(context, query) }
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Language,
+                    contentDescription = "Google",
+                    tint = TextPrimary,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Pesquisar \"$query\"",
+                    color = TextPrimary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Lado Direito: Ações rápidas de Apps (YouTube, Play Store, etc.)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // YouTube (se habilitado ou padrão)
+                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.youtube")) {
+                    AppSearchQuickIcon(
+                        icon = Icons.Outlined.PlayArrow,
+                        description = "YouTube",
+                        onClick = { launchYouTubeSearch(context, query) }
+                    )
+                }
+
+                // Play Store
+                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.android.vending")) {
+                    AppSearchQuickIcon(
+                        icon = Icons.Outlined.ShoppingBag,
+                        description = "Play Store",
+                        onClick = { launchPlayStoreSearch(context, query) }
+                    )
+                }
+
+                // WhatsApp
+                if (inAppSearchPackages.contains("com.whatsapp")) {
+                    AppSearchQuickIcon(
+                        icon = Icons.Outlined.Send,
+                        description = "WhatsApp",
+                        onClick = { launchWhatsAppSearch(context, query) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppSearchQuickIcon(
+    icon: ImageVector,
+    description: String,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(CircleShape)
+            .background(Color(0xFF1E1E26))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -112,27 +160,12 @@ private fun ExternalSearchChip(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = label,
-                tint = TextPrimary,
-                modifier = Modifier.size(15.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = label,
-                color = TextPrimary,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = description,
+            tint = TextSecondary,
+            modifier = Modifier.size(17.dp)
+        )
     }
 }
 
@@ -200,5 +233,17 @@ private fun launchYouTubeSearch(context: Context, query: String) {
         runCatching {
             context.startActivity(webIntent)
         }
+    }
+}
+
+private fun launchWhatsAppSearch(context: Context, query: String) {
+    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, query)
+        setPackage("com.whatsapp")
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    runCatching {
+        context.startActivity(sendIntent)
     }
 }

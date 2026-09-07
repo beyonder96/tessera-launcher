@@ -21,7 +21,14 @@ class ContactSearchHelper(private val context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun searchContacts(query: String, limit: Int = 4): List<ContactInfo> {
+    private fun normalize(str: String): String {
+        return java.text.Normalizer.normalize(str, java.text.Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
+            .lowercase()
+            .trim()
+    }
+
+    fun searchContacts(query: String, limit: Int = 50): List<ContactInfo> {
         if (!hasContactsPermission() || query.isBlank()) return emptyList()
 
         val list = mutableListOf<ContactInfo>()
@@ -30,20 +37,28 @@ class ContactSearchHelper(private val context: Context) {
             ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
             ContactsContract.CommonDataKinds.Phone.NUMBER
         )
-        val selection = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ? OR ${ContactsContract.CommonDataKinds.Phone.NUMBER} LIKE ?"
-        val selectionArgs = arrayOf("%$query%", "%$query%")
         val sortOrder = "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} ASC"
+        val normalizedQuery = normalize(query)
+        val digitQuery = query.filter { it.isDigit() }
 
         runCatching {
-            context.contentResolver.query(uri, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+            context.contentResolver.query(uri, projection, null, null, sortOrder)?.use { cursor ->
                 val nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
                 val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
 
                 while (cursor.moveToNext() && list.size < limit) {
                     val name = if (nameIndex >= 0) cursor.getString(nameIndex) ?: "Contato" else "Contato"
                     val number = if (numberIndex >= 0) cursor.getString(numberIndex) ?: "" else ""
-                    if (number.isNotBlank() && !list.any { it.name == name && it.phoneNumber == number }) {
-                        list.add(ContactInfo(name = name, phoneNumber = number))
+
+                    if (number.isNotBlank()) {
+                        val normName = normalize(name)
+                        val normNumber = number.filter { it.isDigit() }
+                        val matchesName = normName.contains(normalizedQuery)
+                        val matchesNumber = digitQuery.isNotEmpty() && normNumber.contains(digitQuery)
+
+                        if ((matchesName || matchesNumber) && !list.any { it.name == name && it.phoneNumber == number }) {
+                            list.add(ContactInfo(name = name, phoneNumber = number))
+                        }
                     }
                 }
             }

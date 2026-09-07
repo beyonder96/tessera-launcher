@@ -64,14 +64,16 @@ fun QuickActionsWidgetCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(115.dp)
             .border(border, CardShape)
             .clip(CardShape)
             .background(background)
-            .padding(14.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Wi-Fi
@@ -134,9 +136,14 @@ private fun QuickActionItem(
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(if (isActive) Color.White else Color(0xFF1B1E28)),
+                .size(50.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .background(if (isActive) Color.White else Color(0xFF191920))
+                .border(
+                    width = 1.dp,
+                    color = if (isActive) Color.White else Color(0xFF24242E),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(

@@ -43,6 +43,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import com.tessera.launcher.ui.state.SettingsSubScreen
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -250,7 +251,7 @@ fun SearchSettingsScreen(
                         title = "Busca em apps",
                         subtitle = "Busque dentro de apps como Spotify e YouTube.",
                         onClick = {
-                            Toast.makeText(context, "Busca rápida no YouTube, Play Store e Web ativa na barra!", Toast.LENGTH_SHORT).show()
+                            viewModel.navigateToSettingsSubScreen(SettingsSubScreen.IN_APP_SEARCH)
                         }
                     )
 

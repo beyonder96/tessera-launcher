@@ -83,6 +83,7 @@ fun VerseFocusWidgetCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
+            .height(115.dp)
             .border(border, CardShape)
             .clip(CardShape)
             .background(background)
@@ -93,7 +94,7 @@ fun VerseFocusWidgetCard(
                     currentIndex = (currentIndex + 1) % VERSE_COLLECTION.size
                 }
             )
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Column {
             Row(

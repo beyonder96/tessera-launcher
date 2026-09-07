@@ -13,9 +13,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -60,19 +64,23 @@ fun AppListItem(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    iconShape: String = "DEFAULT"
+    iconShape: String = "DEFAULT",
+    isThemedIcons: Boolean = false,
+    isHideAppLabels: Boolean = false
 ) {
     val shape = remember(iconShape) {
         when (iconShape) {
-            "CIRCLE" -> androidx.compose.foundation.shape.CircleShape
-            "SQUIRCLE" -> androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
-            "ROUNDED" -> androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            "CIRCLE" -> CircleShape
+            "CYLINDER" -> RoundedCornerShape(16.dp)
+            "LOSANGO" -> RoundedCornerShape(6.dp)
+            "SQUIRCLE" -> RoundedCornerShape(14.dp)
+            "SQUARE" -> RoundedCornerShape(4.dp)
             else -> IconShape
         }
     }
 
-    val colorFilter = remember(iconShape) {
-        if (iconShape == "MONOCHROME") {
+    val colorFilter = remember(isThemedIcons) {
+        if (isThemedIcons) {
             ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
         } else {
             null
@@ -92,22 +100,35 @@ fun AppListItem(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(horizontal = 24.dp, vertical = 7.dp),
+            .padding(horizontal = 24.dp, vertical = if (isHideAppLabels) 10.dp else 7.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val iconModifier = if (iconShape == "LOSANGO") {
+            Modifier
+                .size(34.dp)
+                .rotate(45f)
+                .clip(shape)
+        } else if (iconShape == "CYLINDER") {
+            Modifier
+                .width(32.dp)
+                .height(42.dp)
+                .clip(shape)
+        } else {
+            Modifier
+                .size(40.dp)
+                .clip(shape)
+        }
+
         if (imageBitmap != null) {
-            Surface(
-                shape = shape,
-                color = DarkSurfaceVariant,
-                modifier = Modifier.size(40.dp)
+            Box(
+                modifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp),
+                contentAlignment = Alignment.Center
             ) {
                 androidx.compose.foundation.Image(
                     bitmap = imageBitmap,
                     contentDescription = app.label,
                     colorFilter = colorFilter,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(shape)
+                    modifier = iconModifier
                 )
             }
         } else {
@@ -126,17 +147,19 @@ fun AppListItem(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        if (!isHideAppLabels) {
+            Spacer(modifier = Modifier.width(16.dp))
 
-        Text(
-            text = app.label,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                fontWeight = FontWeight.Medium,
-                fontSize = 15.sp
-            ),
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+            Text(
+                text = app.label,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 15.sp
+                ),
+                color = TextPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }

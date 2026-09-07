@@ -1,7 +1,9 @@
 package com.tessera.launcher.ui.state
 
+import android.graphics.drawable.Drawable
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.ContactInfo
+import com.tessera.launcher.data.helper.WeatherInfo
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
@@ -14,13 +16,28 @@ sealed interface AppsListState {
     data class Error(val message: String) : AppsListState
 }
 
+enum class WidgetConfigType {
+    CALENDAR,
+    BATTERY,
+    MEDIA,
+    NOTES,
+    WEATHER,
+    QUICK_ACTIONS,
+    VERSE_FOCUS
+}
+
 enum class SettingsSubScreen {
     MAIN,
     SEARCH,
     WIDGETS_CENTER,
     EXTRAS,
     FOLDERS,
-    SEARCHOS
+    SEARCHOS,
+    GESTURES,
+    IN_APP_SEARCH,
+    HIDDEN_APPS,
+    CUSTOMIZATION,
+    PERMISSIONS
 }
 
 data class AppFolder(
@@ -36,7 +53,25 @@ data class SearchoItem(
     val iconType: String
 )
 
+data class AppShortcutItem(
+    val id: String,
+    val packageName: String,
+    val shortLabel: String,
+    val longLabel: String? = null,
+    val icon: Drawable? = null
+)
+
+data class FileSearchResult(
+    val id: Long,
+    val title: String,
+    val path: String,
+    val mimeType: String?,
+    val sizeBytes: Long,
+    val uriString: String
+)
+
 val DEFAULT_SEARCHOS_LIST = listOf(
+    SearchoItem("calc", "Calculadora", "@calc", "calculator"),
     SearchoItem("tasks", "Tarefas", "@t", "tasks"),
     SearchoItem("notes", "Notas", "@n", "notes"),
     SearchoItem("quick_actions", "Ações rápidas", "@s", "quick_actions"),
@@ -47,6 +82,7 @@ val DEFAULT_SEARCHOS_LIST = listOf(
     SearchoItem("telegram", "Mensagens do Telegram", "@tg", "telegram"),
     SearchoItem("notifications", "Notificações", "@ntf", "notifications"),
     SearchoItem("contacts", "Contatos", "@con", "contacts"),
+    SearchoItem("files", "Arquivos", "@files", "files"),
     SearchoItem("activity", "Sua atividade", "@fd", "activity"),
     SearchoItem("obsidian", "Obsidian", "@ob", "obsidian")
 )
@@ -101,5 +137,71 @@ data class LauncherUiState(
     val isShowStatusBarEnabled: Boolean = true,
     val searchoActivationSymbol: String = "@",
     val searchosList: List<SearchoItem> = DEFAULT_SEARCHOS_LIST,
-    val appFolders: List<AppFolder> = emptyList()
+    val appFolders: List<AppFolder> = emptyList(),
+
+    // Gestos
+    val isDoubleTapEnabled: Boolean = true,
+    val doubleTapAction: String = "lock_screen",
+    val isHoldEnabled: Boolean = false,
+    val holdAction: String = "launcher_settings",
+    val isSwipeDownEnabled: Boolean = true,
+    val swipeDownAction: String = "notifications",
+    val isSwipeUpEnabled: Boolean = true,
+    val swipeUpAction: String = "open_keyboard",
+    val isSwipeLeftEnabled: Boolean = false,
+    val swipeLeftAction: String = "launcher_settings",
+    val isSwipeRightEnabled: Boolean = false,
+    val swipeRightAction: String = "system_settings",
+
+    // Busca em Apps & Arquivos
+    val inAppSearchPackages: Set<String> = emptySet(),
+    val isFilesSearchEnabled: Boolean = true,
+    val matchingFiles: List<FileSearchResult> = emptyList(),
+
+    // Apps Ocultos & PIN
+    val hiddenAppsPin: String = "",
+    val hiddenAppsPackages: Set<String> = emptySet(),
+    val isPinUnlocked: Boolean = false,
+
+    // Ícones Customizados
+    val customAppIcons: Map<String, String> = emptyMap(),
+
+    // Customização Avançada
+    val searchBarStyle: String = "split_pill",
+    val searchBarTextType: String = "app_name",
+    val searchBarCustomText: String = "Searcho...",
+    val fontFamilyType: String = "searcho",
+    val customFontPath: String = "",
+    val isSystemWallpaperEnabled: Boolean = false,
+    val solidWallpaperColor: String = "#000000",
+    val solidWallpaperTarget: String = "both",
+    val isThemedIconsEnabled: Boolean = false,
+    val isHideAppLabelsEnabled: Boolean = false,
+
+    // Idioma
+    val selectedLanguage: String = "PT",
+    val isLanguageModalOpen: Boolean = false,
+
+    // Permissões
+    val isDefaultLauncher: Boolean = false,
+    val hasSmsPermission: Boolean = false,
+    val hasMusicPermission: Boolean = false,
+    val hasMediaImagesPermission: Boolean = false,
+    val hasAccessibilityService: Boolean = false,
+
+    // Clima & Localização
+    val weatherInfo: WeatherInfo? = null,
+    val hasLocationPermission: Boolean = false,
+    val isWeatherCelsius: Boolean = true,
+
+    // Configurações & Estilos dos Widgets
+    val batteryWidgetStyle: String = "cards_3",
+    val mediaWidgetStyle: String = "classic",
+    val notesWidgetFilter: String = "all",
+    val calendarHowFarAhead: Int = 7,
+    val calendarHideFinished: Boolean = true,
+    val calendarIs24hFormat: Boolean = true,
+
+    // Modal de Configuração por Toque Longo
+    val activeWidgetConfigModal: WidgetConfigType? = null
 )

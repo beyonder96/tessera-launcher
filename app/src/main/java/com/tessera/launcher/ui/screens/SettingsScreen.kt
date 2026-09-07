@@ -89,10 +89,10 @@ import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val SettingsCardShape = RoundedCornerShape(26.dp)
-private val SettingsCardBackground = Color(0xFF0F0F12)
-private val SettingsCardBorder = Color(0xFF1D1D22)
-private val ItemDividerColor = Color(0xFF18181D)
-private val IconCircleBackground = Color(0xFF19191E)
+private val SettingsCardBackground = Color(0xFF0C0C0F)
+private val SettingsCardBorder = Color(0xFF1C1C24)
+private val ItemDividerColor = Color(0xFF15151A)
+private val IconCircleBackground = Color(0xFF16161C)
 
 @Composable
 fun SettingsScreen(
@@ -140,7 +140,7 @@ fun SettingsScreen(
                     viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCHOS)
                 },
                 onOpenHiddenApps = {
-                    Toast.makeText(context, "Apps ocultos: recurso de proteção de aplicativos.", Toast.LENGTH_SHORT).show()
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS)
                 },
                 modifier = modifier
             )
@@ -157,6 +157,51 @@ fun SettingsScreen(
         }
         SettingsSubScreen.SEARCHOS -> {
             SearchosScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.GESTURES -> {
+            GesturesScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.IN_APP_SEARCH -> {
+            InAppSearchSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.HIDDEN_APPS -> {
+            HiddenAppsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.CUSTOMIZATION -> {
+            CustomizationScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.PERMISSIONS -> {
+            PermissionsScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
@@ -217,6 +262,15 @@ fun SettingsScreen(
             hasNotificationAccess = uiState.hasNotificationAccess,
             isLiquidGlass = uiState.isLiquidGlassEnabled,
             onDismiss = { activeDialog = null }
+        )
+    }
+
+    if (uiState.isLanguageModalOpen) {
+        com.tessera.launcher.ui.components.LanguageBottomSheet(
+            selectedLanguage = uiState.selectedLanguage,
+            onSelectLanguage = { viewModel.setSelectedLanguage(it) },
+            onDismiss = { viewModel.setLanguageModalOpen(false) },
+            isAmoled = uiState.isAmoledMode
         )
     }
 
@@ -319,7 +373,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.TouchApp,
                         title = "Gestos",
                         subtitle = "Ações de deslizar e toque duplo.",
-                        onClick = { activeDialog = "gestures" }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES) }
                     )
 
                     ItemDivider()
@@ -329,7 +383,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Palette,
                         title = "Customization",
                         subtitle = "Ícones, papel de parede e estilo",
-                        onClick = { activeDialog = "customization" }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION) }
                     )
 
                     ItemDivider()
@@ -339,7 +393,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Language,
                         title = "Idioma",
                         subtitle = "Alterar o idioma do aplicativo.",
-                        onClick = { activeDialog = "language" }
+                        onClick = { viewModel.setLanguageModalOpen(true) }
                     )
 
                     ItemDivider()
@@ -380,7 +434,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Security,
                         title = "Permissões",
                         subtitle = "Escolha o que o Tessera pode acessar",
-                        onClick = { activeDialog = "permissions" }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.PERMISSIONS) }
                     )
 
                     ItemDivider()
