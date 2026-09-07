@@ -85,22 +85,18 @@ class WeatherHelper(private val context: Context) {
         return bestLocation
     }
 
-    private fun resolveCityName(latitude: Double, longitude: Double): String {
-        return try {
-            val geocoder = Geocoder(context, Locale.getDefault())
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val addresses = geocoder.getFromLocation(latitude, longitude, 1)
-                val address = addresses?.firstOrNull()
-                address?.locality ?: address?.subAdminArea ?: address?.adminArea ?: "Minha Cidade"
-            } else {
+    private suspend fun resolveCityName(latitude: Double, longitude: Double): String = withContext(Dispatchers.IO) {
+        kotlinx.coroutines.withTimeoutOrNull(2500L) {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
                 @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocation(latitude, longitude, 1)
                 val address = addresses?.firstOrNull()
                 address?.locality ?: address?.subAdminArea ?: address?.adminArea ?: "Minha Cidade"
+            } catch (_: Exception) {
+                "Local Atual"
             }
-        } catch (_: Exception) {
-            "Local Atual"
-        }
+        } ?: "Local Atual"
     }
 
     suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
@@ -116,9 +112,9 @@ class WeatherHelper(private val context: Context) {
             val url = URL(endpoint)
             connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
-            connection.connectTimeout = 8000
-            connection.readTimeout = 8000
-            connection.setRequestProperty("User-Agent", "TesseraLauncher/1.7.1")
+            connection.connectTimeout = 6000
+            connection.readTimeout = 6000
+            connection.setRequestProperty("User-Agent", "TesseraLauncher/1.7.3")
 
             val responseCode = connection.responseCode
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -150,6 +146,36 @@ class WeatherHelper(private val context: Context) {
             null
         } finally {
             connection?.disconnect()
+        }
+    }
+
+    fun toJson(info: WeatherInfo): String {
+        return JSONObject().apply {
+            put("temperature", info.temperature)
+            put("apparentTemperature", info.apparentTemperature)
+            put("weatherCode", info.weatherCode)
+            put("condition", info.condition)
+            put("cityName", info.cityName)
+            put("humidity", info.humidity)
+            put("isCelsius", info.isCelsius)
+        }.toString()
+    }
+
+    fun fromJson(jsonStr: String?): WeatherInfo? {
+        if (jsonStr.isNullOrBlank()) return null
+        return try {
+            val json = JSONObject(jsonStr)
+            WeatherInfo(
+                temperature = json.getDouble("temperature"),
+                apparentTemperature = json.getDouble("apparentTemperature"),
+                weatherCode = json.getInt("weatherCode"),
+                condition = json.getString("condition"),
+                cityName = json.getString("cityName"),
+                humidity = json.getInt("humidity"),
+                isCelsius = json.optBoolean("isCelsius", true)
+            )
+        } catch (_: Exception) {
+            null
         }
     }
 

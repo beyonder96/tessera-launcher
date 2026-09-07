@@ -21,14 +21,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Album
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.EventNote
 import androidx.compose.material.icons.outlined.GraphicEq
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
@@ -49,14 +55,21 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.helper.WeatherInfo
@@ -1027,6 +1040,248 @@ private fun OpenWidgetsCenterButton(
                 ),
                 color = TextSecondary
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NotesTasksManagerBottomSheet(
+    tasks: List<NoteTask>,
+    onAddTask: (String) -> Unit,
+    onToggleTask: (Long) -> Unit,
+    onRemoveTask: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var newTaskText by remember { mutableStateOf("") }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = AmoledBlack,
+        dragHandle = {
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp, bottom = 16.dp)
+                    .width(44.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF44444E))
+            )
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DIÁRIO E TAREFAS",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        letterSpacing = 1.sp
+                    ),
+                    color = TextPrimary
+                )
+
+                val completedCount = tasks.count { it.isDone }
+                Text(
+                    text = if (tasks.isNotEmpty()) "$completedCount/${tasks.size} concluídas" else "",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
+                    color = TextTertiary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Campo para Adicionar Nova Tarefa
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .background(Color(0xFF161820), RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicTextField(
+                    value = newTaskText,
+                    onValueChange = { newTaskText = it },
+                    textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
+                    cursorBrush = SolidColor(TextPrimary),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (newTaskText.isNotBlank()) {
+                                onAddTask(newTaskText.trim())
+                                newTaskText = ""
+                            }
+                        }
+                    ),
+                    decorationBox = { innerTextField ->
+                        if (newTaskText.isEmpty()) {
+                            Text("Nova anotação ou tarefa...", color = TextTertiary, fontSize = 14.sp)
+                        }
+                        innerTextField()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (newTaskText.isNotBlank()) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {
+                                    onAddTask(newTaskText.trim())
+                                    newTaskText = ""
+                                }
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "Adicionar",
+                            tint = Color.Black,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Lista ou Empty State
+            if (tasks.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFF191922)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.EventNote,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Nenhuma anotação ou tarefa",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = TextPrimary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Digite no campo acima para criar sua primeira anotação",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = TextTertiary
+                    )
+                }
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    tasks.forEach { task ->
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = AmoledCardBackground,
+                            border = BorderStroke(1.dp, AmoledCardBorder),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = { onToggleTask(task.id) }
+                                    )
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .border(
+                                            BorderStroke(1.dp, if (task.isDone) Color.White else Color(0xFF48484A)),
+                                            RoundedCornerShape(6.dp)
+                                        )
+                                        .background(if (task.isDone) Color.White else Color.Transparent),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (task.isDone) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Check,
+                                            contentDescription = null,
+                                            tint = Color.Black,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Text(
+                                    text = task.text,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontSize = 14.sp,
+                                        fontWeight = if (task.isDone) FontWeight.Normal else FontWeight.Medium
+                                    ),
+                                    color = if (task.isDone) TextTertiary else TextPrimary,
+                                    textDecoration = if (task.isDone) TextDecoration.LineThrough else TextDecoration.None,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = { onRemoveTask(task.id) }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Remover",
+                                        tint = TextTertiary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

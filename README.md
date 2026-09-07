@@ -61,15 +61,13 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.3)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.4)
 
-### 🆕 Novidades na v1.7.3
-- 🔍 **Comportamento Aprimorado da Lupa:** Abertura da lupa expande a barra e widgets na Home sem pular para a lista de aplicativos. Deslizar o carrossel de widgets lateralmente fecha o teclado instantaneamente.
-- 📱 **Gesto de Deslizar para Cima (Swipe Up):** Deslizar para cima na tela inicial abre a gaveta de aplicativos com foco imediato no teclado virtual.
-- ⚙️ **Fechamento Automático do Teclado:** Teclado recolhido automaticamente ao tocar no botão de configurações da barra de pesquisa.
-- 🔒 **Apps Ocultos Turbinado:** Ícones reais dos aplicativos em alta definição, barra de busca rápida, zero piscada/reset de rolagem ao alternar apps, seção de Acesso Rápido no topo e ocultação real em todo o sistema.
-- 🧮 **Modo Calculadora Isolado (@calc):** Foco exclusivo no resultado matemático ao digitar `@calc`, ocultando contatos, arquivos e chips para evitar poluição visual.
-- ♿ **Serviço de Acessibilidade do Tessera:** Implementado serviço nativo para execução confiável de gestos do sistema (Bloqueio de Tela via `GLOBAL_ACTION_LOCK_SCREEN`, Notificações e Configurações Rápidas).
+### 🆕 Novidades na v1.7.4
+- ⛅ **Widget de Clima Otimizado:** Cache local permanente para carregamento instantâneo, geocodificação com timeout seguro, atualização em tempo real por toque (sem abrir o navegador) e exibição da sensação térmica.
+- 🦖 **Dino Runner Interativo no Dock:** Jogo retrô em pixel art adaptado aos 54dp do dock com loop a 60 FPS, pulo por toque em qualquer área do card, física suave, placar dinâmico e reinício imediato.
+- 📝 **Diário e Tarefas Interativo:** Ícone semântico de anotações (`EventNote`), gaveta inferior dedicada para adicionar, alternar conclusão e excluir tarefas diretamente pelo dock.
+- 🛡️ **Permissões Refinadas:** Removidas as permissões de Música e Fotos & Vídeos na tela de permissões, mantendo o painel rigorosamente minimalista e essencial.
 
 ---
 

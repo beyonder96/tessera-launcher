@@ -33,8 +33,6 @@ import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.HorizontalDivider
@@ -95,18 +93,6 @@ fun PermissionsScreen(
     }
 
     val smsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {
-        viewModel.refreshAllPermissions(context)
-    }
-
-    val musicLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {
-        viewModel.refreshAllPermissions(context)
-    }
-
-    val photosLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) {
         viewModel.refreshAllPermissions(context)
@@ -226,47 +212,7 @@ fun PermissionsScreen(
 
                     PermissionDivider()
 
-                    // 4. Music
-                    PermissionRow(
-                        icon = Icons.Outlined.MusicNote,
-                        title = "Music",
-                        subtitle = "Search local music tracks",
-                        isChecked = uiState.hasMusicPermission,
-                        onCheckedChange = {
-                            if (!uiState.hasMusicPermission) {
-                                val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    Manifest.permission.READ_MEDIA_AUDIO
-                                } else {
-                                    Manifest.permission.READ_EXTERNAL_STORAGE
-                                }
-                                musicLauncher.launch(perm)
-                            }
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 5. Photos & Videos
-                    PermissionRow(
-                        icon = Icons.Outlined.Image,
-                        title = "Photos & Videos",
-                        subtitle = "Search local photos and video files",
-                        isChecked = uiState.hasMediaImagesPermission,
-                        onCheckedChange = {
-                            if (!uiState.hasMediaImagesPermission) {
-                                val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    Manifest.permission.READ_MEDIA_IMAGES
-                                } else {
-                                    Manifest.permission.READ_EXTERNAL_STORAGE
-                                }
-                                photosLauncher.launch(perm)
-                            }
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 6. Serviço de acessibilidade
+                    // 4. Serviço de acessibilidade
                     PermissionRow(
                         icon = Icons.Outlined.AccessibilityNew,
                         title = "Serviço de acessibilidade",
@@ -281,7 +227,7 @@ fun PermissionsScreen(
 
                     PermissionDivider()
 
-                    // 7. Localização e Clima
+                    // 5. Localização e Clima
                     PermissionRow(
                         icon = Icons.Outlined.WbSunny,
                         title = "Localização e Clima",

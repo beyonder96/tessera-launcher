@@ -179,6 +179,7 @@ class MainViewModel(
             // Clima & Localização
             hasLocationPermission = weatherHelper.hasLocationPermission(),
             isWeatherCelsius = preferences.isWeatherCelsius(),
+            weatherInfo = weatherHelper.fromJson(preferences.getCachedWeatherJson()),
 
             // Configurações & Estilos dos Widgets
             batteryWidgetStyle = preferences.getBatteryWidgetStyle(),
@@ -1251,6 +1252,7 @@ class MainViewModel(
             _uiState.update { it.copy(hasLocationPermission = hasPerm) }
             val weather = weatherHelper.fetchWeather(isCelsius = _uiState.value.isWeatherCelsius)
             if (weather != null) {
+                preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
                 _uiState.update { it.copy(weatherInfo = weather) }
             }
         }

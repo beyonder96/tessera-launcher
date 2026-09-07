@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,7 +50,8 @@ import kotlinx.coroutines.isActive
 @Composable
 fun DinoWidgetCard(
     modifier: Modifier = Modifier,
-    isLiquidGlass: Boolean = true
+    isDockMode: Boolean = true,
+    isLiquidGlass: Boolean = false
 ) {
     var isPlaying by remember { mutableStateOf(false) }
     var isGameOver by remember { mutableStateOf(false) }
@@ -58,13 +60,13 @@ fun DinoWidgetCard(
 
     var dinoY by remember { mutableFloatStateOf(0f) }
     var velocityY by remember { mutableFloatStateOf(0f) }
-    val gravity = 1.6f
-    val jumpVelocity = -18f
+    val gravity = 0.95f
+    val jumpVelocity = -11.0f
 
-    var obstacleX by remember { mutableFloatStateOf(300f) }
-    val obstacleSpeed = 7f
+    var obstacleX by remember { mutableFloatStateOf(350f) }
+    val obstacleSpeed = 6f
 
-    // Loop do Jogo
+    // Loop do Jogo (60 FPS)
     LaunchedEffect(isPlaying) {
         if (!isPlaying) return@LaunchedEffect
         obstacleX = 400f
@@ -92,14 +94,14 @@ fun DinoWidgetCard(
                 if (score > highScore) highScore = score
             }
 
-            // Colisão (Dino ~30px wide, 35px high no chão vs Cacto a 40px da esquerda)
-            val dinoLeft = 40f
-            val dinoRight = dinoLeft + 24f
+            // Colisão com Cacto (Dino x ~30f a 46f, Cacto em obstacleX)
+            val dinoLeft = 30f
+            val dinoRight = dinoLeft + 16f
             val obstacleLeft = obstacleX
-            val obstacleRight = obstacleX + 16f
+            val obstacleRight = obstacleX + 10f
 
             val isHorizCollision = dinoRight > obstacleLeft && dinoLeft < obstacleRight
-            val isVertCollision = dinoY > -24f // Se não pulou alto o suficiente
+            val isVertCollision = dinoY > -14f // Se não pulou alto o suficiente
 
             if (isHorizCollision && isVertCollision) {
                 isGameOver = true
@@ -109,15 +111,32 @@ fun DinoWidgetCard(
         }
     }
 
-    val border = if (isLiquidGlass) {
-        BorderStroke(1.dp, LiquidGlassBorderBrush)
+    val boxModifier = if (isDockMode) {
+        modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    if (!isPlaying) {
+                        isPlaying = true
+                        isGameOver = false
+                    } else if (dinoY == 0f) {
+                        velocityY = jumpVelocity
+                    }
+                }
+            )
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     } else {
-        BorderStroke(1.dp, DarkSurfaceBorder)
-    }
-    val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurface
+        val border = if (isLiquidGlass) {
+            BorderStroke(1.dp, LiquidGlassBorderBrush)
+        } else {
+            BorderStroke(1.dp, DarkSurfaceBorder)
+        }
+        val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurface
 
-    Box(
-        modifier = modifier
+        modifier
             .fillMaxWidth()
             .height(115.dp)
             .border(border, CardShape)
@@ -136,80 +155,83 @@ fun DinoWidgetCard(
                 }
             )
             .padding(12.dp)
-    ) {
-        // Placar
+    }
+
+    Box(modifier = boxModifier) {
+        // Placar Superior
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "DINO RUN",
                 color = TextSecondary,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = "HI ${highScore.toString().padStart(4, '0')}  ${score.toString().padStart(4, '0')}",
                 color = TextPrimary,
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
             )
         }
 
-        // Canvas do Jogo
+        // Canvas com Dino, Cacto e Linha do Chão
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val groundY = size.height - 18f
+            val groundY = size.height - 6f
 
-            // Linha do Chão Pontilhada
+            // Linha do Chão
             drawLine(
-                color = Color(0x66FFFFFF),
+                color = Color(0x55FFFFFF),
                 start = Offset(0f, groundY),
                 end = Offset(size.width, groundY),
                 strokeWidth = 1.5f
             )
 
-            // Dinossauro Retrô Minimalista (Pixels)
-            val dinoBaseX = 40f
-            val currentDinoY = groundY - 28f + dinoY
+            // Dinossauro Retrô (Pixel Art)
+            val dinoBaseX = 30f
+            val currentDinoY = groundY - 18f + dinoY
 
             // Corpo
             drawRect(
                 color = Color.White,
                 topLeft = Offset(dinoBaseX, currentDinoY),
-                size = Size(20f, 24f)
+                size = Size(14f, 16f)
             )
             // Cabeça
             drawRect(
                 color = Color.White,
-                topLeft = Offset(dinoBaseX + 10f, currentDinoY - 8f),
-                size = Size(14f, 12f)
+                topLeft = Offset(dinoBaseX + 7f, currentDinoY - 6f),
+                size = Size(10f, 8f)
             )
             // Olho
             drawRect(
                 color = Color.Black,
-                topLeft = Offset(dinoBaseX + 18f, currentDinoY - 6f),
-                size = Size(3f, 3f)
+                topLeft = Offset(dinoBaseX + 13f, currentDinoY - 4f),
+                size = Size(2.5f, 2.5f)
             )
 
             // Cacto Retrô
-            if (obstacleX < size.width + 50f) {
+            if (obstacleX < size.width + 40f) {
                 drawRect(
                     color = Color.White,
-                    topLeft = Offset(obstacleX, groundY - 24f),
-                    size = Size(14f, 24f)
+                    topLeft = Offset(obstacleX, groundY - 18f),
+                    size = Size(10f, 18f)
                 )
-                // Braço do Cacto
+                // Braços do Cacto
                 drawRect(
                     color = Color.White,
-                    topLeft = Offset(obstacleX - 4f, groundY - 18f),
-                    size = Size(5f, 10f)
+                    topLeft = Offset(obstacleX - 3f, groundY - 13f),
+                    size = Size(3.5f, 7f)
                 )
                 drawRect(
                     color = Color.White,
-                    topLeft = Offset(obstacleX + 13f, groundY - 14f),
-                    size = Size(5f, 10f)
+                    topLeft = Offset(obstacleX + 9.5f, groundY - 10f),
+                    size = Size(3.5f, 7f)
                 )
             }
         }
@@ -223,7 +245,7 @@ fun DinoWidgetCard(
                 Text(
                     text = "Toque para Jogar",
                     color = Color.White,
-                    fontSize = 13.sp,
+                    fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -237,14 +259,14 @@ fun DinoWidgetCard(
                     Text(
                         text = "GAME OVER",
                         color = Color.White,
-                        fontSize = 13.sp,
+                        fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Toque para reiniciar",
                         color = TextSecondary,
-                        fontSize = 11.sp,
+                        fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
                     )
                 }

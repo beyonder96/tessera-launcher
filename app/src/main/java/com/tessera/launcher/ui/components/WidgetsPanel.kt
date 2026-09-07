@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.AcUnit
 import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Bluetooth
+import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.GraphicEq
@@ -121,6 +122,7 @@ fun WidgetsPanel(
     onAddNoteTask: (String) -> Unit = {},
     onToggleNoteTask: (Long) -> Unit = {},
     onRemoveNoteTask: (Long) -> Unit = {},
+    onNotesClick: () -> Unit = {},
     weatherInfo: WeatherInfo? = null,
     hasLocationPermission: Boolean = false,
     onRequestLocationPermission: () -> Unit = {},
@@ -237,7 +239,7 @@ fun WidgetsPanel(
                 }
                 6 -> {
                     if (isDinoWidgetEnabled) {
-                        DinoWidgetCard()
+                        DinoWidgetCard(isDockMode = true)
                     } else if (isNotesWidgetEnabled) {
                         NotesWidgetCard(
                             tasks = notesTasks,
@@ -245,6 +247,7 @@ fun WidgetsPanel(
                             onAddTask = onAddNoteTask,
                             onToggleTask = onToggleNoteTask,
                             onRemoveTask = onRemoveNoteTask,
+                            onNotesClick = onNotesClick,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -257,6 +260,7 @@ fun WidgetsPanel(
                             onAddTask = onAddNoteTask,
                             onToggleTask = onToggleNoteTask,
                             onRemoveTask = onRemoveNoteTask,
+                            onNotesClick = onNotesClick,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -976,13 +980,10 @@ private fun WeatherWidgetCard(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
-                        if (!hasLocationPermission) onRequestLocationPermission()
-                        else {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=clima+tempo"))
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                context.startActivity(intent)
-                            } catch (_: Exception) {}
+                        if (!hasLocationPermission) {
+                            onRequestLocationPermission()
+                        } else {
+                            onRefreshWeather()
                         }
                     },
                     onLongPress = { onLongClick() }
@@ -1073,7 +1074,7 @@ private fun WeatherWidgetCard(
                     )
 
                     Text(
-                        text = "Clima ↗",
+                        text = "Sensação ${weatherInfo.displayApparent}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
@@ -1100,31 +1101,6 @@ private fun WeatherWidgetCard(
 }
 
 /**
- * Dino Run Mini Widget
- */
-@Composable
-private fun DinoWidgetCard() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = "DINO RUNNER",
-            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
-        )
-        Text(
-            text = "Toque para jogar",
-            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-            color = TextSecondary
-        )
-    }
-}
-
-/**
  * Notes & Tasks Widget
  */
 @Composable
@@ -1134,6 +1110,7 @@ private fun NotesWidgetCard(
     onAddTask: (String) -> Unit,
     onToggleTask: (Long) -> Unit,
     onRemoveTask: (Long) -> Unit,
+    onNotesClick: () -> Unit = {},
     onLongClick: () -> Unit = {}
 ) {
     val topTask = tasks.firstOrNull()
@@ -1144,6 +1121,7 @@ private fun NotesWidgetCard(
             .fillMaxHeight()
             .pointerInput(Unit) {
                 detectTapGestures(
+                    onTap = { onNotesClick() },
                     onLongPress = { onLongClick() }
                 )
             },
@@ -1158,7 +1136,7 @@ private fun NotesWidgetCard(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Outlined.MusicNote,
+                imageVector = Icons.AutoMirrored.Outlined.EventNote,
                 contentDescription = null,
                 tint = Color.White,
                 modifier = Modifier.size(20.dp)
@@ -1175,8 +1153,9 @@ private fun NotesWidgetCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            val pendingCount = tasks.count { !it.isDone }
             Text(
-                text = "Diário e Tarefas",
+                text = if (pendingCount > 0) "$pendingCount pendente${if (pendingCount > 1) "s" else ""} • Toque para ver" else "Diário e Tarefas • Toque para abrir",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                 color = Color(0xFF8E8E98)
             )

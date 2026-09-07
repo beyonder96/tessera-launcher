@@ -85,6 +85,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_CALENDAR_HIDE_FINISHED = "calendar_hide_finished"
         private const val KEY_CALENDAR_IS_24H = "calendar_is_24h"
         private const val KEY_WEATHER_IS_CELSIUS = "weather_is_celsius"
+        private const val KEY_CACHED_WEATHER_JSON = "cached_weather_json"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -343,4 +344,7 @@ class LauncherPreferences(context: Context) {
 
     fun isWeatherCelsius(): Boolean = prefs.getBoolean(KEY_WEATHER_IS_CELSIUS, true)
     fun setWeatherCelsius(isCelsius: Boolean) = prefs.edit().putBoolean(KEY_WEATHER_IS_CELSIUS, isCelsius).apply()
+
+    fun getCachedWeatherJson(): String? = prefs.getString(KEY_CACHED_WEATHER_JSON, null)
+    fun setCachedWeatherJson(json: String?) = prefs.edit().putString(KEY_CACHED_WEATHER_JSON, json).apply()
 }

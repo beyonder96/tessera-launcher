@@ -86,6 +86,7 @@ import com.tessera.launcher.ui.components.BatteryConfigBottomSheet
 import com.tessera.launcher.ui.components.CalendarConfigBottomSheet
 import com.tessera.launcher.ui.components.MediaConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesConfigBottomSheet
+import com.tessera.launcher.ui.components.NotesTasksManagerBottomSheet
 import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
@@ -123,6 +124,7 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
+    var isNotesTasksOpen by remember { mutableStateOf(false) }
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
@@ -668,6 +670,7 @@ fun HomeScreen(
                             onAddNoteTask = { viewModel.addNoteTask(it) },
                             onToggleNoteTask = { viewModel.toggleNoteTask(it) },
                             onRemoveNoteTask = { viewModel.removeNoteTask(it) },
+                            onNotesClick = { isNotesTasksOpen = true },
                             weatherInfo = uiState.weatherInfo,
                             hasLocationPermission = uiState.hasLocationPermission,
                             onRequestLocationPermission = onRequestLocationPermission,
@@ -809,6 +812,16 @@ fun HomeScreen(
                 }
             }
             WidgetConfigType.VERSE_FOCUS, null -> {}
+        }
+
+        if (isNotesTasksOpen) {
+            NotesTasksManagerBottomSheet(
+                tasks = uiState.notesTasks,
+                onAddTask = { viewModel.addNoteTask(it) },
+                onToggleTask = { viewModel.toggleNoteTask(it) },
+                onRemoveTask = { viewModel.removeNoteTask(it) },
+                onDismiss = { isNotesTasksOpen = false }
+            )
         }
     }
 }
