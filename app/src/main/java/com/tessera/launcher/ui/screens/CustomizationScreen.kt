@@ -6,20 +6,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -228,6 +235,26 @@ fun CustomizationScreen(
                         )
                     }
 
+                    // Menos brilho para dar mais contraste (Pill Slider)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "Menos brilho para dar mais contraste",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        PillPercentSlider(
+                            labelPrefix = "ESCURECIMENTO HOME",
+                            percent = uiState.homeWallpaperDimming,
+                            onPercentChange = { viewModel.setHomeWallpaperDimming(it) }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+
                     CustomDivider()
 
                     // Alterar Papel de Parede
@@ -397,7 +424,74 @@ fun CustomizationScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // CARD 2: Estilos, Barra, Tipografia e Ícones
+            // CARD 2: Vidro na Gaveta
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = AmoledCardBackground,
+                border = BorderStroke(1.dp, AmoledCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Vidro na Gaveta",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Mostra o papel de parede atrás dos resultados",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = TextSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = uiState.isDrawerGlassEnabled,
+                            onCheckedChange = { viewModel.setDrawerGlassEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = TextSecondary,
+                                uncheckedTrackColor = Color(0xFF222228),
+                                uncheckedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "Controle o quanto o fundo aparece",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        PillPercentSlider(
+                            labelPrefix = "OPACIDADE",
+                            percent = uiState.drawerGlassOpacity,
+                            onPercentChange = { viewModel.setDrawerGlassOpacity(it) }
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CARD 3: Estilos, Barra, Tipografia e Ícones
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = AmoledCardBackground,
@@ -633,3 +727,87 @@ private fun CustomDivider() {
         modifier = Modifier.padding(start = 68.dp, end = 16.dp)
     )
 }
+
+@Composable
+private fun PillPercentSlider(
+    labelPrefix: String,
+    percent: Int,
+    onPercentChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val steps = listOf(0, 20, 40, 60, 80, 100)
+    var boxWidthPx by remember { mutableStateOf(0f) }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFF131317))
+            .border(BorderStroke(1.dp, Color(0xFF22222A)), RoundedCornerShape(14.dp))
+            .onSizeChanged { boxWidthPx = it.width.toFloat() }
+            .pointerInput(boxWidthPx) {
+                detectTapGestures { offset ->
+                    if (boxWidthPx > 0) {
+                        val fraction = (offset.x / boxWidthPx).coerceIn(0f, 1f)
+                        val target = steps.minByOrNull { kotlin.math.abs(it - (fraction * 100).toInt()) } ?: 20
+                        onPercentChange(target)
+                    }
+                }
+            }
+            .pointerInput(boxWidthPx) {
+                detectHorizontalDragGestures { _, dragAmount ->
+                    if (boxWidthPx > 0) {
+                        val delta = (dragAmount / boxWidthPx) * 100
+                        val current = (percent + delta).coerceIn(0f, 100f).toInt()
+                        val target = steps.minByOrNull { kotlin.math.abs(it - current) } ?: 20
+                        onPercentChange(target)
+                    }
+                }
+            }
+            .padding(4.dp)
+    ) {
+        val handleWidth = 54.dp
+        val fraction = (percent.coerceIn(0, 100) / 100f)
+
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val totalWidth = maxWidth
+            val maxOffset = (totalWidth - handleWidth).coerceAtLeast(0.dp)
+            val handleOffset = maxOffset * fraction
+
+            Box(
+                modifier = Modifier
+                    .offset(x = handleOffset)
+                    .width(handleWidth)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(16.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(Color(0xFF7E7E88))
+                )
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$labelPrefix $percent%",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    ),
+                    color = if (fraction in 0.35f..0.65f) Color.Black else TextPrimary
+                )
+            }
+        }
+    }
+}
+

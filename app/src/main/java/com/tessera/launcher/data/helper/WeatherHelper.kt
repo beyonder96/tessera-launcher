@@ -72,7 +72,6 @@ class WeatherHelper(private val context: Context) {
 
         val hasFine = hasFineLocationPermission()
         val providers = buildList {
-            // "gps" provider strictly requires ACCESS_FINE_LOCATION on Android 12+ (API 31+)
             if (hasFine) {
                 add(LocationManager.GPS_PROVIDER)
             }
@@ -109,8 +108,47 @@ class WeatherHelper(private val context: Context) {
         return bestLocation
     }
 
+    @SuppressLint("MissingPermission")
+    private suspend fun obtainLocation(): Location? = withContext(Dispatchers.IO) {
+        val cached = getLastKnownLocation()
+        if (cached != null) return@withContext cached
+        if (!hasLocationPermission()) return@withContext null
+
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return@withContext null
+        val provider = if (hasFineLocationPermission() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            LocationManager.GPS_PROVIDER
+        } else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            LocationManager.NETWORK_PROVIDER
+        } else if (lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+            LocationManager.PASSIVE_PROVIDER
+        } else {
+            null
+        } ?: return@withContext null
+
+        kotlinx.coroutines.withTimeoutOrNull(3000L) {
+            try {
+                kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+                    val signal = androidx.core.os.CancellationSignal()
+                    cont.invokeOnCancellation { signal.cancel() }
+                    androidx.core.location.LocationManagerCompat.getCurrentLocation(
+                        lm,
+                        provider,
+                        signal,
+                        ContextCompat.getMainExecutor(context)
+                    ) { loc ->
+                        if (cont.isActive) {
+                            cont.resume(loc) {}
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
     private suspend fun resolveCityName(latitude: Double, longitude: Double): String = withContext(Dispatchers.IO) {
-        kotlinx.coroutines.withTimeoutOrNull(2500L) {
+        kotlinx.coroutines.withTimeoutOrNull(2000L) {
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
                 @Suppress("DEPRECATION")
@@ -126,7 +164,7 @@ class WeatherHelper(private val context: Context) {
     suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
         try {
             val location = try {
-                getLastKnownLocation()
+                obtainLocation()
             } catch (_: Exception) {
                 null
             }
@@ -136,18 +174,18 @@ class WeatherHelper(private val context: Context) {
 
             val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
 
-        var connection: HttpURLConnection? = null
-        try {
-            val url = URL(endpoint)
-            connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 6000
-            connection.readTimeout = 6000
-            connection.setRequestProperty("User-Agent", "TesseraLauncher/1.7.3")
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL(endpoint)
+                connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 12000
+                connection.readTimeout = 12000
+                connection.setRequestProperty("User-Agent", "TesseraLauncher/1.7.6")
 
-            val responseCode = connection.responseCode
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                val responseCode = connection.responseCode
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
                 val response = reader.readText()
                 reader.close()
 

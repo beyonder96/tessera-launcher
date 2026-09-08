@@ -194,6 +194,14 @@ data class LauncherUiState(
     val weatherInfo: WeatherInfo? = null,
     val hasLocationPermission: Boolean = false,
     val isWeatherCelsius: Boolean = true,
+    val isWeatherLoading: Boolean = false,
+    val weatherError: String? = null,
+
+    // Customização Visual Avançada
+    val homeWallpaperDimming: Int = 20,
+    val isDrawerGlassEnabled: Boolean = true,
+    val drawerGlassOpacity: Int = 20,
+    val themeMode: String = "AMOLED",
 
     // Configurações & Estilos dos Widgets
     val batteryWidgetStyle: String = "cards_3",

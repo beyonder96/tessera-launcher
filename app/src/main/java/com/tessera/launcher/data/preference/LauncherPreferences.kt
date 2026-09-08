@@ -86,6 +86,10 @@ class LauncherPreferences(context: Context) {
         private const val KEY_CALENDAR_IS_24H = "calendar_is_24h"
         private const val KEY_WEATHER_IS_CELSIUS = "weather_is_celsius"
         private const val KEY_CACHED_WEATHER_JSON = "cached_weather_json"
+        private const val KEY_HOME_WALLPAPER_DIMMING = "home_wallpaper_dimming"
+        private const val KEY_DRAWER_GLASS_ENABLED = "drawer_glass_enabled"
+        private const val KEY_DRAWER_GLASS_OPACITY = "drawer_glass_opacity"
+        private const val KEY_THEME_MODE = "theme_mode"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -347,4 +351,16 @@ class LauncherPreferences(context: Context) {
 
     fun getCachedWeatherJson(): String? = prefs.getString(KEY_CACHED_WEATHER_JSON, null)
     fun setCachedWeatherJson(json: String?) = prefs.edit().putString(KEY_CACHED_WEATHER_JSON, json).apply()
+
+    fun getHomeWallpaperDimming(): Int = prefs.getInt(KEY_HOME_WALLPAPER_DIMMING, 20)
+    fun setHomeWallpaperDimming(percent: Int) = prefs.edit().putInt(KEY_HOME_WALLPAPER_DIMMING, percent).apply()
+
+    fun isDrawerGlassEnabled(): Boolean = prefs.getBoolean(KEY_DRAWER_GLASS_ENABLED, true)
+    fun setDrawerGlassEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_DRAWER_GLASS_ENABLED, enabled).apply()
+
+    fun getDrawerGlassOpacity(): Int = prefs.getInt(KEY_DRAWER_GLASS_OPACITY, 20)
+    fun setDrawerGlassOpacity(percent: Int) = prefs.edit().putInt(KEY_DRAWER_GLASS_OPACITY, percent).apply()
+
+    fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
+    fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
 }

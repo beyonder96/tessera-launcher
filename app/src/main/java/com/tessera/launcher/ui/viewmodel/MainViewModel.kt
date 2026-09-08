@@ -175,6 +175,10 @@ class MainViewModel(
             isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
             isHideAppLabelsEnabled = preferences.isHideAppLabelsEnabled(),
             selectedLanguage = preferences.getSelectedLanguage(),
+            homeWallpaperDimming = preferences.getHomeWallpaperDimming(),
+            isDrawerGlassEnabled = preferences.isDrawerGlassEnabled(),
+            drawerGlassOpacity = preferences.getDrawerGlassOpacity(),
+            themeMode = preferences.getThemeMode(),
 
             // Clima & Localização
             hasLocationPermission = weatherHelper.hasLocationPermission(),
@@ -704,7 +708,31 @@ class MainViewModel(
 
     fun setAmoledMode(enabled: Boolean) {
         preferences.setAmoledMode(enabled)
-        _uiState.update { it.copy(isAmoledMode = enabled) }
+        val mode = if (enabled) "AMOLED" else "DARK"
+        preferences.setThemeMode(mode)
+        _uiState.update { it.copy(isAmoledMode = enabled, themeMode = mode) }
+    }
+
+    fun setThemeMode(mode: String) {
+        preferences.setThemeMode(mode)
+        val isAmoled = mode == "AMOLED"
+        preferences.setAmoledMode(isAmoled)
+        _uiState.update { it.copy(themeMode = mode, isAmoledMode = isAmoled) }
+    }
+
+    fun setHomeWallpaperDimming(percent: Int) {
+        preferences.setHomeWallpaperDimming(percent)
+        _uiState.update { it.copy(homeWallpaperDimming = percent) }
+    }
+
+    fun setDrawerGlassEnabled(enabled: Boolean) {
+        preferences.setDrawerGlassEnabled(enabled)
+        _uiState.update { it.copy(isDrawerGlassEnabled = enabled) }
+    }
+
+    fun setDrawerGlassOpacity(percent: Int) {
+        preferences.setDrawerGlassOpacity(percent)
+        _uiState.update { it.copy(drawerGlassOpacity = percent) }
     }
 
     fun setLiquidGlassEnabled(enabled: Boolean) {
@@ -1253,11 +1281,13 @@ class MainViewModel(
     fun refreshWeather() {
         viewModelScope.launch {
             val hasPerm = weatherHelper.hasLocationPermission()
-            _uiState.update { it.copy(hasLocationPermission = hasPerm) }
+            _uiState.update { it.copy(hasLocationPermission = hasPerm, isWeatherLoading = true, weatherError = null) }
             val weather = weatherHelper.fetchWeather(isCelsius = _uiState.value.isWeatherCelsius)
             if (weather != null) {
                 preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
-                _uiState.update { it.copy(weatherInfo = weather) }
+                _uiState.update { it.copy(weatherInfo = weather, isWeatherLoading = false, weatherError = null) }
+            } else {
+                _uiState.update { it.copy(isWeatherLoading = false, weatherError = "Falha ao obter previsão") }
             }
         }
     }

@@ -83,10 +83,12 @@ import com.tessera.launcher.data.helper.WeatherInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.state.WidgetConfigType
+import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import androidx.compose.material.icons.outlined.LocationOn
 import java.util.Calendar
 
 @Composable
@@ -127,11 +129,14 @@ fun WidgetsPanel(
     hasLocationPermission: Boolean = false,
     onRequestLocationPermission: () -> Unit = {},
     onRefreshWeather: () -> Unit = {},
+    isWeatherLoading: Boolean = false,
+    weatherError: String? = null,
     batteryWidgetStyle: String = "cards_3",
     mediaWidgetStyle: String = "classic",
     notesWidgetFilter: String = "all",
     onWidgetLongClick: (WidgetConfigType) -> Unit = {},
-    isLiquidGlass: Boolean = false
+    isLiquidGlass: Boolean = false,
+    isAmoledMode: Boolean = false
 ) {
     // Ordem das páginas:
     // 0: Ações Rápidas (Screenshot 1)
@@ -188,6 +193,7 @@ fun WidgetsPanel(
                         onOpenWifi = onOpenWifi,
                         onOpenBluetooth = onOpenBluetooth,
                         onCycleRingerMode = onCycleRingerMode,
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.QUICK_ACTIONS) }
                     )
                 }
@@ -197,6 +203,7 @@ fun WidgetsPanel(
                         isCharging = isCharging,
                         batteryWidgetStyle = batteryWidgetStyle,
                         onOpenWifi = onOpenWifi,
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.BATTERY) }
                     )
                 }
@@ -208,6 +215,7 @@ fun WidgetsPanel(
                         hasPermission = hasCalendarPermission,
                         onRequestPermission = onRequestCalendarPermission,
                         onCalendarClick = onCalendarClick,
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
                     )
                 }
@@ -220,11 +228,13 @@ fun WidgetsPanel(
                         onSkipNext = onSkipNext,
                         onSkipPrevious = onSkipPrevious,
                         onOpenMusicApp = onOpenMusicApp,
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.MEDIA) }
                     )
                 }
                 4 -> {
                     VerseFocusWidgetCard(
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.VERSE_FOCUS) }
                     )
                 }
@@ -234,6 +244,9 @@ fun WidgetsPanel(
                         hasLocationPermission = hasLocationPermission,
                         onRequestLocationPermission = onRequestLocationPermission,
                         onRefreshWeather = onRefreshWeather,
+                        isWeatherLoading = isWeatherLoading,
+                        weatherError = weatherError,
+                        isAmoledMode = isAmoledMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.WEATHER) }
                     )
                 }
@@ -248,6 +261,7 @@ fun WidgetsPanel(
                             onToggleTask = onToggleNoteTask,
                             onRemoveTask = onRemoveNoteTask,
                             onNotesClick = onNotesClick,
+                            isAmoledMode = isAmoledMode,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -261,6 +275,7 @@ fun WidgetsPanel(
                             onToggleTask = onToggleNoteTask,
                             onRemoveTask = onRemoveNoteTask,
                             onNotesClick = onNotesClick,
+                            isAmoledMode = isAmoledMode,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -306,6 +321,7 @@ private fun QuickActionsWidgetCard(
     onOpenWifi: () -> Unit,
     onOpenBluetooth: () -> Unit,
     onCycleRingerMode: () -> Unit,
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -327,6 +343,7 @@ private fun QuickActionsWidgetCard(
             icon = Icons.Outlined.WbSunny,
             isActive = false,
             contentDescription = "Brilho",
+            isAmoledMode = isAmoledMode,
             onClick = {
                 try {
                     context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply {
@@ -342,6 +359,7 @@ private fun QuickActionsWidgetCard(
             icon = Icons.Outlined.FlashlightOn,
             isActive = isTorchOn,
             contentDescription = "Lanterna",
+            isAmoledMode = isAmoledMode,
             onClick = onToggleTorch,
             onLongClick = onLongClick
         )
@@ -351,6 +369,7 @@ private fun QuickActionsWidgetCard(
             icon = Icons.Outlined.Bluetooth,
             isActive = true,
             contentDescription = "Bluetooth",
+            isAmoledMode = isAmoledMode,
             onClick = onOpenBluetooth,
             onLongClick = onLongClick
         )
@@ -360,6 +379,7 @@ private fun QuickActionsWidgetCard(
             icon = Icons.Outlined.Wifi,
             isActive = true,
             contentDescription = "Wi-Fi",
+            isAmoledMode = isAmoledMode,
             onClick = onOpenWifi,
             onLongClick = onLongClick
         )
@@ -373,10 +393,11 @@ private fun QuickActionButton(
     contentDescription: String,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    isAmoledMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(14.dp)
-    val bgColor = if (isActive) Color.White else Color(0xFF1E1E26)
+    val bgColor = if (isActive) Color.White else if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)
     val iconTint = if (isActive) Color.Black else Color.White
 
     Box(
@@ -384,7 +405,7 @@ private fun QuickActionButton(
             .size(48.dp)
             .clip(shape)
             .border(
-                border = if (isActive) BorderStroke(1.dp, Color.White) else BorderStroke(1.dp, Color(0xFF2C2C38)),
+                border = if (isActive) BorderStroke(1.dp, Color.White) else BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)),
                 shape = shape
             )
             .background(bgColor)
@@ -414,6 +435,7 @@ private fun BatteryWidgetCard(
     isCharging: Boolean,
     batteryWidgetStyle: String = "cards_3",
     onOpenWifi: () -> Unit = {},
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -436,7 +458,8 @@ private fun BatteryWidgetCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF1E1E26)),
+                    .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)), CircleShape)
+                    .background(if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -485,6 +508,7 @@ private fun BatteryWidgetCard(
             StatusPill(
                 icon = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
                 label = "$batteryPercentage%",
+                isAmoledMode = isAmoledMode,
                 onClick = {
                     try {
                         context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply {
@@ -501,6 +525,7 @@ private fun BatteryWidgetCard(
             StatusPill(
                 icon = Icons.Outlined.Wifi,
                 label = "Wi-Fi",
+                isAmoledMode = isAmoledMode,
                 onClick = onOpenWifi,
                 onLongClick = onLongClick
             )
@@ -511,6 +536,7 @@ private fun BatteryWidgetCard(
             StatusPill(
                 icon = Icons.Outlined.SignalCellularAlt,
                 label = "Cell",
+                isAmoledMode = isAmoledMode,
                 onClick = {
                     try {
                         context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply {
@@ -530,16 +556,19 @@ private fun StatusPill(
     label: String,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
+    isAmoledMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val pillShape = RoundedCornerShape(20.dp)
+    val pillBg = if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val pillBorder = if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
 
     Box(
         modifier = modifier
             .height(36.dp)
             .clip(pillShape)
-            .border(BorderStroke(1.dp, Color(0xFF2A2A36)), pillShape)
-            .background(Color(0xFF1C1C24))
+            .border(BorderStroke(1.dp, pillBorder), pillShape)
+            .background(pillBg)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { onClick() },
@@ -582,6 +611,7 @@ private fun CalendarWidgetCard(
     hasPermission: Boolean,
     onRequestPermission: () -> Unit,
     onCalendarClick: () -> Unit,
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val cal = remember { Calendar.getInstance() }
@@ -611,8 +641,8 @@ private fun CalendarWidgetCard(
             modifier = Modifier
                 .size(46.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
+                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -722,6 +752,7 @@ private fun MediaWidgetCard(
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
     onOpenMusicApp: () -> Unit,
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     Row(
@@ -755,8 +786,8 @@ private fun MediaWidgetCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(10.dp))
-                    .background(Color(0xFF1C1C24))
+                    .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(10.dp))
+                    .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -867,6 +898,7 @@ private fun MediaWidgetCard(
  */
 @Composable
 private fun VerseFocusWidgetCard(
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val quotes = remember {
@@ -897,8 +929,8 @@ private fun VerseFocusWidgetCard(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
+                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -969,10 +1001,11 @@ private fun WeatherWidgetCard(
     hasLocationPermission: Boolean,
     onRequestLocationPermission: () -> Unit,
     onRefreshWeather: () -> Unit,
+    isWeatherLoading: Boolean = false,
+    weatherError: String? = null,
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -991,21 +1024,25 @@ private fun WeatherWidgetCard(
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val weatherIcon = when (weatherInfo?.weatherCode) {
-            0, 1 -> Icons.Outlined.WbSunny
-            2, 3, 45, 48 -> Icons.Outlined.Cloud
-            51, 53, 55, 61, 63, 65, 80, 81, 82 -> Icons.Outlined.WaterDrop
-            71, 73, 75, 77, 85, 86 -> Icons.Outlined.AcUnit
-            95, 96, 99 -> Icons.Outlined.Thunderstorm
-            else -> Icons.Outlined.WbSunny
+        val weatherIcon = when {
+            !hasLocationPermission -> Icons.Outlined.LocationOn
+            weatherInfo != null -> when (weatherInfo.weatherCode) {
+                0, 1 -> Icons.Outlined.WbSunny
+                2, 3, 45, 48 -> Icons.Outlined.Cloud
+                51, 53, 55, 61, 63, 65, 80, 81, 82 -> Icons.Outlined.WaterDrop
+                71, 73, 75, 77, 85, 86 -> Icons.Outlined.AcUnit
+                95, 96, 99 -> Icons.Outlined.Thunderstorm
+                else -> Icons.Outlined.WbSunny
+            }
+            else -> Icons.Outlined.Cloud
         }
 
         Box(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
+                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -1018,83 +1055,131 @@ private fun WeatherWidgetCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        if (!hasLocationPermission) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Ativar previsão do tempo",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White
-                )
-                Text(
-                    text = "Toque para conceder localização",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = Color(0xFF8E8E98)
-                )
-            }
-        } else if (weatherInfo != null) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+        when {
+            !hasLocationPermission -> {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = weatherInfo.displayTemperature,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                        text = "Localização necessária",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
                         ),
                         color = Color.White
                     )
-
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = weatherInfo.cityName,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 12.sp
-                        ),
-                        color = Color(0xFFAAAAAA)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = weatherInfo.condition,
+                        text = "Toque para ativar previsão do tempo",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF8E8E98),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = "Sensação ${weatherInfo.displayApparent}",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = Color(0xFFAAAAAA)
+                        color = Color(0xFF8E8E98)
                     )
                 }
             }
-        } else {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Obtendo previsão...",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = Color.White
-                )
-                Text(
-                    text = "Aguarde atualização de satélite",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = Color(0xFF8E8E98)
-                )
+            isWeatherLoading && weatherInfo == null -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Carregando clima...",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Buscando dados de satélite",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = Color(0xFF8E8E98)
+                    )
+                }
+            }
+            weatherError != null && weatherInfo == null -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Falha ao carregar clima",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Toque para tentar novamente",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = Color(0xFF8E8E98)
+                    )
+                }
+            }
+            weatherInfo != null -> {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = weatherInfo.displayTemperature,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp
+                            ),
+                            color = Color.White
+                        )
+
+                        Text(
+                            text = weatherInfo.cityName,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp
+                            ),
+                            color = Color(0xFFAAAAAA)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = weatherInfo.condition,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = Color(0xFF8E8E98),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = if (isWeatherLoading) "Atualizando..." else "Sensação ${weatherInfo.displayApparent}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            color = Color(0xFFAAAAAA)
+                        )
+                    }
+                }
+            }
+            else -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Obtendo previsão...",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Aguarde atualização de satélite",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = Color(0xFF8E8E98)
+                    )
+                }
             }
         }
     }
@@ -1111,6 +1196,7 @@ private fun NotesWidgetCard(
     onToggleTask: (Long) -> Unit,
     onRemoveTask: (Long) -> Unit,
     onNotesClick: () -> Unit = {},
+    isAmoledMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val topTask = tasks.firstOrNull()
@@ -1131,8 +1217,8 @@ private fun NotesWidgetCard(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
+                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
             contentAlignment = Alignment.Center
         ) {
             Icon(

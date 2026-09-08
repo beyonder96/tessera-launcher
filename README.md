@@ -61,12 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.5)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.6)
 
-### 🆕 Novidades na v1.7.5
-- 🌦️ **Correção da Previsão do Tempo:** Resolução definitiva do travamento em satélite no Android 12+, com tratamento diferenciado para localização aproximada e fina, e proteção individual de provedores.
-- 🔒 **Gerenciamento de Permissões:** Possibilidade de desativar ou alterar qualquer permissão ativa, redirecionando com 1 toque para as Configurações do Aplicativo no sistema Android com sincronização reativa.
-- 📁 **Acesso Completo a Pastas na Barra de Pesquisa:** Cabeçalho clicável no card de pastas e nova janela inferior (`FolderViewBottomSheet`) minimalista exibindo todos os apps agrupados na pasta para lançamento instantâneo ou atalhos.
+### 🆕 Novidades na v1.7.6
+- 🖤 **Modo AMOLED 100% Puro:** Remoção completa de caixas cinzas nos cartões, configurações e emblemas de widgets, garantindo preto absoluto (`#000000`) com bordas sutis de 1px.
+- ✨ **Logo Cursiva no Cabeçalho:** Substituição do título no topo das configurações pelo logotipo caligráfico transparente estilizado com tint dinâmico.
+- 📏 **Dock com Divisória e Alinhamento Perfeito:** Inserção de linha divisória horizontal entre os widgets e a barra de busca, além do nivelamento vertical milimétrico do botão de engrenagem (`⚙`).
+- 🎨 **Novos Controles de Customização:** Sliders em pílula para *Escurecimento Home* (0–100%) e *Vidro na Gaveta / Opacidade*, com seletor de cores sólidas e abas segmentadas (`Inicial`, `Bloqueio`, `Ambas`).
+- 📍 **Permissão de Localização e Clima Confiável:** Suporte completo ao Android 12+ (Target SDK 36) requisitando localização fina e aproximada sem desvios para configurações do sistema, com obtenção ativa de coordenadas e estados visuais completos no widget.
 
 ---
 

@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
@@ -77,16 +78,29 @@ import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.R
 import com.tessera.launcher.ui.state.SettingsSubScreen
+import com.tessera.launcher.ui.theme.AmoledBlack
+import com.tessera.launcher.ui.theme.AmoledCardBorder
+import com.tessera.launcher.ui.theme.CharcoalBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBorder
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceVariant
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.ColorFilter
 
 private val SettingsCardShape = RoundedCornerShape(26.dp)
 private val SettingsCardBackground = Color(0xFF0C0C0F)
@@ -290,10 +304,35 @@ fun SettingsScreen(
         )
     }
 
+    val isLight = uiState.themeMode == "LIGHT"
+    val isCharcoal = uiState.themeMode == "DARK"
+    val isAmoled = uiState.themeMode == "AMOLED" || uiState.isAmoledMode
+
+    val screenBg = when {
+        isLight -> LightBackground
+        isCharcoal -> CharcoalBackground
+        else -> AmoledBlack
+    }
+
+    val cardBg = when {
+        isLight -> LightCardBackground
+        isCharcoal -> CharcoalCardBackground
+        else -> AmoledBlack // 100% Preto Puro no modo AMOLED
+    }
+
+    val cardBorder = when {
+        isLight -> LightCardBorder
+        isCharcoal -> CharcoalCardBorder
+        else -> AmoledCardBorder
+    }
+
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(WindowInsets.statusBars.asPaddingValues())
     ) {
         Column(
@@ -302,7 +341,7 @@ fun SettingsScreen(
                 .padding(horizontal = 18.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Barra superior com Voltar e Título "Tessera"
+            // Barra superior com Voltar e Logo "Tessera." Caligráfica
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -323,18 +362,18 @@ fun SettingsScreen(
                     Icon(
                         imageVector = Icons.Outlined.ArrowBack,
                         contentDescription = "Voltar",
-                        tint = TextPrimary,
+                        tint = primaryTextColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
 
-                Text(
-                    text = "Tessera",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = (-0.5).sp,
-                    color = TextPrimary,
-                    modifier = Modifier.align(Alignment.Center)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_tessera_header_logo),
+                    contentDescription = "Tessera",
+                    colorFilter = ColorFilter.tint(primaryTextColor),
+                    modifier = Modifier
+                        .height(32.dp)
+                        .align(Alignment.Center)
                 )
             }
 
@@ -343,8 +382,8 @@ fun SettingsScreen(
             // CARD 1: Configurações Principais (7 itens)
             Surface(
                 shape = SettingsCardShape,
-                color = SettingsCardBackground,
-                border = BorderStroke(1.dp, SettingsCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -362,7 +401,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Extension,
                         title = "Extras",
-                        subtitle = "Pastas, apps ocultos e Tesseras",
+                        subtitle = "Pastas, apps ocultos e Searchos",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) }
                     )
 
@@ -400,11 +439,8 @@ fun SettingsScreen(
 
                     // 6. Tema com 4 botões circulares inline
                     ThemeSettingsRow(
-                        isAmoled = uiState.isAmoledMode,
-                        onSelectAuto = { viewModel.setAmoledMode(false) },
-                        onSelectAmoled = { viewModel.setAmoledMode(true) },
-                        onSelectDarkGray = { viewModel.setAmoledMode(false) },
-                        onSelectLight = { viewModel.setAmoledMode(false) }
+                        themeMode = uiState.themeMode,
+                        onSelectMode = { viewModel.setThemeMode(it) }
                     )
 
                     ItemDivider()
@@ -413,7 +449,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Home,
                         title = "Lançador padrão",
-                        subtitle = "O Tessera é o seu launcher.",
+                        subtitle = "O Searcho é o seu launcher.",
                         onClick = { openDefaultLauncherSettings(context) }
                     )
                 }
@@ -424,8 +460,8 @@ fun SettingsScreen(
             // CARD 2: Sistema e Privacidade (3 itens)
             Surface(
                 shape = SettingsCardShape,
-                color = SettingsCardBackground,
-                border = BorderStroke(1.dp, SettingsCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -528,11 +564,8 @@ private fun SettingsItemRow(
 
 @Composable
 private fun ThemeSettingsRow(
-    isAmoled: Boolean,
-    onSelectAuto: () -> Unit,
-    onSelectAmoled: () -> Unit,
-    onSelectDarkGray: () -> Unit,
-    onSelectLight: () -> Unit
+    themeMode: String,
+    onSelectMode: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -577,71 +610,124 @@ private fun ThemeSettingsRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 1. Auto
             Box(
                 modifier = Modifier
                     .size(26.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF1E1E24))
+                    .border(
+                        width = if (themeMode == "AUTO") 1.dp else 0.dp,
+                        color = if (themeMode == "AUTO") Color.White else Color.Transparent,
+                        shape = CircleShape
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onSelectAuto
+                        onClick = { onSelectMode("AUTO") }
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.BrightnessAuto,
-                    contentDescription = "Automático",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(14.dp)
-                )
+                if (themeMode == "AUTO") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Auto Ativo",
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.BrightnessAuto,
+                        contentDescription = "Automático",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
             }
 
+            // 2. AMOLED (Preto Puro)
             Box(
                 modifier = Modifier
                     .size(26.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF000000))
+                    .border(
+                        width = 1.dp,
+                        color = if (themeMode == "AMOLED") Color.White else Color(0xFF33333D),
+                        shape = CircleShape
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onSelectAmoled
+                        onClick = { onSelectMode("AMOLED") }
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                if (isAmoled) {
+                if (themeMode == "AMOLED") {
                     Icon(
                         imageVector = Icons.Outlined.Check,
-                        contentDescription = "AMOLED Selecionado",
-                        tint = TextPrimary,
+                        contentDescription = "AMOLED Ativo",
+                        tint = Color.White,
                         modifier = Modifier.size(15.dp)
                     )
                 }
             }
 
+            // 3. Dark Charcoal
             Box(
                 modifier = Modifier
                     .size(26.dp)
                     .clip(CircleShape)
                     .background(Color(0xFF26262B))
+                    .border(
+                        width = if (themeMode == "DARK") 1.dp else 0.dp,
+                        color = if (themeMode == "DARK") Color.White else Color.Transparent,
+                        shape = CircleShape
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onSelectDarkGray
+                        onClick = { onSelectMode("DARK") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "DARK") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Dark Ativo",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
                     )
-            )
+                }
+            }
 
+            // 4. Light
             Box(
                 modifier = Modifier
                     .size(26.dp)
                     .clip(CircleShape)
                     .background(Color(0xFFE5E5EA))
+                    .border(
+                        width = if (themeMode == "LIGHT") 1.dp else 0.dp,
+                        color = if (themeMode == "LIGHT") Color.Black else Color.Transparent,
+                        shape = CircleShape
+                    )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onSelectLight
+                        onClick = { onSelectMode("LIGHT") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "LIGHT") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Light Ativo",
+                        tint = Color.Black,
+                        modifier = Modifier.size(15.dp)
                     )
-            )
+                }
+            }
         }
     }
 }

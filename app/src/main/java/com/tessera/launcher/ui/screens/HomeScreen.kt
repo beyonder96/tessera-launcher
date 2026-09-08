@@ -99,8 +99,11 @@ import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.FileSearchResult
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.state.WidgetConfigType
+import com.tessera.launcher.ui.theme.AmoledBlack
+import com.tessera.launcher.ui.theme.CharcoalBackground
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkBackgroundTranslucent
+import com.tessera.launcher.ui.theme.LightBackground
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
@@ -184,10 +187,21 @@ fun HomeScreen(
         }
     }
 
+    val baseBackgroundColor = if (uiState.isSystemWallpaperEnabled) {
+        Color.Transparent
+    } else {
+        when (uiState.themeMode) {
+            "amoled" -> AmoledBlack
+            "charcoal" -> CharcoalBackground
+            "light" -> LightBackground
+            else -> if (uiState.isAmoledMode) DarkBackground else DarkBackgroundTranslucent
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(if (uiState.isAmoledMode) DarkBackground else DarkBackgroundTranslucent)
+            .background(baseBackgroundColor)
             .padding(top = statusBarTopPadding)
             // Gestos de Toque: Toque duplo e Manter pressionado
             .pointerInput(uiState.isDoubleTapEnabled, uiState.doubleTapAction, uiState.isHoldEnabled, uiState.holdAction, uiState.isDrawerOpen) {
@@ -263,6 +277,15 @@ fun HomeScreen(
                 )
             }
     ) {
+        // Escurecimento do Papel de Parede (Home Wallpaper Dimming)
+        if (uiState.homeWallpaperDimming > 0) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = (uiState.homeWallpaperDimming / 100f).coerceIn(0f, 1f)))
+            )
+        }
+
         // Centro da Tela Inicial: Moldura de Foto Minimalista
         if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
@@ -284,7 +307,15 @@ fun HomeScreen(
             }
         }
 
-        // Camada de Foco e Desfoque de Fundo
+        // Camada de Foco e Desfoque de Fundo da Gaveta
+        val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
+            (uiState.drawerGlassOpacity / 100f).coerceIn(0.05f, 1f)
+        } else if (uiState.isAmoledMode) {
+            1f
+        } else {
+            0.58f
+        }
+
         AnimatedVisibility(
             visible = uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
             enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)),
@@ -293,7 +324,7 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.58f))
+                    .background(Color.Black.copy(alpha = drawerBackdropAlpha))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -680,11 +711,14 @@ fun HomeScreen(
                             hasLocationPermission = uiState.hasLocationPermission,
                             onRequestLocationPermission = onRequestLocationPermission,
                             onRefreshWeather = { viewModel.refreshWeather() },
+                            isWeatherLoading = uiState.isWeatherLoading,
+                            weatherError = uiState.weatherError,
                             batteryWidgetStyle = uiState.batteryWidgetStyle,
                             mediaWidgetStyle = uiState.mediaWidgetStyle,
                             notesWidgetFilter = uiState.notesWidgetFilter,
                             onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
-                            isLiquidGlass = false
+                            isLiquidGlass = false,
+                            isAmoledMode = uiState.isAmoledMode
                         )
                     }
                 } else null

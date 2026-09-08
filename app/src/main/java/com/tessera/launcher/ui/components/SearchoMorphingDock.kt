@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -212,6 +213,14 @@ fun SearchoMorphingDock(
                     ) {
                         if (widgetContent != null) {
                             widgetContent()
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(
+                                color = if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
+                                thickness = 1.dp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                            )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
 
@@ -315,7 +324,8 @@ fun SearchoMorphingDock(
 
                     Box(
                         modifier = Modifier
-                            .size(52.dp)
+                            .padding(bottom = 4.dp)
+                            .size(48.dp)
                             .shadow(
                                 elevation = 12.dp,
                                 shape = buttonShape,

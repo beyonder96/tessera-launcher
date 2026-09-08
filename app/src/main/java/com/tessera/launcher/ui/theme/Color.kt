@@ -7,12 +7,22 @@ import androidx.compose.ui.graphics.Color
 val DarkBackground = Color(0xFF000000)
 val DarkBackgroundTranslucent = Color.Transparent
 val AmoledBlack = Color(0xFF000000)
-val AmoledCardBackground = Color(0xFF0C0C0F)
-val AmoledCardBorder = Color(0xFF1C1C24)
+val AmoledCardBackground = Color(0xFF000000) // 100% Preto Puro no modo AMOLED
+val AmoledCardBorder = Color(0xFF18181E)
 val DarkSurface = Color(0xFF0F0F12)
 val DarkSurfaceVariant = Color(0xFF17171C)
 val DarkSurfaceBorder = Color(0xFF1E1E24)
 val DarkSurfaceBorderHover = Color(0xFF2E2E38)
+
+// Modos Charcoal (Dark Slate) e Light
+val CharcoalBackground = Color(0xFF121215)
+val CharcoalCardBackground = Color(0xFF1A1A1F)
+val CharcoalCardBorder = Color(0xFF26262E)
+val LightBackground = Color(0xFFF3F4F6)
+val LightCardBackground = Color(0xFFFFFFFF)
+val LightCardBorder = Color(0xFFE5E7EB)
+val LightTextPrimary = Color(0xFF111827)
+val LightTextSecondary = Color(0xFF6B7280)
 
 // Liquid Glass Tokens (Estilo iOS 27 / VisionOS - Frosted Glass Translúcido com Difração de Luz)
 val LiquidGlassBackground = Color(0x75141720)

@@ -11,8 +11,8 @@ android {
         applicationId = "com.tessera.launcher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.7.5"
+        versionCode = 13
+        versionName = "1.7.6"
     }
 
     buildTypes {

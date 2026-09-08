@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import android.widget.Toast
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -34,6 +35,7 @@ import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.HorizontalDivider
@@ -242,15 +244,16 @@ fun PermissionsScreen(
 
                     PermissionDivider()
 
-                    // 5. Localização e Clima
+                    // 5. Localização
                     PermissionRow(
-                        icon = Icons.Outlined.WbSunny,
-                        title = "Localização e Clima",
+                        icon = Icons.Outlined.LocationOn,
+                        title = "Localização",
                         subtitle = "Previsão do tempo em tempo real no widget de clima",
                         isChecked = uiState.hasLocationPermission,
                         onCheckedChange = {
                             if (uiState.hasLocationPermission) {
-                                openAppSettings()
+                                viewModel.refreshWeather()
+                                Toast.makeText(context, "Localização ativa. Atualizando previsão...", Toast.LENGTH_SHORT).show()
                             } else {
                                 locationLauncher.launch(
                                     arrayOf(
