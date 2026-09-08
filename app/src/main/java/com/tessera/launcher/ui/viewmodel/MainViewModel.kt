@@ -1241,8 +1241,12 @@ class MainViewModel(
                 hasMediaImagesPermission = hasImages,
                 hasAccessibilityService = hasA11y,
                 hasContactsPermission = contactSearchHelper.hasContactsPermission(),
-                hasNotificationAccess = TesseraMediaService.isNotificationAccessGranted(context)
+                hasNotificationAccess = TesseraMediaService.isNotificationAccessGranted(context),
+                hasLocationPermission = weatherHelper.hasLocationPermission()
             )
+        }
+        if (weatherHelper.hasLocationPermission()) {
+            refreshWeather()
         }
     }
 

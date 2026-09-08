@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -42,6 +43,13 @@ import com.tessera.launcher.ui.theme.LiquidGlassBackground
 import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
 import com.tessera.launcher.ui.theme.TextPrimary
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.ui.text.style.TextOverflow
+
 private fun drawableToBitmap(drawable: Drawable): Bitmap {
     if (drawable is BitmapDrawable && drawable.bitmap != null) {
         return drawable.bitmap
@@ -62,6 +70,7 @@ fun FolderSearchCard(
     allApps: List<AppInfo>,
     onAppClick: (AppInfo) -> Unit,
     onAppLongClick: (AppInfo) -> Unit,
+    onFolderClick: (AppFolder) -> Unit,
     modifier: Modifier = Modifier,
     isLiquidGlass: Boolean = true
 ) {
@@ -87,64 +96,138 @@ fun FolderSearchCard(
             .clip(RoundedCornerShape(26.dp))
             .border(border, RoundedCornerShape(26.dp))
             .background(background)
-            .padding(18.dp)
+            .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 1. Ícone da Pasta
-            Box(
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Cabeçalho da Pasta (Ícone + Nome + Contagem + Chevron) - Clicável para abrir modal
+            Row(
                 modifier = Modifier
-                    .size(54.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Color(0xFF1B1B22))
-                    .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .combinedClickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onFolderClick(folder) }
+                    )
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF1B1B22))
+                        .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Folder,
+                        contentDescription = folder.name,
+                        tint = TextPrimary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = folder.name,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(1.dp))
+                    Text(
+                        text = if (folderApps.size == 1) "1 aplicativo" else "${folderApps.size} aplicativos",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = Color(0xFF8E8E98)
+                    )
+                }
+
                 Icon(
-                    imageVector = Icons.Outlined.Folder,
-                    contentDescription = folder.name,
-                    tint = TextPrimary,
-                    modifier = Modifier.size(24.dp)
+                    imageVector = Icons.Outlined.ChevronRight,
+                    contentDescription = "Abrir pasta",
+                    tint = Color(0xFF6E6E78),
+                    modifier = Modifier.size(20.dp)
                 )
             }
 
-            // 2. Apps da Pasta
-            folderApps.take(5).forEach { app ->
-                val imageBitmap = remember(app.icon) {
-                    app.icon?.let { drawableToBitmap(it).asImageBitmap() }
-                }
+            // Grade/Linha de Apps da pasta (atalho para abrir diretamente)
+            if (folderApps.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Box(
-                    modifier = Modifier
-                        .size(54.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF1B1B22))
-                        .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(16.dp))
-                        .combinedClickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { onAppClick(app) },
-                            onLongClick = { onAppLongClick(app) }
-                        ),
-                    contentAlignment = Alignment.Center
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (imageBitmap != null) {
-                        Image(
-                            bitmap = imageBitmap,
-                            contentDescription = app.label,
-                            colorFilter = monoFilter,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    } else {
-                        Text(
-                            text = app.firstLetter.toString(),
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                    folderApps.take(5).forEach { app ->
+                        val imageBitmap = remember(app.icon) {
+                            app.icon?.let { drawableToBitmap(it).asImageBitmap() }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(Color(0xFF1B1B22))
+                                .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(15.dp))
+                                .combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { onAppClick(app) },
+                                    onLongClick = { onAppLongClick(app) }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (imageBitmap != null) {
+                                Image(
+                                    bitmap = imageBitmap,
+                                    contentDescription = app.label,
+                                    colorFilter = monoFilter,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            } else {
+                                Text(
+                                    text = app.firstLetter.toString(),
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    // Se a pasta contiver mais de 5 apps, mostra badge de sobra clicável
+                    if (folderApps.size > 5) {
+                        val remaining = folderApps.size - 5
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(Color(0xFF18181E))
+                                .border(BorderStroke(1.dp, Color(0xFF262630)), RoundedCornerShape(15.dp))
+                                .combinedClickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { onFolderClick(folder) }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "+$remaining",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                ),
+                                color = TextPrimary
+                            )
+                        }
                     }
                 }
             }

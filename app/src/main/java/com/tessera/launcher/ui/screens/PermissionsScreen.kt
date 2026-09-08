@@ -2,6 +2,7 @@ package com.tessera.launcher.ui.screens
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -98,9 +99,19 @@ fun PermissionsScreen(
         viewModel.refreshAllPermissions(context)
     }
 
+    val openAppSettings = {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    }
+
     val locationLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         viewModel.updateLocationPermission(isGranted)
         viewModel.refreshAllPermissions(context)
     }
@@ -159,7 +170,7 @@ fun PermissionsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Card Unificado com as 6 Permissões
+            // Card Unificado com as 5 Permissões
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = AmoledCardBackground,
@@ -189,7 +200,9 @@ fun PermissionsScreen(
                         subtitle = "Find and call contacts from search",
                         isChecked = uiState.hasContactsPermission,
                         onCheckedChange = {
-                            if (!uiState.hasContactsPermission) {
+                            if (uiState.hasContactsPermission) {
+                                openAppSettings()
+                            } else {
                                 contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
                             }
                         }
@@ -204,7 +217,9 @@ fun PermissionsScreen(
                         subtitle = "Search messages and notifications",
                         isChecked = uiState.hasSmsPermission,
                         onCheckedChange = {
-                            if (!uiState.hasSmsPermission) {
+                            if (uiState.hasSmsPermission) {
+                                openAppSettings()
+                            } else {
                                 smsLauncher.launch(Manifest.permission.READ_SMS)
                             }
                         }
@@ -234,8 +249,15 @@ fun PermissionsScreen(
                         subtitle = "Previsão do tempo em tempo real no widget de clima",
                         isChecked = uiState.hasLocationPermission,
                         onCheckedChange = {
-                            if (!uiState.hasLocationPermission) {
-                                locationLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                            if (uiState.hasLocationPermission) {
+                                openAppSettings()
+                            } else {
+                                locationLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.ACCESS_FINE_LOCATION,
+                                        Manifest.permission.ACCESS_COARSE_LOCATION
+                                    )
+                                )
                             }
                         }
                     )

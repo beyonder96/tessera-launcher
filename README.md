@@ -61,13 +61,12 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.4)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.5)
 
-### 🆕 Novidades na v1.7.4
-- ⛅ **Widget de Clima Otimizado:** Cache local permanente para carregamento instantâneo, geocodificação com timeout seguro, atualização em tempo real por toque (sem abrir o navegador) e exibição da sensação térmica.
-- 🦖 **Dino Runner Interativo no Dock:** Jogo retrô em pixel art adaptado aos 54dp do dock com loop a 60 FPS, pulo por toque em qualquer área do card, física suave, placar dinâmico e reinício imediato.
-- 📝 **Diário e Tarefas Interativo:** Ícone semântico de anotações (`EventNote`), gaveta inferior dedicada para adicionar, alternar conclusão e excluir tarefas diretamente pelo dock.
-- 🛡️ **Permissões Refinadas:** Removidas as permissões de Música e Fotos & Vídeos na tela de permissões, mantendo o painel rigorosamente minimalista e essencial.
+### 🆕 Novidades na v1.7.5
+- 🌦️ **Correção da Previsão do Tempo:** Resolução definitiva do travamento em satélite no Android 12+, com tratamento diferenciado para localização aproximada e fina, e proteção individual de provedores.
+- 🔒 **Gerenciamento de Permissões:** Possibilidade de desativar ou alterar qualquer permissão ativa, redirecionando com 1 toque para as Configurações do Aplicativo no sistema Android com sincronização reativa.
+- 📁 **Acesso Completo a Pastas na Barra de Pesquisa:** Cabeçalho clicável no card de pastas e nova janela inferior (`FolderViewBottomSheet`) minimalista exibindo todos os apps agrupados na pasta para lançamento instantâneo ou atalhos.
 
 ---
 

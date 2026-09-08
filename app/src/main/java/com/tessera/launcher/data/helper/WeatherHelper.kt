@@ -58,28 +58,52 @@ class WeatherHelper(private val context: Context) {
         return coarse || fine
     }
 
+    private fun hasFineLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
     @SuppressLint("MissingPermission")
     private fun getLastKnownLocation(): Location? {
         if (!hasLocationPermission()) return null
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
 
-        val providers = listOf(
-            LocationManager.GPS_PROVIDER,
-            LocationManager.NETWORK_PROVIDER,
-            LocationManager.PASSIVE_PROVIDER
-        )
+        val hasFine = hasFineLocationPermission()
+        val providers = buildList {
+            // "gps" provider strictly requires ACCESS_FINE_LOCATION on Android 12+ (API 31+)
+            if (hasFine) {
+                add(LocationManager.GPS_PROVIDER)
+            }
+            add(LocationManager.NETWORK_PROVIDER)
+            add(LocationManager.PASSIVE_PROVIDER)
+        }
 
         var bestLocation: Location? = null
         for (provider in providers) {
-            if (lm.isProviderEnabled(provider)) {
-                val loc = try {
-                    lm.getLastKnownLocation(provider)
+            try {
+                val isEnabled = try {
+                    lm.isProviderEnabled(provider)
+                } catch (_: SecurityException) {
+                    false
                 } catch (_: Exception) {
-                    null
+                    false
                 }
-                if (loc != null && (bestLocation == null || loc.accuracy < bestLocation.accuracy)) {
-                    bestLocation = loc
+
+                if (isEnabled) {
+                    val loc = try {
+                        lm.getLastKnownLocation(provider)
+                    } catch (_: SecurityException) {
+                        null
+                    } catch (_: Exception) {
+                        null
+                    }
+                    if (loc != null && (bestLocation == null || loc.accuracy < bestLocation.accuracy)) {
+                        bestLocation = loc
+                    }
                 }
+            } catch (_: Exception) {
             }
         }
         return bestLocation
@@ -100,12 +124,17 @@ class WeatherHelper(private val context: Context) {
     }
 
     suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
-        val location = getLastKnownLocation()
-        val lat = location?.latitude ?: -23.5505 // Fallback default (São Paulo)
-        val lon = location?.longitude ?: -46.6333
-        val city = if (location != null) resolveCityName(lat, lon) else "São Paulo"
+        try {
+            val location = try {
+                getLastKnownLocation()
+            } catch (_: Exception) {
+                null
+            }
+            val lat = location?.latitude ?: -23.5505 // Fallback padrão (São Paulo)
+            val lon = location?.longitude ?: -46.6333
+            val city = if (location != null) resolveCityName(lat, lon) else "São Paulo"
 
-        val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
+            val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
 
         var connection: HttpURLConnection? = null
         try {
@@ -147,7 +176,10 @@ class WeatherHelper(private val context: Context) {
         } finally {
             connection?.disconnect()
         }
+    } catch (_: Exception) {
+        null
     }
+}
 
     fun toJson(info: WeatherInfo): String {
         return JSONObject().apply {

@@ -84,6 +84,7 @@ import com.tessera.launcher.ui.components.CalculatorCard
 import com.tessera.launcher.ui.components.FolderSearchCard
 import com.tessera.launcher.ui.components.BatteryConfigBottomSheet
 import com.tessera.launcher.ui.components.CalendarConfigBottomSheet
+import com.tessera.launcher.ui.components.FolderViewBottomSheet
 import com.tessera.launcher.ui.components.MediaConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesTasksManagerBottomSheet
@@ -93,6 +94,7 @@ import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.SearchosChipsRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
+import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.FileSearchResult
 import com.tessera.launcher.ui.state.SettingsSubScreen
@@ -125,6 +127,7 @@ fun HomeScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
     var isNotesTasksOpen by remember { mutableStateOf(false) }
+    var folderToView by remember { mutableStateOf<AppFolder?>(null) }
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
@@ -413,6 +416,7 @@ fun HomeScreen(
                                                 allApps = allApps,
                                                 onAppClick = { app -> viewModel.launchApp(app.packageName) },
                                                 onAppLongClick = { app -> selectedAppForMenu = app },
+                                                onFolderClick = { f -> folderToView = f },
                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
                                             )
                                         }
@@ -537,6 +541,7 @@ fun HomeScreen(
                                                 allApps = allApps,
                                                 onAppClick = { app -> viewModel.launchApp(app.packageName) },
                                                 onAppLongClick = { app -> selectedAppForMenu = app },
+                                                onFolderClick = { f -> folderToView = f },
                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
                                             )
                                         }
@@ -821,6 +826,17 @@ fun HomeScreen(
                 onToggleTask = { viewModel.toggleNoteTask(it) },
                 onRemoveTask = { viewModel.removeNoteTask(it) },
                 onDismiss = { isNotesTasksOpen = false }
+            )
+        }
+
+        folderToView?.let { folder ->
+            FolderViewBottomSheet(
+                folder = folder,
+                allApps = allApps,
+                onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                onAppLongClick = { app -> selectedAppForMenu = app },
+                onDismiss = { folderToView = null },
+                isAmoledMode = uiState.isAmoledMode
             )
         }
     }
