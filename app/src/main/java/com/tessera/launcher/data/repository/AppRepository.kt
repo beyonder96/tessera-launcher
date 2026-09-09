@@ -6,6 +6,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Process
 import android.os.UserManager
@@ -28,6 +32,28 @@ class AppRepository(
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     val iconPackHelper: IconPackHelper = IconPackHelper(context)
 ) {
+    private fun rasterizeDrawable(drawable: Drawable?, targetSize: Int = 120): Bitmap? {
+        if (drawable == null) return null
+        if (drawable is BitmapDrawable && drawable.bitmap != null) {
+            val bmp = drawable.bitmap
+            return if (bmp.width <= targetSize && bmp.height <= targetSize) {
+                bmp
+            } else {
+                Bitmap.createScaledBitmap(bmp, targetSize, targetSize, true)
+            }
+        }
+        return try {
+            val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceAtMost(targetSize) else targetSize
+            val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceAtMost(targetSize) else targetSize
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            bitmap
+        } catch (_: Throwable) {
+            null
+        }
+    }
 
     suspend fun loadApps(
         iconPackPackage: String? = null,
@@ -61,13 +87,15 @@ class AppRepository(
                     val customIcon = if (!customPack.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, activity.name, customPack) else null
                     val packIcon = if (!iconPackPackage.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, activity.name, iconPackPackage) else null
                     val icon = customIcon ?: packIcon ?: defaultIcon
+                    val iconBitmap = rasterizeDrawable(icon)
 
                     appsList.add(
                         AppInfo(
                             label = label,
                             packageName = pkgName,
                             activityName = activity.name,
-                            icon = icon
+                            icon = icon,
+                            bitmap = iconBitmap
                         )
                     )
                 }
@@ -92,13 +120,15 @@ class AppRepository(
                 val customIcon = if (!customPack.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, customPack) else null
                 val packIcon = if (!iconPackPackage.isNullOrBlank()) iconPackHelper.getIconForApp(pkgName, resolveInfo.activityInfo.name, iconPackPackage) else null
                 val icon = customIcon ?: packIcon ?: defaultIcon
+                val iconBitmap = rasterizeDrawable(icon)
 
                 appsList.add(
                     AppInfo(
                         label = label,
                         packageName = pkgName,
                         activityName = resolveInfo.activityInfo.name,
-                        icon = icon
+                        icon = icon,
+                        bitmap = iconBitmap
                     )
                 )
             }

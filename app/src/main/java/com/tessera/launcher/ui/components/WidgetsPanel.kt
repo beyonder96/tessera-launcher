@@ -136,7 +136,8 @@ fun WidgetsPanel(
     notesWidgetFilter: String = "all",
     onWidgetLongClick: (WidgetConfigType) -> Unit = {},
     isLiquidGlass: Boolean = false,
-    isAmoledMode: Boolean = false
+    isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false
 ) {
     // Ordem das páginas:
     // 0: Ações Rápidas (Screenshot 1)
@@ -194,6 +195,7 @@ fun WidgetsPanel(
                         onOpenBluetooth = onOpenBluetooth,
                         onCycleRingerMode = onCycleRingerMode,
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.QUICK_ACTIONS) }
                     )
                 }
@@ -204,6 +206,7 @@ fun WidgetsPanel(
                         batteryWidgetStyle = batteryWidgetStyle,
                         onOpenWifi = onOpenWifi,
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.BATTERY) }
                     )
                 }
@@ -216,6 +219,7 @@ fun WidgetsPanel(
                         onRequestPermission = onRequestCalendarPermission,
                         onCalendarClick = onCalendarClick,
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
                     )
                 }
@@ -229,12 +233,14 @@ fun WidgetsPanel(
                         onSkipPrevious = onSkipPrevious,
                         onOpenMusicApp = onOpenMusicApp,
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.MEDIA) }
                     )
                 }
                 4 -> {
                     VerseFocusWidgetCard(
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.VERSE_FOCUS) }
                     )
                 }
@@ -247,6 +253,7 @@ fun WidgetsPanel(
                         isWeatherLoading = isWeatherLoading,
                         weatherError = weatherError,
                         isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.WEATHER) }
                     )
                 }
@@ -262,6 +269,7 @@ fun WidgetsPanel(
                             onRemoveTask = onRemoveNoteTask,
                             onNotesClick = onNotesClick,
                             isAmoledMode = isAmoledMode,
+                            isLightMode = isLightMode,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -276,6 +284,7 @@ fun WidgetsPanel(
                             onRemoveTask = onRemoveNoteTask,
                             onNotesClick = onNotesClick,
                             isAmoledMode = isAmoledMode,
+                            isLightMode = isLightMode,
                             onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
                         )
                     }
@@ -298,12 +307,17 @@ fun WidgetsPanel(
                     animationSpec = tween(180, easing = FastOutSlowInEasing),
                     label = "dot_width"
                 )
+                val dotColor = if (isLightMode) {
+                    if (isSelected) Color(0xFF111827) else Color(0xFFD1D5DB)
+                } else {
+                    if (isSelected) Color.White else Color(0xFF383844)
+                }
                 Box(
                     modifier = Modifier
                         .height(3.5.dp)
                         .width(dotWidth)
                         .clip(CircleShape)
-                        .background(if (isSelected) Color.White else Color(0xFF383844))
+                        .background(dotColor)
                 )
             }
         }
@@ -322,6 +336,7 @@ private fun QuickActionsWidgetCard(
     onOpenBluetooth: () -> Unit,
     onCycleRingerMode: () -> Unit,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -344,6 +359,7 @@ private fun QuickActionsWidgetCard(
             isActive = false,
             contentDescription = "Brilho",
             isAmoledMode = isAmoledMode,
+            isLightMode = isLightMode,
             onClick = {
                 try {
                     context.startActivity(Intent(Settings.ACTION_DISPLAY_SETTINGS).apply {
@@ -354,12 +370,13 @@ private fun QuickActionsWidgetCard(
             onLongClick = onLongClick
         )
 
-        // 2. Lanterna (Destaque branco quando ligada)
+        // 2. Lanterna (Destaque ativo quando ligada)
         QuickActionButton(
             icon = Icons.Outlined.FlashlightOn,
             isActive = isTorchOn,
             contentDescription = "Lanterna",
             isAmoledMode = isAmoledMode,
+            isLightMode = isLightMode,
             onClick = onToggleTorch,
             onLongClick = onLongClick
         )
@@ -370,6 +387,7 @@ private fun QuickActionsWidgetCard(
             isActive = true,
             contentDescription = "Bluetooth",
             isAmoledMode = isAmoledMode,
+            isLightMode = isLightMode,
             onClick = onOpenBluetooth,
             onLongClick = onLongClick
         )
@@ -380,6 +398,7 @@ private fun QuickActionsWidgetCard(
             isActive = true,
             contentDescription = "Wi-Fi",
             isAmoledMode = isAmoledMode,
+            isLightMode = isLightMode,
             onClick = onOpenWifi,
             onLongClick = onLongClick
         )
@@ -394,18 +413,34 @@ private fun QuickActionButton(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val shape = RoundedCornerShape(14.dp)
-    val bgColor = if (isActive) Color.White else if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)
-    val iconTint = if (isActive) Color.Black else Color.White
+    val bgColor = when {
+        isActive -> if (isLightMode) Color(0xFF111827) else Color.White
+        isLightMode -> Color(0xFFF1F3F5)
+        isAmoledMode -> AmoledBlack
+        else -> Color(0xFF1E1E26)
+    }
+    val iconTint = when {
+        isActive -> if (isLightMode) Color.White else Color.Black
+        isLightMode -> Color(0xFF111827)
+        else -> Color.White
+    }
+    val borderStroke = when {
+        isActive -> BorderStroke(1.dp, if (isLightMode) Color(0xFF111827) else Color.White)
+        isLightMode -> BorderStroke(1.dp, Color(0xFFE5E7EB))
+        isAmoledMode -> BorderStroke(1.dp, AmoledCardBorder)
+        else -> BorderStroke(1.dp, Color(0xFF2C2C38))
+    }
 
     Box(
         modifier = modifier
             .size(48.dp)
             .clip(shape)
             .border(
-                border = if (isActive) BorderStroke(1.dp, Color.White) else BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)),
+                border = borderStroke,
                 shape = shape
             )
             .background(bgColor)
@@ -436,12 +471,17 @@ private fun BatteryWidgetCard(
     batteryWidgetStyle: String = "cards_3",
     onOpenWifi: () -> Unit = {},
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
     if (batteryWidgetStyle == "bar") {
         // Estilo Barra Padrão
+        val boxBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)
+        val boxBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)
+        val contentColor = if (isLightMode) Color(0xFF111827) else Color.White
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -458,14 +498,14 @@ private fun BatteryWidgetCard(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)), CircleShape)
-                    .background(if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)),
+                    .border(BorderStroke(1.dp, boxBorder), CircleShape)
+                    .background(boxBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = contentColor,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -476,7 +516,7 @@ private fun BatteryWidgetCard(
                 Text(
                     text = if (isCharging) "Carregando • $batteryPercentage%" else "Bateria • $batteryPercentage%",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = TextPrimary
+                    color = contentColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
@@ -485,8 +525,8 @@ private fun BatteryWidgetCard(
                         .fillMaxWidth()
                         .height(4.dp)
                         .clip(CircleShape),
-                    color = Color.White,
-                    trackColor = Color(0xFF2C2C36)
+                    color = contentColor,
+                    trackColor = if (isLightMode) Color(0xFFE5E7EB) else Color(0xFF2C2C36)
                 )
             }
         }
@@ -509,6 +549,7 @@ private fun BatteryWidgetCard(
                 icon = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
                 label = "$batteryPercentage%",
                 isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
                 onClick = {
                     try {
                         context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply {
@@ -526,6 +567,7 @@ private fun BatteryWidgetCard(
                 icon = Icons.Outlined.Wifi,
                 label = "Wi-Fi",
                 isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
                 onClick = onOpenWifi,
                 onLongClick = onLongClick
             )
@@ -537,6 +579,7 @@ private fun BatteryWidgetCard(
                 icon = Icons.Outlined.SignalCellularAlt,
                 label = "Cell",
                 isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
                 onClick = {
                     try {
                         context.startActivity(Intent(Settings.ACTION_DATA_ROAMING_SETTINGS).apply {
@@ -557,11 +600,13 @@ private fun StatusPill(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val pillShape = RoundedCornerShape(20.dp)
-    val pillBg = if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val pillBorder = if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val pillBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val pillBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val contentColor = if (isLightMode) Color(0xFF111827) else Color.White
 
     Box(
         modifier = modifier
@@ -585,7 +630,7 @@ private fun StatusPill(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.White,
+                tint = contentColor,
                 modifier = Modifier.size(15.dp)
             )
             Text(
@@ -594,7 +639,7 @@ private fun StatusPill(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 12.sp
                 ),
-                color = Color.White
+                color = contentColor
             )
         }
     }
@@ -612,6 +657,7 @@ private fun CalendarWidgetCard(
     onRequestPermission: () -> Unit,
     onCalendarClick: () -> Unit,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val cal = remember { Calendar.getInstance() }
@@ -623,6 +669,16 @@ private fun CalendarWidgetCard(
 
     val currentMinuteOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
     val dayProgress = (currentMinuteOfDay / 1440f).coerceIn(0.05f, 1f)
+
+    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val dayColor = if (isLightMode) Color(0xFF111827) else Color.White
+    val monthColor = if (isLightMode) Color(0xFF6B7280) else Color(0xFFAAAAAA)
+    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
+    val linkColor = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
+    val progressColor = if (isLightMode) Color(0xFF111827) else Color(0xFFCCCCCC)
+    val progressTrack = if (isLightMode) Color(0xFFE5E7EB) else Color(0xFF262630)
 
     Row(
         modifier = Modifier
@@ -641,8 +697,8 @@ private fun CalendarWidgetCard(
             modifier = Modifier
                 .size(46.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, badgeBorder), RoundedCornerShape(13.dp))
+                .background(badgeBg),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -652,7 +708,7 @@ private fun CalendarWidgetCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     ),
-                    color = Color.White
+                    color = dayColor
                 )
                 Text(
                     text = monthStr,
@@ -660,7 +716,7 @@ private fun CalendarWidgetCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.sp
                     ),
-                    color = Color(0xFFAAAAAA)
+                    color = monthColor
                 )
             }
         }
@@ -685,7 +741,7 @@ private fun CalendarWidgetCard(
                         fontSize = 12.sp,
                         letterSpacing = 0.5.sp
                     ),
-                    color = Color.White
+                    color = primaryText
                 )
 
                 Text(
@@ -694,7 +750,7 @@ private fun CalendarWidgetCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
                     ),
-                    color = Color.White
+                    color = primaryText
                 )
             }
 
@@ -707,7 +763,7 @@ private fun CalendarWidgetCard(
                 Text(
                     text = if (nextCalendarEvent != null) nextCalendarEvent.title else currentDate,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = Color(0xFF8E8E98),
+                    color = secondaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false)
@@ -721,7 +777,7 @@ private fun CalendarWidgetCard(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = Color(0xFFAAAAAA),
+                    color = linkColor,
                     modifier = Modifier.clickable { onCalendarClick() }
                 )
             }
@@ -733,8 +789,8 @@ private fun CalendarWidgetCard(
                     .fillMaxWidth()
                     .height(2.dp)
                     .clip(CircleShape),
-                color = Color(0xFFCCCCCC),
-                trackColor = Color(0xFF262630)
+                color = progressColor,
+                trackColor = progressTrack
             )
         }
     }
@@ -753,8 +809,18 @@ private fun MediaWidgetCard(
     onSkipPrevious: () -> Unit,
     onOpenMusicApp: () -> Unit,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
+    val placeholderBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val placeholderBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val placeholderTint = if (isLightMode) Color(0xFF6B7280) else Color(0xFFAAAAAA)
+    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
+    val controlTint = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
+    val playBg = if (isLightMode) Color(0xFF111827) else Color.White
+    val playTint = if (isLightMode) Color.White else Color.Black
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -786,8 +852,8 @@ private fun MediaWidgetCard(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(10.dp))
-                    .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24))
+                    .border(BorderStroke(1.dp, placeholderBorder), RoundedCornerShape(10.dp))
+                    .background(placeholderBg)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -798,7 +864,7 @@ private fun MediaWidgetCard(
                 Icon(
                     imageVector = Icons.Outlined.MusicNote,
                     contentDescription = null,
-                    tint = Color(0xFFAAAAAA),
+                    tint = placeholderTint,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -822,7 +888,7 @@ private fun MediaWidgetCard(
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp
                 ),
-                color = Color.White,
+                color = primaryText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -830,7 +896,7 @@ private fun MediaWidgetCard(
             Text(
                 text = mediaPlayback.artist.ifBlank { "Toque para abrir música" },
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = Color(0xFF8E8E98),
+                color = secondaryText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -846,7 +912,7 @@ private fun MediaWidgetCard(
             Icon(
                 imageVector = Icons.Outlined.SkipPrevious,
                 contentDescription = "Anterior",
-                tint = Color(0xFFAAAAAA),
+                tint = controlTint,
                 modifier = Modifier
                     .size(20.dp)
                     .clickable(
@@ -856,12 +922,12 @@ private fun MediaWidgetCard(
                     )
             )
 
-            // Play / Pause em Squircle Branco com Ícone Preto
+            // Play / Pause
             Box(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(RoundedCornerShape(11.dp))
-                    .background(Color.White)
+                    .background(playBg)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -872,7 +938,7 @@ private fun MediaWidgetCard(
                 Icon(
                     imageVector = if (mediaPlayback.isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
                     contentDescription = if (mediaPlayback.isPlaying) "Pausar" else "Reproduzir",
-                    tint = Color.Black,
+                    tint = playTint,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -880,7 +946,7 @@ private fun MediaWidgetCard(
             Icon(
                 imageVector = Icons.Outlined.SkipNext,
                 contentDescription = "Próxima",
-                tint = Color(0xFFAAAAAA),
+                tint = controlTint,
                 modifier = Modifier
                     .size(20.dp)
                     .clickable(
@@ -899,6 +965,7 @@ private fun MediaWidgetCard(
 @Composable
 private fun VerseFocusWidgetCard(
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val quotes = remember {
@@ -911,6 +978,12 @@ private fun VerseFocusWidgetCard(
         )
     }
     var currentQuoteIndex by remember { mutableIntStateOf(0) }
+
+    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val quoteIconColor = if (isLightMode) Color(0xFF111827) else Color(0xFFAAAAAA)
+    val headerColor = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
+    val quoteTextColor = if (isLightMode) Color(0xFF111827) else Color.White
 
     Row(
         modifier = Modifier
@@ -929,8 +1002,8 @@ private fun VerseFocusWidgetCard(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, badgeBorder), RoundedCornerShape(13.dp))
+                .background(badgeBg),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -939,7 +1012,7 @@ private fun VerseFocusWidgetCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 26.sp
                 ),
-                color = Color(0xFFAAAAAA)
+                color = quoteIconColor
             )
         }
 
@@ -962,13 +1035,13 @@ private fun VerseFocusWidgetCard(
                         fontSize = 11.sp,
                         letterSpacing = 0.5.sp
                     ),
-                    color = Color(0xFF8E8E98)
+                    color = headerColor
                 )
 
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
                     contentDescription = "Alternar",
-                    tint = Color(0xFF8E8E98),
+                    tint = headerColor,
                     modifier = Modifier
                         .size(15.dp)
                         .clickable {
@@ -984,7 +1057,7 @@ private fun VerseFocusWidgetCard(
                     fontStyle = FontStyle.Italic,
                     fontSize = 12.sp
                 ),
-                color = Color.White,
+                color = quoteTextColor,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1004,8 +1077,16 @@ private fun WeatherWidgetCard(
     isWeatherLoading: Boolean = false,
     weatherError: String? = null,
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
+    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val iconTint = if (isLightMode) Color(0xFF111827) else Color.White
+    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
+    val subtleText = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1041,14 +1122,14 @@ private fun WeatherWidgetCard(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, badgeBorder), RoundedCornerShape(13.dp))
+                .background(badgeBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = weatherIcon,
                 contentDescription = null,
-                tint = Color.White,
+                tint = iconTint,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -1064,13 +1145,13 @@ private fun WeatherWidgetCard(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = Color.White
+                        color = primaryText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Toque para ativar previsão do tempo",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF8E8E98)
+                        color = secondaryText
                     )
                 }
             }
@@ -1082,13 +1163,13 @@ private fun WeatherWidgetCard(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = Color.White
+                        color = primaryText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Buscando dados de satélite",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF8E8E98)
+                        color = secondaryText
                     )
                 }
             }
@@ -1100,13 +1181,13 @@ private fun WeatherWidgetCard(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = Color.White
+                        color = primaryText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Toque para tentar novamente",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF8E8E98)
+                        color = secondaryText
                     )
                 }
             }
@@ -1126,7 +1207,7 @@ private fun WeatherWidgetCard(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 15.sp
                             ),
-                            color = Color.White
+                            color = primaryText
                         )
 
                         Text(
@@ -1135,7 +1216,7 @@ private fun WeatherWidgetCard(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp
                             ),
-                            color = Color(0xFFAAAAAA)
+                            color = subtleText
                         )
                     }
 
@@ -1147,7 +1228,7 @@ private fun WeatherWidgetCard(
                         Text(
                             text = weatherInfo.condition,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = Color(0xFF8E8E98),
+                            color = secondaryText,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -1158,7 +1239,7 @@ private fun WeatherWidgetCard(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = Color(0xFFAAAAAA)
+                            color = subtleText
                         )
                     }
                 }
@@ -1171,13 +1252,13 @@ private fun WeatherWidgetCard(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = Color.White
+                        color = primaryText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = "Aguarde atualização de satélite",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = Color(0xFF8E8E98)
+                        color = secondaryText
                     )
                 }
             }
@@ -1197,9 +1278,15 @@ private fun NotesWidgetCard(
     onRemoveTask: (Long) -> Unit,
     onNotesClick: () -> Unit = {},
     isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
     val topTask = tasks.firstOrNull()
+    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val iconTint = if (isLightMode) Color(0xFF111827) else Color.White
+    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
 
     Row(
         modifier = Modifier
@@ -1217,14 +1304,14 @@ private fun NotesWidgetCard(
             modifier = Modifier
                 .size(44.dp)
                 .clip(RoundedCornerShape(13.dp))
-                .border(BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)), RoundedCornerShape(13.dp))
-                .background(if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)),
+                .border(BorderStroke(1.dp, badgeBorder), RoundedCornerShape(13.dp))
+                .background(badgeBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.EventNote,
                 contentDescription = null,
-                tint = Color.White,
+                tint = iconTint,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -1235,7 +1322,7 @@ private fun NotesWidgetCard(
             Text(
                 text = topTask?.text ?: "Nenhuma tarefa pendente",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = Color.White,
+                color = primaryText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1243,7 +1330,7 @@ private fun NotesWidgetCard(
             Text(
                 text = if (pendingCount > 0) "$pendingCount pendente${if (pendingCount > 1) "s" else ""} • Toque para ver" else "Diário e Tarefas • Toque para abrir",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                color = Color(0xFF8E8E98)
+                color = secondaryText
             )
         }
     }

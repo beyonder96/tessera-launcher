@@ -61,14 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.6)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.7)
 
-### 🆕 Novidades na v1.7.6
-- 🖤 **Modo AMOLED 100% Puro:** Remoção completa de caixas cinzas nos cartões, configurações e emblemas de widgets, garantindo preto absoluto (`#000000`) com bordas sutis de 1px.
-- ✨ **Logo Cursiva no Cabeçalho:** Substituição do título no topo das configurações pelo logotipo caligráfico transparente estilizado com tint dinâmico.
-- 📏 **Dock com Divisória e Alinhamento Perfeito:** Inserção de linha divisória horizontal entre os widgets e a barra de busca, além do nivelamento vertical milimétrico do botão de engrenagem (`⚙`).
-- 🎨 **Novos Controles de Customização:** Sliders em pílula para *Escurecimento Home* (0–100%) e *Vidro na Gaveta / Opacidade*, com seletor de cores sólidas e abas segmentadas (`Inicial`, `Bloqueio`, `Ambas`).
-- 📍 **Permissão de Localização e Clima Confiável:** Suporte completo ao Android 12+ (Target SDK 36) requisitando localização fina e aproximada sem desvios para configurações do sistema, com obtenção ativa de coordenadas e estados visuais completos no widget.
+### 🆕 Novidades na v1.7.7
+- 🗑️ **Desinstalação de Apps com Modal de Confirmação:** Inclusão da permissão `REQUEST_DELETE_PACKAGES` e modal in-app nativo de confirmação antes de desinstalar aplicativos.
+- ☀️ **Modo Claro 100% Puro & Consistente:** Remoção completa dos círculos pretos em ícones nas Configurações e Customização; tema claro estendido à Barra de Busca e aos Widgets (Ações Rápidas, Bateria, Calendário, Mídia, Versículo, Clima e Notas).
+- 💧 **Opacidade da Barra de Busca & Liquid Design:** Slider contínuo de 0% a 100% para opacidade da barra com acabamento *Liquid Glass* (difração de luz e brilho especular) e contraste adaptativo inteligente (WCAG AA).
+- ⚡ **Sliders 120Hz Reconstruídos:** Rastreamento tátil suave e contínuo em 120Hz sem travamento nos 20% e sem colisões visuais de texto.
+- 🚀 **Rolagem a 120Hz sem Travamento (Butter-Smooth):** Pré-rasterização de ícones em segundo plano (`Dispatchers.IO`) e requisição de taxa máxima de atualização (120Hz/144Hz) na janela principal.
+- 🖋️ **Logo Tessera no Cabeçalho:** Logotipo caligráfico nas Configurações ampliado para o dobro do tamanho (64dp).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.7.6</b></summary>
+
+- 🖤 **Modo AMOLED 100% Puro:** Remoção de caixas cinzas em cartões e widgets.
+- ✨ **Logo Cursiva no Cabeçalho:** Introdução do logotipo caligráfico transparente.
+- 📏 **Dock com Divisória e Alinhamento:** Linha divisória e engrenagem alinhada milimetricamente.
+- 🎨 **Controles de Customização:** Sliders para papel de parede e vidro na gaveta.
+- 📍 **Localização e Clima Confiável:** Suporte ao Android 12+ sem redirecionamento forçado.
+</details>
 
 ---
 

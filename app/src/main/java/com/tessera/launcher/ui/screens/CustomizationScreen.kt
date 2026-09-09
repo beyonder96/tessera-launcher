@@ -6,6 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -71,6 +73,15 @@ import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBackground
 import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.DarkSurface
+import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightIconBackground
+import com.tessera.launcher.ui.theme.LightIconTint
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
@@ -84,7 +95,12 @@ fun CustomizationScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val bg = if (uiState.isAmoledMode) AmoledBlack else DarkSurface
+    val isLight = uiState.isLightMode
+    val bg = if (isLight) LightBackground else if (uiState.isAmoledMode) AmoledBlack else DarkSurface
+    val cardBg = if (isLight) LightCardBackground else if (uiState.isAmoledMode) AmoledCardBackground else DarkSurface
+    val cardBorder = if (isLight) LightCardBorder else if (uiState.isAmoledMode) AmoledCardBorder else DarkSurfaceBorder
+    val textPrimary = if (isLight) LightTextPrimary else TextPrimary
+    val textSecondary = if (isLight) LightTextSecondary else TextSecondary
 
     var openModal by remember { mutableStateOf<String?>(null) }
 
@@ -171,7 +187,7 @@ fun CustomizationScreen(
                     Icon(
                         imageVector = Icons.Outlined.ArrowBack,
                         contentDescription = "Voltar",
-                        tint = TextPrimary,
+                        tint = textPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -183,7 +199,7 @@ fun CustomizationScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.4.sp
                     ),
-                    color = TextSecondary,
+                    color = textSecondary,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
@@ -193,8 +209,8 @@ fun CustomizationScreen(
             // CARD 1: Papel de Parede do Sistema & Cor sólida
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = AmoledCardBackground,
-                border = BorderStroke(1.dp, AmoledCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -212,13 +228,13 @@ fun CustomizationScreen(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 15.sp
                                 ),
-                                color = TextPrimary
+                                color = textPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Usa cores sólidas do tema quando está desligado",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = textSecondary
                             )
                         }
 
@@ -228,7 +244,7 @@ fun CustomizationScreen(
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.Black,
                                 checkedTrackColor = Color.White,
-                                uncheckedThumbColor = TextSecondary,
+                                uncheckedThumbColor = textSecondary,
                                 uncheckedTrackColor = Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
@@ -241,21 +257,16 @@ fun CustomizationScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(
-                            text = "Menos brilho para dar mais contraste",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
                         PillPercentSlider(
-                            labelPrefix = "ESCURECIMENTO HOME",
+                            title = "Escurecimento Home",
+                            subtitle = "Menos brilho para aumentar o contraste",
                             percent = uiState.homeWallpaperDimming,
-                            onPercentChange = { viewModel.setHomeWallpaperDimming(it) }
+                            onPercentChange = { viewModel.setHomeWallpaperDimming(it) },
+                            isLight = isLight
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
                     }
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Alterar Papel de Parede
                     Row(
@@ -427,8 +438,8 @@ fun CustomizationScreen(
             // CARD 2: Vidro na Gaveta
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = AmoledCardBackground,
-                border = BorderStroke(1.dp, AmoledCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -445,13 +456,13 @@ fun CustomizationScreen(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 15.sp
                                 ),
-                                color = TextPrimary
+                                color = textPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Mostra o papel de parede atrás dos resultados",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = textSecondary
                             )
                         }
 
@@ -461,7 +472,7 @@ fun CustomizationScreen(
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.Black,
                                 checkedTrackColor = Color.White,
-                                uncheckedThumbColor = TextSecondary,
+                                uncheckedThumbColor = textSecondary,
                                 uncheckedTrackColor = Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
@@ -473,18 +484,13 @@ fun CustomizationScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(
-                            text = "Controle o quanto o fundo aparece",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
                         PillPercentSlider(
-                            labelPrefix = "OPACIDADE",
+                            title = "Opacidade do Vidro",
+                            subtitle = "Controle o quanto o fundo aparece",
                             percent = uiState.drawerGlassOpacity,
-                            onPercentChange = { viewModel.setDrawerGlassOpacity(it) }
+                            onPercentChange = { viewModel.setDrawerGlassOpacity(it) },
+                            isLight = isLight
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
                     }
                 }
             }
@@ -494,8 +500,8 @@ fun CustomizationScreen(
             // CARD 3: Estilos, Barra, Tipografia e Ícones
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = AmoledCardBackground,
-                border = BorderStroke(1.dp, AmoledCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
@@ -512,10 +518,11 @@ fun CustomizationScreen(
                             "square" -> "Square"
                             else -> "Split Pill (Separate Gear)"
                         },
-                        onClick = { openModal = "style" }
+                        onClick = { openModal = "style" },
+                        isLight = isLight
                     )
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Texto da barra
                     CustomSettingsRow(
@@ -528,10 +535,28 @@ fun CustomizationScreen(
                             "custom" -> uiState.searchBarCustomText.ifBlank { "Texto próprio" }
                             else -> "Searcho..."
                         },
-                        onClick = { openModal = "text" }
+                        onClick = { openModal = "text" },
+                        isLight = isLight
                     )
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
+
+                    // Opacidade da Barra de Pesquisa (Liquid Design)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        PillPercentSlider(
+                            title = "Opacidade da Barra de Pesquisa",
+                            subtitle = "Transparência do vidro com acabamento Liquid Design",
+                            percent = uiState.searchBarOpacity,
+                            onPercentChange = { viewModel.setSearchBarOpacity(it) },
+                            isLight = isLight
+                        )
+                    }
+
+                    CustomDivider(isLight = isLight)
 
                     // Typography
                     CustomSettingsRow(
@@ -543,20 +568,22 @@ fun CustomizationScreen(
                             "custom" -> "Custom Font"
                             else -> "Searcho"
                         },
-                        onClick = { openModal = "typography" }
+                        onClick = { openModal = "typography" },
+                        isLight = isLight
                     )
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Pacote de ícones
                     CustomSettingsRow(
                         icon = Icons.Outlined.GridView,
                         title = "Pacote de ícones",
                         subtitle = uiState.selectedIconPack?.substringAfterLast(".") ?: "Padrão",
-                        onClick = { openModal = "pack" }
+                        onClick = { openModal = "pack" },
+                        isLight = isLight
                     )
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Forma dos ícones
                     CustomSettingsRow(
@@ -570,10 +597,11 @@ fun CustomizationScreen(
                             "SQUARE" -> "Quadrado"
                             else -> "Padrão"
                         },
-                        onClick = { openModal = "shape" }
+                        onClick = { openModal = "shape" },
+                        isLight = isLight
                     )
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Switch Ícones com tema
                     Row(
@@ -589,13 +617,13 @@ fun CustomizationScreen(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 15.sp
                                 ),
-                                color = TextPrimary
+                                color = textPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Tinge os ícones na cor do seu tema.",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = textSecondary
                             )
                         }
 
@@ -605,14 +633,14 @@ fun CustomizationScreen(
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.Black,
                                 checkedTrackColor = Color.White,
-                                uncheckedThumbColor = TextSecondary,
+                                uncheckedThumbColor = textSecondary,
                                 uncheckedTrackColor = Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
                     }
 
-                    CustomDivider()
+                    CustomDivider(isLight = isLight)
 
                     // Switch Ocultar nomes dos apps
                     Row(
@@ -628,13 +656,13 @@ fun CustomizationScreen(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 15.sp
                                 ),
-                                color = TextPrimary
+                                color = textPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Mostra só os ícones nos resultados.",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = textSecondary
                             )
                         }
 
@@ -644,7 +672,7 @@ fun CustomizationScreen(
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.Black,
                                 checkedTrackColor = Color.White,
-                                uncheckedThumbColor = TextSecondary,
+                                uncheckedThumbColor = textSecondary,
                                 uncheckedTrackColor = Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
@@ -663,8 +691,15 @@ private fun CustomSettingsRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLight: Boolean = false
 ) {
+    val iconBg = if (isLight) Color(0xFFF1F3F5) else Color(0xFF191920)
+    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val titleColor = if (isLight) LightTextPrimary else TextPrimary
+    val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
+    val chevronTint = if (isLight) Color(0xFF9CA3AF) else TextTertiary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -680,13 +715,13 @@ private fun CustomSettingsRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF191920)),
+                .background(iconBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = iconTint,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -700,29 +735,29 @@ private fun CustomSettingsRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 15.sp
                 ),
-                color = TextPrimary
+                color = titleColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = TextSecondary
+                color = subtitleColor
             )
         }
 
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = TextTertiary,
+            tint = chevronTint,
             modifier = Modifier.size(20.dp)
         )
     }
 }
 
 @Composable
-private fun CustomDivider() {
+private fun CustomDivider(isLight: Boolean = false) {
     HorizontalDivider(
-        color = Color(0xFF16161C),
+        color = if (isLight) LightDivider else Color(0xFF16161C),
         thickness = 1.dp,
         modifier = Modifier.padding(start = 68.dp, end = 16.dp)
     )
@@ -730,82 +765,131 @@ private fun CustomDivider() {
 
 @Composable
 private fun PillPercentSlider(
-    labelPrefix: String,
+    title: String,
+    subtitle: String? = null,
     percent: Int,
     onPercentChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLight: Boolean = false
 ) {
-    val steps = listOf(0, 20, 40, 60, 80, 100)
-    var boxWidthPx by remember { mutableStateOf(0f) }
+    val trackBg = if (isLight) Color(0xFFE5E7EB) else Color(0xFF14141A)
+    val trackBorder = if (isLight) Color(0xFFD1D5DB) else Color(0xFF24242E)
+    val handleBg = if (isLight) Color(0xFF111827) else Color.White
+    val handleGrip = if (isLight) Color(0xFF6B7280) else Color(0xFF7E7E88)
+    val textPrimary = if (isLight) LightTextPrimary else TextPrimary
+    val textSecondary = if (isLight) LightTextSecondary else TextSecondary
+    val badgeBg = if (isLight) Color(0xFFE5E7EB) else Color(0xFF1E1E28)
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(50.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFF131317))
-            .border(BorderStroke(1.dp, Color(0xFF22222A)), RoundedCornerShape(14.dp))
-            .onSizeChanged { boxWidthPx = it.width.toFloat() }
-            .pointerInput(boxWidthPx) {
-                detectTapGestures { offset ->
-                    if (boxWidthPx > 0) {
-                        val fraction = (offset.x / boxWidthPx).coerceIn(0f, 1f)
-                        val target = steps.minByOrNull { kotlin.math.abs(it - (fraction * 100).toInt()) } ?: 20
-                        onPercentChange(target)
-                    }
-                }
-            }
-            .pointerInput(boxWidthPx) {
-                detectHorizontalDragGestures { _, dragAmount ->
-                    if (boxWidthPx > 0) {
-                        val delta = (dragAmount / boxWidthPx) * 100
-                        val current = (percent + delta).coerceIn(0f, 100f).toInt()
-                        val target = steps.minByOrNull { kotlin.math.abs(it - current) } ?: 20
-                        onPercentChange(target)
-                    }
-                }
-            }
-            .padding(4.dp)
-    ) {
-        val handleWidth = 54.dp
-        val fraction = (percent.coerceIn(0, 100) / 100f)
-
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val totalWidth = maxWidth
-            val maxOffset = (totalWidth - handleWidth).coerceAtLeast(0.dp)
-            val handleOffset = maxOffset * fraction
-
-            Box(
-                modifier = Modifier
-                    .offset(x = handleOffset)
-                    .width(handleWidth)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(Color.White),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(2.dp)
-                        .height(16.dp)
-                        .clip(RoundedCornerShape(1.dp))
-                        .background(Color(0xFF7E7E88))
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f, fill = false)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    ),
+                    color = textPrimary
                 )
+                if (subtitle != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                        color = textSecondary
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            // Badge de Porcentagem
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = badgeBg,
+                modifier = Modifier.padding(start = 8.dp)
             ) {
                 Text(
-                    text = "$labelPrefix $percent%",
+                    text = "$percent%",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
                     ),
-                    color = if (fraction in 0.35f..0.65f) Color.Black else TextPrimary
+                    color = textPrimary,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Trilho deslizante limpo e contínuo com rastreamento a 120Hz
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(trackBg)
+                .border(BorderStroke(1.dp, trackBorder), RoundedCornerShape(12.dp))
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val totalWidth = size.width.toFloat()
+                        if (totalWidth > 0) {
+                            val fraction = (down.position.x / totalWidth).coerceIn(0f, 1f)
+                            val raw = (fraction * 100).toInt()
+                            val snapped = (Math.round(raw / 5.0) * 5).toInt().coerceIn(0, 100)
+                            onPercentChange(snapped)
+                        }
+                        val pointerId = down.id
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val dragChange = event.changes.firstOrNull { it.id == pointerId } ?: break
+                            if (dragChange.pressed) {
+                                val width = size.width.toFloat()
+                                if (width > 0) {
+                                    val fraction = (dragChange.position.x / width).coerceIn(0f, 1f)
+                                    val raw = (fraction * 100).toInt()
+                                    val snapped = (Math.round(raw / 5.0) * 5).toInt().coerceIn(0, 100)
+                                    onPercentChange(snapped)
+                                }
+                                dragChange.consume()
+                            } else {
+                                break
+                            }
+                        }
+                    }
+                }
+                .padding(4.dp)
+        ) {
+            val handleWidth = 46.dp
+            val fraction = (percent.coerceIn(0, 100) / 100f)
+
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val totalW = maxWidth
+                val maxOffset = (totalW - handleWidth).coerceAtLeast(0.dp)
+                val handleOffset = maxOffset * fraction
+
+                // Pílula / Manopla deslizante sem texto sobreposto
+                Box(
+                    modifier = Modifier
+                        .offset(x = handleOffset)
+                        .width(handleWidth)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(handleBg),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(3.dp)
+                            .height(14.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(handleGrip)
+                    )
+                }
             }
         }
     }

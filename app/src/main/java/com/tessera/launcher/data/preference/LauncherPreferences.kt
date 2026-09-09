@@ -89,6 +89,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_HOME_WALLPAPER_DIMMING = "home_wallpaper_dimming"
         private const val KEY_DRAWER_GLASS_ENABLED = "drawer_glass_enabled"
         private const val KEY_DRAWER_GLASS_OPACITY = "drawer_glass_opacity"
+        private const val KEY_SEARCH_BAR_OPACITY = "search_bar_opacity"
         private const val KEY_THEME_MODE = "theme_mode"
     }
 
@@ -360,6 +361,9 @@ class LauncherPreferences(context: Context) {
 
     fun getDrawerGlassOpacity(): Int = prefs.getInt(KEY_DRAWER_GLASS_OPACITY, 20)
     fun setDrawerGlassOpacity(percent: Int) = prefs.edit().putInt(KEY_DRAWER_GLASS_OPACITY, percent).apply()
+
+    fun getSearchBarOpacity(): Int = prefs.getInt(KEY_SEARCH_BAR_OPACITY, 100)
+    fun setSearchBarOpacity(percent: Int) = prefs.edit().putInt(KEY_SEARCH_BAR_OPACITY, percent).apply()
 
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
     fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()

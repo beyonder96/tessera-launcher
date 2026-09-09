@@ -669,6 +669,8 @@ fun HomeScreen(
                 currentTime = uiState.formattedTime,
                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                 isAmoledMode = uiState.isAmoledMode,
+                isLightMode = uiState.isLightMode,
+                searchBarOpacity = uiState.searchBarOpacity,
                 widgetContent = if (showWidgets) {
                     {
                         WidgetsPanel(
@@ -718,7 +720,8 @@ fun HomeScreen(
                             notesWidgetFilter = uiState.notesWidgetFilter,
                             onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
                             isLiquidGlass = false,
-                            isAmoledMode = uiState.isAmoledMode
+                            isAmoledMode = uiState.isAmoledMode,
+                            isLightMode = uiState.isLightMode
                         )
                     }
                 } else null
@@ -761,11 +764,15 @@ fun HomeScreen(
                     context.startActivity(intent)
                 },
                 onUninstallApp = {
-                    val intent = Intent(Intent.ACTION_DELETE).apply {
-                        data = Uri.parse("package:${app.packageName}")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        val intent = Intent(Intent.ACTION_DELETE).apply {
+                            data = Uri.parse("package:${app.packageName}")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Não foi possível iniciar a desinstalação", Toast.LENGTH_SHORT).show()
                     }
-                    context.startActivity(intent)
                 }
             )
         }

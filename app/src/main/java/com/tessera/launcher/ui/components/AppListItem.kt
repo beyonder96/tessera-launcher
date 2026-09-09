@@ -87,8 +87,8 @@ fun AppListItem(
         }
     }
 
-    val imageBitmap: ImageBitmap? = remember(app.icon) {
-        app.icon?.let { drawableToBitmap(it).asImageBitmap() }
+    val imageBitmap: ImageBitmap? = remember(app.bitmap, app.icon) {
+        app.bitmap?.asImageBitmap() ?: app.icon?.let { drawableToBitmap(it).asImageBitmap() }
     }
 
     Row(

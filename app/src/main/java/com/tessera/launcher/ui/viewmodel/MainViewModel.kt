@@ -178,6 +178,7 @@ class MainViewModel(
             homeWallpaperDimming = preferences.getHomeWallpaperDimming(),
             isDrawerGlassEnabled = preferences.isDrawerGlassEnabled(),
             drawerGlassOpacity = preferences.getDrawerGlassOpacity(),
+            searchBarOpacity = preferences.getSearchBarOpacity(),
             themeMode = preferences.getThemeMode(),
 
             // Clima & Localização
@@ -733,6 +734,11 @@ class MainViewModel(
     fun setDrawerGlassOpacity(percent: Int) {
         preferences.setDrawerGlassOpacity(percent)
         _uiState.update { it.copy(drawerGlassOpacity = percent) }
+    }
+
+    fun setSearchBarOpacity(percent: Int) {
+        preferences.setSearchBarOpacity(percent)
+        _uiState.update { it.copy(searchBarOpacity = percent) }
     }
 
     fun setLiquidGlassEnabled(enabled: Boolean) {

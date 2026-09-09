@@ -201,6 +201,7 @@ data class LauncherUiState(
     val homeWallpaperDimming: Int = 20,
     val isDrawerGlassEnabled: Boolean = true,
     val drawerGlassOpacity: Int = 20,
+    val searchBarOpacity: Int = 100,
     val themeMode: String = "AMOLED",
 
     // Configurações & Estilos dos Widgets
@@ -213,4 +214,6 @@ data class LauncherUiState(
 
     // Modal de Configuração por Toque Longo
     val activeWidgetConfigModal: WidgetConfigType? = null
-)
+) {
+    val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
+}

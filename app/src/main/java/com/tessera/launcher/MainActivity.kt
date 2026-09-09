@@ -77,6 +77,26 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Maximizar taxa de atualização da tela para 120Hz / alta fluidez
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val currentDisplay = display
+            val maxMode = currentDisplay?.supportedModes?.maxByOrNull { it.refreshRate }
+            if (maxMode != null) {
+                val params = window.attributes
+                params.preferredDisplayModeId = maxMode.modeId
+                window.attributes = params
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            @Suppress("DEPRECATION")
+            val currentDisplay = window.windowManager.defaultDisplay
+            val maxMode = currentDisplay?.supportedModes?.maxByOrNull { it.refreshRate }
+            if (maxMode != null) {
+                val params = window.attributes
+                params.preferredDisplayModeId = maxMode.modeId
+                window.attributes = params
+            }
+        }
+
         val factory = MainViewModelFactory(this)
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 

@@ -47,6 +47,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -56,7 +57,15 @@ import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceBorderHover
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightLiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.LightLiquidGlassSheenBrush
+import com.tessera.launcher.ui.theme.LightLiquidGlassSurfaceBrush
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.LiquidGlassSheenBrush
 import com.tessera.launcher.ui.theme.LiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
@@ -79,6 +88,8 @@ fun SearchoMorphingDock(
     currentTime: String = "",
     isLiquidGlass: Boolean = true,
     isAmoledMode: Boolean = true,
+    isLightMode: Boolean = false,
+    searchBarOpacity: Int = 100,
     widgetContent: (@Composable () -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
@@ -102,19 +113,72 @@ fun SearchoMorphingDock(
         else -> CircleShape
     }
 
+    val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
+
     val dockBorder = if (isLiquidGlass && !isAmoledMode) {
-        BorderStroke(1.dp, LiquidGlassBorderBrush)
+        if (isLightMode) {
+            BorderStroke(1.dp, LightLiquidGlassBorderBrush)
+        } else {
+            BorderStroke(1.dp, LiquidGlassBorderBrush)
+        }
     } else {
-        BorderStroke(1.dp, if (isAmoledMode) AmoledCardBorder else if (isExpanded) DarkSurfaceBorderHover else DarkSurfaceBorder)
+        val borderColor = when {
+            isLightMode -> LightCardBorder.copy(alpha = opacityFraction.coerceAtLeast(0.25f))
+            isAmoledMode -> AmoledCardBorder
+            isExpanded -> DarkSurfaceBorderHover
+            else -> DarkSurfaceBorder
+        }
+        BorderStroke(1.dp, borderColor)
     }
 
     val dockBgModifier = if (isLiquidGlass && !isAmoledMode) {
-        Modifier.background(LiquidGlassSurfaceBrush)
+        if (isLightMode) {
+            val surfaceBrush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFFFFFFFF).copy(alpha = (0.88f * opacityFraction).coerceIn(0.06f, 0.95f)),
+                    Color(0xFFF0F2F5).copy(alpha = (0.75f * opacityFraction).coerceIn(0.06f, 0.90f))
+                )
+            )
+            Modifier.background(surfaceBrush)
+        } else {
+            val surfaceBrush = Brush.verticalGradient(
+                colors = listOf(
+                    Color(0xFF222836).copy(alpha = (0.45f * opacityFraction).coerceIn(0.06f, 0.85f)),
+                    Color(0xFF11131A).copy(alpha = (0.60f * opacityFraction).coerceIn(0.06f, 0.95f))
+                )
+            )
+            Modifier.background(surfaceBrush)
+        }
     } else if (isAmoledMode) {
-        Modifier.background(AmoledCardBackground)
+        Modifier.background(AmoledCardBackground.copy(alpha = opacityFraction))
+    } else if (isLightMode) {
+        Modifier.background(LightCardBackground.copy(alpha = opacityFraction))
     } else {
-        Modifier.background(DarkSurface)
+        Modifier.background(DarkSurface.copy(alpha = opacityFraction))
     }
+
+    // Cores adaptativas de texto e ícones com base na opacidade e no tema (WCAG AA)
+    val dockTextPrimary = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else LightTextPrimary
+    } else {
+        TextPrimary
+    }
+    val dockPlaceholderColor = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color(0xCCFFFFFF) else Color(0xFF6B7280)
+    } else {
+        Color(0xFF70707C)
+    }
+    val dockIconTint = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
+    } else {
+        Color(0xFF82828E)
+    }
+    val dockGearTint = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
+    } else {
+        Color(0xFFA0A0AA)
+    }
+    val dockCursorBrush = SolidColor(if (isLightMode && opacityFraction >= 0.35f) Color.Black else Color.White)
 
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -174,7 +238,7 @@ fun SearchoMorphingDock(
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = "Expandir pesquisa",
-                    tint = TextPrimary,
+                    tint = dockTextPrimary,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -207,6 +271,16 @@ fun SearchoMorphingDock(
                             bottom = if (widgetContent != null) 4.dp else 4.dp
                         )
                 ) {
+                    // Reflexo especular superior do Liquid Design
+                    if (isLiquidGlass && !isAmoledMode) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clip(dockShape)
+                                .background(if (isLightMode) LightLiquidGlassSheenBrush else LiquidGlassSheenBrush)
+                        )
+                    }
+
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -215,7 +289,7 @@ fun SearchoMorphingDock(
                             widgetContent()
                             Spacer(modifier = Modifier.height(4.dp))
                             HorizontalDivider(
-                                color = if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
+                                color = if (isLightMode) LightCardBorder else if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
                                 thickness = 1.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -234,7 +308,7 @@ fun SearchoMorphingDock(
                             Icon(
                                 imageVector = Icons.Outlined.Search,
                                 contentDescription = "Buscar",
-                                tint = Color(0xFF82828E),
+                                tint = dockIconTint,
                                 modifier = Modifier
                                     .size(22.dp)
                                     .clickable(
@@ -253,11 +327,11 @@ fun SearchoMorphingDock(
                                 value = searchQuery,
                                 onValueChange = onQueryChange,
                                 textStyle = TextStyle(
-                                    color = TextPrimary,
+                                    color = dockTextPrimary,
                                     fontSize = 16.sp,
                                     fontFamily = FontFamily.SansSerif
                                 ),
-                                cursorBrush = SolidColor(Color.White),
+                                cursorBrush = dockCursorBrush,
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
@@ -269,7 +343,7 @@ fun SearchoMorphingDock(
                                         if (searchQuery.isEmpty()) {
                                             Text(
                                                 text = placeholderText,
-                                                color = Color(0xFF70707C),
+                                                color = dockPlaceholderColor,
                                                 fontSize = 16.sp,
                                                 fontFamily = FontFamily.SansSerif
                                             )
@@ -287,7 +361,7 @@ fun SearchoMorphingDock(
                                 Icon(
                                     imageVector = Icons.Outlined.Close,
                                     contentDescription = "Limpar busca",
-                                    tint = TextSecondary,
+                                    tint = dockPlaceholderColor,
                                     modifier = Modifier
                                         .size(20.dp)
                                         .clickable(
@@ -300,7 +374,7 @@ fun SearchoMorphingDock(
                                 Icon(
                                     imageVector = Icons.Outlined.Settings,
                                     contentDescription = "Configurações",
-                                    tint = TextTertiary,
+                                    tint = dockGearTint,
                                     modifier = Modifier
                                         .size(20.dp)
                                         .clickable(
@@ -346,10 +420,20 @@ fun SearchoMorphingDock(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
+                        // Brilho especular do botão
+                        if (isLiquidGlass && !isAmoledMode) {
+                            Box(
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(buttonShape)
+                                    .background(if (isLightMode) LightLiquidGlassSheenBrush else LiquidGlassSheenBrush)
+                            )
+                        }
+
                         Icon(
                             imageVector = Icons.Outlined.Settings,
                             contentDescription = "Configurações",
-                            tint = Color(0xFFA0A0AA),
+                            tint = dockGearTint,
                             modifier = Modifier.size(22.dp)
                         )
                     }

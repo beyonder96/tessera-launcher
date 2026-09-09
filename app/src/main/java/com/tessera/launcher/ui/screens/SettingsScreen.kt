@@ -92,6 +92,7 @@ import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.LightBackground
 import com.tessera.launcher.ui.theme.LightCardBackground
 import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
 import com.tessera.launcher.ui.theme.LightTextPrimary
 import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.PillShape
@@ -341,16 +342,16 @@ fun SettingsScreen(
                 .padding(horizontal = 18.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Barra superior com Voltar e Logo "Tessera." Caligráfica
+            // Barra superior com Voltar e Logo "Tessera." Caligráfica (Dobro do tamanho: 64dp)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp)
+                    .padding(vertical = 14.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterStart)
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -372,7 +373,7 @@ fun SettingsScreen(
                     contentDescription = "Tessera",
                     colorFilter = ColorFilter.tint(primaryTextColor),
                     modifier = Modifier
-                        .height(32.dp)
+                        .height(64.dp)
                         .align(Alignment.Center)
                 )
             }
@@ -392,65 +393,72 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Search,
                         title = "Busca",
                         subtitle = "Escolha o que aparece quando você busca.",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 2. Extras
                     SettingsItemRow(
                         icon = Icons.Outlined.Extension,
                         title = "Extras",
                         subtitle = "Pastas, apps ocultos e Searchos",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 3. Gestos
                     SettingsItemRow(
                         icon = Icons.Outlined.TouchApp,
                         title = "Gestos",
                         subtitle = "Ações de deslizar e toque duplo.",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES) }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 4. Customization
                     SettingsItemRow(
                         icon = Icons.Outlined.Palette,
                         title = "Customization",
                         subtitle = "Ícones, papel de parede e estilo",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION) }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 5. Idioma
                     SettingsItemRow(
                         icon = Icons.Outlined.Language,
                         title = "Idioma",
                         subtitle = "Alterar o idioma do aplicativo.",
-                        onClick = { viewModel.setLanguageModalOpen(true) }
+                        onClick = { viewModel.setLanguageModalOpen(true) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 6. Tema com 4 botões circulares inline
                     ThemeSettingsRow(
                         themeMode = uiState.themeMode,
-                        onSelectMode = { viewModel.setThemeMode(it) }
+                        onSelectMode = { viewModel.setThemeMode(it) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 7. Lançador padrão
                     SettingsItemRow(
                         icon = Icons.Outlined.Home,
                         title = "Lançador padrão",
                         subtitle = "O Searcho é o seu launcher.",
-                        onClick = { openDefaultLauncherSettings(context) }
+                        onClick = { openDefaultLauncherSettings(context) },
+                        isLight = isLight
                     )
                 }
             }
@@ -470,27 +478,30 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Security,
                         title = "Permissões",
                         subtitle = "Escolha o que o Tessera pode acessar",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.PERMISSIONS) }
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.PERMISSIONS) },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 9. Transparência
                     SettingsItemRow(
                         icon = Icons.Outlined.Visibility,
                         title = "Transparência",
                         subtitle = "Sem rastreio. Sem anúncios. Sem coleta de dados.",
-                        onClick = { activeDialog = "transparency" }
+                        onClick = { activeDialog = "transparency" },
+                        isLight = isLight
                     )
 
-                    ItemDivider()
+                    ItemDivider(isLight = isLight)
 
                     // 10. Desenvolvedor
                     SettingsItemRow(
                         icon = Icons.Outlined.Code,
                         title = "Desenvolvedor",
                         subtitle = "Opções avançadas e depuração.",
-                        onClick = { activeDialog = "developer" }
+                        onClick = { activeDialog = "developer" },
+                        isLight = isLight
                     )
                 }
             }
@@ -505,8 +516,15 @@ private fun SettingsItemRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLight: Boolean = false
 ) {
+    val iconCircleBackground = if (isLight) Color(0xFFF1F3F5) else IconCircleBackground
+    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val titleColor = if (isLight) LightTextPrimary else TextPrimary
+    val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
+    val chevronTint = if (isLight) Color(0xFF9CA3AF) else TextSecondary.copy(alpha = 0.5f)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -522,13 +540,13 @@ private fun SettingsItemRow(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(IconCircleBackground),
+                .background(iconCircleBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = title,
-                tint = TextPrimary,
+                tint = iconTint,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -540,14 +558,14 @@ private fun SettingsItemRow(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
+                color = titleColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Normal,
-                color = TextSecondary,
+                color = subtitleColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -556,7 +574,7 @@ private fun SettingsItemRow(
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = TextSecondary.copy(alpha = 0.5f),
+            tint = chevronTint,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -565,8 +583,14 @@ private fun SettingsItemRow(
 @Composable
 private fun ThemeSettingsRow(
     themeMode: String,
-    onSelectMode: (String) -> Unit
+    onSelectMode: (String) -> Unit,
+    isLight: Boolean = false
 ) {
+    val iconCircleBackground = if (isLight) Color(0xFFF1F3F5) else IconCircleBackground
+    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val titleColor = if (isLight) LightTextPrimary else TextPrimary
+    val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -577,13 +601,13 @@ private fun ThemeSettingsRow(
             modifier = Modifier
                 .size(42.dp)
                 .clip(CircleShape)
-                .background(IconCircleBackground),
+                .background(iconCircleBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.Palette,
                 contentDescription = "Tema",
-                tint = TextPrimary,
+                tint = iconTint,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -595,14 +619,14 @@ private fun ThemeSettingsRow(
                 text = "Tema",
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
+                color = titleColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Trocar de estilo",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Normal,
-                color = TextSecondary
+                color = subtitleColor
             )
         }
 
@@ -733,10 +757,10 @@ private fun ThemeSettingsRow(
 }
 
 @Composable
-private fun ItemDivider() {
+private fun ItemDivider(isLight: Boolean = false) {
     HorizontalDivider(
         modifier = Modifier.padding(start = 74.dp, end = 16.dp),
-        color = ItemDividerColor,
+        color = if (isLight) LightDivider else ItemDividerColor,
         thickness = 1.dp
     )
 }

@@ -91,13 +91,14 @@ fun AppContextMenu(
     onUninstallApp: () -> Unit
 ) {
     var showIconPicker by remember { mutableStateOf(false) }
+    var showUninstallConfirmDialog by remember { mutableStateOf(false) }
 
     val monoColorFilter = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
     }
 
-    val imageBitmap: ImageBitmap? = remember(app.icon) {
-        app.icon?.let { drawableToBitmap(it).asImageBitmap() }
+    val imageBitmap: ImageBitmap? = remember(app.bitmap, app.icon) {
+        app.bitmap?.asImageBitmap() ?: app.icon?.let { drawableToBitmap(it).asImageBitmap() }
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -349,8 +350,7 @@ fun AppContextMenu(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = ripple(color = Color(0x22FFFFFF)),
                             onClick = {
-                                onDismiss()
-                                onUninstallApp()
+                                showUninstallConfirmDialog = true
                             }
                         )
                         .padding(horizontal = 12.dp, vertical = 11.dp)
@@ -547,6 +547,95 @@ fun AppContextMenu(
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Modal minimalista de Confirmação de Desinstalação
+    if (showUninstallConfirmDialog) {
+        Dialog(onDismissRequest = { showUninstallConfirmDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF14141A),
+                border = BorderStroke(1.dp, Color(0xFF282834)),
+                shadowElevation = 24.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(22.dp)
+                ) {
+                    Text(
+                        text = "Desinstalar aplicativo?",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 17.sp
+                        ),
+                        color = TextPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Deseja remover \"${app.label}\" do dispositivo?",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        ),
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(22.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            ),
+                            color = TextSecondary,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    showUninstallConfirmDialog = false
+                                }
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFFEF5350).copy(alpha = 0.15f),
+                            border = BorderStroke(1.dp, Color(0xFFEF5350).copy(alpha = 0.4f)),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    showUninstallConfirmDialog = false
+                                    onDismiss()
+                                    onUninstallApp()
+                                }
+                        ) {
+                            Text(
+                                text = "Desinstalar",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                ),
+                                color = Color(0xFFEF5350),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
                         }
                     }
                 }
