@@ -30,50 +30,80 @@ val LightDivider = Color(0xFFE5E7EB)
 val LightSurface = Color(0xFFFFFFFF)
 val LightSurfaceVariant = Color(0xFFF3F4F6)
 
-// Liquid Glass Tokens (Estilo iOS 27 / VisionOS - Frosted Glass Translúcido com Difração de Luz)
+// Liquid Glass Tokens Dinâmicos e Escalonados (Estilo Minimalista Frosted Glass)
+fun liquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF1E222D).copy(alpha = 0.55f * a),
+            Color(0xFF12141C).copy(alpha = 0.70f * a)
+        )
+    )
+}
+
+fun liquidGlassBorderBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.28f * a),
+            Color.White.copy(alpha = 0.12f * a),
+            Color.White.copy(alpha = 0.05f * a)
+        )
+    )
+}
+
+fun liquidGlassSheenBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.08f * a),
+            Color.White.copy(alpha = 0.02f * a),
+            Color.Transparent
+        )
+    )
+}
+
+fun lightLiquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFFFFFFFF).copy(alpha = 0.85f * a),
+            Color(0xFFF1F3F7).copy(alpha = 0.72f * a)
+        )
+    )
+}
+
+fun lightLiquidGlassBorderBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.65f * a),
+            Color.White.copy(alpha = 0.25f * a),
+            Color(0x15000000).copy(alpha = 0.15f * a)
+        )
+    )
+}
+
+fun lightLiquidGlassSheenBrush(alphaFactor: Float = 1f): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return Brush.verticalGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.25f * a),
+            Color.Transparent
+        )
+    )
+}
+
 val LiquidGlassBackground = Color(0x75141720)
 val LiquidGlassBackgroundHover = Color(0x901C202B)
-val LiquidGlassSurfaceBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0x66222836),
-        Color(0x8511131A)
-    )
-)
-val LiquidGlassBorderBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0x99FFFFFF),
-        Color(0x33FFFFFF),
-        Color(0x0AFFFFFF)
-    )
-)
+val LiquidGlassSurfaceBrush = liquidGlassSurfaceBrush(1f)
+val LiquidGlassBorderBrush = liquidGlassBorderBrush(1f)
 val LiquidGlassBorder = Color(0x40FFFFFF)
-val LiquidGlassSheenBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0x28FFFFFF),
-        Color(0x00FFFFFF)
-    )
-)
+val LiquidGlassSheenBrush = liquidGlassSheenBrush(1f)
 
-// Light Liquid Glass Tokens (Vidro Leitoso Translúcido com Brilho Especular Claro)
-val LightLiquidGlassSurfaceBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0xD9FFFFFF),
-        Color(0xB3F0F2F5)
-    )
-)
-val LightLiquidGlassBorderBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0xE6FFFFFF),
-        Color(0x40FFFFFF),
-        Color(0x20000000)
-    )
-)
-val LightLiquidGlassSheenBrush = Brush.verticalGradient(
-    colors = listOf(
-        Color(0x55FFFFFF),
-        Color(0x00FFFFFF)
-    )
-)
+val LightLiquidGlassSurfaceBrush = lightLiquidGlassSurfaceBrush(1f)
+val LightLiquidGlassBorderBrush = lightLiquidGlassBorderBrush(1f)
+val LightLiquidGlassSheenBrush = lightLiquidGlassSheenBrush(1f)
 
 val TextPrimary = Color(0xFFEEEEEE)
 val TextSecondary = Color(0xFF727275)

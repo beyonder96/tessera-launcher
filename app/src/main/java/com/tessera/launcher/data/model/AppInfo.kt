@@ -15,9 +15,9 @@ data class AppInfo(
 ) {
     companion object {
         fun computeFirstLetter(label: String): Char {
-            val trimmed = label.trim()
-            if (trimmed.isEmpty()) return '#'
-            val first = trimmed.first().uppercaseChar()
+            val normalized = normalize(label.trim())
+            if (normalized.isEmpty()) return '#'
+            val first = normalized.first().uppercaseChar()
             return if (first in 'A'..'Z') first else '#'
         }
 

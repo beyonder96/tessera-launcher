@@ -134,12 +134,22 @@ class AppRepository(
             }
         }
 
-        // Ordenação alfabética natural respeitando acentos e locale
+        // Ordenação alfabética natural respeitando acentos e locale:
+        // Letras (A..Z) primeiro, seguidas por símbolos e números ('#') no final,
+        // perfeitamente alinhado com o AlphabetScroller (A..Z + #)
         val collator = Collator.getInstance(Locale.getDefault()).apply {
             strength = Collator.PRIMARY
         }
         appsList.distinctBy { it.packageName }
-            .sortedWith { a, b -> collator.compare(a.label, b.label) }
+            .sortedWith { a, b ->
+                val aIsLetter = a.firstLetter in 'A'..'Z'
+                val bIsLetter = b.firstLetter in 'A'..'Z'
+                when {
+                    aIsLetter && !bIsLetter -> -1
+                    !aIsLetter && bIsLetter -> 1
+                    else -> collator.compare(a.label, b.label)
+                }
+            }
     }
 
     /**

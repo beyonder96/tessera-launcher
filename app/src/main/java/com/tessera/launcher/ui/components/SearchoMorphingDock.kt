@@ -59,14 +59,13 @@ import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceBorderHover
 import com.tessera.launcher.ui.theme.LightCardBackground
 import com.tessera.launcher.ui.theme.LightCardBorder
-import com.tessera.launcher.ui.theme.LightLiquidGlassBorderBrush
-import com.tessera.launcher.ui.theme.LightLiquidGlassSheenBrush
-import com.tessera.launcher.ui.theme.LightLiquidGlassSurfaceBrush
+import com.tessera.launcher.ui.theme.lightLiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.lightLiquidGlassSheenBrush
+import com.tessera.launcher.ui.theme.lightLiquidGlassSurfaceBrush
+import com.tessera.launcher.ui.theme.liquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.liquidGlassSheenBrush
+import com.tessera.launcher.ui.theme.liquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.LightTextPrimary
-import com.tessera.launcher.ui.theme.LightTextSecondary
-import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
-import com.tessera.launcher.ui.theme.LiquidGlassSheenBrush
-import com.tessera.launcher.ui.theme.LiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -114,16 +113,18 @@ fun SearchoMorphingDock(
     }
 
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
+    // Se opacidade for ajustada (< 1.0f) ou liquid glass ativado, aplica acabamento de vidro líquido translúcido
+    val shouldUseLiquidGlass = (isLiquidGlass && !isAmoledMode) || opacityFraction < 0.98f
 
-    val dockBorder = if (isLiquidGlass && !isAmoledMode) {
+    val dockBorder = if (shouldUseLiquidGlass) {
         if (isLightMode) {
-            BorderStroke(1.dp, LightLiquidGlassBorderBrush)
+            BorderStroke(1.dp, lightLiquidGlassBorderBrush(opacityFraction))
         } else {
-            BorderStroke(1.dp, LiquidGlassBorderBrush)
+            BorderStroke(1.dp, liquidGlassBorderBrush(opacityFraction))
         }
     } else {
         val borderColor = when {
-            isLightMode -> LightCardBorder.copy(alpha = opacityFraction.coerceAtLeast(0.25f))
+            isLightMode -> LightCardBorder
             isAmoledMode -> AmoledCardBorder
             isExpanded -> DarkSurfaceBorderHover
             else -> DarkSurfaceBorder
@@ -131,30 +132,31 @@ fun SearchoMorphingDock(
         BorderStroke(1.dp, borderColor)
     }
 
-    val dockBgModifier = if (isLiquidGlass && !isAmoledMode) {
+    val dockBgModifier = if (shouldUseLiquidGlass) {
         if (isLightMode) {
-            val surfaceBrush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFFFFFFFF).copy(alpha = (0.88f * opacityFraction).coerceIn(0.06f, 0.95f)),
-                    Color(0xFFF0F2F5).copy(alpha = (0.75f * opacityFraction).coerceIn(0.06f, 0.90f))
-                )
-            )
-            Modifier.background(surfaceBrush)
+            Modifier.background(lightLiquidGlassSurfaceBrush(opacityFraction))
         } else {
-            val surfaceBrush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0xFF222836).copy(alpha = (0.45f * opacityFraction).coerceIn(0.06f, 0.85f)),
-                    Color(0xFF11131A).copy(alpha = (0.60f * opacityFraction).coerceIn(0.06f, 0.95f))
-                )
-            )
-            Modifier.background(surfaceBrush)
+            Modifier.background(liquidGlassSurfaceBrush(opacityFraction))
         }
     } else if (isAmoledMode) {
-        Modifier.background(AmoledCardBackground.copy(alpha = opacityFraction))
+        Modifier.background(AmoledCardBackground)
     } else if (isLightMode) {
-        Modifier.background(LightCardBackground.copy(alpha = opacityFraction))
+        Modifier.background(LightCardBackground)
     } else {
-        Modifier.background(DarkSurface.copy(alpha = opacityFraction))
+        Modifier.background(DarkSurface)
+    }
+
+    // Sombra sutil que escala com a opacidade; spotColor é removido quando translúcido para eliminar o halo preto
+    val shadowElevation = (8.dp * opacityFraction)
+    val shadowAmbientColor = if (isLightMode) {
+        Color.Black.copy(alpha = 0.05f * opacityFraction)
+    } else {
+        Color.Black.copy(alpha = 0.12f * opacityFraction)
+    }
+    val shadowSpotColor = if (opacityFraction < 0.95f) {
+        Color.Transparent
+    } else {
+        if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.35f)
     }
 
     // Cores adaptativas de texto e ícones com base na opacidade e no tema (WCAG AA)
@@ -220,14 +222,14 @@ fun SearchoMorphingDock(
                     .width(animatedWidth)
                     .height(56.dp)
                     .shadow(
-                        elevation = 8.dp,
+                        elevation = shadowElevation,
                         shape = dockShape,
-                        ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
-                        spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
+                        ambientColor = shadowAmbientColor,
+                        spotColor = shadowSpotColor
                     )
-                    .border(dockBorder, dockShape)
                     .clip(dockShape)
                     .then(dockBgModifier)
+                    .border(dockBorder, dockShape)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -256,14 +258,14 @@ fun SearchoMorphingDock(
                     modifier = Modifier
                         .weight(1f)
                         .shadow(
-                            elevation = 12.dp,
+                            elevation = shadowElevation,
                             shape = dockShape,
-                            ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
-                            spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
+                            ambientColor = shadowAmbientColor,
+                            spotColor = shadowSpotColor
                         )
-                        .border(dockBorder, dockShape)
                         .clip(dockShape)
                         .then(dockBgModifier)
+                        .border(dockBorder, dockShape)
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
@@ -272,12 +274,15 @@ fun SearchoMorphingDock(
                         )
                 ) {
                     // Reflexo especular superior do Liquid Design
-                    if (isLiquidGlass && !isAmoledMode) {
+                    if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
                                 .clip(dockShape)
-                                .background(if (isLightMode) LightLiquidGlassSheenBrush else LiquidGlassSheenBrush)
+                                .background(
+                                    if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
+                                    else liquidGlassSheenBrush(opacityFraction)
+                                )
                         )
                     }
 
@@ -289,11 +294,15 @@ fun SearchoMorphingDock(
                             widgetContent()
                             Spacer(modifier = Modifier.height(4.dp))
                             HorizontalDivider(
-                                color = if (isLightMode) Color(0xFFE2E8F0) else if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
+                                color = if (isLightMode) {
+                                    Color(0xFFE2E8F0).copy(alpha = opacityFraction.coerceAtLeast(0.3f))
+                                } else {
+                                    Color.White.copy(alpha = 0.08f * opacityFraction.coerceAtLeast(0.35f))
+                                },
                                 thickness = 1.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                                    .padding(horizontal = 8.dp, vertical = 6.dp)
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                         }
@@ -401,14 +410,14 @@ fun SearchoMorphingDock(
                             .padding(bottom = 4.dp)
                             .size(48.dp)
                             .shadow(
-                                elevation = 12.dp,
+                                elevation = shadowElevation,
                                 shape = buttonShape,
-                                ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
-                                spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
+                                ambientColor = shadowAmbientColor,
+                                spotColor = shadowSpotColor
                             )
-                            .border(dockBorder, buttonShape)
                             .clip(buttonShape)
                             .then(dockBgModifier)
+                            .border(dockBorder, buttonShape)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -421,12 +430,15 @@ fun SearchoMorphingDock(
                         contentAlignment = Alignment.Center
                     ) {
                         // Brilho especular do botão
-                        if (isLiquidGlass && !isAmoledMode) {
+                        if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
                             Box(
                                 modifier = Modifier
                                     .matchParentSize()
                                     .clip(buttonShape)
-                                    .background(if (isLightMode) LightLiquidGlassSheenBrush else LiquidGlassSheenBrush)
+                                    .background(
+                                        if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
+                                        else liquidGlassSheenBrush(opacityFraction)
+                                    )
                             )
                         }
 

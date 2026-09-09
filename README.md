@@ -61,17 +61,25 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.8](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.8)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.1)
 
-### 🆕 Novidades na v1.7.8
+### 🆕 Novidades na v1.8.1
+- 🔤 **Gaveta de Aplicativos Sempre no Início (Letra A):** Ordenação alfabética natural garantindo que aplicativos com letras (`A..Z`) venham primeiro e números/símbolos (`#`) fiquem ao final, alinhado 100% à barra `AlphabetScroller`. A gaveta sempre reseta suavemente para o início na letra A ao abrir pelo gesto de deslizar para cima.
+- 🇧🇷 **Normalização Diacrítica de Acentos:** Aplicativos brasileiros e internacionais com nomes acentuados (como "Área do Cliente", "Época", "Ícones") agora mapeiam corretamente para as letras `'A'`, `'E'`, `'I'` no alfabeto em vez de caírem na seção `'#'`.
+- 🔍 **Isolamento de Widgets na Busca & Teclado:** Correção do bug em que o painel de widgets re-expandia sobre o teclado ao apagar o texto digitado na pesquisa. O dock agora permanece compacto como barra de busca sobre o teclado e a lista rola de volta para o topo.
+- 🫧 **Lapidação do Design Líquido (Liquid Glass):** Eliminação de bordas pretas residuais e névoas esbranquiçadas em superfícies translúcidas, com sombras ambientais escalonadas e reflexo especular superior dinâmico.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.0 / v1.7.8</b></summary>
+
 - 🌤️ **Widget de Clima Dual-Engine Resiliente:** Motor primário ultra-rápido (`wttr.in`, <1s) com descrições em Português e fallback automático por geolocalização IP quando o GPS estiver desligado, além de contingência secundária via `open-meteo.com` e cache offline persistente.
 - ⚡ **Rolagem a 120Hz Fluida nos Widgets (Sem Conflitos de Toque):** Eliminação de bloqueios de gesto por `pointerInput`, integrando `combinedClickable` nativo para troca de páginas instantânea e sem engasgos no `HorizontalPager`.
 - 🎯 **Sincronização Exata do "Cartão Padrão":** Grade harmonizada com 8 opções na Central de Widgets (Ações Rápidas, Bateria, Agenda, Música, Foco, Clima, Dino e Notas) com animação e rolagem automática ao selecionar o widget padrão.
 - 🛡️ **Tela de Permissões Reestruturada em Duas Camadas:** Separação clara entre permissões do app disparadas diretamente na tela (Localização, Calendário, Contatos e SMS) e acessos protegidos pelo sistema Android (Lançador Padrão, Notificações e Acessibilidade).
 - ☀️ **Refinamento do Modo Claro nos Widgets e Doca:** Paleta Slate de alto contraste (WCAG AA), sombras suaves de baixa opacidade e divisórias consistentes, eliminando manchas escuras.
 - 🔒 **Auditoria de Segurança & Privacidade Concluída:** 100% dos dados processados localmente no dispositivo (*local-first*), zero telemetria e zero segredos expostos.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.7.7</b></summary>
 

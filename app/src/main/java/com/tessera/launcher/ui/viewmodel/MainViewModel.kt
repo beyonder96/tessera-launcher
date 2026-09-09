@@ -117,6 +117,7 @@ class MainViewModel(
             isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
             isAutoLaunchEnabled = preferences.isAutoLaunchEnabled(),
             isCollapseDockEnabled = preferences.isCollapseDockEnabled(),
+            isWidgetExpanded = !preferences.isCollapseDockEnabled(),
             isExactSearchEnabled = preferences.isExactSearchEnabled(),
             isAppShortcutsEnabled = preferences.isAppShortcutsEnabled(),
             isWebSearchEnabled = preferences.isWebSearchEnabled(),
@@ -322,7 +323,7 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isSearchExpanded = false,
-                isWidgetExpanded = false,
+                isWidgetExpanded = !it.isCollapseDockEnabled,
                 isDrawerOpen = false,
                 searchQuery = "",
                 calculatorResult = null,
@@ -374,7 +375,7 @@ class MainViewModel(
                     appsState = AppsListState.Success(emptyList()),
                     isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                     isSearchExpanded = true,
-                    isWidgetExpanded = !hasQuery
+                    isWidgetExpanded = if (it.isDrawerOpen) false else !hasQuery
                 )
             }
             return
@@ -420,7 +421,7 @@ class MainViewModel(
                 matchingFiles = files,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
-                isWidgetExpanded = !hasQuery
+                isWidgetExpanded = if (it.isDrawerOpen) false else !hasQuery
             )
         }
 
@@ -513,6 +514,7 @@ class MainViewModel(
             it.copy(
                 isDrawerOpen = false,
                 isSearchExpanded = false,
+                isWidgetExpanded = !it.isCollapseDockEnabled,
                 searchQuery = "",
                 calculatorResult = null,
                 matchingContacts = emptyList(),
@@ -643,7 +645,7 @@ class MainViewModel(
 
     fun setCollapseDockEnabled(enabled: Boolean) {
         preferences.setCollapseDockEnabled(enabled)
-        _uiState.update { it.copy(isCollapseDockEnabled = enabled) }
+        _uiState.update { it.copy(isCollapseDockEnabled = enabled, isWidgetExpanded = if (it.isDrawerOpen) false else !enabled) }
     }
 
     fun setExactSearchEnabled(enabled: Boolean) {

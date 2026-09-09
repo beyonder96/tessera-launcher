@@ -74,6 +74,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.data.helper.ContactInfo
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.components.Alphabet
 import com.tessera.launcher.ui.components.AlphabetScroller
 import com.tessera.launcher.ui.components.AppContextMenu
 import com.tessera.launcher.ui.components.AppListEmptyState
@@ -168,6 +169,15 @@ fun HomeScreen(
         } else if (!uiState.isSearchExpanded && !uiState.isDrawerOpen) {
             focusManager.clearFocus()
             keyboardController?.hide()
+        }
+    }
+
+    // Redefinição de scroll para o início da lista (letra A) ao abrir a gaveta ou limpar a busca
+    val isAppsReady = uiState.appsState is AppsListState.Success
+    LaunchedEffect(uiState.isDrawerOpen, uiState.searchQuery.isEmpty(), isAppsReady) {
+        if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && isAppsReady) {
+            val targetIndex = uiState.letterIndexMap['A'] ?: 0
+            listState.scrollToItem(targetIndex)
         }
     }
 
@@ -356,7 +366,7 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                    .padding(bottom = if (uiState.isWidgetExpanded) 310.dp else 84.dp)
+                    .padding(bottom = if (uiState.isWidgetExpanded && !uiState.isDrawerOpen) 310.dp else 84.dp)
             ) {
                 Box(
                     modifier = Modifier
@@ -627,7 +637,19 @@ fun HomeScreen(
                     AlphabetScroller(
                         availableLetters = uiState.availableLetters.toSet(),
                         onLetterSelected = { letter ->
-                            val targetIndex = uiState.letterIndexMap[letter]
+                            val targetIndex = uiState.letterIndexMap[letter] ?: run {
+                                val alphabetIndex = Alphabet.indexOf(letter)
+                                if (alphabetIndex >= 0) {
+                                    val nextLetter = Alphabet.drop(alphabetIndex + 1).firstOrNull { uiState.letterIndexMap.containsKey(it) }
+                                    if (nextLetter != null) {
+                                        uiState.letterIndexMap[nextLetter]
+                                    } else {
+                                        Alphabet.take(alphabetIndex).reversed().firstOrNull { uiState.letterIndexMap.containsKey(it) }?.let {
+                                            uiState.letterIndexMap[it]
+                                        }
+                                    }
+                                } else null
+                            }
                             if (targetIndex != null) {
                                 scope.launch {
                                     listState.scrollToItem(targetIndex)
@@ -648,7 +670,7 @@ fun HomeScreen(
                 .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
             contentAlignment = Alignment.BottomCenter
         ) {
-            val showWidgets = (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
+            val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
 
             SearchoMorphingDock(
                 isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
@@ -719,7 +741,7 @@ fun HomeScreen(
                             mediaWidgetStyle = uiState.mediaWidgetStyle,
                             notesWidgetFilter = uiState.notesWidgetFilter,
                             onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
-                            isLiquidGlass = false,
+                            isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
                             isAmoledMode = uiState.isAmoledMode,
                             isLightMode = uiState.isLightMode
                         )
