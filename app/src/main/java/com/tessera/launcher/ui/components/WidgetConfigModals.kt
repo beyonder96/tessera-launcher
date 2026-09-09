@@ -720,14 +720,26 @@ fun WeatherConfigBottomSheet(
     onRequestLocationPermission: () -> Unit,
     onRefreshWeather: () -> Unit,
     onOpenWidgetsCenter: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    isLightMode: Boolean = false,
+    isAmoledMode: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val sheetBg = if (isLightMode) Color(0xFFF8FAFC) else if (isAmoledMode) AmoledBlack else Color(0xFF16161E)
+    val handleColor = if (isLightMode) Color(0xFFCBD5E1) else Color(0xFF44444E)
+    val primaryTextColor = if (isLightMode) Color(0xFF0F172A) else TextPrimary
+    val secondaryTextColor = if (isLightMode) Color(0xFF475569) else TextSecondary
+    val tertiaryTextColor = if (isLightMode) Color(0xFF64748B) else TextTertiary
+    val cardBg = if (isLightMode) Color(0xFFFFFFFF) else if (isAmoledMode) AmoledCardBackground else Color(0xFF1C1C24)
+    val cardBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)
+    val iconBoxBg = if (isLightMode) Color(0xFFF1F5F9) else Color(0xFF22222A)
+    val iconTint = if (isLightMode) Color(0xFF0F172A) else Color.White
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = AmoledBlack,
+        containerColor = sheetBg,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -735,7 +747,7 @@ fun WeatherConfigBottomSheet(
                     .width(44.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF44444E))
+                    .background(handleColor)
             )
         }
     ) {
@@ -753,7 +765,7 @@ fun WeatherConfigBottomSheet(
                     fontSize = 14.sp,
                     letterSpacing = 1.sp
                 ),
-                color = TextPrimary
+                color = primaryTextColor
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -765,7 +777,7 @@ fun WeatherConfigBottomSheet(
                     fontSize = 11.sp,
                     letterSpacing = 1.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.align(Alignment.Start)
             )
 
@@ -775,15 +787,20 @@ fun WeatherConfigBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                val selectedBg = if (isLightMode) Color(0xFF0F172A) else Color.White
+                val selectedText = if (isLightMode) Color.White else Color.Black
+                val selectedBorder = BorderStroke(2.dp, if (isLightMode) Color(0xFF0F172A) else Color.White)
+                val unselectedBorder = BorderStroke(1.dp, cardBorder)
+
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
                         .border(
-                            border = if (isCelsius) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder),
+                            border = if (isCelsius) selectedBorder else unselectedBorder,
                             shape = RoundedCornerShape(14.dp)
                         )
-                        .background(if (isCelsius) Color.White else Color(0xFF141418))
+                        .background(if (isCelsius) selectedBg else cardBg)
                         .clickable { onCelsiusChange(true) }
                         .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center
@@ -791,7 +808,7 @@ fun WeatherConfigBottomSheet(
                     Text(
                         text = "°C Celsius",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (isCelsius) Color.Black else TextSecondary
+                        color = if (isCelsius) selectedText else secondaryTextColor
                     )
                 }
 
@@ -800,10 +817,10 @@ fun WeatherConfigBottomSheet(
                         .weight(1f)
                         .clip(RoundedCornerShape(14.dp))
                         .border(
-                            border = if (!isCelsius) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder),
+                            border = if (!isCelsius) selectedBorder else unselectedBorder,
                             shape = RoundedCornerShape(14.dp)
                         )
-                        .background(if (!isCelsius) Color.White else Color(0xFF141418))
+                        .background(if (!isCelsius) selectedBg else cardBg)
                         .clickable { onCelsiusChange(false) }
                         .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center
@@ -811,7 +828,7 @@ fun WeatherConfigBottomSheet(
                     Text(
                         text = "°F Fahrenheit",
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = if (!isCelsius) Color.Black else TextSecondary
+                        color = if (!isCelsius) selectedText else secondaryTextColor
                     )
                 }
             }
@@ -825,7 +842,7 @@ fun WeatherConfigBottomSheet(
                     fontSize = 11.sp,
                     letterSpacing = 1.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.align(Alignment.Start)
             )
 
@@ -833,15 +850,16 @@ fun WeatherConfigBottomSheet(
 
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF141418),
-                border = BorderStroke(1.dp, AmoledCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = {
-                            if (!hasLocationPermission) onRequestLocationPermission() else onRefreshWeather()
+                            if (!hasLocationPermission) onRequestLocationPermission()
+                            onRefreshWeather()
                         }
                     )
                     .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -854,13 +872,13 @@ fun WeatherConfigBottomSheet(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF22222A)),
+                            .background(iconBoxBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.WbSunny,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = iconTint,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -871,19 +889,19 @@ fun WeatherConfigBottomSheet(
                         Text(
                             text = weatherInfo?.cityName ?: if (hasLocationPermission) "Atualizar previsão" else "Permitir localização",
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Text(
                             text = if (weatherInfo != null) "${weatherInfo.condition} • ${weatherInfo.displayTemperature}" else "Toque para detectar local",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Outlined.Refresh,
                         contentDescription = null,
-                        tint = TextSecondary,
+                        tint = secondaryTextColor,
                         modifier = Modifier.size(18.dp)
                     )
                 }

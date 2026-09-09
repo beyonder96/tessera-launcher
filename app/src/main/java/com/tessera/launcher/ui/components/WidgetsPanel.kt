@@ -1104,16 +1104,14 @@ private fun WeatherWidgetCard(
                 onClick = {
                     if (!hasLocationPermission) {
                         onRequestLocationPermission()
-                    } else {
-                        onRefreshWeather()
                     }
+                    onRefreshWeather()
                 },
                 onLongClick = onLongClick
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val weatherIcon = when {
-            !hasLocationPermission -> Icons.Outlined.LocationOn
             weatherInfo != null -> when (weatherInfo.weatherCode) {
                 0, 1 -> Icons.Outlined.WbSunny
                 2, 3, 45, 48 -> Icons.Outlined.Cloud
@@ -1122,6 +1120,7 @@ private fun WeatherWidgetCard(
                 95, 96, 99 -> Icons.Outlined.Thunderstorm
                 else -> Icons.Outlined.WbSunny
             }
+            !hasLocationPermission -> Icons.Outlined.LocationOn
             else -> Icons.Outlined.Cloud
         }
 
@@ -1144,60 +1143,6 @@ private fun WeatherWidgetCard(
         Spacer(modifier = Modifier.width(12.dp))
 
         when {
-            !hasLocationPermission -> {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Localização necessária",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        ),
-                        color = primaryText
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Toque para ativar previsão do tempo",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = secondaryText
-                    )
-                }
-            }
-            isWeatherLoading && weatherInfo == null -> {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Carregando clima...",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        ),
-                        color = primaryText
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Buscando dados de satélite",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = secondaryText
-                    )
-                }
-            }
-            weatherError != null && weatherInfo == null -> {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Falha ao carregar clima",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        ),
-                        color = primaryText
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Toque para tentar novamente",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                        color = secondaryText
-                    )
-                }
-            }
             weatherInfo != null -> {
                 Column(
                     modifier = Modifier.weight(1f),
@@ -1223,7 +1168,9 @@ private fun WeatherWidgetCard(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 12.sp
                             ),
-                            color = subtleText
+                            color = subtleText,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -1251,6 +1198,60 @@ private fun WeatherWidgetCard(
                     }
                 }
             }
+            isWeatherLoading -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Carregando clima...",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = primaryText
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Buscando previsão do tempo",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = secondaryText
+                    )
+                }
+            }
+            weatherError != null -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Falha ao carregar clima",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = primaryText
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Toque para tentar novamente",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = secondaryText
+                    )
+                }
+            }
+            !hasLocationPermission -> {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Ativar clima",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        ),
+                        color = primaryText
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Toque para ver a previsão",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                        color = secondaryText
+                    )
+                }
+            }
             else -> {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -1263,7 +1264,7 @@ private fun WeatherWidgetCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Aguarde atualização de satélite",
+                        text = "Toque para atualizar",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
                         color = secondaryText
                     )

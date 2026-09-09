@@ -8,6 +8,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
+import android.util.Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -46,6 +47,12 @@ data class WeatherInfo(
         }
 }
 
+private data class TargetLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val cityName: String
+)
+
 class WeatherHelper(private val context: Context) {
 
     fun hasLocationPermission(): Boolean {
@@ -72,62 +79,47 @@ class WeatherHelper(private val context: Context) {
         if (!hasLocationPermission()) return null
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
 
-        val hasFine = hasFineLocationPermission()
         val providers = buildList {
-            if (hasFine) {
+            add(LocationManager.NETWORK_PROVIDER)
+            if (hasFineLocationPermission()) {
                 add(LocationManager.GPS_PROVIDER)
             }
-            add(LocationManager.NETWORK_PROVIDER)
             add(LocationManager.PASSIVE_PROVIDER)
         }
 
         var bestLocation: Location? = null
         for (provider in providers) {
             try {
-                val isEnabled = try {
-                    lm.isProviderEnabled(provider)
-                } catch (_: SecurityException) {
-                    false
-                } catch (_: Exception) {
-                    false
-                }
-
-                if (isEnabled) {
-                    val loc = try {
-                        lm.getLastKnownLocation(provider)
-                    } catch (_: SecurityException) {
-                        null
-                    } catch (_: Exception) {
-                        null
-                    }
+                if (lm.isProviderEnabled(provider)) {
+                    val loc = lm.getLastKnownLocation(provider)
                     if (loc != null && (bestLocation == null || loc.accuracy < bestLocation.accuracy)) {
                         bestLocation = loc
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Erro ao obter lastKnownLocation para $provider: ${e.message}")
             }
         }
         return bestLocation
     }
 
     @SuppressLint("MissingPermission")
-    private suspend fun obtainLocation(): Location? = withContext(Dispatchers.IO) {
+    private suspend fun obtainDeviceLocation(): Location? = withContext(Dispatchers.IO) {
         val cached = getLastKnownLocation()
         if (cached != null) return@withContext cached
         if (!hasLocationPermission()) return@withContext null
 
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return@withContext null
-        val provider = if (hasFineLocationPermission() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            LocationManager.GPS_PROVIDER
-        } else if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            LocationManager.NETWORK_PROVIDER
-        } else if (lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
-            LocationManager.PASSIVE_PROVIDER
-        } else {
-            null
+
+        // Priorizar NETWORK_PROVIDER (torres e Wi-Fi) para retorno imediato (< 1s mesmo em ambientes internos)
+        val provider = when {
+            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+            hasFineLocationPermission() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+            lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER) -> LocationManager.PASSIVE_PROVIDER
+            else -> null
         } ?: return@withContext null
 
-        kotlinx.coroutines.withTimeoutOrNull(3000L) {
+        kotlinx.coroutines.withTimeoutOrNull(2000L) {
             try {
                 kotlinx.coroutines.suspendCancellableCoroutine { cont ->
                     val signal = androidx.core.os.CancellationSignal()
@@ -143,120 +135,174 @@ class WeatherHelper(private val context: Context) {
                         }
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Timeout ou falha ao requisitar localizacao do dispositivo: ${e.message}")
                 null
             }
         }
     }
 
     private suspend fun resolveCityName(latitude: Double, longitude: Double): String = withContext(Dispatchers.IO) {
-        kotlinx.coroutines.withTimeoutOrNull(2000L) {
+        // 1. Tentar Geocoder nativo do Android
+        val geocoderResult = kotlinx.coroutines.withTimeoutOrNull(1800L) {
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
                 @Suppress("DEPRECATION")
                 val addresses = geocoder.getFromLocation(latitude, longitude, 1)
                 val address = addresses?.firstOrNull()
-                address?.locality ?: address?.subAdminArea ?: address?.adminArea ?: "Minha Cidade"
-            } catch (_: Exception) {
-                "Local Atual"
-            }
-        } ?: "Local Atual"
-    }
-
-    private fun getInputStream(conn: HttpURLConnection): InputStream {
-        val isGzip = "gzip".equals(conn.contentEncoding, ignoreCase = true)
-        return if (isGzip) GZIPInputStream(conn.inputStream) else conn.inputStream
-    }
-
-    private fun mapWttrToWmoCode(wttrCode: Int): Int {
-        return when (wttrCode) {
-            113 -> 0 // Céu limpo
-            116 -> 2 // Parcialmente nublado
-            119, 122 -> 3 // Nublado
-            143, 248, 260 -> 45 // Nevoeiro
-            176, 263, 266, 281, 284, 293, 296, 299, 302, 305, 308, 311, 314, 353, 356, 359 -> 61 // Chuva
-            179, 182, 185, 227, 230, 320, 323, 326, 329, 332, 335, 338, 350, 368, 371 -> 71 // Neve
-            200, 386, 389, 392, 395 -> 95 // Tempestade
-            else -> 1
-        }
-    }
-
-    private fun fetchFromWttr(location: Location?, isCelsius: Boolean): WeatherInfo? {
-        var connection: HttpURLConnection? = null
-        return try {
-            val urlString = if (location != null) {
-                "https://wttr.in/${location.latitude},${location.longitude}?format=j1"
-            } else {
-                "https://wttr.in/?format=j1"
-            }
-            val url = URL(urlString)
-            connection = (url.openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
-                connectTimeout = 4500
-                readTimeout = 4500
-                setRequestProperty("User-Agent", "TesseraLauncher/1.7.7")
-                setRequestProperty("Accept", "application/json")
-            }
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val reader = BufferedReader(InputStreamReader(getInputStream(connection)))
-                val response = reader.readText()
-                reader.close()
-
-                val json = JSONObject(response)
-                val currArray = json.optJSONArray("current_condition")
-                val curr = currArray?.optJSONObject(0) ?: return null
-
-                val tempC = curr.optDouble("temp_C", Double.NaN)
-                if (tempC.isNaN()) return null
-
-                val feelsLikeC = curr.optDouble("FeelsLikeC", tempC)
-                val humidity = curr.optInt("humidity", 50)
-                val wttrCode = curr.optInt("weatherCode", 113)
-                val wmoCode = mapWttrToWmoCode(wttrCode)
-                val condition = getWeatherConditionDescription(wmoCode)
-
-                val nearestAreaArray = json.optJSONArray("nearest_area")
-                val nearestArea = nearestAreaArray?.optJSONObject(0)
-                val areaNameArray = nearestArea?.optJSONArray("areaName")
-                val resolvedCity = areaNameArray?.optJSONObject(0)?.optString("value")?.takeIf { it.isNotBlank() }
-                    ?: "Local Atual"
-
-                WeatherInfo(
-                    temperature = tempC,
-                    apparentTemperature = feelsLikeC,
-                    weatherCode = wmoCode,
-                    condition = condition,
-                    cityName = resolvedCity,
-                    humidity = humidity,
-                    isCelsius = isCelsius
-                )
-            } else {
+                address?.locality ?: address?.subAdminArea ?: address?.adminArea
+            } catch (e: Exception) {
+                Log.w(TAG, "Geocoder nativo falhou: ${e.message}")
                 null
             }
-        } catch (_: Exception) {
-            null
-        } finally {
-            connection?.disconnect()
+        }
+        if (!geocoderResult.isNullOrBlank()) return@withContext geocoderResult
+
+        // 2. Fallback de geocodificacao reversa via HTTP (BigDataCloud, sem API key)
+        val reverseHttpResult = kotlinx.coroutines.withTimeoutOrNull(2000L) {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=$latitude&longitude=$longitude&localityLanguage=pt")
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 2000
+                    readTimeout = 2000
+                    setRequestProperty("User-Agent", "TesseraLauncher/1.7.9")
+                }
+                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(text)
+                    val locality = json.optString("locality").takeIf { it.isNotBlank() }
+                    val city = json.optString("city").takeIf { it.isNotBlank() }
+                    val region = json.optString("principalSubdivision").takeIf { it.isNotBlank() }
+                    locality ?: city ?: region
+                } else null
+            } catch (_: Exception) {
+                null
+            } finally {
+                conn?.disconnect()
+            }
+        }
+        if (!reverseHttpResult.isNullOrBlank()) return@withContext reverseHttpResult
+
+        "Local Atual"
+    }
+
+    /**
+     * Fallback Instantaneo via IP Geolocation (ipwho.is com fallback para ip-api.com).
+     * Retorna latitude, longitude e nome da cidade em ~40ms sem requerer permissao de GPS!
+     */
+    private suspend fun obtainIpLocation(): TargetLocation? = withContext(Dispatchers.IO) {
+        // 1. Motor IP primario: ipwho.is (rapido, HTTPS, sem autenticacao)
+        val ipwhoisResult = kotlinx.coroutines.withTimeoutOrNull(2500L) {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL("https://ipwho.is/")
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 2000
+                    readTimeout = 2000
+                    setRequestProperty("User-Agent", "TesseraLauncher/1.7.9")
+                    setRequestProperty("Accept", "application/json")
+                }
+                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(text)
+                    if (json.optBoolean("success", true)) {
+                        val lat = json.optDouble("latitude", Double.NaN)
+                        val lon = json.optDouble("longitude", Double.NaN)
+                        val city = json.optString("city").ifBlank { json.optString("region") }.ifBlank { "Local Atual" }
+                        if (!lat.isNaN() && !lon.isNaN()) {
+                            TargetLocation(lat, lon, city)
+                        } else null
+                    } else null
+                } else null
+            } catch (e: Exception) {
+                Log.w(TAG, "ipwho.is falhou: ${e.message}")
+                null
+            } finally {
+                conn?.disconnect()
+            }
+        }
+        if (ipwhoisResult != null) return@withContext ipwhoisResult
+
+        // 2. Motor IP secundario: ip-api.com
+        kotlinx.coroutines.withTimeoutOrNull(2500L) {
+            var conn: HttpURLConnection? = null
+            try {
+                val url = URL("http://ip-api.com/json")
+                conn = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 2000
+                    readTimeout = 2000
+                    setRequestProperty("User-Agent", "TesseraLauncher/1.7.9")
+                }
+                if (conn.responseCode == HttpURLConnection.HTTP_OK) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(text)
+                    val lat = json.optDouble("lat", Double.NaN)
+                    val lon = json.optDouble("lon", Double.NaN)
+                    val city = json.optString("city").ifBlank { "Local Atual" }
+                    if (!lat.isNaN() && !lon.isNaN()) {
+                        TargetLocation(lat, lon, city)
+                    } else null
+                } else null
+            } catch (e: Exception) {
+                Log.w(TAG, "ip-api.com falhou: ${e.message}")
+                null
+            } finally {
+                conn?.disconnect()
+            }
         }
     }
 
-    private fun fetchFromOpenMeteo(location: Location?, isCelsius: Boolean): WeatherInfo? {
+    private suspend fun resolveTargetLocation(): TargetLocation? = withContext(Dispatchers.IO) {
+        // Nivel 1: Dispositivo com GPS / Rede do Sistema
+        if (hasLocationPermission()) {
+            val devLoc = obtainDeviceLocation()
+            if (devLoc != null) {
+                val city = resolveCityName(devLoc.latitude, devLoc.longitude)
+                Log.d(TAG, "Localizacao obtida via dispositivo: $city (${devLoc.latitude}, ${devLoc.longitude})")
+                return@withContext TargetLocation(devLoc.latitude, devLoc.longitude, city)
+            }
+        }
+
+        // Nivel 2: Fallback Ultrarrapido por IP (Zero permissao necessaria)
+        val ipLoc = obtainIpLocation()
+        if (ipLoc != null) {
+            Log.d(TAG, "Localizacao obtida via IP: ${ipLoc.cityName} (${ipLoc.latitude}, ${ipLoc.longitude})")
+            return@withContext ipLoc
+        }
+
+        null
+    }
+
+    private fun getSafeInputStream(conn: HttpURLConnection): InputStream {
+        val isGzip = "gzip".equals(conn.contentEncoding, ignoreCase = true)
+        val raw = conn.inputStream
+        return if (isGzip) {
+            try {
+                GZIPInputStream(raw)
+            } catch (_: Exception) {
+                raw
+            }
+        } else {
+            raw
+        }
+    }
+
+    private fun fetchFromOpenMeteo(target: TargetLocation, isCelsius: Boolean): WeatherInfo? {
         var connection: HttpURLConnection? = null
         return try {
-            val lat = location?.latitude ?: -23.5505
-            val lon = location?.longitude ?: -46.6333
-            val city = if (location != null) "Local Atual" else "São Paulo"
-
-            val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
+            val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=${target.latitude}&longitude=${target.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
             val url = URL(endpoint)
             connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
-                connectTimeout = 5000
-                readTimeout = 5000
-                setRequestProperty("User-Agent", "TesseraLauncher/1.7.7")
+                connectTimeout = 4000
+                readTimeout = 4000
+                setRequestProperty("User-Agent", "TesseraLauncher/1.7.9")
+                setRequestProperty("Accept", "application/json")
             }
+
             if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val reader = BufferedReader(InputStreamReader(getInputStream(connection)))
+                val reader = BufferedReader(InputStreamReader(getSafeInputStream(connection), Charsets.UTF_8))
                 val response = reader.readText()
                 reader.close()
 
@@ -268,19 +314,23 @@ class WeatherHelper(private val context: Context) {
                 val humidity = current.optInt("relative_humidity_2m", 50)
                 val condition = getWeatherConditionDescription(code)
 
+                Log.d(TAG, "Clima obtido com sucesso para ${target.cityName}: $temp°C, $condition")
+
                 WeatherInfo(
                     temperature = temp,
                     apparentTemperature = apparent,
                     weatherCode = code,
                     condition = condition,
-                    cityName = city,
+                    cityName = target.cityName,
                     humidity = humidity,
                     isCelsius = isCelsius
                 )
             } else {
+                Log.w(TAG, "Open-Meteo HTTP erro: ${connection.responseCode}")
                 null
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e(TAG, "Falha na requisicao Open-Meteo: ${e.message}")
             null
         } finally {
             connection?.disconnect()
@@ -288,21 +338,8 @@ class WeatherHelper(private val context: Context) {
     }
 
     suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
-        val location = try {
-            obtainLocation()
-        } catch (_: Exception) {
-            null
-        }
-
-        // 1. Motor primário ultrarrápido: wttr.in (< 1s com suporte a IP)
-        val wttrResult = fetchFromWttr(location, isCelsius)
-        if (wttrResult != null) return@withContext wttrResult
-
-        // 2. Motor secundário de contingência: Open-Meteo
-        val openMeteoResult = fetchFromOpenMeteo(location, isCelsius)
-        if (openMeteoResult != null) return@withContext openMeteoResult
-
-        null
+        val target = resolveTargetLocation() ?: return@withContext null
+        fetchFromOpenMeteo(target, isCelsius)
     }
 
     fun toJson(info: WeatherInfo): String {
@@ -336,6 +373,8 @@ class WeatherHelper(private val context: Context) {
     }
 
     companion object {
+        private const val TAG = "WeatherHelper"
+
         fun getWeatherConditionDescription(code: Int): String {
             return when (code) {
                 0 -> "Céu limpo"

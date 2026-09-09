@@ -847,7 +847,9 @@ fun HomeScreen(
                         viewModel.openSettings()
                         viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
                     },
-                    onDismiss = { viewModel.closeWidgetConfig() }
+                    onDismiss = { viewModel.closeWidgetConfig() },
+                    isLightMode = uiState.isLightMode,
+                    isAmoledMode = uiState.isAmoledMode
                 )
             }
             WidgetConfigType.QUICK_ACTIONS -> {

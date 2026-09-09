@@ -1293,7 +1293,12 @@ class MainViewModel(
                 preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
                 _uiState.update { it.copy(weatherInfo = weather, isWeatherLoading = false, weatherError = null) }
             } else {
-                _uiState.update { it.copy(isWeatherLoading = false, weatherError = "Falha ao obter previsão") }
+                val cached = weatherHelper.fromJson(preferences.getCachedWeatherJson())
+                if (cached != null) {
+                    _uiState.update { it.copy(weatherInfo = cached, isWeatherLoading = false, weatherError = null) }
+                } else {
+                    _uiState.update { it.copy(isWeatherLoading = false, weatherError = "Falha ao obter previsão") }
+                }
             }
         }
     }
