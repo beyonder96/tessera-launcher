@@ -8,10 +8,12 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -162,6 +164,15 @@ fun WidgetsPanel(
     LaunchedEffect(mediaPlayback.isPlaying) {
         if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
             pagerState.animateScrollToPage(3)
+        }
+    }
+
+    LaunchedEffect(defaultWidgetCardIndex) {
+        if (!isSwitchOnMusicPlayEnabled || !mediaPlayback.isPlaying) {
+            val target = defaultWidgetCardIndex.coerceIn(0, pageCount - 1)
+            if (pagerState.currentPage != target) {
+                pagerState.animateScrollToPage(target)
+            }
         }
     }
 
@@ -344,12 +355,7 @@ private fun QuickActionsWidgetCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .fillMaxHeight(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -405,6 +411,7 @@ private fun QuickActionsWidgetCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun QuickActionButton(
     icon: ImageVector,
@@ -418,19 +425,19 @@ private fun QuickActionButton(
 ) {
     val shape = RoundedCornerShape(14.dp)
     val bgColor = when {
-        isActive -> if (isLightMode) Color(0xFF111827) else Color.White
-        isLightMode -> Color(0xFFF1F3F5)
+        isActive -> if (isLightMode) Color(0xFF0F172A) else Color.White
+        isLightMode -> Color(0xFFF1F5F9)
         isAmoledMode -> AmoledBlack
         else -> Color(0xFF1E1E26)
     }
     val iconTint = when {
         isActive -> if (isLightMode) Color.White else Color.Black
-        isLightMode -> Color(0xFF111827)
+        isLightMode -> Color(0xFF0F172A)
         else -> Color.White
     }
     val borderStroke = when {
-        isActive -> BorderStroke(1.dp, if (isLightMode) Color(0xFF111827) else Color.White)
-        isLightMode -> BorderStroke(1.dp, Color(0xFFE5E7EB))
+        isActive -> BorderStroke(1.dp, if (isLightMode) Color(0xFF0F172A) else Color.White)
+        isLightMode -> BorderStroke(1.dp, Color(0xFFCBD5E1))
         isAmoledMode -> BorderStroke(1.dp, AmoledCardBorder)
         else -> BorderStroke(1.dp, Color(0xFF2C2C38))
     }
@@ -444,12 +451,10 @@ private fun QuickActionButton(
                 shape = shape
             )
             .background(bgColor)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { onClick() },
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
         contentAlignment = Alignment.Center
     ) {
         Icon(
@@ -478,19 +483,26 @@ private fun BatteryWidgetCard(
 
     if (batteryWidgetStyle == "bar") {
         // Estilo Barra Padrão
-        val boxBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)
-        val boxBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)
-        val contentColor = if (isLightMode) Color(0xFF111827) else Color.White
+        val boxBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1E1E26)
+        val boxBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2C2C38)
+        val contentColor = if (isLightMode) Color(0xFF0F172A) else Color.White
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = { onLongClick() }
-                    )
-                }
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {
+                        try {
+                            context.startActivity(Intent(Intent.ACTION_POWER_USAGE_SUMMARY).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        } catch (_: Exception) {}
+                    },
+                    onLongClick = onLongClick
+                )
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -526,7 +538,7 @@ private fun BatteryWidgetCard(
                         .height(4.dp)
                         .clip(CircleShape),
                     color = contentColor,
-                    trackColor = if (isLightMode) Color(0xFFE5E7EB) else Color(0xFF2C2C36)
+                    trackColor = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF2C2C36)
                 )
             }
         }
@@ -535,12 +547,7 @@ private fun BatteryWidgetCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight()
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onLongPress = { onLongClick() }
-                    )
-                },
+                .fillMaxHeight(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -593,6 +600,7 @@ private fun BatteryWidgetCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun StatusPill(
     icon: ImageVector,
@@ -604,9 +612,9 @@ private fun StatusPill(
     modifier: Modifier = Modifier
 ) {
     val pillShape = RoundedCornerShape(20.dp)
-    val pillBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val pillBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val contentColor = if (isLightMode) Color(0xFF111827) else Color.White
+    val pillBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val pillBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val contentColor = if (isLightMode) Color(0xFF0F172A) else Color.White
 
     Box(
         modifier = modifier
@@ -614,12 +622,10 @@ private fun StatusPill(
             .clip(pillShape)
             .border(BorderStroke(1.dp, pillBorder), pillShape)
             .background(pillBg)
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { onClick() },
-                    onLongPress = { onLongClick() }
-                )
-            }
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -670,26 +676,26 @@ private fun CalendarWidgetCard(
     val currentMinuteOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
     val dayProgress = (currentMinuteOfDay / 1440f).coerceIn(0.05f, 1f)
 
-    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val dayColor = if (isLightMode) Color(0xFF111827) else Color.White
-    val monthColor = if (isLightMode) Color(0xFF6B7280) else Color(0xFFAAAAAA)
-    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
-    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
-    val linkColor = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
-    val progressColor = if (isLightMode) Color(0xFF111827) else Color(0xFFCCCCCC)
-    val progressTrack = if (isLightMode) Color(0xFFE5E7EB) else Color(0xFF262630)
+    val badgeBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val dayColor = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val monthColor = if (isLightMode) Color(0xFF475569) else Color(0xFFAAAAAA)
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+    val linkColor = if (isLightMode) Color(0xFF334155) else Color(0xFFAAAAAA)
+    val progressColor = if (isLightMode) Color(0xFF0F172A) else Color(0xFFCCCCCC)
+    val progressTrack = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF262630)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { if (hasPermission) onCalendarClick() else onRequestPermission() },
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { if (hasPermission) onCalendarClick() else onRequestPermission() },
+                onLongClick = onLongClick
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Emblema Esquerdo (Dia / Mês)
@@ -812,24 +818,25 @@ private fun MediaWidgetCard(
     isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
-    val placeholderBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val placeholderBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val placeholderTint = if (isLightMode) Color(0xFF6B7280) else Color(0xFFAAAAAA)
-    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
-    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
-    val controlTint = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
-    val playBg = if (isLightMode) Color(0xFF111827) else Color.White
+    val placeholderBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val placeholderBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val placeholderTint = if (isLightMode) Color(0xFF475569) else Color(0xFFAAAAAA)
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+    val controlTint = if (isLightMode) Color(0xFF334155) else Color(0xFFAAAAAA)
+    val playBg = if (isLightMode) Color(0xFF0F172A) else Color.White
     val playTint = if (isLightMode) Color.White else Color.Black
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onOpenMusicApp,
+                onLongClick = onLongClick
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Capa do Álbum
@@ -979,22 +986,22 @@ private fun VerseFocusWidgetCard(
     }
     var currentQuoteIndex by remember { mutableIntStateOf(0) }
 
-    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val quoteIconColor = if (isLightMode) Color(0xFF111827) else Color(0xFFAAAAAA)
-    val headerColor = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
-    val quoteTextColor = if (isLightMode) Color(0xFF111827) else Color.White
+    val badgeBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val quoteIconColor = if (isLightMode) Color(0xFF0F172A) else Color(0xFFAAAAAA)
+    val headerColor = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+    val quoteTextColor = if (isLightMode) Color(0xFF0F172A) else Color.White
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.size },
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.size },
+                onLongClick = onLongClick
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Emblema de Aspas
@@ -1080,29 +1087,29 @@ private fun WeatherWidgetCard(
     isLightMode: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
-    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val iconTint = if (isLightMode) Color(0xFF111827) else Color.White
-    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
-    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
-    val subtleText = if (isLightMode) Color(0xFF4B5563) else Color(0xFFAAAAAA)
+    val badgeBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val iconTint = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+    val subtleText = if (isLightMode) Color(0xFF334155) else Color(0xFFAAAAAA)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        if (!hasLocationPermission) {
-                            onRequestLocationPermission()
-                        } else {
-                            onRefreshWeather()
-                        }
-                    },
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    if (!hasLocationPermission) {
+                        onRequestLocationPermission()
+                    } else {
+                        onRefreshWeather()
+                    }
+                },
+                onLongClick = onLongClick
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         val weatherIcon = when {
@@ -1282,22 +1289,22 @@ private fun NotesWidgetCard(
     onLongClick: () -> Unit = {}
 ) {
     val topTask = tasks.firstOrNull()
-    val badgeBg = if (isLightMode) Color(0xFFF1F3F5) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
-    val badgeBorder = if (isLightMode) Color(0xFFE5E7EB) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
-    val iconTint = if (isLightMode) Color(0xFF111827) else Color.White
-    val primaryText = if (isLightMode) Color(0xFF111827) else Color.White
-    val secondaryText = if (isLightMode) Color(0xFF6B7280) else Color(0xFF8E8E98)
+    val badgeBg = if (isLightMode) Color(0xFFF1F5F9) else if (isAmoledMode) AmoledBlack else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFCBD5E1) else if (isAmoledMode) AmoledCardBorder else Color(0xFF2A2A36)
+    val iconTint = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = { onNotesClick() },
-                    onLongPress = { onLongClick() }
-                )
-            },
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onNotesClick,
+                onLongClick = onLongClick
+            ),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(

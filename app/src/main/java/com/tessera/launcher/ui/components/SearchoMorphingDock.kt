@@ -222,8 +222,8 @@ fun SearchoMorphingDock(
                     .shadow(
                         elevation = 8.dp,
                         shape = dockShape,
-                        ambientColor = Color.Black.copy(alpha = 0.5f),
-                        spotColor = Color.Black.copy(alpha = 0.5f)
+                        ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
+                        spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
                     )
                     .border(dockBorder, dockShape)
                     .clip(dockShape)
@@ -258,8 +258,8 @@ fun SearchoMorphingDock(
                         .shadow(
                             elevation = 12.dp,
                             shape = dockShape,
-                            ambientColor = Color.Black.copy(alpha = 0.5f),
-                            spotColor = Color.Black.copy(alpha = 0.5f)
+                            ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
+                            spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
                         )
                         .border(dockBorder, dockShape)
                         .clip(dockShape)
@@ -289,7 +289,7 @@ fun SearchoMorphingDock(
                             widgetContent()
                             Spacer(modifier = Modifier.height(4.dp))
                             HorizontalDivider(
-                                color = if (isLightMode) LightCardBorder else if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
+                                color = if (isLightMode) Color(0xFFE2E8F0) else if (isAmoledMode) Color(0xFF1E1E26) else Color(0x22FFFFFF),
                                 thickness = 1.dp,
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -403,8 +403,8 @@ fun SearchoMorphingDock(
                             .shadow(
                                 elevation = 12.dp,
                                 shape = buttonShape,
-                                ambientColor = Color.Black.copy(alpha = 0.5f),
-                                spotColor = Color.Black.copy(alpha = 0.5f)
+                                ambientColor = if (isLightMode) Color(0x10000000) else Color.Black.copy(alpha = 0.5f),
+                                spotColor = if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.5f)
                             )
                             .border(dockBorder, buttonShape)
                             .clip(buttonShape)

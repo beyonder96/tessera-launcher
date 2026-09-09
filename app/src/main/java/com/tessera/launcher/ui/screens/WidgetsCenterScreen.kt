@@ -4,6 +4,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -26,11 +27,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.MenuBook
@@ -38,6 +41,7 @@ import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -81,10 +86,24 @@ fun WidgetsCenterScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
+    val isLight = uiState.isLightMode
+    val screenBg = when {
+        isLight -> Color(0xFFF8FAFC)
+        uiState.isAmoledMode -> AmoledBlack
+        else -> DarkBackground
+    }
+    val cardBg = if (isLight) Color(0xFFFFFFFF) else WidgetCenterCardBackground
+    val cardBorder = if (isLight) Color(0xFFCBD5E1) else WidgetCenterCardBorder
+    val dividerColor = if (isLight) Color(0xFFF1F5F9) else WidgetCenterDividerColor
+    val iconBg = if (isLight) Color(0xFFF1F5F9) else WidgetCenterIconBackground
+    val primaryTextColor = if (isLight) Color(0xFF0F172A) else TextPrimary
+    val secondaryTextColor = if (isLight) Color(0xFF64748B) else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF94A3B8) else TextTertiary
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(WindowInsets.statusBars.asPaddingValues())
             .padding(WindowInsets.navigationBars.asPaddingValues())
     ) {
@@ -111,7 +130,7 @@ fun WidgetsCenterScreen(
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -123,7 +142,7 @@ fun WidgetsCenterScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -142,14 +161,14 @@ fun WidgetsCenterScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, top = 12.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = WidgetCenterCardShape,
-                color = WidgetCenterCardBackground,
-                border = BorderStroke(1.dp, WidgetCenterCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -158,17 +177,25 @@ fun WidgetsCenterScreen(
                         title = "Jogo do dino",
                         subtitle = "Jogo retrô jogável do dinossauro pulando",
                         checked = uiState.isDinoWidgetEnabled,
-                        onCheckedChange = { viewModel.setDinoWidgetEnabled(it) }
+                        onCheckedChange = { viewModel.setDinoWidgetEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
                     )
 
-                    HorizontalDivider(color = WidgetCenterDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     WidgetCenterToggleRow(
                         icon = Icons.Outlined.MenuBook,
                         title = "Notas e diário",
                         subtitle = "Notas rápidas, lista de tarefas e entradas do diário",
                         checked = uiState.isNotesWidgetEnabled,
-                        onCheckedChange = { viewModel.setNotesWidgetEnabled(it) }
+                        onCheckedChange = { viewModel.setNotesWidgetEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
                     )
                 }
             }
@@ -183,14 +210,14 @@ fun WidgetsCenterScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = WidgetCenterCardShape,
-                color = WidgetCenterCardBackground,
-                border = BorderStroke(1.dp, WidgetCenterCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -212,13 +239,13 @@ fun WidgetsCenterScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(WidgetCenterIconBackground),
+                            .background(iconBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Notifications,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -232,20 +259,20 @@ fun WidgetsCenterScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = if (uiState.hasNotificationAccess) "1 app permitido" else "Permissão necessária",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
-                        tint = TextTertiary,
+                        tint = tertiaryTextColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -261,14 +288,14 @@ fun WidgetsCenterScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = WidgetCenterCardShape,
-                color = WidgetCenterCardBackground,
-                border = BorderStroke(1.dp, WidgetCenterCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
@@ -277,11 +304,15 @@ fun WidgetsCenterScreen(
                         title = "Trocar ao tocar música",
                         subtitle = "Trocar para o player automaticamente quando o áudio começar",
                         checked = uiState.isSwitchOnMusicPlayEnabled,
-                        onCheckedChange = { viewModel.setSwitchOnMusicPlayEnabled(it) }
+                        onCheckedChange = { viewModel.setSwitchOnMusicPlayEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
                     )
 
                     HorizontalDivider(
-                        color = WidgetCenterDividerColor,
+                        color = dividerColor,
                         thickness = 1.dp,
                         modifier = Modifier.padding(vertical = 6.dp)
                     )
@@ -297,13 +328,13 @@ fun WidgetsCenterScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(WidgetCenterIconBackground),
+                                .background(iconBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Layers,
                                 contentDescription = null,
-                                tint = TextPrimary,
+                                tint = primaryTextColor,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -318,95 +349,124 @@ fun WidgetsCenterScreen(
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.5.sp
                                 ),
-                                color = TextPrimary
+                                color = primaryTextColor
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Cartão exibido quando nada mais está acontecendo",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = secondaryTextColor
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Grade de Cartões Padrão (7 Chips Circulares Conforme Imagem 5)
-                    // Linha 1: 4 itens
+                    // Grade dos 8 Cartões Padrão (2 Linhas x 4 Colunas Perfeitas)
+                    // Linha 1: Índices 0 a 3
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
+                        // 0: Ações Rápidas
                         WidgetCardSelectorCircle(
-                            label = "Agenda e\ndata",
-                            icon = Icons.Outlined.CalendarToday,
+                            label = "Ações\nrápidas",
+                            icon = Icons.Outlined.FlashlightOn,
                             isSelected = uiState.defaultWidgetCardIndex == 0,
                             onClick = { viewModel.setDefaultWidgetCardIndex(0) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
 
+                        // 1: Bateria e Sinais
                         WidgetCardSelectorCircle(
                             label = "Bateria e\nsinais",
                             icon = Icons.Outlined.BatteryStd,
                             isSelected = uiState.defaultWidgetCardIndex == 1,
                             onClick = { viewModel.setDefaultWidgetCardIndex(1) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
 
+                        // 2: Agenda e Data
+                        WidgetCardSelectorCircle(
+                            label = "Agenda e\ndata",
+                            icon = Icons.Outlined.CalendarToday,
+                            isSelected = uiState.defaultWidgetCardIndex == 2,
+                            onClick = { viewModel.setDefaultWidgetCardIndex(2) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // 3: Player de Música
                         WidgetCardSelectorCircle(
                             label = "Player de\nmúsica",
                             icon = Icons.Outlined.MusicNote,
-                            isSelected = uiState.defaultWidgetCardIndex == 2,
-                            onClick = { viewModel.setDefaultWidgetCardIndex(2) },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        WidgetCardSelectorCircle(
-                            label = "Barra de\nações rápid...",
-                            icon = Icons.Outlined.Tune,
                             isSelected = uiState.defaultWidgetCardIndex == 3,
                             onClick = { viewModel.setDefaultWidgetCardIndex(3) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
                     }
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Linha 2: 3 itens
+                    // Linha 2: Índices 4 a 7
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
+                        // 4: Foco e Frase
                         WidgetCardSelectorCircle(
                             label = "Foco e frase\ndo dia",
                             icon = Icons.Outlined.FormatQuote,
                             isSelected = uiState.defaultWidgetCardIndex == 4,
                             onClick = { viewModel.setDefaultWidgetCardIndex(4) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
 
+                        // 5: Clima & Temperatura
                         WidgetCardSelectorCircle(
-                            label = "Jogo do dino",
-                            icon = Icons.Outlined.SportsEsports,
+                            label = "Clima e\ntempo",
+                            icon = Icons.Outlined.WbSunny,
                             isSelected = uiState.defaultWidgetCardIndex == 5,
                             onClick = { viewModel.setDefaultWidgetCardIndex(5) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
 
+                        // 6: Jogo do Dino
                         WidgetCardSelectorCircle(
-                            label = "Notas e\ndiário",
-                            icon = Icons.Outlined.MenuBook,
+                            label = "Jogo do\ndino",
+                            icon = Icons.Outlined.SportsEsports,
                             isSelected = uiState.defaultWidgetCardIndex == 6,
                             onClick = { viewModel.setDefaultWidgetCardIndex(6) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
 
-                        // Espaço vazio para manter alinhamento estrito de 4 colunas
-                        Spacer(modifier = Modifier.weight(1f))
+                        // 7: Notas e Diário
+                        WidgetCardSelectorCircle(
+                            label = "Notas e\ndiário",
+                            icon = Icons.AutoMirrored.Outlined.EventNote,
+                            isSelected = uiState.defaultWidgetCardIndex == 7,
+                            onClick = { viewModel.setDefaultWidgetCardIndex(7) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -422,8 +482,27 @@ private fun WidgetCardSelectorCircle(
     icon: ImageVector,
     isSelected: Boolean,
     onClick: () -> Unit,
+    isLightMode: Boolean = false,
+    iconBgColor: Color = WidgetCenterIconBackground,
     modifier: Modifier = Modifier
 ) {
+    val circleBg = when {
+        isSelected -> if (isLightMode) Color(0xFF0F172A) else Color.White
+        isLightMode -> Color(0xFFF1F5F9)
+        else -> iconBgColor
+    }
+    val iconTint = when {
+        isSelected -> if (isLightMode) Color.White else Color.Black
+        isLightMode -> Color(0xFF64748B)
+        else -> Color(0xFF8E8E93)
+    }
+    val labelColor = when {
+        isSelected -> if (isLightMode) Color(0xFF0F172A) else Color.White
+        isLightMode -> Color(0xFF64748B)
+        else -> Color(0xFF727275)
+    }
+    val circleBorder = if (isLightMode && !isSelected) BorderStroke(1.dp, Color(0xFFCBD5E1)) else null
+
     Column(
         modifier = modifier
             .clickable(
@@ -437,13 +516,14 @@ private fun WidgetCardSelectorCircle(
             modifier = Modifier
                 .size(54.dp)
                 .clip(CircleShape)
-                .background(if (isSelected) Color.White else WidgetCenterIconBackground),
+                .then(if (circleBorder != null) Modifier.border(circleBorder, CircleShape) else Modifier)
+                .background(circleBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (isSelected) Color.Black else Color(0xFF8E8E93),
+                tint = iconTint,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -452,7 +532,7 @@ private fun WidgetCardSelectorCircle(
 
         Text(
             text = label,
-            color = if (isSelected) Color.White else Color(0xFF727275),
+            color = labelColor,
             fontSize = 11.sp,
             lineHeight = 13.sp,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
@@ -469,7 +549,11 @@ private fun WidgetCenterToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    isLightMode: Boolean = false,
+    iconBgColor: Color = WidgetCenterIconBackground,
+    primaryTextColor: Color = TextPrimary,
+    secondaryTextColor: Color = TextSecondary
 ) {
     Row(
         modifier = Modifier
@@ -486,13 +570,13 @@ private fun WidgetCenterToggleRow(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(WidgetCenterIconBackground),
+                .background(iconBgColor),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryTextColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -506,7 +590,7 @@ private fun WidgetCenterToggleRow(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = TextPrimary
+                color = primaryTextColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -515,7 +599,7 @@ private fun WidgetCenterToggleRow(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 ),
-                color = TextSecondary
+                color = secondaryTextColor
             )
         }
 
@@ -525,12 +609,12 @@ private fun WidgetCenterToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.Black,
-                checkedTrackColor = Color.White,
-                checkedBorderColor = Color.White,
-                uncheckedThumbColor = Color(0xFF8E8E93),
-                uncheckedTrackColor = Color(0xFF1E1E24),
-                uncheckedBorderColor = Color(0xFF2C2C34)
+                checkedThumbColor = if (isLightMode) Color.White else Color.Black,
+                checkedTrackColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
+                checkedBorderColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
+                uncheckedThumbColor = if (isLightMode) Color(0xFF94A3B8) else Color(0xFF8E8E93),
+                uncheckedTrackColor = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF1E1E24),
+                uncheckedBorderColor = if (isLightMode) Color(0xFFCBD5E1) else Color(0xFF2C2C34)
             )
         )
     }

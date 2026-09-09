@@ -61,17 +61,27 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.7.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.7)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.7.8](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.7.8)
 
-### 🆕 Novidades na v1.7.7
-- 🗑️ **Desinstalação de Apps com Modal de Confirmação:** Inclusão da permissão `REQUEST_DELETE_PACKAGES` e modal in-app nativo de confirmação antes de desinstalar aplicativos.
-- ☀️ **Modo Claro 100% Puro & Consistente:** Remoção completa dos círculos pretos em ícones nas Configurações e Customização; tema claro estendido à Barra de Busca e aos Widgets (Ações Rápidas, Bateria, Calendário, Mídia, Versículo, Clima e Notas).
-- 💧 **Opacidade da Barra de Busca & Liquid Design:** Slider contínuo de 0% a 100% para opacidade da barra com acabamento *Liquid Glass* (difração de luz e brilho especular) e contraste adaptativo inteligente (WCAG AA).
-- ⚡ **Sliders 120Hz Reconstruídos:** Rastreamento tátil suave e contínuo em 120Hz sem travamento nos 20% e sem colisões visuais de texto.
-- 🚀 **Rolagem a 120Hz sem Travamento (Butter-Smooth):** Pré-rasterização de ícones em segundo plano (`Dispatchers.IO`) e requisição de taxa máxima de atualização (120Hz/144Hz) na janela principal.
-- 🖋️ **Logo Tessera no Cabeçalho:** Logotipo caligráfico nas Configurações ampliado para o dobro do tamanho (64dp).
+### 🆕 Novidades na v1.7.8
+- 🌤️ **Widget de Clima Dual-Engine Resiliente:** Motor primário ultra-rápido (`wttr.in`, <1s) com descrições em Português e fallback automático por geolocalização IP quando o GPS estiver desligado, além de contingência secundária via `open-meteo.com` e cache offline persistente.
+- ⚡ **Rolagem a 120Hz Fluida nos Widgets (Sem Conflitos de Toque):** Eliminação de bloqueios de gesto por `pointerInput`, integrando `combinedClickable` nativo para troca de páginas instantânea e sem engasgos no `HorizontalPager`.
+- 🎯 **Sincronização Exata do "Cartão Padrão":** Grade harmonizada com 8 opções na Central de Widgets (Ações Rápidas, Bateria, Agenda, Música, Foco, Clima, Dino e Notas) com animação e rolagem automática ao selecionar o widget padrão.
+- 🛡️ **Tela de Permissões Reestruturada em Duas Camadas:** Separação clara entre permissões do app disparadas diretamente na tela (Localização, Calendário, Contatos e SMS) e acessos protegidos pelo sistema Android (Lançador Padrão, Notificações e Acessibilidade).
+- ☀️ **Refinamento do Modo Claro nos Widgets e Doca:** Paleta Slate de alto contraste (WCAG AA), sombras suaves de baixa opacidade e divisórias consistentes, eliminando manchas escuras.
+- 🔒 **Auditoria de Segurança & Privacidade Concluída:** 100% dos dados processados localmente no dispositivo (*local-first*), zero telemetria e zero segredos expostos.
 
 ### 📋 Versões Anteriores
+<details>
+<summary><b>v1.7.7</b></summary>
+
+- 🗑️ **Desinstalação de Apps com Modal de Confirmação:** Inclusão da permissão `REQUEST_DELETE_PACKAGES` e modal in-app nativo de confirmação antes de desinstalar aplicativos.
+- ☀️ **Modo Claro 100% Puro & Consistente:** Remoção completa dos círculos pretos em ícones nas Configurações e Customização; tema claro estendido à Barra de Busca e aos Widgets.
+- 💧 **Opacidade da Barra de Busca & Liquid Design:** Slider contínuo de 0% a 100% para opacidade da barra com acabamento *Liquid Glass* e contraste adaptativo inteligente (WCAG AA).
+- ⚡ **Sliders 120Hz Reconstruídos:** Rastreamento tátil suave e contínuo em 120Hz sem travamento nos 20%.
+- 🚀 **Rolagem a 120Hz sem Travamento:** Pré-rasterização de ícones em segundo plano (`Dispatchers.IO`) e requisição de taxa máxima de atualização na janela.
+- 🖋️ **Logo Tessera no Cabeçalho:** Logotipo caligráfico nas Configurações ampliado para o dobro do tamanho (64dp).
+</details>
 <details>
 <summary><b>v1.7.6</b></summary>
 

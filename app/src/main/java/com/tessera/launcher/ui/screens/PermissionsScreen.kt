@@ -33,9 +33,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.HorizontalDivider
@@ -67,6 +70,7 @@ import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 @Composable
@@ -101,6 +105,12 @@ fun PermissionsScreen(
         viewModel.refreshAllPermissions(context)
     }
 
+    val calendarLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {
+        viewModel.refreshAllPermissions(context)
+    }
+
     val openAppSettings = {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", context.packageName, null)
@@ -118,7 +128,19 @@ fun PermissionsScreen(
         viewModel.refreshAllPermissions(context)
     }
 
-    val bg = if (uiState.isAmoledMode) AmoledBlack else DarkSurface
+    val isLight = uiState.isLightMode
+    val bg = when {
+        isLight -> Color(0xFFF8FAFC)
+        uiState.isAmoledMode -> AmoledBlack
+        else -> DarkSurface
+    }
+    val cardBg = if (isLight) Color(0xFFFFFFFF) else AmoledCardBackground
+    val cardBorder = if (isLight) Color(0xFFCBD5E1) else AmoledCardBorder
+    val iconBoxBg = if (isLight) Color(0xFFF1F5F9) else Color(0xFF191920)
+    val primaryTextColor = if (isLight) Color(0xFF0F172A) else TextPrimary
+    val secondaryTextColor = if (isLight) Color(0xFF64748B) else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF94A3B8) else TextTertiary
+    val dividerColor = if (isLight) Color(0xFFF1F5F9) else Color(0xFF16161C)
 
     Box(
         modifier = modifier
@@ -153,7 +175,7 @@ fun PermissionsScreen(
                     Icon(
                         imageVector = Icons.Outlined.ArrowBack,
                         contentDescription = "Voltar",
-                        tint = TextPrimary,
+                        tint = primaryTextColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -165,90 +187,43 @@ fun PermissionsScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.4.sp
                     ),
-                    color = TextSecondary,
+                    color = secondaryTextColor,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Card Unificado com as 5 Permissões
+            // SEÇÃO 1: PERMISSÕES DO APP (ACESSO DIRETO)
+            Text(
+                text = "PERMISSÕES DO APP (ACESSO DIRETO)",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = tertiaryTextColor,
+                modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
+            )
+            Text(
+                text = "Solicitações acionadas diretamente na tela via diálogo nativo do sistema",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                color = secondaryTextColor,
+                modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
+            )
+
             Surface(
                 shape = RoundedCornerShape(24.dp),
-                color = AmoledCardBackground,
-                border = BorderStroke(1.dp, AmoledCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    // 1. Lançador padrão
-                    PermissionRow(
-                        icon = Icons.Outlined.Home,
-                        title = "Lançador padrão",
-                        subtitle = "O Searcho é o seu launcher.",
-                        isChecked = uiState.isDefaultLauncher,
-                        onCheckedChange = {
-                            context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            })
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 2. Busca de Contatos
-                    PermissionRow(
-                        icon = Icons.Outlined.People,
-                        title = "Busca de Contatos",
-                        subtitle = "Find and call contacts from search",
-                        isChecked = uiState.hasContactsPermission,
-                        onCheckedChange = {
-                            if (uiState.hasContactsPermission) {
-                                openAppSettings()
-                            } else {
-                                contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
-                            }
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 3. Busca de mensagens
-                    PermissionRow(
-                        icon = Icons.Outlined.ChatBubbleOutline,
-                        title = "Busca de mensagens",
-                        subtitle = "Search messages and notifications",
-                        isChecked = uiState.hasSmsPermission,
-                        onCheckedChange = {
-                            if (uiState.hasSmsPermission) {
-                                openAppSettings()
-                            } else {
-                                smsLauncher.launch(Manifest.permission.READ_SMS)
-                            }
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 4. Serviço de acessibilidade
-                    PermissionRow(
-                        icon = Icons.Outlined.AccessibilityNew,
-                        title = "Serviço de acessibilidade",
-                        subtitle = "Enable quick gestures and actions",
-                        isChecked = uiState.hasAccessibilityService,
-                        onCheckedChange = {
-                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            })
-                        }
-                    )
-
-                    PermissionDivider()
-
-                    // 5. Localização
+                    // 1. Localização (Clima)
                     PermissionRow(
                         icon = Icons.Outlined.LocationOn,
                         title = "Localização",
-                        subtitle = "Previsão do tempo em tempo real no widget de clima",
+                        subtitle = "Previsão do tempo precisa em tempo real no widget",
                         isChecked = uiState.hasLocationPermission,
                         onCheckedChange = {
                             if (uiState.hasLocationPermission) {
@@ -262,7 +237,158 @@ fun PermissionsScreen(
                                     )
                                 )
                             }
-                        }
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 2. Calendário & Agenda
+                    PermissionRow(
+                        icon = Icons.Outlined.CalendarToday,
+                        title = "Calendário & Agenda",
+                        subtitle = "Exibe seus próximos compromissos no widget",
+                        isChecked = uiState.hasCalendarPermission,
+                        onCheckedChange = {
+                            if (uiState.hasCalendarPermission) {
+                                openAppSettings()
+                            } else {
+                                calendarLauncher.launch(Manifest.permission.READ_CALENDAR)
+                            }
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 3. Busca de Contatos
+                    PermissionRow(
+                        icon = Icons.Outlined.People,
+                        title = "Busca de contatos",
+                        subtitle = "Localizar contatos e discar diretamente pela barra",
+                        isChecked = uiState.hasContactsPermission,
+                        onCheckedChange = {
+                            if (uiState.hasContactsPermission) {
+                                openAppSettings()
+                            } else {
+                                contactsLauncher.launch(Manifest.permission.READ_CONTACTS)
+                            }
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 4. Busca de Mensagens
+                    PermissionRow(
+                        icon = Icons.Outlined.ChatBubbleOutline,
+                        title = "Busca de mensagens",
+                        subtitle = "Encontrar mensagens SMS pela pesquisa do launcher",
+                        isChecked = uiState.hasSmsPermission,
+                        onCheckedChange = {
+                            if (uiState.hasSmsPermission) {
+                                openAppSettings()
+                            } else {
+                                smsLauncher.launch(Manifest.permission.READ_SMS)
+                            }
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // SEÇÃO 2: ACESSOS DO SISTEMA (CONFIGURAÇÕES DO ANDROID)
+            Text(
+                text = "ACESSOS DO SISTEMA (CONFIGURAÇÕES DO ANDROID)",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = tertiaryTextColor,
+                modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
+            )
+            Text(
+                text = "Exigência de segurança do Android: permissões de sistema requerem autorização nas telas oficiais de configuração.",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                color = secondaryTextColor,
+                modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 1. Lançador Padrão
+                    PermissionRow(
+                        icon = Icons.Outlined.Home,
+                        title = "Lançador padrão",
+                        subtitle = "Define o Tessera como sua tela inicial principal",
+                        isChecked = uiState.isDefaultLauncher,
+                        onCheckedChange = {
+                            context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 2. Acesso a Notificações (Música)
+                    PermissionRow(
+                        icon = Icons.Outlined.Notifications,
+                        title = "Acesso a notificações",
+                        subtitle = "Permite ao widget de música ler e controlar reprodução",
+                        isChecked = uiState.hasNotificationAccess,
+                        onCheckedChange = {
+                            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 3. Serviço de Acessibilidade
+                    PermissionRow(
+                        icon = Icons.Outlined.AccessibilityNew,
+                        title = "Serviço de acessibilidade",
+                        subtitle = "Gestos de toque duplo para bloquear a tela e ações rápidas",
+                        isChecked = uiState.hasAccessibilityService,
+                        onCheckedChange = {
+                            context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            })
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
                     )
                 }
             }
@@ -278,7 +404,11 @@ private fun PermissionRow(
     title: String,
     subtitle: String,
     isChecked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    isLightMode: Boolean = false,
+    iconBoxBg: Color = Color(0xFF191920),
+    primaryTextColor: Color = TextPrimary,
+    secondaryTextColor: Color = TextSecondary
 ) {
     Row(
         modifier = Modifier
@@ -295,13 +425,13 @@ private fun PermissionRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF191920)),
+                .background(iconBoxBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryTextColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -315,13 +445,13 @@ private fun PermissionRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 15.sp
                 ),
-                color = TextPrimary
+                color = primaryTextColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = TextSecondary
+                color = secondaryTextColor
             )
         }
 
@@ -329,20 +459,21 @@ private fun PermissionRow(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.Black,
-                checkedTrackColor = Color.White,
-                uncheckedThumbColor = TextSecondary,
-                uncheckedTrackColor = Color(0xFF222228),
-                uncheckedBorderColor = Color.Transparent
+                checkedThumbColor = if (isLightMode) Color.White else Color.Black,
+                checkedTrackColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
+                checkedBorderColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
+                uncheckedThumbColor = if (isLightMode) Color(0xFF94A3B8) else TextSecondary,
+                uncheckedTrackColor = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF222228),
+                uncheckedBorderColor = if (isLightMode) Color(0xFFCBD5E1) else Color.Transparent
             )
         )
     }
 }
 
 @Composable
-private fun PermissionDivider() {
+private fun PermissionDivider(color: Color = Color(0xFF16161C)) {
     HorizontalDivider(
-        color = Color(0xFF16161C),
+        color = color,
         thickness = 1.dp,
         modifier = Modifier.padding(start = 68.dp, end = 16.dp)
     )

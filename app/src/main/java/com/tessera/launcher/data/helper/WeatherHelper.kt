@@ -13,10 +13,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.InputStream
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Locale
+import java.util.zip.GZIPInputStream
 
 data class WeatherInfo(
     val temperature: Double,
@@ -161,31 +163,100 @@ class WeatherHelper(private val context: Context) {
         } ?: "Local Atual"
     }
 
-    suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
-        try {
-            val location = try {
-                obtainLocation()
-            } catch (_: Exception) {
+    private fun getInputStream(conn: HttpURLConnection): InputStream {
+        val isGzip = "gzip".equals(conn.contentEncoding, ignoreCase = true)
+        return if (isGzip) GZIPInputStream(conn.inputStream) else conn.inputStream
+    }
+
+    private fun mapWttrToWmoCode(wttrCode: Int): Int {
+        return when (wttrCode) {
+            113 -> 0 // Céu limpo
+            116 -> 2 // Parcialmente nublado
+            119, 122 -> 3 // Nublado
+            143, 248, 260 -> 45 // Nevoeiro
+            176, 263, 266, 281, 284, 293, 296, 299, 302, 305, 308, 311, 314, 353, 356, 359 -> 61 // Chuva
+            179, 182, 185, 227, 230, 320, 323, 326, 329, 332, 335, 338, 350, 368, 371 -> 71 // Neve
+            200, 386, 389, 392, 395 -> 95 // Tempestade
+            else -> 1
+        }
+    }
+
+    private fun fetchFromWttr(location: Location?, isCelsius: Boolean): WeatherInfo? {
+        var connection: HttpURLConnection? = null
+        return try {
+            val urlString = if (location != null) {
+                "https://wttr.in/${location.latitude},${location.longitude}?format=j1"
+            } else {
+                "https://wttr.in/?format=j1"
+            }
+            val url = URL(urlString)
+            connection = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 4500
+                readTimeout = 4500
+                setRequestProperty("User-Agent", "TesseraLauncher/1.7.7")
+                setRequestProperty("Accept", "application/json")
+            }
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val reader = BufferedReader(InputStreamReader(getInputStream(connection)))
+                val response = reader.readText()
+                reader.close()
+
+                val json = JSONObject(response)
+                val currArray = json.optJSONArray("current_condition")
+                val curr = currArray?.optJSONObject(0) ?: return null
+
+                val tempC = curr.optDouble("temp_C", Double.NaN)
+                if (tempC.isNaN()) return null
+
+                val feelsLikeC = curr.optDouble("FeelsLikeC", tempC)
+                val humidity = curr.optInt("humidity", 50)
+                val wttrCode = curr.optInt("weatherCode", 113)
+                val wmoCode = mapWttrToWmoCode(wttrCode)
+                val condition = getWeatherConditionDescription(wmoCode)
+
+                val nearestAreaArray = json.optJSONArray("nearest_area")
+                val nearestArea = nearestAreaArray?.optJSONObject(0)
+                val areaNameArray = nearestArea?.optJSONArray("areaName")
+                val resolvedCity = areaNameArray?.optJSONObject(0)?.optString("value")?.takeIf { it.isNotBlank() }
+                    ?: "Local Atual"
+
+                WeatherInfo(
+                    temperature = tempC,
+                    apparentTemperature = feelsLikeC,
+                    weatherCode = wmoCode,
+                    condition = condition,
+                    cityName = resolvedCity,
+                    humidity = humidity,
+                    isCelsius = isCelsius
+                )
+            } else {
                 null
             }
-            val lat = location?.latitude ?: -23.5505 // Fallback padrão (São Paulo)
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    private fun fetchFromOpenMeteo(location: Location?, isCelsius: Boolean): WeatherInfo? {
+        var connection: HttpURLConnection? = null
+        return try {
+            val lat = location?.latitude ?: -23.5505
             val lon = location?.longitude ?: -46.6333
-            val city = if (location != null) resolveCityName(lat, lon) else "São Paulo"
+            val city = if (location != null) "Local Atual" else "São Paulo"
 
             val endpoint = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code&timezone=auto"
-
-            var connection: HttpURLConnection? = null
-            try {
-                val url = URL(endpoint)
-                connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 12000
-                connection.readTimeout = 12000
-                connection.setRequestProperty("User-Agent", "TesseraLauncher/1.7.6")
-
-                val responseCode = connection.responseCode
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    val reader = BufferedReader(InputStreamReader(connection.inputStream))
+            val url = URL(endpoint)
+            connection = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 5000
+                readTimeout = 5000
+                setRequestProperty("User-Agent", "TesseraLauncher/1.7.7")
+            }
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                val reader = BufferedReader(InputStreamReader(getInputStream(connection)))
                 val response = reader.readText()
                 reader.close()
 
@@ -214,10 +285,25 @@ class WeatherHelper(private val context: Context) {
         } finally {
             connection?.disconnect()
         }
-    } catch (_: Exception) {
+    }
+
+    suspend fun fetchWeather(isCelsius: Boolean = true): WeatherInfo? = withContext(Dispatchers.IO) {
+        val location = try {
+            obtainLocation()
+        } catch (_: Exception) {
+            null
+        }
+
+        // 1. Motor primário ultrarrápido: wttr.in (< 1s com suporte a IP)
+        val wttrResult = fetchFromWttr(location, isCelsius)
+        if (wttrResult != null) return@withContext wttrResult
+
+        // 2. Motor secundário de contingência: Open-Meteo
+        val openMeteoResult = fetchFromOpenMeteo(location, isCelsius)
+        if (openMeteoResult != null) return@withContext openMeteoResult
+
         null
     }
-}
 
     fun toJson(info: WeatherInfo): String {
         return JSONObject().apply {
