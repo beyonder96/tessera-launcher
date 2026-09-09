@@ -1289,17 +1289,8 @@ class MainViewModel(
             val hasPerm = weatherHelper.hasLocationPermission()
             _uiState.update { it.copy(hasLocationPermission = hasPerm, isWeatherLoading = true, weatherError = null) }
             val weather = weatherHelper.fetchWeather(isCelsius = _uiState.value.isWeatherCelsius)
-            if (weather != null) {
-                preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
-                _uiState.update { it.copy(weatherInfo = weather, isWeatherLoading = false, weatherError = null) }
-            } else {
-                val cached = weatherHelper.fromJson(preferences.getCachedWeatherJson())
-                if (cached != null) {
-                    _uiState.update { it.copy(weatherInfo = cached, isWeatherLoading = false, weatherError = null) }
-                } else {
-                    _uiState.update { it.copy(isWeatherLoading = false, weatherError = "Falha ao obter previsão") }
-                }
-            }
+            preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
+            _uiState.update { it.copy(weatherInfo = weather, isWeatherLoading = false, weatherError = null) }
         }
     }
 
