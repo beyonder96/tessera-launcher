@@ -91,6 +91,14 @@ class LauncherPreferences(context: Context) {
         private const val KEY_DRAWER_GLASS_OPACITY = "drawer_glass_opacity"
         private const val KEY_SEARCH_BAR_OPACITY = "search_bar_opacity"
         private const val KEY_THEME_MODE = "theme_mode"
+
+        // Feed Social
+        private const val KEY_FEED_ENABLED = "feed_enabled"
+        private const val KEY_FEED_SUBREDDITS = "feed_subreddits"
+        private const val KEY_FEED_BLUESKY_HANDLES = "feed_bluesky_handles"
+        private const val KEY_FEED_SOURCES_ENABLED = "feed_sources_enabled"
+        private const val KEY_FEED_CACHED_JSON = "feed_cached_json"
+        private const val KEY_FEED_AI_SUMMARIES = "feed_ai_summaries"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -367,4 +375,35 @@ class LauncherPreferences(context: Context) {
 
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
     fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
+
+    // Feed Social
+    fun isFeedEnabled(): Boolean = prefs.getBoolean(KEY_FEED_ENABLED, true)
+    fun setFeedEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_FEED_ENABLED, enabled).apply()
+
+    fun getFeedSubreddits(): List<String> {
+        val raw = prefs.getString(KEY_FEED_SUBREDDITS, "technology,androiddev,worldnews") ?: ""
+        return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    }
+    fun setFeedSubreddits(subs: List<String>) =
+        prefs.edit().putString(KEY_FEED_SUBREDDITS, subs.joinToString(",")).apply()
+
+    fun getFeedBlueskyHandles(): List<String> {
+        val raw = prefs.getString(KEY_FEED_BLUESKY_HANDLES, "") ?: ""
+        return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
+    }
+    fun setFeedBlueskyHandles(handles: List<String>) =
+        prefs.edit().putString(KEY_FEED_BLUESKY_HANDLES, handles.joinToString(",")).apply()
+
+    fun getFeedEnabledSources(): Set<String> {
+        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "REDDIT") ?: "REDDIT"
+        return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
+    }
+    fun setFeedEnabledSources(sources: Set<String>) =
+        prefs.edit().putString(KEY_FEED_SOURCES_ENABLED, sources.joinToString(",")).apply()
+
+    fun getFeedCachedJson(): String? = prefs.getString(KEY_FEED_CACHED_JSON, null)
+    fun setFeedCachedJson(json: String?) = prefs.edit().putString(KEY_FEED_CACHED_JSON, json).apply()
+
+    fun isFeedAiSummariesEnabled(): Boolean = prefs.getBoolean(KEY_FEED_AI_SUMMARIES, false)
+    fun setFeedAiSummariesEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_FEED_AI_SUMMARIES, enabled).apply()
 }

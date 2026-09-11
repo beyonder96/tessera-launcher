@@ -9,6 +9,7 @@ import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.repository.AppRepository
+import com.tessera.launcher.data.repository.FeedRepository
 
 class MainViewModelFactory(
     private val context: Context
@@ -25,6 +26,7 @@ class MainViewModelFactory(
             val fileSearchHelper = com.tessera.launcher.data.helper.FileSearchHelper(context.applicationContext)
             val messageSearchHelper = com.tessera.launcher.data.helper.MessageSearchHelper(context.applicationContext)
             val weatherHelper = com.tessera.launcher.data.helper.WeatherHelper(context.applicationContext)
+            val feedRepository = FeedRepository(context.applicationContext, prefs)
             return MainViewModel(
                 appRepo,
                 systemHelper,
@@ -34,9 +36,11 @@ class MainViewModelFactory(
                 contactSearchHelper,
                 fileSearchHelper,
                 messageSearchHelper,
-                weatherHelper
+                weatherHelper,
+                feedRepository
             ) as T
         }
         throw IllegalArgumentException("Classe ViewModel desconhecida: ${modelClass.name}")
     }
 }
+

@@ -61,15 +61,22 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.2)
 
-### 🆕 Novidades na v1.8.1
+### 🆕 Novidades na v1.8.2
+- 📰 **Feed Social Integrado (Tela -1):** Deslize para a direita para acessar seu feed contendo posts do Reddit e do Bluesky diretamente da sua tela inicial.
+- 🤖 **Resumos por Inteligência Artificial:** Integração inteligente de resumos rápidos nos cartões do feed via IA para uma leitura mais eficiente.
+- 🔍 **Busca Semântica no App Drawer:** Encontre aplicativos não só pelo nome, mas pela função (ex: "pagamento", "foto", "mapa").
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.1</b></summary>
+
 - 🔤 **Gaveta de Aplicativos Sempre no Início (Letra A):** Ordenação alfabética natural garantindo que aplicativos com letras (`A..Z`) venham primeiro e números/símbolos (`#`) fiquem ao final, alinhado 100% à barra `AlphabetScroller`. A gaveta sempre reseta suavemente para o início na letra A ao abrir pelo gesto de deslizar para cima.
 - 🇧🇷 **Normalização Diacrítica de Acentos:** Aplicativos brasileiros e internacionais com nomes acentuados (como "Área do Cliente", "Época", "Ícones") agora mapeiam corretamente para as letras `'A'`, `'E'`, `'I'` no alfabeto em vez de caírem na seção `'#'`.
 - 🔍 **Isolamento de Widgets na Busca & Teclado:** Correção do bug em que o painel de widgets re-expandia sobre o teclado ao apagar o texto digitado na pesquisa. O dock agora permanece compacto como barra de busca sobre o teclado e a lista rola de volta para o topo.
 - 🫧 **Lapidação do Design Líquido (Liquid Glass):** Eliminação de bordas pretas residuais e névoas esbranquiçadas em superfícies translúcidas, com sombras ambientais escalonadas e reflexo especular superior dinâmico.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.0 / v1.7.8</b></summary>
 

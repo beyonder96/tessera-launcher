@@ -45,6 +45,8 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Vibration
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.SettingsApplications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -93,8 +95,10 @@ fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
         actionKey == "launcher_settings" -> "Configurações do launcher"
         actionKey == "system_settings" -> "Configurações do sistema"
         actionKey == "notifications" -> "Notificações"
+        actionKey == "quick_settings" -> "Configurações rápidas"
         actionKey == "lock_screen" -> "Bloquear Tela"
         actionKey == "open_keyboard" -> "Abrir teclado"
+        actionKey == "open_feed" -> "Abrir Feed Social"
         actionKey.startsWith("app:") -> {
             val pkg = actionKey.removePrefix("app:")
             apps.firstOrNull { it.packageName == pkg }?.label ?: "Abrir aplicativo"
@@ -516,6 +520,18 @@ fun GesturesScreen(
                         title = "Abrir teclado",
                         isSelected = currentAction == "open_keyboard",
                         onClick = { onSelectAction("open_keyboard") }
+                    )
+                    ActionOptionItem(
+                        icon = Icons.Outlined.Dashboard,
+                        title = "Abrir Feed Social",
+                        isSelected = currentAction == "open_feed",
+                        onClick = { onSelectAction("open_feed") }
+                    )
+                    ActionOptionItem(
+                        icon = Icons.Outlined.SettingsApplications,
+                        title = "Configurações rápidas",
+                        isSelected = currentAction == "quick_settings",
+                        onClick = { onSelectAction("quick_settings") }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

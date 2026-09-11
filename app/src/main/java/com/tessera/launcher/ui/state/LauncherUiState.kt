@@ -8,12 +8,21 @@ import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.components.NoteTask
+import com.tessera.launcher.data.model.FeedPost
+import com.tessera.launcher.data.model.FeedSource
 
 sealed interface AppsListState {
     data object Loading : AppsListState
     data class Success(val apps: List<AppInfo>) : AppsListState
     data class Empty(val query: String) : AppsListState
     data class Error(val message: String) : AppsListState
+}
+
+sealed interface FeedState {
+    data object Loading : FeedState
+    data class Success(val posts: List<FeedPost>) : FeedState
+    data object Empty : FeedState
+    data class Error(val message: String) : FeedState
 }
 
 enum class WidgetConfigType {
@@ -37,7 +46,8 @@ enum class SettingsSubScreen {
     IN_APP_SEARCH,
     HIDDEN_APPS,
     CUSTOMIZATION,
-    PERMISSIONS
+    PERMISSIONS,
+    FEED
 }
 
 data class AppFolder(
@@ -213,7 +223,16 @@ data class LauncherUiState(
     val calendarIs24hFormat: Boolean = true,
 
     // Modal de Configuração por Toque Longo
-    val activeWidgetConfigModal: WidgetConfigType? = null
+    val activeWidgetConfigModal: WidgetConfigType? = null,
+
+    // Feed Social
+    val isFeedEnabled: Boolean = true,
+    val isFeedOpen: Boolean = false,
+    val feedState: FeedState = FeedState.Loading,
+    val feedSubreddits: List<String> = listOf("technology", "androiddev", "worldnews"),
+    val feedBlueskyHandles: List<String> = emptyList(),
+    val feedEnabledSources: Set<FeedSource> = setOf(FeedSource.REDDIT),
+    val isFeedAiSummariesEnabled: Boolean = false
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
 }

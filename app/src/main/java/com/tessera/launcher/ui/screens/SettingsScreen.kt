@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Language
@@ -217,6 +218,15 @@ fun SettingsScreen(
         }
         SettingsSubScreen.PERMISSIONS -> {
             PermissionsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.FEED -> {
+            FeedSettingsScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
@@ -421,7 +431,18 @@ fun SettingsScreen(
 
                     ItemDivider(isLight = isLight)
 
-                    // 4. Customization
+                    // 4. Feed Social
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Dashboard,
+                        title = "Feed Social",
+                        subtitle = "Fontes, IA e subreddits",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FEED) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 5. Customization
                     SettingsItemRow(
                         icon = Icons.Outlined.Palette,
                         title = "Customization",

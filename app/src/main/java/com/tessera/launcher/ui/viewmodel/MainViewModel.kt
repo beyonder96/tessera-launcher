@@ -8,9 +8,12 @@ import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.repository.AppRepository
+import com.tessera.launcher.data.repository.FeedRepository
+import com.tessera.launcher.data.repository.FeedResult
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.data.service.TesseraAccessibilityService
 import com.tessera.launcher.data.helper.IconPackInfo
@@ -19,6 +22,7 @@ import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.DEFAULT_SEARCHOS_LIST
+import com.tessera.launcher.ui.state.FeedState
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.state.SearchoItem
 import com.tessera.launcher.ui.state.SettingsSubScreen
@@ -102,7 +106,8 @@ class MainViewModel(
     private val contactSearchHelper: ContactSearchHelper,
     private val fileSearchHelper: com.tessera.launcher.data.helper.FileSearchHelper,
     private val messageSearchHelper: com.tessera.launcher.data.helper.MessageSearchHelper,
-    private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper
+    private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper,
+    private val feedRepository: FeedRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -193,7 +198,17 @@ class MainViewModel(
             notesWidgetFilter = preferences.getNotesWidgetFilter(),
             calendarHowFarAhead = preferences.getCalendarHowFarAhead(),
             calendarHideFinished = preferences.isCalendarHideFinished(),
-            calendarIs24hFormat = preferences.isCalendar24hFormat()
+            calendarIs24hFormat = preferences.isCalendar24hFormat(),
+
+            // Feed Social
+            isFeedEnabled = preferences.isFeedEnabled(),
+            feedSubreddits = preferences.getFeedSubreddits(),
+            feedBlueskyHandles = preferences.getFeedBlueskyHandles(),
+            feedEnabledSources = preferences.getFeedEnabledSources()
+                .mapNotNull { name -> runCatching { FeedSource.valueOf(name) }.getOrNull() }
+                .toSet()
+                .ifEmpty { setOf(FeedSource.REDDIT) },
+            isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -439,6 +454,8 @@ class MainViewModel(
         applyFilter(query)
     }
 
+    private val semanticIndex = com.tessera.launcher.data.helper.AppSemanticIndex()
+
     private fun applyFilter(query: String) {
         val trimmed = query.trim()
         autoLaunchJob?.cancel()
@@ -457,10 +474,30 @@ class MainViewModel(
                             app.label.equals(trimmed, ignoreCase = true)
                 }
             } else {
-                visibleApps.filter { app ->
-                    app.normalizedLabel.contains(normalizedQuery) ||
-                            app.packageName.contains(trimmed, ignoreCase = true)
+                val resultsWithScore = visibleApps.mapNotNull { app ->
+                    var score = 0.0
+                    
+                    // Matches diretos
+                    if (app.normalizedLabel.equals(normalizedQuery, ignoreCase = true) || app.label.equals(trimmed, ignoreCase = true)) {
+                        score += 100.0 // Match exato
+                    } else if (app.normalizedLabel.startsWith(normalizedQuery, ignoreCase = true)) {
+                        score += 50.0 // Começa com
+                    } else if (app.normalizedLabel.contains(normalizedQuery, ignoreCase = true) || app.packageName.contains(trimmed, ignoreCase = true)) {
+                        score += 10.0 // Contém
+                    }
+                    
+                    // Match semântico
+                    val semanticScore = semanticIndex.scoreApp(app, trimmed, normalizedQuery)
+                    score += semanticScore
+                    
+                    if (score > 0.0) {
+                        Pair(app, score)
+                    } else {
+                        null
+                    }
                 }
+                
+                resultsWithScore.sortedByDescending { it.second }.map { it.first }
             }
         }
 
@@ -628,6 +665,7 @@ class MainViewModel(
                 SettingsSubScreen.IN_APP_SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
                 SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.FEED -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
             }
         }
@@ -976,6 +1014,7 @@ class MainViewModel(
                     }
                 }
             }
+            actionKey == "open_feed" -> openFeed()
             actionKey.startsWith("app:") -> {
                 val pkg = actionKey.removePrefix("app:")
                 launchApp(pkg)
@@ -1356,5 +1395,81 @@ class MainViewModel(
         return Normalizer.normalize(text, Normalizer.Form.NFD)
             .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
             .lowercase()
+    }
+
+    // Feed Social
+    fun openFeed() {
+        if (!_uiState.value.isFeedEnabled) return
+        _uiState.update { it.copy(isFeedOpen = true) }
+        loadFeed()
+    }
+
+    fun closeFeed() {
+        _uiState.update { it.copy(isFeedOpen = false) }
+    }
+
+    fun loadFeed() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(feedState = FeedState.Loading) }
+            val result = feedRepository.fetchFeed()
+            val newState = when (result) {
+                is FeedResult.Success -> FeedState.Success(result.posts)
+                is FeedResult.Empty -> FeedState.Empty
+                is FeedResult.Error -> FeedState.Error(result.message)
+            }
+            _uiState.update { it.copy(feedState = newState) }
+        }
+    }
+
+    fun refreshFeed() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(feedState = FeedState.Loading) }
+            val result = feedRepository.fetchFeed(forceRefresh = true)
+            val newState = when (result) {
+                is FeedResult.Success -> FeedState.Success(result.posts)
+                is FeedResult.Empty -> FeedState.Empty
+                is FeedResult.Error -> FeedState.Error(result.message)
+            }
+            _uiState.update { it.copy(feedState = newState) }
+        }
+    }
+
+    fun setFeedEnabled(enabled: Boolean) {
+        preferences.setFeedEnabled(enabled)
+        _uiState.update { it.copy(isFeedEnabled = enabled) }
+    }
+
+    fun setFeedSubreddits(subs: List<String>) {
+        preferences.setFeedSubreddits(subs)
+        _uiState.update { it.copy(feedSubreddits = subs) }
+    }
+
+    fun setFeedBlueskyHandles(handles: List<String>) {
+        preferences.setFeedBlueskyHandles(handles)
+        _uiState.update { it.copy(feedBlueskyHandles = handles) }
+    }
+
+    fun toggleFeedSource(source: FeedSource) {
+        val current = _uiState.value.feedEnabledSources.toMutableSet()
+        if (current.contains(source)) {
+            if (current.size > 1) current.remove(source)
+        } else {
+            current.add(source)
+        }
+        preferences.setFeedEnabledSources(current.map { it.name }.toSet())
+        _uiState.update { it.copy(feedEnabledSources = current) }
+    }
+
+    fun setFeedAiSummariesEnabled(enabled: Boolean) {
+        preferences.setFeedAiSummariesEnabled(enabled)
+        _uiState.update { it.copy(isFeedAiSummariesEnabled = enabled) }
+    }
+
+    fun handleFeedBackPress(): Boolean {
+        if (_uiState.value.isFeedOpen) {
+            closeFeed()
+            return true
+        }
+        return false
     }
 }

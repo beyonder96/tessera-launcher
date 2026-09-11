@@ -111,6 +111,9 @@ import com.tessera.launcher.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import com.tessera.launcher.ui.state.FeedState
 
 @Composable
 fun HomeScreen(
@@ -150,6 +153,9 @@ fun HomeScreen(
     }
 
     BackHandler(enabled = true) {
+        if (viewModel.handleFeedBackPress()) {
+            return@BackHandler
+        }
         val handled = viewModel.handleBackPress()
         if (handled) {
             focusManager.clearFocus()
@@ -902,6 +908,35 @@ fun HomeScreen(
                 onAppLongClick = { app -> selectedAppForMenu = app },
                 onDismiss = { folderToView = null },
                 isAmoledMode = uiState.isAmoledMode
+            )
+        }
+
+        // Feed Social — Tela −1 (Slide Horizontal)
+        AnimatedVisibility(
+            visible = uiState.isFeedOpen,
+            enter = slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(200, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(200)),
+            exit = slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = tween(180, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(180))
+        ) {
+            FeedScreen(
+                feedState = uiState.feedState,
+                activeSource = null,
+                enabledSources = uiState.feedEnabledSources,
+                isLightMode = uiState.isLightMode,
+                onSourceSelected = { },
+                onPostClick = { url ->
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    runCatching { context.startActivity(intent) }
+                },
+                onRefresh = { viewModel.refreshFeed() },
+                onClose = { viewModel.closeFeed() }
             )
         }
     }
