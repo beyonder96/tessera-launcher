@@ -485,11 +485,166 @@ fun CustomizationScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         PillPercentSlider(
-                            title = "Opacidade do Vidro",
-                            subtitle = "Controle o quanto o fundo aparece",
+                            title = "Desfoque do Vidro",
+                            subtitle = "Ajuste a intensidade do efeito de blur do fundo",
                             percent = uiState.drawerGlassOpacity,
                             onPercentChange = { viewModel.setDrawerGlassOpacity(it) },
                             isLight = isLight
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CARD SMART DOCK: Previsão Contextual de Apps
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Smart Dock (Previsão Contextual)",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Sugere apps com base no horário e fones de ouvido",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = textSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = uiState.isSmartDockEnabled,
+                            onCheckedChange = { viewModel.setSmartDockEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = textSecondary,
+                                uncheckedTrackColor = Color(0xFF222228),
+                                uncheckedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+
+                    if (uiState.isSmartDockEnabled) {
+                        HorizontalDivider(
+                            color = if (isLight) LightCardBorder else Color(0xFF1A1A22),
+                            thickness = 1.dp
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Quantidade de Apps",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                                color = textPrimary
+                            )
+
+                            Row(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (isLight) Color(0xFFEFEFF2) else Color(0xFF131318))
+                                    .border(1.dp, if (isLight) LightCardBorder else Color(0xFF22222A), RoundedCornerShape(10.dp))
+                                    .padding(2.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                listOf(3, 4, 5).forEach { count ->
+                                    val isSelected = uiState.smartDockAppCount == count
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(
+                                                if (isSelected) {
+                                                    if (isLight) Color.White else Color(0xFF282832)
+                                                } else Color.Transparent
+                                            )
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                onClick = { viewModel.setSmartDockAppCount(count) }
+                                            )
+                                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "$count",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            ),
+                                            color = if (isSelected) textPrimary else textSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CARD CATEGORIAS: Categorias Automáticas na Gaveta
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Categorias na Gaveta",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Agrupa apps por Produtividade, Social, Mídia, Utilitários e Jogos",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = textSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = uiState.isAppCategoriesEnabled,
+                            onCheckedChange = { viewModel.setAppCategoriesEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = textSecondary,
+                                uncheckedTrackColor = Color(0xFF222228),
+                                uncheckedBorderColor = Color.Transparent
+                            )
                         )
                     }
                 }

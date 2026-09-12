@@ -8,8 +8,10 @@ import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.components.NoteTask
+import com.tessera.launcher.data.model.AppCategory
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
+import com.tessera.launcher.data.helper.SmartGlanceBriefing
 
 sealed interface AppsListState {
     data object Loading : AppsListState
@@ -81,6 +83,7 @@ data class FileSearchResult(
 )
 
 val DEFAULT_SEARCHOS_LIST = listOf(
+    SearchoItem("ai", "Gemini IA", "@ai", "ai"),
     SearchoItem("calc", "Calculadora", "@calc", "calculator"),
     SearchoItem("tasks", "Tarefas", "@t", "tasks"),
     SearchoItem("notes", "Notas", "@n", "notes"),
@@ -114,7 +117,7 @@ data class LauncherUiState(
     val hasNotificationAccess: Boolean = false,
     val hasCalendarPermission: Boolean = false,
     val nextCalendarEvent: CalendarEventInfo? = null,
-    val enabledWidgets: List<WidgetType> = listOf(WidgetType.CALENDAR, WidgetType.BATTERY, WidgetType.MEDIA),
+    val enabledWidgets: List<WidgetType> = listOf(WidgetType.NOW_AND_NEXT, WidgetType.CALENDAR, WidgetType.BATTERY, WidgetType.MEDIA),
     val defaultMusicApp: String? = null,
     val defaultCalendarApp: String? = null,
     val photoWidgetUri: String? = null,
@@ -232,7 +235,27 @@ data class LauncherUiState(
     val feedSubreddits: List<String> = listOf("technology", "androiddev", "worldnews"),
     val feedBlueskyHandles: List<String> = emptyList(),
     val feedEnabledSources: Set<FeedSource> = setOf(FeedSource.REDDIT),
-    val isFeedAiSummariesEnabled: Boolean = false
+    val isFeedAiSummariesEnabled: Boolean = false,
+
+    // Smart Dock (Previsão Contextual)
+    val isSmartDockEnabled: Boolean = true,
+    val smartDockAppCount: Int = 4,
+    val predictedApps: List<AppInfo> = emptyList(),
+
+    // Smart Glance (Now & Next)
+    val isSmartGlanceEnabled: Boolean = true,
+    val smartGlanceBriefing: SmartGlanceBriefing? = null,
+
+    // Categorias de Apps na Gaveta
+    val isAppCategoriesEnabled: Boolean = true,
+    val selectedAppCategory: AppCategory = AppCategory.ALL,
+
+    // Prompt Bar na Lupa (Gemini AI)
+    val isAiSearchEnabled: Boolean = true,
+    val geminiApiKey: String = "",
+    val aiSearchResponse: String? = null,
+    val isAiSearchLoading: Boolean = false,
+    val aiSearchError: String? = null
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
 }

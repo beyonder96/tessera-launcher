@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -42,13 +43,18 @@ import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -300,6 +306,100 @@ fun SearchSettingsScreen(
                         checked = uiState.isCalculatorCardEnabled,
                         onCheckedChange = { viewModel.setCalculatorCardEnabled(it) }
                     )
+                }
+            }
+
+            // Bloco: INTELIGÊNCIA ARTIFICIAL (GEMINI)
+            Text(
+                text = "INTELIGÊNCIA ARTIFICIAL (GEMINI)",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = TextTertiary,
+                modifier = Modifier.padding(start = 6.dp, top = 20.dp, bottom = 8.dp)
+            )
+
+            Surface(
+                shape = SearchCardShape,
+                color = SearchCardBackground,
+                border = BorderStroke(1.dp, SearchCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    SearchToggleRow(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Respostas com IA na Busca",
+                        subtitle = "Digite @ai <pergunta> para obter respostas ultrarrápidas",
+                        checked = uiState.isAiSearchEnabled,
+                        onCheckedChange = { viewModel.setAiSearchEnabled(it) }
+                    )
+
+                    if (uiState.isAiSearchEnabled) {
+                        HorizontalDivider(color = SearchDividerColor, thickness = 1.dp)
+
+                        var showApiKeyDialog by remember { mutableStateOf(false) }
+
+                        SearchNavRow(
+                            icon = Icons.Outlined.VpnKey,
+                            title = "Chave de API do Gemini",
+                            subtitle = if (uiState.geminiApiKey.isNotBlank()) "Chave configurada (toque para alterar)" else "Toque para inserir sua chave gratuita do Gemini",
+                            onClick = { showApiKeyDialog = true }
+                        )
+
+                        if (showApiKeyDialog) {
+                            var tempKey by remember { mutableStateOf(uiState.geminiApiKey) }
+                            androidx.compose.material3.AlertDialog(
+                                onDismissRequest = { showApiKeyDialog = false },
+                                title = {
+                                    Text(
+                                        text = "Chave de API do Gemini",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = TextPrimary
+                                    )
+                                },
+                                text = {
+                                    Column {
+                                        Text(
+                                            text = "Obtenha gratuitamente em aistudio.google.com e cole abaixo:",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                            color = TextSecondary
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        OutlinedTextField(
+                                            value = tempKey,
+                                            onValueChange = { tempKey = it },
+                                            placeholder = { Text("Cole sua chave AIzaSy... aqui", color = TextTertiary, fontSize = 13.sp) },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(
+                                        onClick = {
+                                            viewModel.setGeminiApiKey(tempKey)
+                                            showApiKeyDialog = false
+                                            Toast.makeText(context, "Chave salva", Toast.LENGTH_SHORT).show()
+                                        }
+                                    ) {
+                                        Text("Salvar", color = TextPrimary, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(
+                                        onClick = { showApiKeyDialog = false }
+                                    ) {
+                                        Text("Cancelar", color = TextSecondary)
+                                    }
+                                }
+                            )
+                        }
+                    }
                 }
             }
 

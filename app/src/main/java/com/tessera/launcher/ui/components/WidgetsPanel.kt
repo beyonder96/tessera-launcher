@@ -90,8 +90,25 @@ import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Warning
+import com.tessera.launcher.data.helper.SmartGlanceActionType
+import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import java.util.Calendar
+
+private enum class PanelCardType {
+    QUICK_ACTIONS,
+    BATTERY,
+    CALENDAR,
+    MEDIA,
+    VERSE_FOCUS,
+    WEATHER,
+    DINO,
+    NOTES,
+    SMART_GLANCE
+}
 
 @Composable
 fun WidgetsPanel(
@@ -139,22 +156,46 @@ fun WidgetsPanel(
     onWidgetLongClick: (WidgetConfigType) -> Unit = {},
     isLiquidGlass: Boolean = false,
     isAmoledMode: Boolean = false,
-    isLightMode: Boolean = false
+    isLightMode: Boolean = false,
+    smartGlanceBriefing: SmartGlanceBriefing? = null,
+    isSmartGlanceEnabled: Boolean = true
 ) {
-    // Ordem das páginas:
-    // 0: Ações Rápidas (Screenshot 1)
-    // 1: Bateria & Conectividade (Screenshot 2)
-    // 2: Calendário & Horário (Screenshot 3)
-    // 3: Mídia (Screenshot 4)
-    // 4: Foco / Citação do dia (Screenshot 5)
-    // 5: Clima & Temperatura
-    // 6: Dino Run (se habilitado)
-    // 7: Notas / Tarefas (se habilitado)
-    val pageCount = 6 + (if (isDinoWidgetEnabled) 1 else 0) + (if (isNotesWidgetEnabled) 1 else 0)
+    val activeCards = remember(isSmartGlanceEnabled, isDinoWidgetEnabled, isNotesWidgetEnabled) {
+        buildList {
+            add(PanelCardType.QUICK_ACTIONS)
+            add(PanelCardType.BATTERY)
+            add(PanelCardType.CALENDAR)
+            add(PanelCardType.MEDIA)
+            add(PanelCardType.VERSE_FOCUS)
+            add(PanelCardType.WEATHER)
+            if (isDinoWidgetEnabled) add(PanelCardType.DINO)
+            if (isNotesWidgetEnabled) add(PanelCardType.NOTES)
+            if (isSmartGlanceEnabled) add(PanelCardType.SMART_GLANCE)
+        }
+    }
+    val pageCount = activeCards.size
+
+    val targetCardType = when (defaultWidgetCardIndex) {
+        0 -> PanelCardType.QUICK_ACTIONS
+        1 -> PanelCardType.BATTERY
+        2 -> PanelCardType.CALENDAR
+        3 -> PanelCardType.MEDIA
+        4 -> PanelCardType.VERSE_FOCUS
+        5 -> PanelCardType.WEATHER
+        6 -> PanelCardType.DINO
+        7 -> PanelCardType.NOTES
+        8 -> PanelCardType.SMART_GLANCE
+        else -> PanelCardType.QUICK_ACTIONS
+    }
+    val targetPageIndex = activeCards.indexOf(targetCardType).let { if (it >= 0) it else 0 }
 
     val initialPage = remember {
-        if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) 3
-        else defaultWidgetCardIndex.coerceIn(0, pageCount - 1)
+        if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
+            val mediaIndex = activeCards.indexOf(PanelCardType.MEDIA)
+            if (mediaIndex >= 0) mediaIndex else 0
+        } else {
+            targetPageIndex.coerceIn(0, pageCount - 1)
+        }
     }
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { pageCount })
 
@@ -163,13 +204,16 @@ fun WidgetsPanel(
 
     LaunchedEffect(mediaPlayback.isPlaying) {
         if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
-            pagerState.animateScrollToPage(3)
+            val mediaIndex = activeCards.indexOf(PanelCardType.MEDIA)
+            if (mediaIndex >= 0) {
+                pagerState.animateScrollToPage(mediaIndex)
+            }
         }
     }
 
     LaunchedEffect(defaultWidgetCardIndex) {
         if (!isSwitchOnMusicPlayEnabled || !mediaPlayback.isPlaying) {
-            val target = defaultWidgetCardIndex.coerceIn(0, pageCount - 1)
+            val target = targetPageIndex.coerceIn(0, pageCount - 1)
             if (pagerState.currentPage != target) {
                 pagerState.animateScrollToPage(target)
             }
@@ -196,8 +240,8 @@ fun WidgetsPanel(
             contentPadding = PaddingValues(horizontal = 0.dp),
             pageSpacing = 16.dp
         ) { page ->
-            when (page) {
-                0 -> {
+            when (activeCards.getOrNull(page)) {
+                PanelCardType.QUICK_ACTIONS -> {
                     QuickActionsWidgetCard(
                         isTorchOn = isTorchOn,
                         ringerMode = ringerMode,
@@ -211,7 +255,7 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.QUICK_ACTIONS) }
                     )
                 }
-                1 -> {
+                PanelCardType.BATTERY -> {
                     BatteryWidgetCard(
                         batteryPercentage = batteryPercentage,
                         isCharging = isCharging,
@@ -223,7 +267,7 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.BATTERY) }
                     )
                 }
-                2 -> {
+                PanelCardType.CALENDAR -> {
                     CalendarWidgetCard(
                         currentTime = currentTime,
                         currentDate = currentDate,
@@ -237,7 +281,7 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
                     )
                 }
-                3 -> {
+                PanelCardType.MEDIA -> {
                     MediaWidgetCard(
                         mediaPlayback = mediaPlayback,
                         hasNotificationAccess = hasNotificationAccess,
@@ -252,7 +296,7 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.MEDIA) }
                     )
                 }
-                4 -> {
+                PanelCardType.VERSE_FOCUS -> {
                     VerseFocusWidgetCard(
                         isAmoledMode = isAmoledMode,
                         isLightMode = isLightMode,
@@ -260,7 +304,7 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.VERSE_FOCUS) }
                     )
                 }
-                5 -> {
+                PanelCardType.WEATHER -> {
                     WeatherWidgetCard(
                         weatherInfo = weatherInfo,
                         hasLocationPermission = hasLocationPermission,
@@ -274,40 +318,37 @@ fun WidgetsPanel(
                         onLongClick = { onWidgetLongClick(WidgetConfigType.WEATHER) }
                     )
                 }
-                6 -> {
-                    if (isDinoWidgetEnabled) {
-                        DinoWidgetCard(isDockMode = true)
-                    } else if (isNotesWidgetEnabled) {
-                        NotesWidgetCard(
-                            tasks = notesTasks,
-                            notesWidgetFilter = notesWidgetFilter,
-                            onAddTask = onAddNoteTask,
-                            onToggleTask = onToggleNoteTask,
-                            onRemoveTask = onRemoveNoteTask,
-                            onNotesClick = onNotesClick,
-                            isAmoledMode = isAmoledMode,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
-                        )
-                    }
+                PanelCardType.DINO -> {
+                    DinoWidgetCard(isDockMode = true)
                 }
-                7 -> {
-                    if (isNotesWidgetEnabled) {
-                        NotesWidgetCard(
-                            tasks = notesTasks,
-                            notesWidgetFilter = notesWidgetFilter,
-                            onAddTask = onAddNoteTask,
-                            onToggleTask = onToggleNoteTask,
-                            onRemoveTask = onRemoveNoteTask,
-                            onNotesClick = onNotesClick,
-                            isAmoledMode = isAmoledMode,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
-                        )
-                    }
+                PanelCardType.NOTES -> {
+                    NotesWidgetCard(
+                        tasks = notesTasks,
+                        notesWidgetFilter = notesWidgetFilter,
+                        onAddTask = onAddNoteTask,
+                        onToggleTask = onToggleNoteTask,
+                        onRemoveTask = onRemoveNoteTask,
+                        onNotesClick = onNotesClick,
+                        isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
+                        isLiquidGlass = isLiquidGlass,
+                        onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
+                    )
                 }
+                PanelCardType.SMART_GLANCE -> {
+                    SmartGlanceWidgetCard(
+                        briefing = smartGlanceBriefing,
+                        formattedDate = currentDate,
+                        onCalendarClick = onCalendarClick,
+                        onWeatherClick = onRefreshWeather,
+                        onNotesClick = onNotesClick,
+                        isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
+                        isLiquidGlass = isLiquidGlass,
+                        onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
+                    )
+                }
+                null -> {}
             }
         }
 
@@ -1394,3 +1435,110 @@ private fun NotesWidgetCard(
         }
     }
 }
+
+/**
+ * Now & Next (Smart Glance) Widget Card para o painel de widgets da doca.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SmartGlanceWidgetCard(
+    briefing: SmartGlanceBriefing?,
+    formattedDate: String,
+    onCalendarClick: () -> Unit,
+    onWeatherClick: () -> Unit,
+    onNotesClick: () -> Unit,
+    isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
+    isLiquidGlass: Boolean = false,
+    onLongClick: () -> Unit = {}
+) {
+    val activeBriefing = briefing ?: SmartGlanceBriefing(
+        primaryText = "Tudo tranquilo hoje",
+        secondaryText = null,
+        iconType = "INFO",
+        actionType = SmartGlanceActionType.CALENDAR,
+        isUrgent = false
+    )
+
+    val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+
+    val icon: ImageVector = when (activeBriefing.iconType) {
+        "ALERT" -> Icons.Outlined.Warning
+        "CALENDAR" -> Icons.AutoMirrored.Outlined.EventNote
+        "RAIN" -> Icons.Outlined.Cloud
+        "SUN" -> Icons.Outlined.WbSunny
+        "CHECK" -> Icons.Outlined.CheckCircle
+        else -> Icons.Outlined.Info
+    }
+
+    val iconTint = if (activeBriefing.isUrgent) Color(0xFFEF4444) else primaryText
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .combinedClickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {
+                    when (activeBriefing.actionType) {
+                        SmartGlanceActionType.CALENDAR -> onCalendarClick()
+                        SmartGlanceActionType.WEATHER -> onWeatherClick()
+                        SmartGlanceActionType.NOTES -> onNotesClick()
+                        SmartGlanceActionType.NONE -> onCalendarClick()
+                    }
+                },
+                onLongClick = onLongClick
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(badgeBg)
+                .border(BorderStroke(1.dp, badgeBorder), RoundedCornerShape(13.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = activeBriefing.iconType,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = activeBriefing.primaryText,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp
+                ),
+                color = primaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = activeBriefing.secondaryText ?: formattedDate.ifEmpty { "Resumo do dia" },
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp
+                ),
+                color = secondaryText,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+

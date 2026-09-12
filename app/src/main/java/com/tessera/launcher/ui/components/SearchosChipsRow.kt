@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Edit
@@ -54,6 +55,7 @@ fun SearchosChipsRow(
     ) {
         items(searchosList, key = { it.id }) { item ->
             val icon: ImageVector = when (item.id) {
+                "ai" -> Icons.Outlined.AutoAwesome
                 "calc" -> Icons.Outlined.Calculate
                 "contacts" -> Icons.Outlined.People
                 "files" -> Icons.Outlined.Folder

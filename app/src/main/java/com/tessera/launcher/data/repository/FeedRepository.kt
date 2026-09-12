@@ -28,6 +28,7 @@ class FeedRepository(
         private const val DEFAULT_LIMIT = 20
         private const val CONNECT_TIMEOUT = 8_000
         private const val READ_TIMEOUT = 10_000
+        private const val USER_AGENT = "android:com.tessera.launcher:v1.8.3 (by /u/tessera_launcher)"
     }
 
     private var lastFetchTime: Long = 0L
@@ -50,24 +51,39 @@ class FeedRepository(
             if (FeedSource.REDDIT.name in enabledSources) {
                 val subreddits = preferences.getFeedSubreddits()
                 for (sub in subreddits) {
-                    val redditPosts = fetchRedditSubreddit(sub)
-                    posts.addAll(redditPosts)
+                    val cleanSub = sub.trim().removePrefix("/r/").removePrefix("r/").removePrefix("/").trim()
+                    if (cleanSub.isNotBlank()) {
+                        runCatching {
+                            val redditPosts = fetchRedditSubreddit(cleanSub)
+                            posts.addAll(redditPosts)
+                        }.onFailure { Log.w(TAG, "Falha ao buscar r/$cleanSub: ${it.message}") }
+                    }
                 }
             }
 
             if (FeedSource.BLUESKY.name in enabledSources) {
                 val handles = preferences.getFeedBlueskyHandles()
                 for (handle in handles) {
-                    val bskyPosts = fetchBlueskyAuthor(handle)
-                    posts.addAll(bskyPosts)
+                    val cleanHandle = handle.trim().removePrefix("@").trim()
+                    if (cleanHandle.isNotBlank()) {
+                        runCatching {
+                            val bskyPosts = fetchBlueskyAuthor(cleanHandle)
+                            posts.addAll(bskyPosts)
+                        }.onFailure { Log.w(TAG, "Falha ao buscar @$cleanHandle: ${it.message}") }
+                    }
                 }
             }
 
             if (posts.isEmpty()) {
-                FeedResult.Empty
+                val fallback = cachedJson?.let { parseCachedPosts(it) } ?: emptyList()
+                if (fallback.isNotEmpty()) {
+                    FeedResult.Success(fallback)
+                } else {
+                    FeedResult.Empty
+                }
             } else {
-                var sorted = posts.sortedByDescending { it.createdAt }
-                
+                var sorted = posts.distinctBy { it.id }.sortedByDescending { it.createdAt }
+
                 // Aplicar resumos de IA se habilitado
                 if (preferences.isFeedAiSummariesEnabled()) {
                     val aiHelper = com.tessera.launcher.data.helper.AiSummaryHelper()
@@ -76,7 +92,7 @@ class FeedRepository(
                         post.copy(aiSummary = summary)
                     }
                 }
-                
+
                 lastFetchTime = System.currentTimeMillis()
                 cachePosts(sorted)
                 FeedResult.Success(sorted)
@@ -94,21 +110,95 @@ class FeedRepository(
 
     private suspend fun fetchRedditSubreddit(subreddit: String): List<FeedPost> =
         withContext(Dispatchers.IO) {
-            val url = "${REDDIT_BASE}${subreddit}/hot.json?limit=$DEFAULT_LIMIT&raw_json=1"
-            val json = httpGet(url) ?: return@withContext emptyList()
-
-            try {
-                val root = JSONObject(json)
-                val children = root
-                    .getJSONObject("data")
-                    .getJSONArray("children")
-
-                parseRedditChildren(children, subreddit)
-            } catch (e: Exception) {
-                Log.e(TAG, "Reddit parse error for r/$subreddit", e)
-                emptyList()
+            // 1. Tentar endpoint JSON oficial do Reddit primeiro (mais rico em campos e score)
+            val jsonUrl = "${REDDIT_BASE}${subreddit}/hot.json?limit=$DEFAULT_LIMIT&raw_json=1"
+            val json = httpGet(jsonUrl)
+            if (json != null && json.startsWith("{") && json.contains("\"children\"")) {
+                try {
+                    val root = JSONObject(json)
+                    val children = root.optJSONObject("data")?.optJSONArray("children")
+                    if (children != null && children.length() > 0) {
+                        val jsonPosts = parseRedditChildren(children, subreddit)
+                        if (jsonPosts.isNotEmpty()) return@withContext jsonPosts
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Reddit JSON parse error for r/$subreddit, tentando RSS", e)
+                }
             }
+
+            // 2. Fallback para feed RSS caso JSON seja bloqueado ou falhe
+            val rssUrl = "${REDDIT_BASE}${subreddit}/.rss?limit=$DEFAULT_LIMIT"
+            val rssXml = httpGet(rssUrl)
+            if (rssXml != null && rssXml.contains("<entry")) {
+                val rssPosts = parseRedditRss(rssXml, subreddit)
+                if (rssPosts.isNotEmpty()) return@withContext rssPosts
+            }
+
+            emptyList()
         }
+
+    private fun parseRedditRss(xml: String, subreddit: String): List<FeedPost> {
+        val posts = mutableListOf<FeedPost>()
+        val entryRegex = Regex("<entry[\\s\\S]*?</entry>")
+        val titleRegex = Regex("<title(?:[^>]*)>([\\s\\S]*?)</title>")
+        val authorRegex = Regex("<author>\\s*<name>([^<]+)</name>")
+        val linkRegex = Regex("<link\\s+href=\"([^\"]+)\"")
+        val idRegex = Regex("<id>([^<]+)</id>")
+        val updatedRegex = Regex("<updated>([^<]+)</updated>")
+        val thumbRegex = Regex("<media:thumbnail\\s+url=\"([^\"]+)\"")
+        val contentRegex = Regex("<content(?:[^>]*)>([\\s\\S]*?)</content>")
+
+        for (match in entryRegex.findAll(xml)) {
+            val entry = match.value
+            val rawTitle = titleRegex.find(entry)?.groupValues?.getOrNull(1) ?: continue
+            val title = unescapeHtml(rawTitle)
+                .replace(Regex("<[^>]+>"), " ")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+            if (title.isBlank()) continue
+
+            val author = authorRegex.find(entry)?.groupValues?.getOrNull(1)?.removePrefix("/u/") ?: "reddit"
+            val link = linkRegex.find(entry)?.groupValues?.getOrNull(1) ?: ""
+            val id = idRegex.find(entry)?.groupValues?.getOrNull(1) ?: link.hashCode().toString()
+            val thumb = thumbRegex.find(entry)?.groupValues?.getOrNull(1)?.replace("&amp;", "&")
+            val updatedStr = updatedRegex.find(entry)?.groupValues?.getOrNull(1)
+            val created = try {
+                if (updatedStr != null) java.time.Instant.parse(updatedStr).toEpochMilli()
+                else System.currentTimeMillis()
+            } catch (_: Exception) {
+                System.currentTimeMillis()
+            }
+
+            val rawContent = contentRegex.find(entry)?.groupValues?.getOrNull(1) ?: ""
+            val unescapedContent = unescapeHtml(rawContent)
+            val bodyText = unescapedContent
+                .replace(Regex("<!--[\\s\\S]*?-->"), "")
+                .replace(Regex("<table[\\s\\S]*?</table>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("<[^>]+>"), " ")
+                .replace(Regex("\\[link\\]|\\[comments\\]", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\s+"), " ")
+                .trim()
+                .take(500)
+
+            posts.add(
+                FeedPost(
+                    id = "reddit_$id",
+                    source = FeedSource.REDDIT,
+                    author = author,
+                    authorHandle = "u/$author",
+                    title = title,
+                    body = bodyText,
+                    subreddit = subreddit,
+                    score = 0,
+                    commentCount = 0,
+                    url = link,
+                    thumbnailUrl = thumb,
+                    createdAt = created
+                )
+            )
+        }
+        return posts
+    }
 
     private fun parseRedditChildren(children: JSONArray, subreddit: String): List<FeedPost> {
         val posts = mutableListOf<FeedPost>()
@@ -130,20 +220,23 @@ class FeedRepository(
             val thumbnail = data.optString("thumbnail", "")
                 .takeIf { it.startsWith("http") }
 
+            val cleanTitle = unescapeHtml(title).trim()
+            val cleanBody = unescapeHtml(selftext).trim().take(500)
+
             posts.add(
                 FeedPost(
                     id = "reddit_$id",
                     source = FeedSource.REDDIT,
                     author = author,
                     authorHandle = "u/$author",
-                    title = title.ifBlank { null },
-                    body = selftext.take(500),
+                    title = cleanTitle.ifBlank { null },
+                    body = cleanBody,
                     subreddit = subreddit,
                     score = score,
                     commentCount = numComments,
-                    url = "https://www.reddit.com$permalink",
+                    url = if (permalink.startsWith("http")) permalink else "https://www.reddit.com$permalink",
                     thumbnailUrl = thumbnail,
-                    createdAt = created
+                    createdAt = if (created > 0L) created else System.currentTimeMillis()
                 )
             )
         }
@@ -152,15 +245,19 @@ class FeedRepository(
 
     private suspend fun fetchBlueskyAuthor(handle: String): List<FeedPost> =
         withContext(Dispatchers.IO) {
-            val url = "${BLUESKY_BASE}app.bsky.feed.getAuthorFeed?actor=$handle&limit=$DEFAULT_LIMIT"
+            val cleanHandle = handle.trim()
+                .removePrefix("@")
+                .let { if (!it.contains(".")) "$it.bsky.social" else it }
+
+            val url = "${BLUESKY_BASE}app.bsky.feed.getAuthorFeed?actor=$cleanHandle&limit=$DEFAULT_LIMIT"
             val json = httpGet(url) ?: return@withContext emptyList()
 
             try {
                 val root = JSONObject(json)
-                val feed = root.getJSONArray("feed")
-                parseBlueskyFeed(feed, handle)
+                val feed = root.optJSONArray("feed") ?: return@withContext emptyList()
+                parseBlueskyFeed(feed, cleanHandle)
             } catch (e: Exception) {
-                Log.e(TAG, "Bluesky parse error for @$handle", e)
+                Log.e(TAG, "Bluesky parse error for @$cleanHandle", e)
                 emptyList()
             }
         }
@@ -174,21 +271,27 @@ class FeedRepository(
 
             val uri = post.optString("uri", "bsky_$i")
             val author = post.optJSONObject("author")
-            val displayName = author?.optString("displayName", handle) ?: handle
-            val authorHandle = author?.optString("handle", handle) ?: handle
+            val displayName = author?.optString("displayName", handle)?.ifBlank { handle } ?: handle
+            val authorHandle = author?.optString("handle", handle)?.ifBlank { handle } ?: handle
             val text = record.optString("text", "")
             val createdAt = record.optString("createdAt", "")
             val likeCount = post.optInt("likeCount", 0)
             val replyCount = post.optInt("replyCount", 0)
 
             val timestamp = try {
-                java.time.Instant.parse(createdAt).toEpochMilli()
+                if (createdAt.isNotBlank()) java.time.Instant.parse(createdAt).toEpochMilli()
+                else System.currentTimeMillis()
             } catch (_: Exception) {
                 System.currentTimeMillis()
             }
 
             val postId = uri.substringAfterLast("/")
             val webUrl = "https://bsky.app/profile/$authorHandle/post/$postId"
+
+            // Tentar extrair imagem thumbnail se houver embed
+            val embed = post.optJSONObject("embed")
+            val thumb = embed?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
+                ?: embed?.optJSONObject("media")?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
 
             posts.add(
                 FeedPost(
@@ -201,11 +304,24 @@ class FeedRepository(
                     score = likeCount,
                     commentCount = replyCount,
                     url = webUrl,
+                    thumbnailUrl = thumb,
                     createdAt = timestamp
                 )
             )
         }
         return posts
+    }
+
+    private fun unescapeHtml(text: String): String {
+        return text
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+            .replace("&quot;", "\"")
+            .replace("&#39;", "'")
+            .replace("&apos;", "'")
+            .replace("&nbsp;", " ")
+            .replace("&#32;", " ")
     }
 
     private fun httpGet(urlString: String): String? {
@@ -215,9 +331,9 @@ class FeedRepository(
                 requestMethod = "GET"
                 connectTimeout = CONNECT_TIMEOUT
                 readTimeout = READ_TIMEOUT
-                setRequestProperty("Accept", "application/json")
+                setRequestProperty("Accept", "*/*")
                 setRequestProperty("Accept-Encoding", "gzip")
-                setRequestProperty("User-Agent", "TesseraLauncher/1.9 (Android)")
+                setRequestProperty("User-Agent", USER_AGENT)
             }
 
             if (connection.responseCode !in 200..299) return null

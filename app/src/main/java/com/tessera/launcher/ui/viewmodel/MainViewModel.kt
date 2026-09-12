@@ -107,8 +107,14 @@ class MainViewModel(
     private val fileSearchHelper: com.tessera.launcher.data.helper.FileSearchHelper,
     private val messageSearchHelper: com.tessera.launcher.data.helper.MessageSearchHelper,
     private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper,
-    private val feedRepository: FeedRepository
+    private val feedRepository: FeedRepository,
+    private val appContext: Context
 ) : ViewModel() {
+
+    private val contextualPredictor = com.tessera.launcher.data.helper.ContextualPredictor(preferences)
+    private val smartGlanceEngine = com.tessera.launcher.data.helper.SmartGlanceEngine()
+    private val categoryClassifier = com.tessera.launcher.data.helper.AppCategoryClassifier(appContext)
+    private val geminiEngine = com.tessera.launcher.data.helper.GeminiAiEngine()
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
@@ -208,7 +214,24 @@ class MainViewModel(
                 .mapNotNull { name -> runCatching { FeedSource.valueOf(name) }.getOrNull() }
                 .toSet()
                 .ifEmpty { setOf(FeedSource.REDDIT) },
-            isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled()
+            isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
+
+            // Smart Dock (Previsão Contextual)
+            isSmartDockEnabled = preferences.isSmartDockEnabled(),
+            smartDockAppCount = preferences.getSmartDockAppCount(),
+            predictedApps = emptyList(),
+
+            // Smart Glance (Now & Next)
+            isSmartGlanceEnabled = preferences.isSmartGlanceEnabled(),
+            smartGlanceBriefing = null,
+
+            // Categorias de Apps na Gaveta
+            isAppCategoriesEnabled = preferences.isAppCategoriesEnabled(),
+            selectedAppCategory = com.tessera.launcher.data.model.AppCategory.ALL,
+
+            // Prompt Bar na Lupa (Gemini AI)
+            isAiSearchEnabled = preferences.isAiSearchEnabled(),
+            geminiApiKey = preferences.getGeminiApiKey()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -223,6 +246,7 @@ class MainViewModel(
         observeQuickSettings()
         refreshCalendarAndPermissions()
         refreshWeather()
+        refreshSmartGlance()
     }
 
     fun observeInstalledApps() {
@@ -249,6 +273,7 @@ class MainViewModel(
                     }
                     _uiState.update { it.copy(allInstalledApps = apps) }
                     applyFilter(_uiState.value.searchQuery)
+                    refreshPredictedApps()
                 }
         }
     }
@@ -317,6 +342,7 @@ class MainViewModel(
                 nextCalendarEvent = nextEvent
             )
         }
+        refreshSmartGlance()
     }
 
     fun checkNotificationAccess(context: Context) {
@@ -335,6 +361,7 @@ class MainViewModel(
 
     fun collapseSearch() {
         autoLaunchJob?.cancel()
+        aiSearchJob?.cancel()
         _uiState.update {
             it.copy(
                 isSearchExpanded = false,
@@ -343,10 +370,67 @@ class MainViewModel(
                 searchQuery = "",
                 calculatorResult = null,
                 matchingContacts = emptyList(),
-                matchingFiles = emptyList()
+                matchingFiles = emptyList(),
+                aiSearchResponse = null,
+                aiSearchError = null,
+                isAiSearchLoading = false
             )
         }
         applyFilter("")
+    }
+
+    private var aiSearchJob: Job? = null
+
+    private fun scheduleDebouncedAiSearch(prompt: String) {
+        aiSearchJob?.cancel()
+        aiSearchJob = viewModelScope.launch {
+            delay(600)
+            executeAiSearch(prompt)
+        }
+    }
+
+    fun executeAiSearch(prompt: String = _uiState.value.searchQuery) {
+        val symbol = _uiState.value.searchoActivationSymbol
+        val cleanPrompt = prompt
+            .removePrefix("@ai")
+            .removePrefix("@gemini")
+            .removePrefix("${symbol}ai")
+            .removePrefix("${symbol}gemini")
+            .trim()
+
+        if (cleanPrompt.isBlank()) return
+
+        aiSearchJob?.cancel()
+        aiSearchJob = viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isAiSearchLoading = true,
+                    aiSearchError = null,
+                    aiSearchResponse = null
+                )
+            }
+            val result = geminiEngine.query(cleanPrompt, _uiState.value.geminiApiKey)
+            when (result) {
+                is com.tessera.launcher.data.helper.AiAnswerResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            isAiSearchLoading = false,
+                            aiSearchResponse = result.answer,
+                            aiSearchError = null
+                        )
+                    }
+                }
+                is com.tessera.launcher.data.helper.AiAnswerResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isAiSearchLoading = false,
+                            aiSearchResponse = null,
+                            aiSearchError = result.message
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun onSearchQueryChange(query: String) {
@@ -367,7 +451,39 @@ class MainViewModel(
             return
         }
 
-        // 2. Calculadora: Ativada EXCLUSIVAMENTE via @calc <expressão>
+        // 2. IA / Gemini: Ativado via @ai / @gemini
+        val isAiCommand = query.startsWith("@ai", ignoreCase = true) ||
+                query.startsWith("@gemini", ignoreCase = true) ||
+                query.startsWith("${symbol}ai", ignoreCase = true) ||
+                query.startsWith("${symbol}gemini", ignoreCase = true)
+
+        if (isAiCommand) {
+            val aiPrompt = query
+                .removePrefix("@ai").removePrefix("@gemini")
+                .removePrefix("${symbol}ai").removePrefix("${symbol}gemini")
+                .trim()
+
+            autoLaunchJob?.cancel()
+            _uiState.update {
+                it.copy(
+                    searchQuery = query,
+                    calculatorResult = null,
+                    matchingContacts = emptyList(),
+                    matchingFiles = emptyList(),
+                    filteredApps = emptyList(),
+                    appsState = AppsListState.Success(emptyList()),
+                    isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
+                    isSearchExpanded = true,
+                    isWidgetExpanded = if (it.isDrawerOpen) false else !hasQuery
+                )
+            }
+            if (aiPrompt.length >= 3 && _uiState.value.isAiSearchEnabled) {
+                scheduleDebouncedAiSearch(aiPrompt)
+            }
+            return
+        }
+
+        // 3. Calculadora: Ativada EXCLUSIVAMENTE via @calc <expressão>
         val isCalcCommand = query.startsWith("@calc", ignoreCase = true) ||
                 query.startsWith("${symbol}calc", ignoreCase = true)
         val calcResult = if (isCalcCommand) {
@@ -396,7 +512,7 @@ class MainViewModel(
             return
         }
 
-        // 3. SearchOS: Contatos via @con ou busca geral se habilitado (não buscar se for outro comando @)
+        // 4. SearchOS: Contatos via @con ou busca geral se habilitado (não buscar se for outro comando @)
         val isContactsCommand = query.startsWith("@con", ignoreCase = true) ||
                 query.startsWith("${symbol}con", ignoreCase = true)
         val isOtherCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isContactsCommand
@@ -413,7 +529,7 @@ class MainViewModel(
             emptyList()
         }
 
-        // 4. SearchOS: Arquivos via @files ou busca geral de arquivos
+        // 5. SearchOS: Arquivos via @files ou busca geral de arquivos
         val isFilesCommand = query.startsWith("@files", ignoreCase = true) ||
                 query.startsWith("${symbol}files", ignoreCase = true)
         val isOtherFilesCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isFilesCommand
@@ -465,7 +581,11 @@ class MainViewModel(
         val visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
 
         val filtered = if (trimmed.isEmpty()) {
-            visibleApps
+            if (_uiState.value.isAppCategoriesEnabled && _uiState.value.selectedAppCategory != com.tessera.launcher.data.model.AppCategory.ALL) {
+                visibleApps.filter { categoryClassifier.classifyApp(it) == _uiState.value.selectedAppCategory }
+            } else {
+                visibleApps
+            }
         } else {
             val normalizedQuery = AppInfo.normalize(trimmed)
             if (isExact) {
@@ -844,6 +964,8 @@ class MainViewModel(
         val result = appRepository.launchApp(packageName)
         if (result.isSuccess) {
             collapseSearch()
+            contextualPredictor.recordAppLaunch(packageName, appContext)
+            refreshPredictedApps()
         }
         return result
     }
@@ -894,6 +1016,7 @@ class MainViewModel(
         current.add(NoteTask(id = nextId, text = text, isDone = false))
         preferences.setNotesRaw(serializeNotes(current))
         _uiState.update { it.copy(notesTasks = current) }
+        refreshSmartGlance()
     }
 
     fun toggleNoteTask(id: Long) {
@@ -902,12 +1025,14 @@ class MainViewModel(
         }
         preferences.setNotesRaw(serializeNotes(current))
         _uiState.update { it.copy(notesTasks = current) }
+        refreshSmartGlance()
     }
 
     fun removeNoteTask(id: Long) {
         val current = _uiState.value.notesTasks.filterNot { it.id == id }
         preferences.setNotesRaw(serializeNotes(current))
         _uiState.update { it.copy(notesTasks = current) }
+        refreshSmartGlance()
     }
 
     // Estilo e Pacotes de Ícones
@@ -1332,6 +1457,7 @@ class MainViewModel(
             val weather = weatherHelper.fetchWeather(isCelsius = _uiState.value.isWeatherCelsius)
             preferences.setCachedWeatherJson(weatherHelper.toJson(weather))
             _uiState.update { it.copy(weatherInfo = weather, isWeatherLoading = false, weatherError = null) }
+            refreshSmartGlance()
         }
     }
 
@@ -1471,5 +1597,80 @@ class MainViewModel(
             return true
         }
         return false
+    }
+
+    // Smart Dock (Previsão Contextual)
+    fun refreshPredictedApps() {
+        if (!_uiState.value.isSmartDockEnabled) return
+        val count = _uiState.value.smartDockAppCount
+        val hiddenPkgs = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
+        val predicted = contextualPredictor.getPredictedApps(
+            allApps = allApps,
+            hiddenPackages = hiddenPkgs,
+            count = count,
+            context = appContext
+        )
+        _uiState.update { it.copy(predictedApps = predicted) }
+    }
+
+    fun setSmartDockEnabled(enabled: Boolean) {
+        preferences.setSmartDockEnabled(enabled)
+        _uiState.update { it.copy(isSmartDockEnabled = enabled) }
+        if (enabled) {
+            refreshPredictedApps()
+        }
+    }
+
+    fun setSmartDockAppCount(count: Int) {
+        preferences.setSmartDockAppCount(count)
+        _uiState.update { it.copy(smartDockAppCount = count) }
+        refreshPredictedApps()
+    }
+
+    // Smart Glance ("Now & Next")
+    fun refreshSmartGlance() {
+        if (!_uiState.value.isSmartGlanceEnabled) return
+        val event = _uiState.value.nextCalendarEvent
+        val conflict = calendarHelper.detectConflicts()
+        val weather = _uiState.value.weatherInfo
+        val notes = _uiState.value.notesTasks
+        val briefing = smartGlanceEngine.synthesizeBriefing(event, conflict, weather, notes)
+        _uiState.update { it.copy(smartGlanceBriefing = briefing) }
+    }
+
+    fun setSmartGlanceEnabled(enabled: Boolean) {
+        preferences.setSmartGlanceEnabled(enabled)
+        _uiState.update { it.copy(isSmartGlanceEnabled = enabled) }
+        if (enabled) {
+            refreshSmartGlance()
+        }
+    }
+
+    // Categorias de Apps na Gaveta
+    fun selectAppCategory(category: com.tessera.launcher.data.model.AppCategory) {
+        _uiState.update { it.copy(selectedAppCategory = category) }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun setAppCategoriesEnabled(enabled: Boolean) {
+        preferences.setAppCategoriesEnabled(enabled)
+        _uiState.update {
+            it.copy(
+                isAppCategoriesEnabled = enabled,
+                selectedAppCategory = com.tessera.launcher.data.model.AppCategory.ALL
+            )
+        }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    // Prompt Bar na Lupa (Gemini AI)
+    fun setAiSearchEnabled(enabled: Boolean) {
+        preferences.setAiSearchEnabled(enabled)
+        _uiState.update { it.copy(isAiSearchEnabled = enabled) }
+    }
+
+    fun setGeminiApiKey(key: String) {
+        preferences.setGeminiApiKey(key)
+        _uiState.update { it.copy(geminiApiKey = key.trim()) }
     }
 }

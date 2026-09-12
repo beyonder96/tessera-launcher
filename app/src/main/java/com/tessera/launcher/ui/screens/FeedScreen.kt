@@ -48,7 +48,7 @@ fun FeedScreen(
     modifier: Modifier = Modifier
 ) {
     val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
-    val backgroundColor = if (isLightMode) Color(0xFFF7F7F7) else Color(0xFF000000)
+    val backgroundColor = if (isLightMode) Color(0xF8F7F7F7) else Color(0xF20D0D11)
     
     var localSelectedSource by remember { mutableStateOf<FeedSource?>(activeSource) }
 

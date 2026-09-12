@@ -37,7 +37,8 @@ class MainViewModelFactory(
                 fileSearchHelper,
                 messageSearchHelper,
                 weatherHelper,
-                feedRepository
+                feedRepository,
+                context.applicationContext
             ) as T
         }
         throw IllegalArgumentException("Classe ViewModel desconhecida: ${modelClass.name}")

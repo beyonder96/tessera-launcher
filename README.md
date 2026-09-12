@@ -61,14 +61,22 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.3)
 
-### 🆕 Novidades na v1.8.2
+### 🆕 Novidades na v1.8.3
+- 📰 **Feed Social Mais Rápido & Resiliente:** Suporte otimizado ao endpoint JSON oficial do Reddit com User-Agent descritivo evitando rate limits, decodificação completa de entidades HTML no parser de contingência RSS, sanitização automática de handles no Bluesky e isolamento por canal contra falhas de conexão.
+- 🤖 **Prompt Bar na Lupa (Gemini AI):** Digite `@ai <pergunta>` ou selecione o chip `@ai` para obter respostas instantâneas, diretas e concisas geradas pelo Gemini Flash diretamente na barra de busca com botão de cópia rápida.
+- 🗂️ **Categorias Automáticas na Gaveta:** Barra horizontal de chips de categorias (Produtividade, Social, Mídia, Utilitários e Jogos) com classificação local em 2 camadas combinando categorias do Android e heurística contextual.
+- ⚡ **Smart Dock (Previsão Contextual) & Smart Glance:** Sugestões inteligentes de aplicativos baseadas na rotina horária e status de fones de ouvido, além de cartão resumo Now & Next.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.2</b></summary>
+
 - 📰 **Feed Social Integrado (Tela -1):** Deslize para a direita para acessar seu feed contendo posts do Reddit e do Bluesky diretamente da sua tela inicial.
 - 🤖 **Resumos por Inteligência Artificial:** Integração inteligente de resumos rápidos nos cartões do feed via IA para uma leitura mais eficiente.
 - 🔍 **Busca Semântica no App Drawer:** Encontre aplicativos não só pelo nome, mas pela função (ex: "pagamento", "foto", "mapa").
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.1</b></summary>
 

@@ -70,13 +70,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            window.attributes = window.attributes.apply {
-                blurBehindRadius = 45
-            }
-        }
-
         // Maximizar taxa de atualização da tela para 120Hz / alta fluidez
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val currentDisplay = display
@@ -114,6 +107,33 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            LaunchedEffect(
+                uiState.isDrawerOpen,
+                uiState.isSearchExpanded,
+                uiState.searchQuery,
+                uiState.isDrawerGlassEnabled,
+                uiState.drawerGlassOpacity,
+                uiState.isSettingsOpen,
+                uiState.isFeedOpen
+            ) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val isOpen = uiState.isDrawerOpen || uiState.isSearchExpanded || uiState.searchQuery.isNotEmpty() || uiState.isSettingsOpen || uiState.isFeedOpen
+                    val targetBlur = if (isOpen && uiState.isDrawerGlassEnabled) {
+                        // Mapeia 0..100% para um desfoque vítreo real de 10px até 160px
+                        val scaled = (uiState.drawerGlassOpacity / 100f) * 150f + 10f
+                        scaled.toInt().coerceIn(10, 160)
+                    } else if (isOpen) {
+                        45
+                    } else {
+                        1
+                    }
+                    window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    val params = window.attributes
+                    params.blurBehindRadius = targetBlur
+                    window.attributes = params
+                }
+            }
+
             TesseraTheme {
                 HomeScreen(
                     viewModel = viewModel,
@@ -146,6 +166,7 @@ class MainActivity : ComponentActivity() {
         if (::viewModel.isInitialized) {
             viewModel.refreshCalendarAndPermissions()
             viewModel.refreshWeather()
+            viewModel.refreshPredictedApps()
         }
     }
 }

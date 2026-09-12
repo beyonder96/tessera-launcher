@@ -74,8 +74,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.data.helper.ContactInfo
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.components.AiResponseCard
 import com.tessera.launcher.ui.components.Alphabet
 import com.tessera.launcher.ui.components.AlphabetScroller
+import com.tessera.launcher.ui.components.AppCategoriesBar
 import com.tessera.launcher.ui.components.AppContextMenu
 import com.tessera.launcher.ui.components.AppListEmptyState
 import com.tessera.launcher.ui.components.AppListErrorState
@@ -93,6 +95,8 @@ import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.SearchosChipsRow
+import com.tessera.launcher.ui.components.SmartDockRow
+import com.tessera.launcher.ui.components.SmartGlanceHeader
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
@@ -302,6 +306,35 @@ fun HomeScreen(
             )
         }
 
+        // Topo da Tela Inicial: Smart Glance ("Now & Next")
+        AnimatedVisibility(
+            visible = uiState.isSmartGlanceEnabled &&
+                    !uiState.isSearchExpanded &&
+                    !uiState.isDrawerOpen &&
+                    uiState.searchQuery.isEmpty(),
+            enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+                    slideInVertically(
+                        initialOffsetY = { -it / 3 },
+                        animationSpec = tween(180, easing = FastOutSlowInEasing)
+                    ),
+            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing)) +
+                    slideOutVertically(
+                        targetOffsetY = { -it / 3 },
+                        animationSpec = tween(150, easing = FastOutSlowInEasing)
+                    ),
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+            SmartGlanceHeader(
+                formattedDate = uiState.formattedDate,
+                briefing = uiState.smartGlanceBriefing,
+                onCalendarClick = { viewModel.launchCalendarApp() },
+                onWeatherClick = { viewModel.refreshWeather() },
+                onNotesClick = { isNotesTasksOpen = true },
+                isLightMode = uiState.isLightMode,
+                isAmoledMode = uiState.isAmoledMode
+            )
+        }
+
         // Centro da Tela Inicial: Moldura de Foto Minimalista
         if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
@@ -323,9 +356,10 @@ fun HomeScreen(
             }
         }
 
-        // Camada de Foco e Desfoque de Fundo da Gaveta
+        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
-            (uiState.drawerGlassOpacity / 100f).coerceIn(0.05f, 1f)
+            // Película ultra sutil: não escurece a tela, o blur faz todo o trabalho estético
+            if (uiState.isLightMode) 0.05f else 0.10f
         } else if (uiState.isAmoledMode) {
             1f
         } else {
@@ -368,32 +402,228 @@ fun HomeScreen(
                     ),
             modifier = Modifier.fillMaxSize()
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                     .padding(bottom = if (uiState.isWidgetExpanded && !uiState.isDrawerOpen) 310.dp else 84.dp)
             ) {
-                Box(
+                // Barra de Categorias de Aplicativos (visível quando gaveta aberta e sem busca ativa)
+                if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
+                    AppCategoriesBar(
+                        selectedCategory = uiState.selectedAppCategory,
+                        onCategorySelected = { category -> viewModel.selectAppCategory(category) },
+                        isLightMode = uiState.isLightMode
+                    )
+                }
+
+                Row(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxSize()
+                        .fillMaxWidth()
                 ) {
-                    when (val state = uiState.appsState) {
-                        is AppsListState.Loading -> AppListSkeleton()
-                        is AppsListState.Empty -> {
-                            // Se a busca tiver contatos, arquivos, calculadora ou pasta, exibe esses resultados
-                            if (uiState.calculatorResult != null ||
-                                uiState.matchingContacts.isNotEmpty() ||
-                                uiState.matchingFiles.isNotEmpty() ||
-                                matchingFolder != null
-                            ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxSize()
+                    ) {
+                        when (val state = uiState.appsState) {
+                            is AppsListState.Loading -> AppListSkeleton()
+                            is AppsListState.Empty -> {
+                                val isAiSearchActive = uiState.isAiSearchEnabled && (
+                                    uiState.isAiSearchLoading ||
+                                    uiState.aiSearchResponse != null ||
+                                    uiState.aiSearchError != null ||
+                                    uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
+                                    uiState.searchQuery.startsWith("@gemini", ignoreCase = true)
+                                )
+
+                                // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
+                                if (isAiSearchActive ||
+                                    uiState.calculatorResult != null ||
+                                    uiState.matchingContacts.isNotEmpty() ||
+                                    uiState.matchingFiles.isNotEmpty() ||
+                                    matchingFolder != null
+                                ) {
+                                    LazyColumn(
+                                        state = listState,
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.Bottom
+                                    ) {
+                                        // Resposta IA (Gemini)
+                                        if (isAiSearchActive) {
+                                            item(key = "ai_response_card") {
+                                                AiResponseCard(
+                                                    query = uiState.searchQuery,
+                                                    response = uiState.aiSearchResponse,
+                                                    isLoading = uiState.isAiSearchLoading,
+                                                    error = uiState.aiSearchError,
+                                                    onRetry = { viewModel.executeAiSearch() },
+                                                    onOpenSettings = {
+                                                        viewModel.openSettings()
+                                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH)
+                                                    },
+                                                    isLightMode = uiState.isLightMode,
+                                                    isAmoledMode = uiState.isAmoledMode,
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Calculadora (@calc)
+                                        uiState.calculatorResult?.let { result ->
+                                            item(key = "calc_result") {
+                                                CalculatorCard(
+                                                    query = uiState.searchQuery,
+                                                    result = result,
+                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Contatos
+                                        if (uiState.calculatorResult == null && !isAiSearchActive && uiState.matchingContacts.isNotEmpty()) {
+                                            item(key = "contacts_header") {
+                                                Text(
+                                                    text = "CONTATOS",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.sp
+                                                    ),
+                                                    color = TextSecondary,
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                            items(
+                                                items = uiState.matchingContacts,
+                                                key = { "contact_${it.name}_${it.phoneNumber}" }
+                                            ) { contact ->
+                                                ContactListItem(
+                                                    contact = contact,
+                                                    onClick = { viewModel.callContact(contact.phoneNumber) }
+                                                )
+                                            }
+                                        }
+
+                                        // Arquivos
+                                        if (uiState.calculatorResult == null && !isAiSearchActive && uiState.matchingFiles.isNotEmpty()) {
+                                            item(key = "files_header") {
+                                                Text(
+                                                    text = "ARQUIVOS",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.sp
+                                                    ),
+                                                    color = TextSecondary,
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                            items(
+                                                items = uiState.matchingFiles,
+                                                key = { "file_${it.uriString}" }
+                                            ) { file ->
+                                                FileListItem(
+                                                    file = file,
+                                                    onClick = { viewModel.openFile(file.uriString, file.mimeType) }
+                                                )
+                                            }
+                                        }
+
+                                        // Cartão de Pasta encontrada na busca
+                                        matchingFolder?.let { folder ->
+                                            item(key = "folder_card_${folder.id}") {
+                                                FolderSearchCard(
+                                                    folder = folder,
+                                                    allApps = allApps,
+                                                    onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                    onAppLongClick = { app -> selectedAppForMenu = app },
+                                                    onFolderClick = { f -> folderToView = f },
+                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                                                )
+                                            }
+                                        }
+
+                                        // Barra externa de busca
+                                        if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled && !isAiSearchActive) {
+                                            item {
+                                                SearchExternalActions(
+                                                    query = uiState.searchQuery,
+                                                    inAppSearchPackages = uiState.inAppSearchPackages,
+                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    modifier = Modifier.padding(top = 8.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    AppListEmptyState(query = state.query)
+                                }
+                            }
+                            is AppsListState.Error -> {
+                                AppListErrorState(
+                                    errorMessage = state.message,
+                                    onRetry = { viewModel.reloadApps() }
+                                )
+                            }
+                            is AppsListState.Success -> {
                                 LazyColumn(
                                     state = listState,
                                     modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = Arrangement.Bottom
+                                    verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                                 ) {
-                                    // Calculadora (@calc)
+                                    // Modo Calculadora isolado (@calc)
+                                    val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
+                                    val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
+                                    val isFilesMode = uiState.searchQuery.startsWith("@files", ignoreCase = true)
+                                    val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
+                                            uiState.searchQuery.startsWith("@gemini", ignoreCase = true)
+
+                                    // Resposta IA (Gemini)
+                                    val isAiSearchActive = uiState.isAiSearchEnabled && (
+                                        uiState.isAiSearchLoading ||
+                                        uiState.aiSearchResponse != null ||
+                                        uiState.aiSearchError != null ||
+                                        isAiCommand
+                                    )
+
+                                    if (isAiSearchActive) {
+                                        item(key = "ai_response_card") {
+                                            AiResponseCard(
+                                                query = uiState.searchQuery,
+                                                response = uiState.aiSearchResponse,
+                                                isLoading = uiState.isAiSearchLoading,
+                                                error = uiState.aiSearchError,
+                                                onRetry = { viewModel.executeAiSearch() },
+                                                onOpenSettings = {
+                                                    viewModel.openSettings()
+                                                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH)
+                                                },
+                                                isLightMode = uiState.isLightMode,
+                                                isAmoledMode = uiState.isAmoledMode,
+                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Chips do SearchOS quando digitar @ isolado ou prefixo inicial sem espaço
+                                    val showSearchosChips = !isCalcMode && !isContactsMode && !isFilesMode && !isAiCommand &&
+                                            (uiState.searchQuery == "@" || (uiState.searchQuery.startsWith("@") && !uiState.searchQuery.contains(" ")))
+
+                                    if (showSearchosChips) {
+                                        item(key = "searchos_chips") {
+                                            SearchosChipsRow(
+                                                searchosList = uiState.searchosList,
+                                                onChipClick = { prefix ->
+                                                    viewModel.onSearchQueryChange(prefix)
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    // Cartão da Calculadora (@calc)
                                     uiState.calculatorResult?.let { result ->
                                         item(key = "calc_result") {
                                             CalculatorCard(
@@ -404,130 +634,6 @@ fun HomeScreen(
                                             )
                                         }
                                     }
-
-                                    // Contatos
-                                    if (uiState.calculatorResult == null && uiState.matchingContacts.isNotEmpty()) {
-                                        item(key = "contacts_header") {
-                                            Text(
-                                                text = "CONTATOS",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 1.sp
-                                                ),
-                                                color = TextSecondary,
-                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                                            )
-                                        }
-                                        items(
-                                            items = uiState.matchingContacts,
-                                            key = { "contact_${it.name}_${it.phoneNumber}" }
-                                        ) { contact ->
-                                            ContactListItem(
-                                                contact = contact,
-                                                onClick = { viewModel.callContact(contact.phoneNumber) }
-                                            )
-                                        }
-                                    }
-
-                                    // Arquivos
-                                    if (uiState.calculatorResult == null && uiState.matchingFiles.isNotEmpty()) {
-                                        item(key = "files_header") {
-                                            Text(
-                                                text = "ARQUIVOS",
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 1.sp
-                                                ),
-                                                color = TextSecondary,
-                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                                            )
-                                        }
-                                        items(
-                                            items = uiState.matchingFiles,
-                                            key = { "file_${it.uriString}" }
-                                        ) { file ->
-                                            FileListItem(
-                                                file = file,
-                                                onClick = { viewModel.openFile(file.uriString, file.mimeType) }
-                                            )
-                                        }
-                                    }
-
-                                    // Cartão de Pasta encontrada na busca
-                                    matchingFolder?.let { folder ->
-                                        item(key = "folder_card_${folder.id}") {
-                                            FolderSearchCard(
-                                                folder = folder,
-                                                allApps = allApps,
-                                                onAppClick = { app -> viewModel.launchApp(app.packageName) },
-                                                onAppLongClick = { app -> selectedAppForMenu = app },
-                                                onFolderClick = { f -> folderToView = f },
-                                                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
-                                            )
-                                        }
-                                    }
-
-                                    // Barra externa de busca
-                                    if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled) {
-                                        item {
-                                            SearchExternalActions(
-                                                query = uiState.searchQuery,
-                                                inAppSearchPackages = uiState.inAppSearchPackages,
-                                                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                                modifier = Modifier.padding(top = 8.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            } else {
-                                AppListEmptyState(query = state.query)
-                            }
-                        }
-                        is AppsListState.Error -> {
-                            AppListErrorState(
-                                errorMessage = state.message,
-                                onRetry = { viewModel.reloadApps() }
-                            )
-                        }
-                        is AppsListState.Success -> {
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
-                            ) {
-                                // Modo Calculadora isolado (@calc)
-                                val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
-                                val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
-                                val isFilesMode = uiState.searchQuery.startsWith("@files", ignoreCase = true)
-
-                                // Chips do SearchOS quando digitar @ isolado ou prefixo inicial sem espaço
-                                val showSearchosChips = !isCalcMode && !isContactsMode && !isFilesMode &&
-                                        (uiState.searchQuery == "@" || (uiState.searchQuery.startsWith("@") && !uiState.searchQuery.contains(" ")))
-
-                                if (showSearchosChips) {
-                                    item(key = "searchos_chips") {
-                                        SearchosChipsRow(
-                                            searchosList = uiState.searchosList,
-                                            onChipClick = { prefix ->
-                                                viewModel.onSearchQueryChange(prefix)
-                                            }
-                                        )
-                                    }
-                                }
-
-                                // Cartão da Calculadora (@calc)
-                                uiState.calculatorResult?.let { result ->
-                                    item(key = "calc_result") {
-                                        CalculatorCard(
-                                            query = uiState.searchQuery,
-                                            result = result,
-                                            isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                }
 
                                 // Contatos encontrados (oculto em modo calculadora ou arquivos)
                                 if (!isCalcMode && !isFilesMode && uiState.matchingContacts.isNotEmpty()) {
@@ -667,15 +773,46 @@ fun HomeScreen(
                 }
             }
         }
+    }
 
-        // Doca Inferior de Pesquisa & Controles Unificada (Widget + Dots + Busca)
-        Box(
+        // Doca Inferior de Pesquisa & Controles Unificada (Smart Dock + Busca/Widgets)
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
-            contentAlignment = Alignment.BottomCenter
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Smart Dock Contextual (Home Screen)
+            AnimatedVisibility(
+                visible = uiState.isSmartDockEnabled &&
+                        !uiState.isDrawerOpen &&
+                        !uiState.isSearchExpanded &&
+                        uiState.searchQuery.isEmpty() &&
+                        uiState.predictedApps.isNotEmpty(),
+                enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+                        slideInVertically(
+                            initialOffsetY = { it / 3 },
+                            animationSpec = tween(180, easing = FastOutSlowInEasing)
+                        ),
+                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing)) +
+                        slideOutVertically(
+                            targetOffsetY = { it / 3 },
+                            animationSpec = tween(150, easing = FastOutSlowInEasing)
+                        )
+            ) {
+                SmartDockRow(
+                    apps = uiState.predictedApps,
+                    onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                    onAppLongClick = { app -> selectedAppForMenu = app },
+                    iconShape = uiState.iconShape,
+                    isThemedIcons = uiState.isThemedIconsEnabled,
+                    isLightMode = uiState.isLightMode,
+                    isAmoledMode = uiState.isAmoledMode,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+            }
+
             val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
 
             SearchoMorphingDock(
@@ -749,7 +886,9 @@ fun HomeScreen(
                             onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
                             isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
                             isAmoledMode = uiState.isAmoledMode,
-                            isLightMode = uiState.isLightMode
+                            isLightMode = uiState.isLightMode,
+                            smartGlanceBriefing = uiState.smartGlanceBriefing,
+                            isSmartGlanceEnabled = uiState.isSmartGlanceEnabled
                         )
                     }
                 } else null

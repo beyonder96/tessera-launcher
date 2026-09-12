@@ -37,14 +37,12 @@ data class FeedPost(
 
     val sourceLabel: String
         get() = when (source) {
-            FeedSource.REDDIT -> "r/$subreddit"
-            FeedSource.BLUESKY -> "@$authorHandle"
-            FeedSource.TWITTER -> "@$authorHandle"
+            FeedSource.REDDIT -> "r/${subreddit?.removePrefix("/r/")?.removePrefix("r/") ?: "reddit"}"
+            FeedSource.BLUESKY -> "@${authorHandle.removePrefix("@")}"
         }
 }
 
 enum class FeedSource(val displayName: String) {
     REDDIT("Reddit"),
-    BLUESKY("Bluesky"),
-    TWITTER("X")
+    BLUESKY("Bluesky")
 }

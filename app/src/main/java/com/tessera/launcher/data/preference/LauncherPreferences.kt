@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 enum class WidgetType(val displayName: String) {
+    NOW_AND_NEXT("Now & Next (Smart Glance)"),
     BATTERY("Bateria & Sinais"),
     CALENDAR("Data & Calendário"),
     MEDIA("Player de Mídia"),
@@ -99,6 +100,21 @@ class LauncherPreferences(context: Context) {
         private const val KEY_FEED_SOURCES_ENABLED = "feed_sources_enabled"
         private const val KEY_FEED_CACHED_JSON = "feed_cached_json"
         private const val KEY_FEED_AI_SUMMARIES = "feed_ai_summaries"
+
+        // Smart Dock (Previsão Contextual)
+        private const val KEY_SMART_DOCK_ENABLED = "smart_dock_enabled"
+        private const val KEY_SMART_DOCK_APP_COUNT = "smart_dock_app_count"
+        private const val KEY_APP_LAUNCH_HISTORY_JSON = "app_launch_history_json"
+
+        // Smart Glance (Now & Next)
+        private const val KEY_SMART_GLANCE_ENABLED = "smart_glance_enabled"
+
+        // Categorias de Apps na Gaveta
+        private const val KEY_APP_CATEGORIES_ENABLED = "app_categories_enabled"
+
+        // Prompt Bar na Lupa (Gemini AI)
+        private const val KEY_AI_SEARCH_ENABLED = "ai_search_enabled"
+        private const val KEY_GEMINI_API_KEY = "gemini_api_key"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -388,14 +404,14 @@ class LauncherPreferences(context: Context) {
         prefs.edit().putString(KEY_FEED_SUBREDDITS, subs.joinToString(",")).apply()
 
     fun getFeedBlueskyHandles(): List<String> {
-        val raw = prefs.getString(KEY_FEED_BLUESKY_HANDLES, "") ?: ""
+        val raw = prefs.getString(KEY_FEED_BLUESKY_HANDLES, "theverge.com,techcrunch.com,bsky.app") ?: "theverge.com,techcrunch.com,bsky.app"
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
     }
     fun setFeedBlueskyHandles(handles: List<String>) =
         prefs.edit().putString(KEY_FEED_BLUESKY_HANDLES, handles.joinToString(",")).apply()
 
     fun getFeedEnabledSources(): Set<String> {
-        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "REDDIT") ?: "REDDIT"
+        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "REDDIT,BLUESKY") ?: "REDDIT,BLUESKY"
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
     }
     fun setFeedEnabledSources(sources: Set<String>) =
@@ -406,4 +422,29 @@ class LauncherPreferences(context: Context) {
 
     fun isFeedAiSummariesEnabled(): Boolean = prefs.getBoolean(KEY_FEED_AI_SUMMARIES, false)
     fun setFeedAiSummariesEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_FEED_AI_SUMMARIES, enabled).apply()
+
+    // Smart Dock (Previsão Contextual)
+    fun isSmartDockEnabled(): Boolean = prefs.getBoolean(KEY_SMART_DOCK_ENABLED, true)
+    fun setSmartDockEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SMART_DOCK_ENABLED, enabled).apply()
+
+    fun getSmartDockAppCount(): Int = prefs.getInt(KEY_SMART_DOCK_APP_COUNT, 4)
+    fun setSmartDockAppCount(count: Int) = prefs.edit().putInt(KEY_SMART_DOCK_APP_COUNT, count.coerceIn(3, 5)).apply()
+
+    fun getAppLaunchHistoryJson(): String? = prefs.getString(KEY_APP_LAUNCH_HISTORY_JSON, null)
+    fun setAppLaunchHistoryJson(json: String?) = prefs.edit().putString(KEY_APP_LAUNCH_HISTORY_JSON, json).apply()
+
+    // Smart Glance (Now & Next)
+    fun isSmartGlanceEnabled(): Boolean = prefs.getBoolean(KEY_SMART_GLANCE_ENABLED, true)
+    fun setSmartGlanceEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SMART_GLANCE_ENABLED, enabled).apply()
+
+    // Categorias de Apps na Gaveta
+    fun isAppCategoriesEnabled(): Boolean = prefs.getBoolean(KEY_APP_CATEGORIES_ENABLED, true)
+    fun setAppCategoriesEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_APP_CATEGORIES_ENABLED, enabled).apply()
+
+    // Prompt Bar na Lupa (Gemini AI)
+    fun isAiSearchEnabled(): Boolean = prefs.getBoolean(KEY_AI_SEARCH_ENABLED, true)
+    fun setAiSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_AI_SEARCH_ENABLED, enabled).apply()
+
+    fun getGeminiApiKey(): String = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
+    fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim()).apply()
 }

@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -172,6 +173,20 @@ fun WidgetsCenterScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    WidgetCenterToggleRow(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Smart Glance (Now & Next)",
+                        subtitle = "Resumo contextual de agenda, clima e tarefas em tempo real",
+                        checked = uiState.isSmartGlanceEnabled,
+                        onCheckedChange = { viewModel.setSmartGlanceEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
                     WidgetCenterToggleRow(
                         icon = Icons.Outlined.SportsEsports,
                         title = "Jogo do dino",
@@ -467,6 +482,28 @@ fun WidgetsCenterScreen(
                             iconBgColor = iconBg,
                             modifier = Modifier.weight(1f)
                         )
+                    }
+
+                    if (uiState.isSmartGlanceEnabled) {
+                        Spacer(modifier = Modifier.height(18.dp))
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.Start
+                        ) {
+                            // 8: Smart Glance ("Now & Next")
+                            WidgetCardSelectorCircle(
+                                label = "Now & Next\n(Smart Glance)",
+                                icon = Icons.Outlined.AutoAwesome,
+                                isSelected = uiState.defaultWidgetCardIndex == 8,
+                                onClick = { viewModel.setDefaultWidgetCardIndex(8) },
+                                isLightMode = isLight,
+                                iconBgColor = iconBg,
+                                modifier = Modifier.fillMaxWidth(0.25f)
+                            )
+                        }
                     }
                 }
             }
