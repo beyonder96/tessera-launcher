@@ -176,7 +176,7 @@ fun WidgetsCenterScreen(
                     WidgetCenterToggleRow(
                         icon = Icons.Outlined.AutoAwesome,
                         title = "Smart Glance (Now & Next)",
-                        subtitle = "Resumo contextual de agenda, clima e tarefas em tempo real",
+                        subtitle = "Resumo contextual de agenda, clima e tarefas acima da barra de pesquisa",
                         checked = uiState.isSmartGlanceEnabled,
                         onCheckedChange = { viewModel.setSmartGlanceEnabled(it) },
                         isLightMode = isLight,

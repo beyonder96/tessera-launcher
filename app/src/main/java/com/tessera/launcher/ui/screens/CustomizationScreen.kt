@@ -522,7 +522,7 @@ fun CustomizationScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Sugere apps com base no horário e fones de ouvido",
+                                text = "Sugere apps contextuais no topo da lista com base no momento",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                 color = textSecondary
                             )

@@ -61,15 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.3)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.4)
 
-### 🆕 Novidades na v1.8.3
+### 🆕 Novidades na v1.8.4
+- 🎯 **Reposicionamento Ergonômico de Informações & Dock:**
+  - **Topo 100% Desobstruído:** Remoção do widget do topo da tela inicial, eliminando qualquer corte ou sobreposição visual com o recorte físico da câmera frontal (punch-hole/notch).
+  - **Resumo Inteligente na Base:** O cartão Smart Glance com Data, Clima e Agenda agora fica posicionado na parte inferior da tela inicial, diretamente acima da barra de pesquisa, com alcance perfeito para uma só mão.
+  - **Smart Dock Contextual no Topo da Gaveta:** A doca com os aplicativos que mudam com base no momento (`predictedApps`) foi movida para o topo da lista de aplicativos, com espaçamento seguro que respeita a barra de status e a câmera frontal.
+  - **Categorias na Base da Gaveta:** A barra de filtros de categorias (`AppCategoriesBar`) agora fica na base da gaveta de aplicativos, imediatamente acima da barra de busca, facilitando a navegação rápida com o polegar.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.3</b></summary>
+
 - 📰 **Feed Social Mais Rápido & Resiliente:** Suporte otimizado ao endpoint JSON oficial do Reddit com User-Agent descritivo evitando rate limits, decodificação completa de entidades HTML no parser de contingência RSS, sanitização automática de handles no Bluesky e isolamento por canal contra falhas de conexão.
 - 🤖 **Prompt Bar na Lupa (Gemini AI):** Digite `@ai <pergunta>` ou selecione o chip `@ai` para obter respostas instantâneas, diretas e concisas geradas pelo Gemini Flash diretamente na barra de busca com botão de cópia rápida.
 - 🗂️ **Categorias Automáticas na Gaveta:** Barra horizontal de chips de categorias (Produtividade, Social, Mídia, Utilitários e Jogos) com classificação local em 2 camadas combinando categorias do Android e heurística contextual.
 - ⚡ **Smart Dock (Previsão Contextual) & Smart Glance:** Sugestões inteligentes de aplicativos baseadas na rotina horária e status de fones de ouvido, além de cartão resumo Now & Next.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.2</b></summary>
 
