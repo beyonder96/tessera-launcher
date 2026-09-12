@@ -95,8 +95,6 @@ import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.SearchosChipsRow
-import com.tessera.launcher.ui.components.SmartDockRow
-import com.tessera.launcher.ui.components.SmartGlanceHeader
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
@@ -320,8 +318,8 @@ fun HomeScreen(
                         onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = if (uiState.isSmartGlanceEnabled) 140.dp else 88.dp)
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 88.dp)
                     )
                 }
             }
@@ -380,28 +378,7 @@ fun HomeScreen(
                     .padding(bottom = if (uiState.isWidgetExpanded && !uiState.isDrawerOpen) 310.dp else 84.dp)
             ) {
                 val drawerTopPadding = if (uiState.isShowStatusBarEnabled) 8.dp else 32.dp
-
-                // Smart Dock no topo da lista de apps: Aplicativos contextuais preditivos do momento
-                if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isSmartDockEnabled && uiState.predictedApps.isNotEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = drawerTopPadding, bottom = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        SmartDockRow(
-                            apps = uiState.predictedApps,
-                            onAppClick = { app -> viewModel.launchApp(app.packageName) },
-                            onAppLongClick = { app -> selectedAppForMenu = app },
-                            iconShape = uiState.iconShape,
-                            isThemedIcons = uiState.isThemedIconsEnabled,
-                            isLightMode = uiState.isLightMode,
-                            isAmoledMode = uiState.isAmoledMode
-                        )
-                    }
-                } else {
-                    Spacer(modifier = Modifier.height(drawerTopPadding))
-                }
+                Spacer(modifier = Modifier.height(drawerTopPadding))
 
                 Row(
                     modifier = Modifier
@@ -771,7 +748,7 @@ fun HomeScreen(
         }
     }
 
-        // Doca Inferior de Pesquisa & Controles Unificada (Smart Glance + Busca/Widgets)
+        // Doca Inferior de Pesquisa & Controles Unificada
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -779,34 +756,6 @@ fun HomeScreen(
                 .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Informações (Data, Clima, Agenda / Smart Glance) na Home acima da barra de pesquisa
-            AnimatedVisibility(
-                visible = uiState.isSmartGlanceEnabled &&
-                        !uiState.isDrawerOpen &&
-                        !uiState.isSearchExpanded &&
-                        uiState.searchQuery.isEmpty(),
-                enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
-                        slideInVertically(
-                            initialOffsetY = { it / 3 },
-                            animationSpec = tween(180, easing = FastOutSlowInEasing)
-                        ),
-                exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing)) +
-                        slideOutVertically(
-                            targetOffsetY = { it / 3 },
-                            animationSpec = tween(150, easing = FastOutSlowInEasing)
-                        )
-            ) {
-                SmartGlanceHeader(
-                    formattedDate = uiState.formattedDate,
-                    briefing = uiState.smartGlanceBriefing,
-                    onCalendarClick = { viewModel.launchCalendarApp() },
-                    onWeatherClick = { viewModel.refreshWeather() },
-                    onNotesClick = { isNotesTasksOpen = true },
-                    isLightMode = uiState.isLightMode,
-                    isAmoledMode = uiState.isAmoledMode,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-            }
 
             val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
 

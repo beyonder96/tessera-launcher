@@ -61,16 +61,21 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.4)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.5)
 
-### 🆕 Novidades na v1.8.4
-- 🎯 **Reposicionamento Ergonômico de Informações & Dock:**
-  - **Topo 100% Desobstruído:** Remoção do widget do topo da tela inicial, eliminando qualquer corte ou sobreposição visual com o recorte físico da câmera frontal (punch-hole/notch).
-  - **Resumo Inteligente na Base:** O cartão Smart Glance com Data, Clima e Agenda agora fica posicionado na parte inferior da tela inicial, diretamente acima da barra de pesquisa, com alcance perfeito para uma só mão.
-  - **Smart Dock Contextual no Topo da Gaveta:** A doca com os aplicativos que mudam com base no momento (`predictedApps`) foi movida para o topo da lista de aplicativos, com espaçamento seguro que respeita a barra de status e a câmera frontal.
-  - **Categorias na Base da Gaveta:** A barra de filtros de categorias (`AppCategoriesBar`) agora fica na base da gaveta de aplicativos, imediatamente acima da barra de busca, facilitando a navegação rápida com o polegar.
+### 🆕 Novidades na v1.8.5
+- 🖼️ **Moldura de Fotos Restaurada:** Retorno do widget de fotos (`PhotoWidget`) para a sua posição ergonômica original na tela inicial, logo acima da barra de pesquisa e lupa.
+- 🧹 **Home Minimalista & Desobstruída:** Remoção completa do widget de resumo da tela inicial, deixando a área central limpa e livre de distrações.
+- ⚡ **Gaveta Ágil e Focada:** Remoção da dock na lista de aplicativos com manutenção do espaçamento seguro superior contra o recorte de câmera e das categorias de apps na parte inferior acima da barra de busca.
 
 ### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.4</b></summary>
+
+- 🎯 **Reposicionamento Ergonômico de Informações & Dock:**
+  - **Topo 100% Desobstruído:** Remoção do widget do topo da tela inicial, eliminando qualquer corte ou sobreposição visual com o recorte físico da câmera frontal (punch-hole/notch).
+  - **Categorias na Base da Gaveta:** A barra de filtros de categorias (`AppCategoriesBar`) agora fica na base da gaveta de aplicativos, imediatamente acima da barra de busca, facilitando a navegação rápida com o polegar.
+</details>
 <details>
 <summary><b>v1.8.3</b></summary>
 
