@@ -61,14 +61,25 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.7)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.9.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.9.0)
 
-### 🆕 Novidades na v1.8.7
+### 🆕 Novidades na v1.9.0
+- ⚡ **Groq AI Ultra-Rápido Integrado:** Substituição completa do Gemini pelo Groq Cloud AI, oferecendo respostas quase instantâneas através dos modelos LLaMA 3.3 70B Versatile, LLaMA 3.1 8B Instant e Mixtral 8x7B, com suporte a chave de API customizada e ajuste fino de temperatura.
+- 🧑‍💻 **Tela de Perfil do Desenvolvedor (Estilo Notion):** Novo design elegante e minimalista inspirado no Notion para a tela do desenvolvedor, com avatar, bio, stack tecnológica, links sociais, visão do projeto e botão de contato direto.
+- 🔍 **Tela de Transparência & Auditoria:** Detalhamento completo da arquitetura local-first da launcher, ausência total de telemetria/rastreamento, auditoria de permissões do sistema Android e créditos a todas as bibliotecas open-source utilizadas.
+- 📐 **Ergonomia e Alinhamento à Direita:** Refinamentos visuais e de posicionamento ergonômico na gaveta de aplicativos com foco em navegação ágil com uma mão.
+- 🗺️ **Ações Rápidas Diretas (Google Maps & Web):** Atalhos diretos na barra de pesquisa para abrir mapas e consultas na web sem fricção.
+- 📖 **Versículos Bíblicos NVI no Widget/Glance:** Frases e versículos bíblicos na Nova Versão Internacional integrados dinamicamente nos widgets contextuais.
+- 🛡️ **Remoção Completa da Marca Registrada Searcho & Busca de Arquivos:** Desacoplamento e remoção total de referências ao Searcho e do indexador legado de arquivos, consolidando a identidade única e limpa do Tessera Launcher.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.7</b></summary>
+
 - 🎯 **Busca Precisa por Caractere Único (ex: app "X"):** Isolamento total para pesquisas de 1 letra, eliminando poluição de matches intermediários (`contains`) e nomes de pacotes que exibiam apps não relacionados (como ADP Expert, Alexa, FGTS Caixa e Google ao buscar "x"). O app "X" recebe prioridade máxima absoluta (+1000 pontos).
 - ⚡ **Auto-Scroll Instantâneo para o Topo na Busca:** Ao digitar ou alterar qualquer caractere na barra de pesquisa, a lista agora reseta instantaneamente a rolagem para o primeiro resultado (`scrollToItem(0)`), garantindo que o aplicativo mais relevante apareça imediatamente sem precisar rolar a tela.
 - 🐦 **Sinônimos e Segmentos de Pacote para X / Twitter:** Suporte aprimorado que localiza o aplicativo tanto pesquisando por "x" quanto por "twitter", com busca por segmentos de pacote (`com.twitter.android`) e mapeamento semântico.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.6</b></summary>
 
