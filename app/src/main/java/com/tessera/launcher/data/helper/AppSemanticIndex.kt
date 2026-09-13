@@ -46,6 +46,8 @@ class AppSemanticIndex {
         "internet" to listOf("chrome", "firefox", "brave", "edge", "opera", "browser"),
         "social" to listOf("instagram", "facebook", "twitter", "reddit", "linkedin", "tiktok", "bsky", "threads"),
         "rede" to listOf("instagram", "facebook", "twitter", "reddit", "linkedin", "tiktok", "bsky"),
+        "twitter" to listOf("twitter", "com.twitter.android"),
+        "tweet" to listOf("twitter", "com.twitter.android"),
         "compras" to listOf("shopee", "mercadolivre", "amazon", "aliexpress", "shein", "magalu"),
         "loja" to listOf("shopee", "mercadolivre", "amazon", "aliexpress", "shein", "magalu"),
         "nota" to listOf("keep", "notes", "evernote", "notion", "todo"),

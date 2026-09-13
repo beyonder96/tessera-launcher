@@ -630,12 +630,12 @@ class MainViewModel(
                         }
                     }
 
-                    // 6. Match por nome do pacote (apenas para query >= 3 e apenas no último segmento ou se houver ponto)
+                    // 6. Match por nome do pacote (apenas para query >= 3, ex: "twitter" acha com.twitter.android)
                     if (score == 0.0 && normalizedQuery.length >= 3) {
                         val pkg = app.packageName.lowercase()
-                        val lastSegment = pkg.substringAfterLast('.')
-                        if (lastSegment.startsWith(normalizedQuery) || (normalizedQuery.contains('.') && pkg.contains(normalizedQuery))) {
-                            score += 10.0
+                        val segments = pkg.split('.')
+                        if (segments.any { it.startsWith(normalizedQuery) } || pkg.contains(normalizedQuery)) {
+                            score += 15.0
                         }
                     }
 

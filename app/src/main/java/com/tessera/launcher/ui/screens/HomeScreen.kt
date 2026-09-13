@@ -190,6 +190,13 @@ fun HomeScreen(
         }
     }
 
+    // Redefinição imediata do scroll para o topo ao digitar qualquer termo na pesquisa
+    LaunchedEffect(uiState.searchQuery) {
+        if (uiState.searchQuery.isNotBlank()) {
+            listState.scrollToItem(0)
+        }
+    }
+
     val statusBarTopPadding = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     } else {
