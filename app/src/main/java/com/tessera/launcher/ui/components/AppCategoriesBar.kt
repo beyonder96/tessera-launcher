@@ -62,9 +62,10 @@ fun AppCategoriesBar(
 
             val bgColor by animateColorAsState(
                 targetValue = when {
-                    isSelected && isLightMode -> LightSurfaceVariant
-                    isSelected -> DarkSurfaceVariant
-                    else -> Color.Transparent
+                    isSelected && isLightMode -> Color(0xFF111827)
+                    isSelected -> Color(0xFFF2F2F5)
+                    isLightMode -> Color(0xFFFFFFFF).copy(alpha = 0.90f)
+                    else -> Color(0xFF1C1E26).copy(alpha = 0.85f)
                 },
                 animationSpec = tween(150),
                 label = "cat_bg"
@@ -72,10 +73,10 @@ fun AppCategoriesBar(
 
             val borderColor by animateColorAsState(
                 targetValue = when {
-                    isSelected && isLightMode -> LightCardBorder
-                    isSelected -> DarkSurfaceBorderHover
-                    isLightMode -> LightCardBorder.copy(alpha = 0.6f)
-                    else -> DarkSurfaceBorder
+                    isSelected && isLightMode -> Color(0xFF111827)
+                    isSelected -> Color.White
+                    isLightMode -> Color(0xFFD1D5DB)
+                    else -> Color.White.copy(alpha = 0.16f)
                 },
                 animationSpec = tween(150),
                 label = "cat_border"
@@ -83,10 +84,10 @@ fun AppCategoriesBar(
 
             val textColor by animateColorAsState(
                 targetValue = when {
-                    isSelected && isLightMode -> LightTextPrimary
-                    isSelected -> TextPrimary
-                    isLightMode -> LightTextSecondary
-                    else -> TextSecondary
+                    isSelected && isLightMode -> Color.White
+                    isSelected -> Color(0xFF101014)
+                    isLightMode -> Color(0xFF374151)
+                    else -> Color(0xFFD4D4D8)
                 },
                 animationSpec = tween(150),
                 label = "cat_text"

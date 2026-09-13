@@ -72,6 +72,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.data.helper.CitySearchResult
 import com.tessera.launcher.data.helper.WeatherInfo
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBackground
@@ -722,7 +723,14 @@ fun WeatherConfigBottomSheet(
     onOpenWidgetsCenter: () -> Unit,
     onDismiss: () -> Unit,
     isLightMode: Boolean = false,
-    isAmoledMode: Boolean = false
+    isAmoledMode: Boolean = false,
+    isAutoLocation: Boolean = true,
+    customCityName: String? = null,
+    searchResults: List<CitySearchResult> = emptyList(),
+    isSearchingCities: Boolean = false,
+    onSearchCityQuery: (String) -> Unit = {},
+    onSelectCity: (CitySearchResult) -> Unit = {},
+    onToggleAutoLocation: (Boolean) -> Unit = {}
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -833,10 +841,12 @@ fun WeatherConfigBottomSheet(
                 }
             }
 
+            var cityQuery by remember { mutableStateOf("") }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "LOCALIZAÇÃO & PREVISÃO",
+                text = "MODO DE LOCALIZAÇÃO",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.sp,
@@ -846,64 +856,267 @@ fun WeatherConfigBottomSheet(
                 modifier = Modifier.align(Alignment.Start)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = cardBg,
-                border = BorderStroke(1.dp, cardBorder),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {
-                            if (!hasLocationPermission) onRequestLocationPermission()
-                            onRefreshWeather()
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                val selectedBg = if (isLightMode) Color(0xFF0F172A) else Color.White
+                val selectedText = if (isLightMode) Color.White else Color.Black
+                val selectedBorder = BorderStroke(2.dp, if (isLightMode) Color(0xFF0F172A) else Color.White)
+                val unselectedBorder = BorderStroke(1.dp, cardBorder)
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(
+                            border = if (isAutoLocation) selectedBorder else unselectedBorder,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        .background(if (isAutoLocation) selectedBg else cardBg)
+                        .clickable { onToggleAutoLocation(true) }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Automático (GPS)",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (isAutoLocation) selectedText else secondaryTextColor
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(
+                            border = if (!isAutoLocation) selectedBorder else unselectedBorder,
+                            shape = RoundedCornerShape(14.dp)
+                        )
+                        .background(if (!isAutoLocation) selectedBg else cardBg)
+                        .clickable { onToggleAutoLocation(false) }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Definir Cidade",
+                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (!isAutoLocation) selectedText else secondaryTextColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            if (isAutoLocation) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                if (!hasLocationPermission) onRequestLocationPermission()
+                                onRefreshWeather()
+                            }
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(iconBoxBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.WbSunny,
+                                contentDescription = null,
+                                tint = iconTint,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = weatherInfo?.cityName ?: if (hasLocationPermission) "Detectar local atual" else "Permitir localização",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = primaryTextColor
+                            )
+                            Text(
+                                text = if (weatherInfo != null) "${weatherInfo.condition} • ${weatherInfo.displayTemperature}" else "Toque para atualizar via rede/GPS",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                color = secondaryTextColor
+                            )
+                        }
+
+                        Icon(
+                            imageVector = Icons.Outlined.Refresh,
+                            contentDescription = null,
+                            tint = secondaryTextColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!customCityName.isNullOrBlank()) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isLightMode) Color(0xFFF1F5F9) else Color(0xFF1E222D),
+                            border = BorderStroke(1.dp, if (isLightMode) Color(0xFFCBD5E1) else Color(0xFF2C3240)),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = primaryTextColor,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = customCityName,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = primaryTextColor
+                                    )
+                                    weatherInfo?.let {
+                                        Text(
+                                            text = "${it.condition} • ${it.displayTemperature}",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                            color = secondaryTextColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Campo de pesquisa de cidade
+                    BasicTextField(
+                        value = cityQuery,
+                        onValueChange = {
+                            cityQuery = it
+                            onSearchCityQuery(it)
+                        },
+                        textStyle = TextStyle(
+                            color = primaryTextColor,
+                            fontSize = 14.sp
+                        ),
+                        cursorBrush = SolidColor(primaryTextColor),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        decorationBox = { innerTextField ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(cardBg)
+                                    .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(14.dp))
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.WbSunny,
+                                    contentDescription = null,
+                                    tint = secondaryTextColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Box(modifier = Modifier.weight(1f)) {
+                                    if (cityQuery.isEmpty()) {
+                                        Text(
+                                            text = "Buscar cidade (ex: Curitiba, Fortaleza, Rio...)",
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                                            color = tertiaryTextColor
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                                if (cityQuery.isNotEmpty()) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Limpar",
+                                        tint = secondaryTextColor,
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .clickable {
+                                                cityQuery = ""
+                                                onSearchCityQuery("")
+                                            }
+                                    )
+                                }
+                            }
                         }
                     )
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(iconBoxBg),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.WbSunny,
-                            contentDescription = null,
-                            tint = iconTint,
-                            modifier = Modifier.size(20.dp)
+
+                    if (isSearchingCities) {
+                        Text(
+                            text = "Buscando cidades...",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = secondaryTextColor,
+                            modifier = Modifier.padding(start = 6.dp, top = 2.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = weatherInfo?.cityName ?: if (hasLocationPermission) "Atualizar previsão" else "Permitir localização",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = primaryTextColor
-                        )
-                        Text(
-                            text = if (weatherInfo != null) "${weatherInfo.condition} • ${weatherInfo.displayTemperature}" else "Toque para detectar local",
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = secondaryTextColor
-                        )
+                    searchResults.forEach { city ->
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = cardBg,
+                            border = BorderStroke(1.dp, cardBorder),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelectCity(city)
+                                    cityQuery = ""
+                                }
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = city.name,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        color = primaryTextColor
+                                    )
+                                    val subtitle = listOfNotNull(city.state, city.country).joinToString(", ")
+                                    if (subtitle.isNotBlank()) {
+                                        Text(
+                                            text = subtitle,
+                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                            color = secondaryTextColor
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = "Selecionar",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = primaryTextColor
+                                )
+                            }
+                        }
                     }
-
-                    Icon(
-                        imageVector = Icons.Outlined.Refresh,
-                        contentDescription = null,
-                        tint = secondaryTextColor,
-                        modifier = Modifier.size(18.dp)
-                    )
                 }
             }
 

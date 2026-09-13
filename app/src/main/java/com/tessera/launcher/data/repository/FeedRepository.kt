@@ -28,7 +28,7 @@ class FeedRepository(
         private const val DEFAULT_LIMIT = 20
         private const val CONNECT_TIMEOUT = 8_000
         private const val READ_TIMEOUT = 10_000
-        private const val USER_AGENT = "android:com.tessera.launcher:v1.8.3 (by /u/tessera_launcher)"
+        private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
     }
 
     private var lastFetchTime: Long = 0L
@@ -72,6 +72,12 @@ class FeedRepository(
                         }.onFailure { Log.w(TAG, "Falha ao buscar @$cleanHandle: ${it.message}") }
                     }
                 }
+            }
+
+            if (posts.isEmpty()) {
+                // Fallback resiliente: buscar notícias de tecnologia se as redes principais estiverem bloqueadas
+                val fallbackNews = fetchFallbackRss()
+                posts.addAll(fallbackNews)
             }
 
             if (posts.isEmpty()) {
@@ -265,15 +271,23 @@ class FeedRepository(
     private fun parseBlueskyFeed(feed: JSONArray, handle: String): List<FeedPost> {
         val posts = mutableListOf<FeedPost>()
         for (i in 0 until feed.length()) {
-            val item = feed.getJSONObject(i)
-            val post = item.getJSONObject("post")
+            val item = feed.optJSONObject(i) ?: continue
+            val post = item.optJSONObject("post") ?: continue
             val record = post.optJSONObject("record") ?: continue
 
             val uri = post.optString("uri", "bsky_$i")
             val author = post.optJSONObject("author")
             val displayName = author?.optString("displayName", handle)?.ifBlank { handle } ?: handle
             val authorHandle = author?.optString("handle", handle)?.ifBlank { handle } ?: handle
-            val text = record.optString("text", "")
+
+            var text = record.optString("text", "")
+            if (text.isBlank()) {
+                text = post.optJSONObject("embed")?.optJSONObject("record")?.optJSONObject("value")?.optString("text", "") ?: ""
+            }
+            if (text.isBlank()) {
+                text = post.optJSONObject("embed")?.optJSONObject("external")?.optString("title", "") ?: ""
+            }
+
             val createdAt = record.optString("createdAt", "")
             val likeCount = post.optInt("likeCount", 0)
             val replyCount = post.optInt("replyCount", 0)
@@ -288,10 +302,17 @@ class FeedRepository(
             val postId = uri.substringAfterLast("/")
             val webUrl = "https://bsky.app/profile/$authorHandle/post/$postId"
 
-            // Tentar extrair imagem thumbnail se houver embed
+            // Extrair imagem thumbnail de embed (images ou external)
             val embed = post.optJSONObject("embed")
             val thumb = embed?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
                 ?: embed?.optJSONObject("media")?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
+                ?: embed?.optJSONObject("external")?.optString("thumb")
+                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONObject("external")?.optString("thumb")
+                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
+
+            val externalTitle = embed?.optJSONObject("external")?.optString("title")
+                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONObject("external")?.optString("title")
+                ?: embed?.optJSONObject("media")?.optJSONObject("external")?.optString("title")
 
             posts.add(
                 FeedPost(
@@ -299,12 +320,12 @@ class FeedRepository(
                     source = FeedSource.BLUESKY,
                     author = displayName,
                     authorHandle = authorHandle,
-                    title = null,
+                    title = externalTitle?.takeIf { it.isNotBlank() },
                     body = text.take(500),
                     score = likeCount,
                     commentCount = replyCount,
                     url = webUrl,
-                    thumbnailUrl = thumb,
+                    thumbnailUrl = thumb?.takeIf { it.startsWith("http") },
                     createdAt = timestamp
                 )
             )
@@ -331,12 +352,18 @@ class FeedRepository(
                 requestMethod = "GET"
                 connectTimeout = CONNECT_TIMEOUT
                 readTimeout = READ_TIMEOUT
-                setRequestProperty("Accept", "*/*")
+                instanceFollowRedirects = true
+                setRequestProperty("Accept", "application/json, application/xml, text/xml, application/atom+xml, */*")
                 setRequestProperty("Accept-Encoding", "gzip")
+                setRequestProperty("Accept-Language", "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7")
                 setRequestProperty("User-Agent", USER_AGENT)
             }
 
-            if (connection.responseCode !in 200..299) return null
+            val responseCode = connection.responseCode
+            if (responseCode !in 200..299) {
+                Log.w(TAG, "HTTP $responseCode from $urlString")
+                return null
+            }
 
             val inputStream = if (connection.contentEncoding?.equals("gzip", true) == true) {
                 GZIPInputStream(connection.inputStream)
@@ -351,6 +378,76 @@ class FeedRepository(
         } finally {
             connection?.disconnect()
         }
+    }
+
+    private suspend fun fetchFallbackRss(): List<FeedPost> = withContext(Dispatchers.IO) {
+        val fallbackUrls = listOf(
+            "https://www.theverge.com/rss/index.xml" to "The Verge",
+            "https://feeds.arstechnica.com/arstechnica/index" to "Ars Technica"
+        )
+        for ((url, name) in fallbackUrls) {
+            val xml = httpGet(url)
+            if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
+                val parsed = parseStandardRss(xml, name, FeedSource.BLUESKY)
+                if (parsed.isNotEmpty()) return@withContext parsed
+            }
+        }
+        emptyList()
+    }
+
+    private fun parseStandardRss(xml: String, defaultAuthor: String, source: FeedSource): List<FeedPost> {
+        val posts = mutableListOf<FeedPost>()
+        val isAtom = xml.contains("<feed") || xml.contains("<entry")
+        val itemRegex = if (isAtom) Regex("<entry[\\s\\S]*?</entry>") else Regex("<item[\\s\\S]*?</item>")
+        val titleRegex = Regex("<title(?:[^>]*)>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>")
+        val linkRegex = if (isAtom) Regex("<link[^>]+href=[\"']([^\"']+)[\"']") else Regex("<link>([^<]+)</link>")
+        val descRegex = Regex("<(?:description|summary|content)(?:[^>]*)>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</(?:description|summary|content)>")
+        val pubDateRegex = Regex("<(?:pubDate|updated|dc:date)>([^<]+)</(?:pubDate|updated|dc:date)>")
+        val authorRegex = Regex("<(?:author|dc:creator)>\\s*(?:<name>)?([^<]+)(?:</name>)?</(?:author|dc:creator)>")
+        val thumbRegex = Regex("(?:url=[\"']([^\"']+\\.(?:jpg|jpeg|png|webp)[^\"']*)[\"']|<media:content[^>]+url=[\"']([^\"']+)[\"'])")
+
+        for (match in itemRegex.findAll(xml)) {
+            val item = match.value
+            val rawTitle = titleRegex.find(item)?.groupValues?.getOrNull(1) ?: continue
+            val title = unescapeHtml(rawTitle).replace(Regex("<[^>]+>"), " ").trim()
+            if (title.isBlank()) continue
+
+            val link = linkRegex.find(item)?.groupValues?.getOrNull(1)?.trim() ?: ""
+            val rawDesc = descRegex.find(item)?.groupValues?.getOrNull(1) ?: ""
+            val body = unescapeHtml(rawDesc).replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim().take(400)
+            val author = authorRegex.find(item)?.groupValues?.getOrNull(1)?.trim()?.ifBlank { defaultAuthor } ?: defaultAuthor
+            val dateStr = pubDateRegex.find(item)?.groupValues?.getOrNull(1)?.trim()
+            val thumb = thumbRegex.find(item)?.let { m -> m.groupValues.getOrNull(1)?.ifBlank { null } ?: m.groupValues.getOrNull(2) }
+
+            val timestamp = try {
+                if (dateStr != null) {
+                    if (dateStr.contains("T")) java.time.Instant.parse(dateStr).toEpochMilli()
+                    else java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.parse(dateStr, java.time.Instant::from).toEpochMilli()
+                } else System.currentTimeMillis()
+            } catch (_: Exception) {
+                System.currentTimeMillis()
+            }
+
+            val id = "rss_" + (link.ifBlank { title }).hashCode().toString()
+
+            posts.add(
+                FeedPost(
+                    id = id,
+                    source = source,
+                    author = author,
+                    authorHandle = defaultAuthor.lowercase().replace(" ", ""),
+                    title = title,
+                    body = body,
+                    subreddit = if (source == FeedSource.REDDIT) "tecnologia" else null,
+                    score = 0,
+                    commentCount = 0,
+                    url = link,
+                    thumbnailUrl = thumb?.takeIf { it.startsWith("http") },
+                    createdAt = timestamp
+                )
+            )
+        }
+        return posts
     }
 
     private fun cachePosts(posts: List<FeedPost>) {

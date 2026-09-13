@@ -196,6 +196,8 @@ class MainViewModel(
             // Clima & Localização
             hasLocationPermission = weatherHelper.hasLocationPermission(),
             isWeatherCelsius = preferences.isWeatherCelsius(),
+            isWeatherAutoLocation = preferences.isWeatherAutoLocation(),
+            customWeatherCity = preferences.getCustomWeatherCity(),
             weatherInfo = weatherHelper.fromJson(preferences.getCachedWeatherJson()),
 
             // Configurações & Estilos dos Widgets
@@ -587,7 +589,10 @@ class MainViewModel(
                 visibleApps
             }
         } else {
-            val normalizedQuery = AppInfo.normalize(trimmed)
+            val normalizedQuery = AppInfo.normalize(trimmed).lowercase()
+            val queryLower = trimmed.lowercase()
+            val isSingleChar = normalizedQuery.length == 1
+
             if (isExact) {
                 visibleApps.filter { app ->
                     app.normalizedLabel.equals(normalizedQuery, ignoreCase = true) ||
@@ -596,28 +601,56 @@ class MainViewModel(
             } else {
                 val resultsWithScore = visibleApps.mapNotNull { app ->
                     var score = 0.0
-                    
-                    // Matches diretos
-                    if (app.normalizedLabel.equals(normalizedQuery, ignoreCase = true) || app.label.equals(trimmed, ignoreCase = true)) {
-                        score += 100.0 // Match exato
-                    } else if (app.normalizedLabel.startsWith(normalizedQuery, ignoreCase = true)) {
-                        score += 50.0 // Começa com
-                    } else if (app.normalizedLabel.contains(normalizedQuery, ignoreCase = true) || app.packageName.contains(trimmed, ignoreCase = true)) {
-                        score += 10.0 // Contém
+                    val normLabel = app.normalizedLabel.lowercase()
+                    val rawLabel = app.label.lowercase()
+
+                    // 1. Match exato (prioridade máxima absoluta)
+                    if (rawLabel == queryLower || normLabel == normalizedQuery) {
+                        score += 1000.0
                     }
-                    
-                    // Match semântico
-                    val semanticScore = semanticIndex.scoreApp(app, trimmed, normalizedQuery)
-                    score += semanticScore
-                    
+                    // 2. Começa com a query
+                    else if (normLabel.startsWith(normalizedQuery) || rawLabel.startsWith(queryLower)) {
+                        score += 500.0
+                    }
+                    // 3. Uma das palavras do nome começa com a query (ex: "Google Maps" para "maps")
+                    else if (normLabel.split(Regex("[\\s\\-_.]+")).any { it.startsWith(normalizedQuery) } ||
+                        rawLabel.split(Regex("[\\s\\-_.]+")).any { it.startsWith(queryLower) }) {
+                        score += 250.0
+                    }
+                    // 4. Nome contém a query (apenas para buscas com 2 ou mais caracteres para evitar poluição)
+                    else if (!isSingleChar && (normLabel.contains(normalizedQuery) || rawLabel.contains(queryLower))) {
+                        score += 50.0
+                    }
+
+                    // 5. Match semântico (offline por tags, ex: "foto" -> Camera) - apenas para query >= 2
+                    if (!isSingleChar) {
+                        val semanticScore = semanticIndex.scoreApp(app, trimmed, normalizedQuery)
+                        if (semanticScore > 0.0) {
+                            score += semanticScore
+                        }
+                    }
+
+                    // 6. Match por nome do pacote (apenas para query >= 3 e apenas no último segmento ou se houver ponto)
+                    if (score == 0.0 && normalizedQuery.length >= 3) {
+                        val pkg = app.packageName.lowercase()
+                        val lastSegment = pkg.substringAfterLast('.')
+                        if (lastSegment.startsWith(normalizedQuery) || (normalizedQuery.contains('.') && pkg.contains(normalizedQuery))) {
+                            score += 10.0
+                        }
+                    }
+
                     if (score > 0.0) {
                         Pair(app, score)
                     } else {
                         null
                     }
                 }
-                
-                resultsWithScore.sortedByDescending { it.second }.map { it.first }
+
+                resultsWithScore.sortedWith(
+                    compareByDescending<Pair<AppInfo, Double>> { it.second }
+                        .thenBy { it.first.label.length }
+                        .thenBy(String.CASE_INSENSITIVE_ORDER) { it.first.label }
+                ).map { it.first }
             }
         }
 
@@ -1477,6 +1510,41 @@ class MainViewModel(
                 weatherInfo = updatedWeather
             )
         }
+    }
+
+    private var citySearchJob: kotlinx.coroutines.Job? = null
+
+    fun searchWeatherCities(query: String) {
+        citySearchJob?.cancel()
+        if (query.trim().length < 2) {
+            _uiState.update { it.copy(weatherCitySearchResults = emptyList(), isSearchingCities = false) }
+            return
+        }
+        _uiState.update { it.copy(isSearchingCities = true) }
+        citySearchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(300)
+            val results = weatherHelper.searchCities(query)
+            _uiState.update { it.copy(weatherCitySearchResults = results, isSearchingCities = false) }
+        }
+    }
+
+    fun selectCustomWeatherCity(city: com.tessera.launcher.data.helper.CitySearchResult) {
+        preferences.setCustomWeatherLocation(city.displayLabel, city.latitude, city.longitude)
+        preferences.setWeatherAutoLocation(false)
+        _uiState.update {
+            it.copy(
+                isWeatherAutoLocation = false,
+                customWeatherCity = city.displayLabel,
+                weatherCitySearchResults = emptyList()
+            )
+        }
+        refreshWeather()
+    }
+
+    fun setWeatherAutoLocation(enabled: Boolean) {
+        preferences.setWeatherAutoLocation(enabled)
+        _uiState.update { it.copy(isWeatherAutoLocation = enabled) }
+        refreshWeather()
     }
 
     fun openWidgetConfig(type: WidgetConfigType) {

@@ -119,18 +119,35 @@ class MainActivity : ComponentActivity() {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val isOpen = uiState.isDrawerOpen || uiState.isSearchExpanded || uiState.searchQuery.isNotEmpty() || uiState.isSettingsOpen || uiState.isFeedOpen
                     val targetBlur = if (isOpen && uiState.isDrawerGlassEnabled) {
-                        // Mapeia 0..100% para um desfoque vítreo real de 10px até 160px
-                        val scaled = (uiState.drawerGlassOpacity / 100f) * 150f + 10f
-                        scaled.toInt().coerceIn(10, 160)
+                        if (uiState.drawerGlassOpacity <= 0) {
+                            0
+                        } else {
+                            // Mapeia 1..100% para um desfoque vítreo real de 10px até 160px
+                            val scaled = (uiState.drawerGlassOpacity / 100f) * 150f + 10f
+                            scaled.toInt().coerceIn(10, 160)
+                        }
                     } else if (isOpen) {
                         45
                     } else {
-                        1
+                        0
                     }
-                    window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                    val params = window.attributes
-                    params.blurBehindRadius = targetBlur
-                    window.attributes = params
+
+                    // Blurring nativo do fundo da janela e do papel de parede (Android 12+)
+                    try {
+                        window.setBackgroundBlurRadius(targetBlur)
+                    } catch (_: Throwable) {}
+
+                    // Blurring entre superfícies
+                    try {
+                        if (targetBlur > 0) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                        }
+                        val params = window.attributes
+                        params.blurBehindRadius = targetBlur
+                        window.attributes = params
+                    } catch (_: Throwable) {}
                 }
             }
 

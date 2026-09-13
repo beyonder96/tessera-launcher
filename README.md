@@ -61,14 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.5)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.6)
 
-### 🆕 Novidades na v1.8.5
+### 🆕 Novidades na v1.8.6
+- 🏷️ **Categorias com Alto Contraste:** Pílulas de categorias na gaveta de aplicativos com novo acabamento escurecido translúcido e bordas sutis, garantindo legibilidade perfeita sobre qualquer papel de parede.
+- 🪟 **Desfoque de Vidro (Frosted Glass) Nativo:** Ativação do desfoque nativo do Android 12+ via `setBackgroundBlurRadius` e película de fundo com opacidade dinâmica vinculada ao controle deslizante.
+- ⚡ **Smart Dock Integrado à Barra de Pesquisa:** Fileira ergonômica de aplicativos sugeridos e contextuais embutida diretamente na doca inferior, posicionada entre os widgets e a barra de digitação.
+- 🌤️ **Precisão do Clima & Busca Manual de Cidades:** Priorização de localização rápida de rede e nova opção de busca manual de cidades via Open-Meteo Geocoding no modal de configurações do clima.
+- 📰 **Feed Social Sem Recorte & Conexão Resiliente:** Ajuste ergonômico de insets no topo respeitando o recorte de câmera (Display Cutout) e conexão com User-Agent de navegador para contornar bloqueios do Reddit/Cloudflare, além de fallback automático para feeds RSS de tecnologia.
+- 🔍 **Busca Inteligente de Aplicativos com Ranking Escalonado:** Algoritmo aprimorado que prioriza matches exatos (como app "X") e prefixos no topo, eliminando poluição de nomes de pacotes em buscas de letra única e ordenando por relevância e tamanho do nome.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.5</b></summary>
+
 - 🖼️ **Moldura de Fotos Restaurada:** Retorno do widget de fotos (`PhotoWidget`) para a sua posição ergonômica original na tela inicial, logo acima da barra de pesquisa e lupa.
 - 🧹 **Home Minimalista & Desobstruída:** Remoção completa do widget de resumo da tela inicial, deixando a área central limpa e livre de distrações.
 - ⚡ **Gaveta Ágil e Focada:** Remoção da dock na lista de aplicativos com manutenção do espaçamento seguro superior contra o recorte de câmera e das categorias de apps na parte inferior acima da barra de busca.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.4</b></summary>
 

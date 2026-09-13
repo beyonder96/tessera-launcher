@@ -89,7 +89,8 @@ fun SearchoMorphingDock(
     isAmoledMode: Boolean = true,
     isLightMode: Boolean = false,
     searchBarOpacity: Int = 100,
-    widgetContent: (@Composable () -> Unit)? = null
+    widgetContent: (@Composable () -> Unit)? = null,
+    smartDockContent: (@Composable () -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -98,11 +99,12 @@ fun SearchoMorphingDock(
 
     val isSplit = searchBarStyle.startsWith("split_")
 
+    val hasTopContent = widgetContent != null || smartDockContent != null
     val dockShape = when (searchBarStyle) {
-        "pill", "split_pill" -> if (widgetContent != null) RoundedCornerShape(26.dp) else PillShape
+        "pill", "split_pill" -> if (hasTopContent) RoundedCornerShape(26.dp) else PillShape
         "rounded", "split_rounded" -> RoundedCornerShape(20.dp)
         "square", "split_square" -> RoundedCornerShape(8.dp)
-        else -> if (widgetContent != null) RoundedCornerShape(26.dp) else PillShape
+        else -> if (hasTopContent) RoundedCornerShape(26.dp) else PillShape
     }
 
     val buttonShape = when (searchBarStyle) {
@@ -269,8 +271,8 @@ fun SearchoMorphingDock(
                         .padding(
                             start = 16.dp,
                             end = 16.dp,
-                            top = if (widgetContent != null) 14.dp else 4.dp,
-                            bottom = if (widgetContent != null) 4.dp else 4.dp
+                            top = if (widgetContent != null || smartDockContent != null) 12.dp else 4.dp,
+                            bottom = if (widgetContent != null || smartDockContent != null) 4.dp else 4.dp
                         )
                 ) {
                     // Reflexo especular superior do Liquid Design
@@ -303,6 +305,23 @@ fun SearchoMorphingDock(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                        }
+
+                        if (smartDockContent != null) {
+                            smartDockContent()
+                            Spacer(modifier = Modifier.height(4.dp))
+                            HorizontalDivider(
+                                color = if (isLightMode) {
+                                    Color(0xFFE2E8F0).copy(alpha = opacityFraction.coerceAtLeast(0.3f))
+                                } else {
+                                    Color.White.copy(alpha = 0.08f * opacityFraction.coerceAtLeast(0.35f))
+                                },
+                                thickness = 1.dp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                         }

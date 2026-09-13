@@ -86,6 +86,10 @@ class LauncherPreferences(context: Context) {
         private const val KEY_CALENDAR_HIDE_FINISHED = "calendar_hide_finished"
         private const val KEY_CALENDAR_IS_24H = "calendar_is_24h"
         private const val KEY_WEATHER_IS_CELSIUS = "weather_is_celsius"
+        private const val KEY_WEATHER_IS_AUTO_LOCATION = "weather_is_auto_location"
+        private const val KEY_WEATHER_CUSTOM_CITY = "weather_custom_city"
+        private const val KEY_WEATHER_CUSTOM_LAT = "weather_custom_lat"
+        private const val KEY_WEATHER_CUSTOM_LON = "weather_custom_lon"
         private const val KEY_CACHED_WEATHER_JSON = "cached_weather_json"
         private const val KEY_HOME_WALLPAPER_DIMMING = "home_wallpaper_dimming"
         private const val KEY_DRAWER_GLASS_ENABLED = "drawer_glass_enabled"
@@ -373,6 +377,20 @@ class LauncherPreferences(context: Context) {
 
     fun isWeatherCelsius(): Boolean = prefs.getBoolean(KEY_WEATHER_IS_CELSIUS, true)
     fun setWeatherCelsius(isCelsius: Boolean) = prefs.edit().putBoolean(KEY_WEATHER_IS_CELSIUS, isCelsius).apply()
+
+    fun isWeatherAutoLocation(): Boolean = prefs.getBoolean(KEY_WEATHER_IS_AUTO_LOCATION, true)
+    fun setWeatherAutoLocation(auto: Boolean) = prefs.edit().putBoolean(KEY_WEATHER_IS_AUTO_LOCATION, auto).apply()
+
+    fun getCustomWeatherCity(): String? = prefs.getString(KEY_WEATHER_CUSTOM_CITY, null)
+    fun getCustomWeatherLat(): Double = java.lang.Double.longBitsToDouble(prefs.getLong(KEY_WEATHER_CUSTOM_LAT, java.lang.Double.doubleToLongBits(0.0)))
+    fun getCustomWeatherLon(): Double = java.lang.Double.longBitsToDouble(prefs.getLong(KEY_WEATHER_CUSTOM_LON, java.lang.Double.doubleToLongBits(0.0)))
+    fun setCustomWeatherLocation(city: String?, lat: Double, lon: Double) {
+        prefs.edit()
+            .putString(KEY_WEATHER_CUSTOM_CITY, city)
+            .putLong(KEY_WEATHER_CUSTOM_LAT, java.lang.Double.doubleToLongBits(lat))
+            .putLong(KEY_WEATHER_CUSTOM_LON, java.lang.Double.doubleToLongBits(lon))
+            .apply()
+    }
 
     fun getCachedWeatherJson(): String? = prefs.getString(KEY_CACHED_WEATHER_JSON, null)
     fun setCachedWeatherJson(json: String?) = prefs.edit().putString(KEY_CACHED_WEATHER_JSON, json).apply()

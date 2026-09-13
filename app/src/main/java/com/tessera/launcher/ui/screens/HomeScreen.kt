@@ -95,6 +95,7 @@ import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchoMorphingDock
 import com.tessera.launcher.ui.components.SearchosChipsRow
+import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
@@ -327,8 +328,11 @@ fun HomeScreen(
 
         // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
-            // Película ultra sutil: não escurece a tela, o blur faz todo o trabalho estético
-            if (uiState.isLightMode) 0.05f else 0.10f
+            // Escala a película vítrea de acordo com o slider de intensidade (0% a 100%)
+            val baseMin = if (uiState.isLightMode) 0.04f else 0.08f
+            val baseMax = if (uiState.isLightMode) 0.42f else 0.62f
+            val factor = (uiState.drawerGlassOpacity.coerceIn(0, 100) / 100f)
+            baseMin + (baseMax - baseMin) * factor
         } else if (uiState.isAmoledMode) {
             1f
         } else {
@@ -758,6 +762,7 @@ fun HomeScreen(
         ) {
 
             val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
+            val showSmartDock = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isSmartDockEnabled && uiState.predictedApps.isNotEmpty() && uiState.searchQuery.isEmpty()
 
             SearchoMorphingDock(
                 isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
@@ -833,6 +838,20 @@ fun HomeScreen(
                             isLightMode = uiState.isLightMode,
                             smartGlanceBriefing = uiState.smartGlanceBriefing,
                             isSmartGlanceEnabled = uiState.isSmartGlanceEnabled
+                        )
+                    }
+                } else null,
+                smartDockContent = if (showSmartDock) {
+                    {
+                        SmartDockRow(
+                            apps = uiState.predictedApps,
+                            onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                            onAppLongClick = { app -> selectedAppForMenu = app },
+                            iconShape = uiState.iconShape,
+                            isThemedIcons = uiState.isThemedIconsEnabled,
+                            isLightMode = uiState.isLightMode,
+                            isAmoledMode = uiState.isAmoledMode,
+                            isEmbedded = true
                         )
                     }
                 } else null
@@ -960,7 +979,14 @@ fun HomeScreen(
                     },
                     onDismiss = { viewModel.closeWidgetConfig() },
                     isLightMode = uiState.isLightMode,
-                    isAmoledMode = uiState.isAmoledMode
+                    isAmoledMode = uiState.isAmoledMode,
+                    isAutoLocation = uiState.isWeatherAutoLocation,
+                    customCityName = uiState.customWeatherCity,
+                    searchResults = uiState.weatherCitySearchResults,
+                    isSearchingCities = uiState.isSearchingCities,
+                    onSearchCityQuery = { viewModel.searchWeatherCities(it) },
+                    onSelectCity = { viewModel.selectCustomWeatherCity(it) },
+                    onToggleAutoLocation = { viewModel.setWeatherAutoLocation(it) }
                 )
             }
             WidgetConfigType.QUICK_ACTIONS -> {

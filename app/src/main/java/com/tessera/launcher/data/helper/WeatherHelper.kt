@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
+import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,22 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 import java.util.zip.GZIPInputStream
+import com.tessera.launcher.data.preference.LauncherPreferences
+
+data class CitySearchResult(
+    val name: String,
+    val state: String?,
+    val country: String?,
+    val latitude: Double,
+    val longitude: Double
+) {
+    val displayLabel: String
+        get() = buildString {
+            append(name)
+            if (!state.isNullOrBlank()) append(", $state")
+            if (!country.isNullOrBlank()) append(" ($country)")
+        }
+}
 
 data class WeatherInfo(
     val temperature: Double,
@@ -54,7 +71,10 @@ private data class TargetLocation(
     val cityName: String
 )
 
-class WeatherHelper(private val context: Context) {
+class WeatherHelper(
+    private val context: Context,
+    private val preferences: LauncherPreferences? = null
+) {
 
     fun hasLocationPermission(): Boolean {
         val coarse = ContextCompat.checkSelfPermission(
@@ -81,6 +101,9 @@ class WeatherHelper(private val context: Context) {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
 
         val providers = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lm.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+                add(LocationManager.FUSED_PROVIDER)
+            }
             add(LocationManager.NETWORK_PROVIDER)
             if (hasFineLocationPermission()) {
                 add(LocationManager.GPS_PROVIDER)
@@ -107,40 +130,58 @@ class WeatherHelper(private val context: Context) {
     @SuppressLint("MissingPermission")
     private suspend fun obtainDeviceLocation(): Location? = withContext(Dispatchers.IO) {
         val cached = getLastKnownLocation()
-        if (cached != null) return@withContext cached
-        if (!hasLocationPermission()) return@withContext null
+        // Se a localização em cache for recente (menos de 3 horas), utiliza diretamente
+        if (cached != null && (System.currentTimeMillis() - cached.time) < 3 * 3600 * 1000L) {
+            return@withContext cached
+        }
+        if (!hasLocationPermission()) return@withContext cached
 
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return@withContext null
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return@withContext cached
 
-        val provider = when {
-            lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
-            hasFineLocationPermission() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-            lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER) -> LocationManager.PASSIVE_PROVIDER
-            else -> null
-        } ?: return@withContext null
-
-        kotlinx.coroutines.withTimeoutOrNull(3000L) {
-            try {
-                kotlinx.coroutines.suspendCancellableCoroutine { cont ->
-                    val signal = androidx.core.os.CancellationSignal()
-                    cont.invokeOnCancellation { signal.cancel() }
-                    @Suppress("DEPRECATION")
-                    androidx.core.location.LocationManagerCompat.getCurrentLocation(
-                        lm,
-                        provider,
-                        signal,
-                        ContextCompat.getMainExecutor(context)
-                    ) { loc ->
-                        if (cont.isActive) {
-                            cont.resume(loc) {}
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Falha ao requisitar localizacao do dispositivo: ${e.message}")
-                null
+        // Priorizar Network e Fused (quase instantâneos via Wi-Fi/ERB) antes de satélite GPS
+        val providersToTry = buildList {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lm.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+                add(LocationManager.FUSED_PROVIDER)
+            }
+            if (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                add(LocationManager.NETWORK_PROVIDER)
+            }
+            if (hasFineLocationPermission() && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                add(LocationManager.GPS_PROVIDER)
+            }
+            if (lm.isProviderEnabled(LocationManager.PASSIVE_PROVIDER)) {
+                add(LocationManager.PASSIVE_PROVIDER)
             }
         }
+
+        for (provider in providersToTry) {
+            val loc = kotlinx.coroutines.withTimeoutOrNull(2500L) {
+                try {
+                    kotlinx.coroutines.suspendCancellableCoroutine<Location?> { cont ->
+                        val signal = androidx.core.os.CancellationSignal()
+                        cont.invokeOnCancellation { signal.cancel() }
+                        @Suppress("DEPRECATION")
+                        androidx.core.location.LocationManagerCompat.getCurrentLocation(
+                            lm,
+                            provider,
+                            signal,
+                            ContextCompat.getMainExecutor(context),
+                            androidx.core.util.Consumer { location ->
+                                if (cont.isActive) {
+                                    cont.resumeWith(Result.success(location))
+                                }
+                            }
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Falha ao requisitar localizacao em $provider: ${e.message}")
+                    null
+                }
+            }
+            if (loc != null) return@withContext loc
+        }
+
+        cached
     }
 
     private suspend fun resolveCityName(latitude: Double, longitude: Double): String = withContext(Dispatchers.IO) {
@@ -274,7 +315,40 @@ class WeatherHelper(private val context: Context) {
         null
     }
 
+    suspend fun searchCities(query: String): List<CitySearchResult> = withContext(Dispatchers.IO) {
+        val trimmed = query.trim()
+        if (trimmed.length < 2) return@withContext emptyList()
+        val encoded = java.net.URLEncoder.encode(trimmed, "UTF-8")
+        val endpoint = "https://geocoding-api.open-meteo.com/v1/search?name=$encoded&count=8&language=pt&format=json"
+        val json = fetchJsonWithTimeout(endpoint, timeoutMs = 4000) ?: return@withContext emptyList()
+        val results = json.optJSONArray("results") ?: return@withContext emptyList()
+        val list = mutableListOf<CitySearchResult>()
+        for (i in 0 until results.length()) {
+            val item = results.getJSONObject(i)
+            val name = item.optString("name")
+            val lat = item.optDouble("latitude", Double.NaN)
+            val lon = item.optDouble("longitude", Double.NaN)
+            val admin1 = item.optString("admin1").takeIf { it.isNotBlank() }
+            val country = item.optString("country").takeIf { it.isNotBlank() }
+            if (name.isNotBlank() && !lat.isNaN() && !lon.isNaN()) {
+                list.add(CitySearchResult(name, admin1, country, lat, lon))
+            }
+        }
+        list
+    }
+
     private suspend fun resolveTargetLocation(): TargetLocation = withContext(Dispatchers.IO) {
+        // Nível 0: Cidade manual selecionada pelo usuário
+        if (preferences != null && !preferences.isWeatherAutoLocation()) {
+            val customCity = preferences.getCustomWeatherCity()
+            val customLat = preferences.getCustomWeatherLat()
+            val customLon = preferences.getCustomWeatherLon()
+            if (!customCity.isNullOrBlank() && customLat != 0.0 && customLon != 0.0) {
+                Log.d(TAG, "Usando cidade personalizada definida: $customCity ($customLat, $customLon)")
+                return@withContext TargetLocation(customLat, customLon, customCity)
+            }
+        }
+
         // Nível 1: Dispositivo com GPS / Rede Celular
         if (hasLocationPermission()) {
             val devLoc = obtainDeviceLocation()

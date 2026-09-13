@@ -209,6 +209,10 @@ data class LauncherUiState(
     val isWeatherCelsius: Boolean = true,
     val isWeatherLoading: Boolean = false,
     val weatherError: String? = null,
+    val isWeatherAutoLocation: Boolean = true,
+    val customWeatherCity: String? = null,
+    val weatherCitySearchResults: List<com.tessera.launcher.data.helper.CitySearchResult> = emptyList(),
+    val isSearchingCities: Boolean = false,
 
     // Customização Visual Avançada
     val homeWallpaperDimming: Int = 20,

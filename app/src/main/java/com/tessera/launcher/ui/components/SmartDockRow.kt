@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -82,31 +83,17 @@ fun SmartDockRow(
     iconShape: String = "DEFAULT",
     isThemedIcons: Boolean = true,
     isLightMode: Boolean = false,
-    isAmoledMode: Boolean = false
+    isAmoledMode: Boolean = false,
+    isEmbedded: Boolean = false
 ) {
     if (apps.isEmpty()) return
 
-    val surfaceColor = when {
-        isLightMode -> LightCardBackground
-        isAmoledMode -> AmoledCardBackground
-        else -> DarkSurface.copy(alpha = 0.85f)
-    }
-
-    val borderColor = when {
-        isLightMode -> LightCardBorder
-        isAmoledMode -> AmoledCardBorder
-        else -> DarkSurfaceBorder
-    }
-
-    Surface(
-        modifier = modifier.wrapContentWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = surfaceColor,
-        border = BorderStroke(1.dp, borderColor)
-    ) {
+    if (isEmbedded) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
             apps.forEach { app ->
@@ -118,6 +105,42 @@ fun SmartDockRow(
                     isThemedIcons = isThemedIcons,
                     isLightMode = isLightMode
                 )
+            }
+        }
+    } else {
+        val surfaceColor = when {
+            isLightMode -> LightCardBackground
+            isAmoledMode -> AmoledCardBackground
+            else -> DarkSurface.copy(alpha = 0.85f)
+        }
+
+        val borderColor = when {
+            isLightMode -> LightCardBorder
+            isAmoledMode -> AmoledCardBorder
+            else -> DarkSurfaceBorder
+        }
+
+        Surface(
+            modifier = modifier.wrapContentWidth(),
+            shape = RoundedCornerShape(22.dp),
+            color = surfaceColor,
+            border = BorderStroke(1.dp, borderColor)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                apps.forEach { app ->
+                    SmartDockItem(
+                        app = app,
+                        onClick = { onAppClick(app) },
+                        onLongClick = onAppLongClick?.let { { it(app) } },
+                        iconShape = iconShape,
+                        isThemedIcons = isThemedIcons,
+                        isLightMode = isLightMode
+                    )
+                }
             }
         }
     }

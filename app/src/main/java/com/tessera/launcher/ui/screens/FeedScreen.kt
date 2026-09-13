@@ -56,8 +56,9 @@ fun FeedScreen(
         modifier = modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .statusBarsPadding()
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
             .navigationBarsPadding()
+            .padding(top = 6.dp)
     ) {
         Row(
             modifier = Modifier
@@ -166,29 +167,38 @@ private fun SourceChip(
     onClick: () -> Unit
 ) {
     val backgroundColor = if (isSelected) {
-        if (isLightMode) LightCardBorder else DarkSurfaceVariant
+        if (isLightMode) Color(0xFF1E2024) else Color(0xFFF2F2F5)
     } else {
-        Color.Transparent
+        if (isLightMode) Color(0xFFE8E8EE).copy(alpha = 0.92f) else Color(0xFF1C1E26).copy(alpha = 0.85f)
     }
     
     val textColor = if (isSelected) {
-        if (isLightMode) LightTextPrimary else TextPrimary
+        if (isLightMode) Color(0xFFFFFFFF) else Color(0xFF0F1014)
     } else {
-        if (isLightMode) LightTextSecondary else TextSecondary
+        if (isLightMode) Color(0xFF2D3039) else Color(0xFFD4D4D8)
+    }
+
+    val borderStroke = if (isSelected) {
+        null
+    } else {
+        BorderStroke(
+            width = 1.dp,
+            color = if (isLightMode) Color(0x30000000) else Color(0x40FFFFFF)
+        )
     }
 
     Surface(
         modifier = Modifier.clickable(onClick = onClick),
         shape = PillShape,
         color = backgroundColor,
-        border = if (!isSelected) BorderStroke(1.dp, if (isLightMode) LightCardBorder else DarkSurfaceBorder) else null
+        border = borderStroke
     ) {
         Text(
             text = name,
             color = textColor,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            fontSize = 13.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
         )
     }
 }
