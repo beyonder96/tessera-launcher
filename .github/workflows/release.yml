@@ -1,0 +1,118 @@
+name: Build and Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag da release (ex: v1.8.7). Se vazio, usa a versão do build.gradle.kts'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java (Temurin 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Platform 36 & Build-Tools
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Determine Version and Tag
+        id: version_info
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.tag_name }}" ]; then
+            TAG="${{ inputs.tag_name }}"
+          elif [ "${{ github.event_name }}" = "push" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION=$(grep 'versionName' app/build.gradle.kts | head -n1 | sed -E 's/.*"([^"]+)".*/\1/')
+            TAG="v${VERSION}"
+          fi
+          VERSION_NUM="${TAG#v}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION_NUM}" >> $GITHUB_OUTPUT
+          echo "Resolved Tag: ${TAG} (Version: ${VERSION_NUM})"
+
+      - name: Build Release and Debug APKs
+        run: ./gradlew assembleRelease assembleDebug --stacktrace
+
+      - name: Prepare APKs
+        run: |
+          mkdir -p release-apks
+          cp app/build/outputs/apk/release/app-release.apk release-apks/tessera-launcher-release.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release-apks/tessera-launcher-debug.apk
+          ls -lh release-apks/
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tessera-launcher-apks
+          path: release-apks/*.apk
+          retention-days: 14
+
+      - name: Extract Release Notes from README
+        id: release_notes
+        run: |
+          VERSION="${{ steps.version_info.outputs.version }}"
+          python3 -c "
+          import re
+          version = '$VERSION'
+          try:
+              with open('README.md', 'r', encoding='utf-8') as f:
+                  content = f.read()
+              pattern = rf'### 🆕 Novidades na v{re.escape(version)}(.*?)(?=\\n###|\\n<details>|\\Z)'
+              m = re.search(pattern, content, re.DOTALL)
+              if m:
+                  notes = f'### 🆕 Novidades na v{version}\n' + m.group(1).strip()
+              else:
+                  notes = f'Release v{version}'
+          except Exception as e:
+              notes = f'Release v{version}'
+          with open('release_body.md', 'w', encoding='utf-8') as out:
+              out.write(notes)
+          "
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version_info.outputs.tag }}
+          name: ${{ steps.version_info.outputs.tag }}
+          body_path: release_body.md
+          files: |
+            release-apks/tessera-launcher-release.apk
+            release-apks/tessera-launcher-debug.apk
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
