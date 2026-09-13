@@ -15,11 +15,25 @@ android {
         versionName = "1.8.7"
     }
 
+    signingConfigs {
+        create("tessera") {
+            storeFile = file("${rootDir}/keystore/tessera.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("tessera")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("tessera")
         }
     }
     compileOptions {
