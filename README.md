@@ -61,17 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.8.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.6)
+- 🏷️ **Página de Releases:** [Baixar na Release v1.8.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.8.7)
 
-### 🆕 Novidades na v1.8.6
+### 🆕 Novidades na v1.8.7
+- 🎯 **Busca Precisa por Caractere Único (ex: app "X"):** Isolamento total para pesquisas de 1 letra, eliminando poluição de matches intermediários (`contains`) e nomes de pacotes que exibiam apps não relacionados (como ADP Expert, Alexa, FGTS Caixa e Google ao buscar "x"). O app "X" recebe prioridade máxima absoluta (+1000 pontos).
+- ⚡ **Auto-Scroll Instantâneo para o Topo na Busca:** Ao digitar ou alterar qualquer caractere na barra de pesquisa, a lista agora reseta instantaneamente a rolagem para o primeiro resultado (`scrollToItem(0)`), garantindo que o aplicativo mais relevante apareça imediatamente sem precisar rolar a tela.
+- 🐦 **Sinônimos e Segmentos de Pacote para X / Twitter:** Suporte aprimorado que localiza o aplicativo tanto pesquisando por "x" quanto por "twitter", com busca por segmentos de pacote (`com.twitter.android`) e mapeamento semântico.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.8.6</b></summary>
+
 - 🏷️ **Categorias com Alto Contraste:** Pílulas de categorias na gaveta de aplicativos com novo acabamento escurecido translúcido e bordas sutis, garantindo legibilidade perfeita sobre qualquer papel de parede.
 - 🪟 **Desfoque de Vidro (Frosted Glass) Nativo:** Ativação do desfoque nativo do Android 12+ via `setBackgroundBlurRadius` e película de fundo com opacidade dinâmica vinculada ao controle deslizante.
 - ⚡ **Smart Dock Integrado à Barra de Pesquisa:** Fileira ergonômica de aplicativos sugeridos e contextuais embutida diretamente na doca inferior, posicionada entre os widgets e a barra de digitação.
 - 🌤️ **Precisão do Clima & Busca Manual de Cidades:** Priorização de localização rápida de rede e nova opção de busca manual de cidades via Open-Meteo Geocoding no modal de configurações do clima.
 - 📰 **Feed Social Sem Recorte & Conexão Resiliente:** Ajuste ergonômico de insets no topo respeitando o recorte de câmera (Display Cutout) e conexão com User-Agent de navegador para contornar bloqueios do Reddit/Cloudflare, além de fallback automático para feeds RSS de tecnologia.
-- 🔍 **Busca Inteligente de Aplicativos com Ranking Escalonado:** Algoritmo aprimorado que prioriza matches exatos (como app "X") e prefixos no topo, eliminando poluição de nomes de pacotes em buscas de letra única e ordenando por relevância e tamanho do nome.
-
-### 📋 Versões Anteriores
+- 🔍 **Busca Inteligente de Aplicativos com Ranking Escalonado:** Algoritmo aprimorado que prioriza matches exatos e prefixos no topo, eliminando poluição de nomes de pacotes e ordenando por relevância.
+</details>
 <details>
 <summary><b>v1.8.5</b></summary>
 
