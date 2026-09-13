@@ -8,7 +8,7 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$ProjectRoot = (Get-Item $PSScriptRoot).Parent.Parent.Parent.FullName
+$ProjectRoot = (Resolve-Path "$PSScriptRoot\..\..\..\..").Path
 Set-Location $ProjectRoot
 
 Write-Host "==========================================" -ForegroundColor Cyan
