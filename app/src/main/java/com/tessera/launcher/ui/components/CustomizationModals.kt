@@ -271,11 +271,11 @@ fun SearchBarTextBottomSheet(
     var editingCustomText by remember { mutableStateOf(customText) }
 
     val previewText = when (currentTextType) {
-        "app_name" -> "Searcho..."
+        "app_name" -> "Tessera..."
         "current_time" -> "09:41"
         "greeting" -> "Bom dia!"
         "custom" -> editingCustomText.ifBlank { "Tessera..." }
-        else -> "Searcho..."
+        else -> "Tessera..."
     }
 
     ModalBottomSheet(
@@ -516,14 +516,14 @@ fun TypographyBottomSheet(
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
-            // Card Searcho Font
+            // Card Tessera Font
             FontCard(
-                title = "Searcho",
+                title = "Tessera",
                 sample = "Aa Bb Cc 0123",
                 subtitle = "Space Grotesk — the built-in face",
                 fontFamily = FontFamily.Monospace,
-                isSelected = currentFontType == "searcho",
-                onClick = { onSelectFontType("searcho") }
+                isSelected = currentFontType == "tessera",
+                onClick = { onSelectFontType("tessera") }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -572,7 +572,7 @@ fun TypographyBottomSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No fonts added yet. Bring your own .ttf or .otf and Searcho will use it everywhere.",
+                        text = "No fonts added yet. Bring your own .ttf or .otf and Tessera will use it everywhere.",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
                         color = TextSecondary,
                         textAlign = TextAlign.Center
@@ -619,7 +619,7 @@ fun TypographyBottomSheet(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Fonts are copied into Searcho and stay on your device. Only .ttf and .otf files work.",
+                text = "Fonts are copied into Tessera and stay on your device. Only .ttf and .otf files work.",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
                 color = TextTertiary,
                 textAlign = TextAlign.Center,

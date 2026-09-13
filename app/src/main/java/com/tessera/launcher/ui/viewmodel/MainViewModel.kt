@@ -21,10 +21,10 @@ import com.tessera.launcher.ui.components.MathEvaluator
 import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
-import com.tessera.launcher.ui.state.DEFAULT_SEARCHOS_LIST
+import com.tessera.launcher.ui.state.DEFAULT_COMMANDS_LIST
 import com.tessera.launcher.ui.state.FeedState
 import com.tessera.launcher.ui.state.LauncherUiState
-import com.tessera.launcher.ui.state.SearchoItem
+import com.tessera.launcher.ui.state.CommandItem
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.state.WidgetConfigType
 import kotlinx.coroutines.Job
@@ -69,17 +69,17 @@ private fun serializeFolders(folders: List<AppFolder>): String {
     return folders.joinToString(";;;") { "${it.name}:::${it.packageNames.joinToString(",")}" }
 }
 
-private fun parseSearchos(raw: String): List<SearchoItem> {
-    if (raw.isBlank()) return DEFAULT_SEARCHOS_LIST
+private fun parseCommands(raw: String): List<CommandItem> {
+    if (raw.isBlank()) return DEFAULT_COMMANDS_LIST
     return raw.split(";;;").mapNotNull { item ->
         val parts = item.split(":::")
         if (parts.size >= 4) {
-            SearchoItem(id = parts[0], title = parts[1], prefix = parts[2], iconType = parts[3])
+            CommandItem(id = parts[0], title = parts[1], prefix = parts[2], iconType = parts[3])
         } else null
-    }.ifEmpty { DEFAULT_SEARCHOS_LIST }
+    }.ifEmpty { DEFAULT_COMMANDS_LIST }
 }
 
-private fun serializeSearchos(items: List<SearchoItem>): String {
+private fun serializeCommands(items: List<CommandItem>): String {
     return items.joinToString(";;;") { "${it.id}:::${it.title}:::${it.prefix}:::${it.iconType}" }
 }
 
@@ -104,7 +104,6 @@ class MainViewModel(
     private val preferences: LauncherPreferences,
     private val quickSettingsHelper: QuickSettingsHelper,
     private val contactSearchHelper: ContactSearchHelper,
-    private val fileSearchHelper: com.tessera.launcher.data.helper.FileSearchHelper,
     private val messageSearchHelper: com.tessera.launcher.data.helper.MessageSearchHelper,
     private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper,
     private val feedRepository: FeedRepository,
@@ -114,7 +113,7 @@ class MainViewModel(
     private val contextualPredictor = com.tessera.launcher.data.helper.ContextualPredictor(preferences)
     private val smartGlanceEngine = com.tessera.launcher.data.helper.SmartGlanceEngine()
     private val categoryClassifier = com.tessera.launcher.data.helper.AppCategoryClassifier(appContext)
-    private val geminiEngine = com.tessera.launcher.data.helper.GeminiAiEngine()
+    private val aiEngine = com.tessera.launcher.data.helper.AiEngine()
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
@@ -146,8 +145,8 @@ class MainViewModel(
             iconShape = preferences.getIconShape(),
             selectedIconPack = preferences.getSelectedIconPack(),
             isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
-            searchoActivationSymbol = preferences.getSearchoActivationSymbol(),
-            searchosList = parseSearchos(preferences.getSearchosRaw()),
+            commandActivationSymbol = preferences.getCommandActivationSymbol(),
+            commandsList = parseCommands(preferences.getCommandsRaw()),
             appFolders = parseFolders(preferences.getFoldersRaw()),
 
             // Gestos
@@ -164,9 +163,8 @@ class MainViewModel(
             isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
             swipeRightAction = preferences.getSwipeRightAction(),
 
-            // Busca em Apps & Arquivos
+            // Busca em Apps
             inAppSearchPackages = preferences.getInAppSearchPackages(),
-            isFilesSearchEnabled = preferences.isFilesSearchEnabled(),
 
             // Apps Ocultos & PIN
             hiddenAppsPin = preferences.getHiddenAppsPin(),
@@ -176,6 +174,7 @@ class MainViewModel(
             customAppIcons = parseCustomIcons(preferences.getCustomAppIconsRaw()),
 
             // Customização Avançada
+            isDrawerRightAligned = preferences.isDrawerRightAligned(),
             searchBarStyle = preferences.getSearchBarStyle(),
             searchBarTextType = preferences.getSearchBarTextType(),
             searchBarCustomText = preferences.getSearchBarCustomText(),
@@ -231,8 +230,10 @@ class MainViewModel(
             isAppCategoriesEnabled = preferences.isAppCategoriesEnabled(),
             selectedAppCategory = com.tessera.launcher.data.model.AppCategory.ALL,
 
-            // Prompt Bar na Lupa (Gemini AI)
+            // Prompt Bar na Lupa (Groq / Gemini AI)
             isAiSearchEnabled = preferences.isAiSearchEnabled(),
+            aiProvider = preferences.getAiProvider(),
+            groqApiKey = preferences.getGroqApiKey(),
             geminiApiKey = preferences.getGeminiApiKey()
         )
     )
@@ -372,7 +373,6 @@ class MainViewModel(
                 searchQuery = "",
                 calculatorResult = null,
                 matchingContacts = emptyList(),
-                matchingFiles = emptyList(),
                 aiSearchResponse = null,
                 aiSearchError = null,
                 isAiSearchLoading = false
@@ -392,7 +392,7 @@ class MainViewModel(
     }
 
     fun executeAiSearch(prompt: String = _uiState.value.searchQuery) {
-        val symbol = _uiState.value.searchoActivationSymbol
+        val symbol = _uiState.value.commandActivationSymbol
         val cleanPrompt = prompt
             .removePrefix("@ai")
             .removePrefix("@gemini")
@@ -411,7 +411,13 @@ class MainViewModel(
                     aiSearchResponse = null
                 )
             }
-            val result = geminiEngine.query(cleanPrompt, _uiState.value.geminiApiKey)
+            val provider = _uiState.value.aiProvider
+            val apiKey = if (provider.equals("GEMINI", ignoreCase = true)) {
+                _uiState.value.geminiApiKey
+            } else {
+                _uiState.value.groqApiKey
+            }
+            val result = aiEngine.query(cleanPrompt, provider = provider, apiKey = apiKey)
             when (result) {
                 is com.tessera.launcher.data.helper.AiAnswerResult.Success -> {
                     _uiState.update {
@@ -437,7 +443,7 @@ class MainViewModel(
 
     fun onSearchQueryChange(query: String) {
         val hasQuery = query.isNotBlank()
-        val symbol = _uiState.value.searchoActivationSymbol
+        val symbol = _uiState.value.commandActivationSymbol
         val trimmed = query.trim()
 
         // 1. Verificação de PIN para desbloqueio de apps ocultos
@@ -453,7 +459,7 @@ class MainViewModel(
             return
         }
 
-        // 2. IA / Gemini: Ativado via @ai / @gemini
+        // 2. IA / Assistente: Ativado via @ai / @gemini
         val isAiCommand = query.startsWith("@ai", ignoreCase = true) ||
                 query.startsWith("@gemini", ignoreCase = true) ||
                 query.startsWith("${symbol}ai", ignoreCase = true) ||
@@ -471,7 +477,6 @@ class MainViewModel(
                     searchQuery = query,
                     calculatorResult = null,
                     matchingContacts = emptyList(),
-                    matchingFiles = emptyList(),
                     filteredApps = emptyList(),
                     appsState = AppsListState.Success(emptyList()),
                     isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
@@ -495,7 +500,7 @@ class MainViewModel(
             null
         }
 
-        // Se for comando @calc, isola 100% a calculadora (sem contatos, sem arquivos, sem apps)
+        // Se for comando @calc, isola 100% a calculadora (sem contatos, sem apps)
         if (isCalcCommand) {
             autoLaunchJob?.cancel()
             _uiState.update {
@@ -503,7 +508,6 @@ class MainViewModel(
                     searchQuery = query,
                     calculatorResult = calcResult,
                     matchingContacts = emptyList(),
-                    matchingFiles = emptyList(),
                     filteredApps = emptyList(),
                     appsState = AppsListState.Success(emptyList()),
                     isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
@@ -514,7 +518,7 @@ class MainViewModel(
             return
         }
 
-        // 4. SearchOS: Contatos via @con ou busca geral se habilitado (não buscar se for outro comando @)
+        // 4. Comandos: Contatos via @con ou busca geral se habilitado (não buscar se for outro comando @)
         val isContactsCommand = query.startsWith("@con", ignoreCase = true) ||
                 query.startsWith("${symbol}con", ignoreCase = true)
         val isOtherCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isContactsCommand
@@ -531,34 +535,18 @@ class MainViewModel(
             emptyList()
         }
 
-        // 5. SearchOS: Arquivos via @files ou busca geral de arquivos
-        val isFilesCommand = query.startsWith("@files", ignoreCase = true) ||
-                query.startsWith("${symbol}files", ignoreCase = true)
-        val isOtherFilesCommand = (query.startsWith("@") || query.startsWith(symbol)) && !isFilesCommand
-        val filesQuery = if (isFilesCommand) {
-            query.substringAfter("files", "").trim()
-        } else {
-            query
-        }
-        val files = if (!isOtherFilesCommand && (isFilesCommand || _uiState.value.isFilesSearchEnabled) && filesQuery.length >= 2) {
-            fileSearchHelper.searchFiles(filesQuery)
-        } else {
-            emptyList()
-        }
-
         _uiState.update {
             it.copy(
                 searchQuery = query,
                 calculatorResult = null,
                 matchingContacts = contacts,
-                matchingFiles = files,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
                 isWidgetExpanded = if (it.isDrawerOpen) false else !hasQuery
             )
         }
 
-        if (isContactsCommand || isFilesCommand) {
+        if (isContactsCommand) {
             autoLaunchJob?.cancel()
             _uiState.update {
                 it.copy(
@@ -707,8 +695,7 @@ class MainViewModel(
                 isWidgetExpanded = !it.isCollapseDockEnabled,
                 searchQuery = "",
                 calculatorResult = null,
-                matchingContacts = emptyList(),
-                matchingFiles = emptyList()
+                matchingContacts = emptyList()
             )
         }
         applyFilter("")
@@ -809,8 +796,10 @@ class MainViewModel(
         _uiState.update {
             when (it.currentSettingsScreen) {
                 SettingsSubScreen.FOLDERS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
-                SettingsSubScreen.SEARCHOS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.COMMANDS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
                 SettingsSubScreen.HIDDEN_APPS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.DEVELOPER -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.TRANSPARENCY -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.EXTRAS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.GESTURES -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.CUSTOMIZATION -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
@@ -1186,31 +1175,31 @@ class MainViewModel(
         }
     }
 
-    // Gestão de Searchos
-    fun removeSearcho(id: String) {
-        val current = _uiState.value.searchosList.filterNot { it.id == id }
-        preferences.setSearchosRaw(serializeSearchos(current))
-        _uiState.update { it.copy(searchosList = current) }
+    // Gestão de Comandos
+    fun removeCommand(id: String) {
+        val current = _uiState.value.commandsList.filterNot { it.id == id }
+        preferences.setCommandsRaw(serializeCommands(current))
+        _uiState.update { it.copy(commandsList = current) }
     }
 
-    fun addSearcho(title: String, prefix: String, iconType: String = "tasks") {
-        val current = _uiState.value.searchosList.toMutableList()
+    fun addCommand(title: String, prefix: String, iconType: String = "tasks") {
+        val current = _uiState.value.commandsList.toMutableList()
         val cleanPrefix = if (prefix.startsWith("@")) prefix else "@$prefix"
         current.add(
-            SearchoItem(
-                id = "searcho_${System.currentTimeMillis()}",
+            CommandItem(
+                id = "cmd_${System.currentTimeMillis()}",
                 title = title,
                 prefix = cleanPrefix,
                 iconType = iconType
             )
         )
-        preferences.setSearchosRaw(serializeSearchos(current))
-        _uiState.update { it.copy(searchosList = current) }
+        preferences.setCommandsRaw(serializeCommands(current))
+        _uiState.update { it.copy(commandsList = current) }
     }
 
-    fun setSearchoActivationSymbol(symbol: String) {
-        preferences.setSearchoActivationSymbol(symbol)
-        _uiState.update { it.copy(searchoActivationSymbol = symbol) }
+    fun setCommandActivationSymbol(symbol: String) {
+        preferences.setCommandActivationSymbol(symbol)
+        _uiState.update { it.copy(commandActivationSymbol = symbol) }
     }
 
     // Gestão de Gestos
@@ -1263,19 +1252,12 @@ class MainViewModel(
         _uiState.update { it.copy(swipeRightAction = action) }
     }
 
-    // Busca em Apps & Arquivos
+    // Busca em Apps
     fun toggleInAppSearchPackage(pkg: String) {
         val current = _uiState.value.inAppSearchPackages.toMutableSet()
         if (current.contains(pkg)) current.remove(pkg) else current.add(pkg)
         preferences.setInAppSearchPackages(current)
         _uiState.update { it.copy(inAppSearchPackages = current) }
-    }
-    fun setFilesSearchEnabled(enabled: Boolean) {
-        preferences.setFilesSearchEnabled(enabled)
-        _uiState.update { it.copy(isFilesSearchEnabled = enabled) }
-    }
-    fun openFile(uriString: String, mimeType: String?) {
-        fileSearchHelper.openFile(uriString, mimeType)
     }
 
     // Apps Ocultos & PIN
@@ -1731,14 +1713,29 @@ class MainViewModel(
         applyFilter(_uiState.value.searchQuery)
     }
 
-    // Prompt Bar na Lupa (Gemini AI)
+    // Prompt Bar na Lupa (Groq / Gemini AI)
     fun setAiSearchEnabled(enabled: Boolean) {
         preferences.setAiSearchEnabled(enabled)
         _uiState.update { it.copy(isAiSearchEnabled = enabled) }
     }
 
+    fun setAiProvider(provider: String) {
+        preferences.setAiProvider(provider)
+        _uiState.update { it.copy(aiProvider = provider) }
+    }
+
+    fun setGroqApiKey(key: String) {
+        preferences.setGroqApiKey(key)
+        _uiState.update { it.copy(groqApiKey = key.trim()) }
+    }
+
     fun setGeminiApiKey(key: String) {
         preferences.setGeminiApiKey(key)
         _uiState.update { it.copy(geminiApiKey = key.trim()) }
+    }
+
+    fun setDrawerRightAligned(aligned: Boolean) {
+        preferences.setDrawerRightAligned(aligned)
+        _uiState.update { it.copy(isDrawerRightAligned = aligned) }
     }
 }

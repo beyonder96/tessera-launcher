@@ -41,7 +41,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.Icon
@@ -93,14 +92,13 @@ import com.tessera.launcher.ui.components.NotesConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesTasksManagerBottomSheet
 import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
-import com.tessera.launcher.ui.components.SearchoMorphingDock
-import com.tessera.launcher.ui.components.SearchosChipsRow
+import com.tessera.launcher.ui.components.SearchMorphingDock
+import com.tessera.launcher.ui.components.CommandsChipsRow
 import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
-import com.tessera.launcher.ui.state.FileSearchResult
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.state.WidgetConfigType
 import com.tessera.launcher.ui.theme.AmoledBlack
@@ -416,7 +414,6 @@ fun HomeScreen(
                                 if (isAiSearchActive ||
                                     uiState.calculatorResult != null ||
                                     uiState.matchingContacts.isNotEmpty() ||
-                                    uiState.matchingFiles.isNotEmpty() ||
                                     matchingFolder != null
                                 ) {
                                     LazyColumn(
@@ -481,31 +478,6 @@ fun HomeScreen(
                                             }
                                         }
 
-                                        // Arquivos
-                                        if (uiState.calculatorResult == null && !isAiSearchActive && uiState.matchingFiles.isNotEmpty()) {
-                                            item(key = "files_header") {
-                                                Text(
-                                                    text = "ARQUIVOS",
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        letterSpacing = 1.sp
-                                                    ),
-                                                    color = TextSecondary,
-                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                                                )
-                                            }
-                                            items(
-                                                items = uiState.matchingFiles,
-                                                key = { "file_${it.uriString}" }
-                                            ) { file ->
-                                                FileListItem(
-                                                    file = file,
-                                                    onClick = { viewModel.openFile(file.uriString, file.mimeType) }
-                                                )
-                                            }
-                                        }
-
                                         // Cartão de Pasta encontrada na busca
                                         matchingFolder?.let { folder ->
                                             item(key = "folder_card_${folder.id}") {
@@ -551,7 +523,6 @@ fun HomeScreen(
                                     // Modo Calculadora isolado (@calc)
                                     val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
                                     val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
-                                    val isFilesMode = uiState.searchQuery.startsWith("@files", ignoreCase = true)
                                     val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
                                             uiState.searchQuery.startsWith("@gemini", ignoreCase = true)
 
@@ -582,14 +553,14 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    // Chips do SearchOS quando digitar @ isolado ou prefixo inicial sem espaço
-                                    val showSearchosChips = !isCalcMode && !isContactsMode && !isFilesMode && !isAiCommand &&
+                                    // Chips de Comandos quando digitar @ isolado ou prefixo inicial sem espaço
+                                    val showCommandsChips = !isCalcMode && !isContactsMode && !isAiCommand &&
                                             (uiState.searchQuery == "@" || (uiState.searchQuery.startsWith("@") && !uiState.searchQuery.contains(" ")))
 
-                                    if (showSearchosChips) {
-                                        item(key = "searchos_chips") {
-                                            SearchosChipsRow(
-                                                searchosList = uiState.searchosList,
+                                    if (showCommandsChips) {
+                                        item(key = "commands_chips") {
+                                            CommandsChipsRow(
+                                                commandsList = uiState.commandsList,
                                                 onChipClick = { prefix ->
                                                     viewModel.onSearchQueryChange(prefix)
                                                 }
@@ -609,8 +580,8 @@ fun HomeScreen(
                                         }
                                     }
 
-                                // Contatos encontrados (oculto em modo calculadora ou arquivos)
-                                if (!isCalcMode && !isFilesMode && uiState.matchingContacts.isNotEmpty()) {
+                                // Contatos encontrados (oculto em modo calculadora)
+                                if (!isCalcMode && uiState.matchingContacts.isNotEmpty()) {
                                     item(key = "contacts_header") {
                                         Text(
                                             text = "CONTATOS",
@@ -634,73 +605,49 @@ fun HomeScreen(
                                     }
                                 }
 
-                                // Arquivos encontrados (oculto em modo calculadora ou contatos)
-                                if (!isCalcMode && !isContactsMode && uiState.matchingFiles.isNotEmpty()) {
-                                    item(key = "files_header") {
-                                        Text(
-                                            text = "ARQUIVOS",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                letterSpacing = 1.sp
-                                            ),
-                                            color = TextSecondary,
-                                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                    items(
-                                        items = uiState.matchingFiles,
-                                        key = { "file_${it.uriString}" }
-                                    ) { file ->
-                                        FileListItem(
-                                            file = file,
-                                            onClick = { viewModel.openFile(file.uriString, file.mimeType) }
-                                        )
-                                    }
-                                }
-
                                 // Cartão de Pasta encontrada na busca (Screenshot media_1788774600763.png)
                                 if (!isCalcMode) {
                                     matchingFolder?.let { folder ->
-                                        item(key = "folder_card_${folder.id}") {
-                                            FolderSearchCard(
-                                                folder = folder,
-                                                allApps = allApps,
-                                                onAppClick = { app -> viewModel.launchApp(app.packageName) },
-                                                onAppLongClick = { app -> selectedAppForMenu = app },
-                                                onFolderClick = { f -> folderToView = f },
-                                                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
-                                            )
-                                        }
-                                    }
-                                }
+                                         item(key = "folder_card_${folder.id}") {
+                                             FolderSearchCard(
+                                                 folder = folder,
+                                                 allApps = allApps,
+                                                 onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                 onAppLongClick = { app -> selectedAppForMenu = app },
+                                                 onFolderClick = { f -> folderToView = f },
+                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                                             )
+                                         }
+                                     }
+                                 }
 
-                                // Aplicativos filtrados (ocultos em modo calculadora/contatos/arquivos)
-                                if (!isCalcMode && !isContactsMode && !isFilesMode) {
-                                    items(
-                                        items = uiState.filteredApps,
-                                        key = { it.packageName }
-                                    ) { app ->
-                                    AppListItem(
-                                        app = app,
-                                        iconShape = uiState.iconShape,
-                                        isThemedIcons = uiState.isThemedIconsEnabled,
-                                        isHideAppLabels = uiState.isHideAppLabelsEnabled,
-                                        onClick = {
-                                            viewModel.launchApp(app.packageName).onFailure { error ->
-                                                Toast.makeText(
-                                                    context,
-                                                    error.message ?: "Erro ao abrir aplicativo",
-                                                    Toast.LENGTH_SHORT
-                                                ).show()
-                                            }
-                                        },
-                                        onLongClick = {
-                                            selectedAppForMenu = app
-                                        }
-                                    )
-                                }
-                            }
+                                 // Aplicativos filtrados (ocultos em modo calculadora/contatos)
+                                 if (!isCalcMode && !isContactsMode) {
+                                     items(
+                                         items = uiState.filteredApps,
+                                         key = { it.packageName }
+                                     ) { app ->
+                                     AppListItem(
+                                         app = app,
+                                         iconShape = uiState.iconShape,
+                                         isThemedIcons = uiState.isThemedIconsEnabled,
+                                         isHideAppLabels = uiState.isHideAppLabelsEnabled,
+                                         isRightAligned = uiState.isDrawerRightAligned,
+                                         onClick = {
+                                             viewModel.launchApp(app.packageName).onFailure { error ->
+                                                 Toast.makeText(
+                                                     context,
+                                                     error.message ?: "Erro ao abrir aplicativo",
+                                                     Toast.LENGTH_SHORT
+                                                 ).show()
+                                             }
+                                         },
+                                         onLongClick = {
+                                             selectedAppForMenu = app
+                                         }
+                                     )
+                                 }
+                             }
 
                             // Pílula externa de pesquisa (Google + Apps)
                                 if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled) {
@@ -771,7 +718,7 @@ fun HomeScreen(
             val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
             val showSmartDock = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isSmartDockEnabled && uiState.predictedApps.isNotEmpty() && uiState.searchQuery.isEmpty()
 
-            SearchoMorphingDock(
+            SearchMorphingDock(
                 isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
                 searchQuery = uiState.searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChange(it) },
@@ -891,6 +838,11 @@ fun HomeScreen(
                 },
                 onChangeIconPack = { packPkg ->
                     viewModel.setCustomAppIcon(app.packageName, packPkg)
+                },
+                onHideApp = {
+                    viewModel.toggleHiddenApp(app.packageName)
+                    Toast.makeText(context, "${app.label} ocultado", Toast.LENGTH_SHORT).show()
+                    selectedAppForMenu = null
                 },
                 onDismiss = { selectedAppForMenu = null },
                 onOpenAppSettings = {
@@ -1120,59 +1072,3 @@ private fun ContactListItem(
     }
 }
 
-@Composable
-private fun FileListItem(
-    file: FileSearchResult,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(horizontal = 24.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFF1E202B)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.InsertDriveFile,
-                contentDescription = null,
-                tint = TextPrimary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = file.title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
-                ),
-                color = TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            val sizeMb = file.sizeBytes / (1024 * 1024.0)
-            val sizeFormatted = if (sizeMb >= 1.0) String.format("%.1f MB", sizeMb) else "${file.sizeBytes / 1024} KB"
-            Text(
-                text = "${file.mimeType ?: "Arquivo"} • $sizeFormatted",
-                style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
-                maxLines = 1
-            )
-        }
-    }
-}

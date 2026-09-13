@@ -2,12 +2,14 @@ package com.tessera.launcher.ui.components
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,13 +43,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -73,7 +76,7 @@ import com.tessera.launcher.ui.theme.TextTertiary
 import java.util.Calendar
 
 @Composable
-fun SearchoMorphingDock(
+fun SearchMorphingDock(
     isExpanded: Boolean,
     searchQuery: String,
     onQueryChange: (String) -> Unit,
@@ -83,7 +86,7 @@ fun SearchoMorphingDock(
     modifier: Modifier = Modifier,
     searchBarStyle: String = "split_pill",
     searchBarTextType: String = "app_name",
-    searchBarCustomText: String = "Searcho...",
+    searchBarCustomText: String = "Tessera...",
     currentTime: String = "",
     isLiquidGlass: Boolean = true,
     isAmoledMode: Boolean = true,
@@ -115,7 +118,6 @@ fun SearchoMorphingDock(
     }
 
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
-    // Se opacidade for ajustada (< 1.0f) ou liquid glass ativado, aplica acabamento de vidro líquido translúcido
     val shouldUseLiquidGlass = (isLiquidGlass && !isAmoledMode) || opacityFraction < 0.98f
 
     val dockBorder = if (shouldUseLiquidGlass) {
@@ -148,7 +150,6 @@ fun SearchoMorphingDock(
         Modifier.background(DarkSurface)
     }
 
-    // Sombra sutil que escala com a opacidade; spotColor é removido quando translúcido para eliminar o halo preto
     val shadowElevation = (8.dp * opacityFraction)
     val shadowAmbientColor = if (isLightMode) {
         Color.Black.copy(alpha = 0.05f * opacityFraction)
@@ -161,7 +162,6 @@ fun SearchoMorphingDock(
         if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.35f)
     }
 
-    // Cores adaptativas de texto e ícones com base na opacidade e no tema (WCAG AA)
     val dockTextPrimary = if (isLightMode) {
         if (opacityFraction < 0.35f) Color.White else LightTextPrimary
     } else {
@@ -194,11 +194,11 @@ fun SearchoMorphingDock(
     }
 
     val placeholderText = when (searchBarTextType) {
-        "app_name" -> "Searcho..."
+        "app_name" -> "Tessera..."
         "current_time" -> if (currentTime.isNotBlank()) currentTime else "09:41"
         "greeting" -> greeting
         "custom" -> searchBarCustomText.ifBlank { "Tessera..." }
-        else -> "Searcho..."
+        else -> "Tessera..."
     }
 
     val targetWidth = if (isExpanded) screenWidth - 32.dp else 56.dp
@@ -211,6 +211,17 @@ fun SearchoMorphingDock(
         label = "dock_width"
     )
 
+    val dockInteractionSource = remember { MutableInteractionSource() }
+    val isDockPressed by dockInteractionSource.collectIsPressedAsState()
+    val dockScale by animateFloatAsState(
+        targetValue = if (isDockPressed) 0.95f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "dock_press_scale"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -218,11 +229,15 @@ fun SearchoMorphingDock(
         contentAlignment = Alignment.Center
     ) {
         if (!isExpanded) {
-            // Estado Recolhido: Círculo ou pílula compacta
+            // Estado Recolhido: Círculo ou pílula compacta com feedback de clique elástico
             Box(
                 modifier = Modifier
                     .width(animatedWidth)
                     .height(56.dp)
+                    .graphicsLayer {
+                        scaleX = dockScale
+                        scaleY = dockScale
+                    }
                     .shadow(
                         elevation = shadowElevation,
                         shape = dockShape,
@@ -233,7 +248,7 @@ fun SearchoMorphingDock(
                     .then(dockBgModifier)
                     .border(dockBorder, dockShape)
                     .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
+                        interactionSource = dockInteractionSource,
                         indication = null,
                         onClick = onExpandClick
                     ),
@@ -259,6 +274,10 @@ fun SearchoMorphingDock(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .graphicsLayer {
+                            scaleX = dockScale
+                            scaleY = dockScale
+                        }
                         .shadow(
                             elevation = shadowElevation,
                             shape = dockShape,
@@ -340,7 +359,7 @@ fun SearchoMorphingDock(
                                 modifier = Modifier
                                     .size(22.dp)
                                     .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
+                                        interactionSource = dockInteractionSource,
                                         indication = null,
                                         onClick = {
                                             focusRequester.requestFocus()
@@ -424,10 +443,25 @@ fun SearchoMorphingDock(
                 if (isSplit) {
                     Spacer(modifier = Modifier.width(10.dp))
 
+                    val settingsInteractionSource = remember { MutableInteractionSource() }
+                    val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
+                    val settingsScale by animateFloatAsState(
+                        targetValue = if (isSettingsPressed) 0.92f else 1f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        ),
+                        label = "settings_press_scale"
+                    )
+
                     Box(
                         modifier = Modifier
                             .padding(bottom = 4.dp)
                             .size(48.dp)
+                            .graphicsLayer {
+                                scaleX = settingsScale
+                                scaleY = settingsScale
+                            }
                             .shadow(
                                 elevation = shadowElevation,
                                 shape = buttonShape,
@@ -438,7 +472,7 @@ fun SearchoMorphingDock(
                             .then(dockBgModifier)
                             .border(dockBorder, buttonShape)
                             .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
+                                interactionSource = settingsInteractionSource,
                                 indication = null,
                                 onClick = {
                                     keyboardController?.hide()
@@ -448,7 +482,6 @@ fun SearchoMorphingDock(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        // Brilho especular do botão
                         if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
                             Box(
                                 modifier = Modifier

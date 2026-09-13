@@ -152,8 +152,8 @@ fun SettingsScreen(
                 onNavigateToFolders = {
                     viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS)
                 },
-                onNavigateToSearchos = {
-                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCHOS)
+                onNavigateToCommands = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.COMMANDS)
                 },
                 onOpenHiddenApps = {
                     viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS)
@@ -171,8 +171,26 @@ fun SettingsScreen(
             )
             return
         }
-        SettingsSubScreen.SEARCHOS -> {
-            SearchosScreen(
+        SettingsSubScreen.COMMANDS -> {
+            CommandsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.DEVELOPER -> {
+            DeveloperScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.TRANSPARENCY -> {
+            TransparencyScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
@@ -413,7 +431,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Extension,
                         title = "Extras",
-                        subtitle = "Pastas, apps ocultos e Searchos",
+                        subtitle = "Pastas, apps ocultos e Comandos",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) },
                         isLight = isLight
                     )
@@ -477,7 +495,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Home,
                         title = "Lançador padrão",
-                        subtitle = "O Searcho é o seu launcher.",
+                        subtitle = "O Tessera é o seu launcher.",
                         onClick = { openDefaultLauncherSettings(context) },
                         isLight = isLight
                     )
@@ -510,7 +528,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Visibility,
                         title = "Transparência",
                         subtitle = "Sem rastreio. Sem anúncios. Sem coleta de dados.",
-                        onClick = { activeDialog = "transparency" },
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.TRANSPARENCY) },
                         isLight = isLight
                     )
 
@@ -521,7 +539,7 @@ fun SettingsScreen(
                         icon = Icons.Outlined.Code,
                         title = "Desenvolvedor",
                         subtitle = "Opções avançadas e depuração.",
-                        onClick = { activeDialog = "developer" },
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.DEVELOPER) },
                         isLight = isLight
                     )
                 }

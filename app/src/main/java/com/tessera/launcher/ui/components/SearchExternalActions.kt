@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.ShoppingBag
@@ -111,6 +112,15 @@ fun SearchExternalActions(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Maps (se habilitado ou padrão)
+                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.apps.maps")) {
+                    AppSearchQuickIcon(
+                        icon = Icons.Outlined.Place,
+                        description = "Maps",
+                        onClick = { launchMapsSearch(context, query) }
+                    )
+                }
+
                 // YouTube (se habilitado ou padrão)
                 if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.youtube")) {
                     AppSearchQuickIcon(
@@ -170,22 +180,46 @@ private fun AppSearchQuickIcon(
 }
 
 private fun launchGoogleSearch(context: Context, query: String) {
-    val searchIntent = Intent(Intent.ACTION_WEB_SEARCH).apply {
-        putExtra(SearchManager.QUERY, query)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
     val browserIntent = Intent(
         Intent.ACTION_VIEW,
         Uri.parse("https://www.google.com/search?q=${Uri.encode(query)}")
     ).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
+    val searchIntent = Intent(Intent.ACTION_WEB_SEARCH).apply {
+        putExtra(SearchManager.QUERY, query)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
 
     runCatching {
-        context.startActivity(searchIntent)
+        context.startActivity(browserIntent)
     }.onFailure {
         runCatching {
-            context.startActivity(browserIntent)
+            context.startActivity(searchIntent)
+        }
+    }
+}
+
+private fun launchMapsSearch(context: Context, query: String) {
+    val mapsIntent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("geo:0,0?q=${Uri.encode(query)}")
+    ).apply {
+        setPackage("com.google.android.apps.maps")
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    val webIntent = Intent(
+        Intent.ACTION_VIEW,
+        Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}")
+    ).apply {
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    runCatching {
+        context.startActivity(mapsIntent)
+    }.onFailure {
+        runCatching {
+            context.startActivity(webIntent)
         }
     }
 }

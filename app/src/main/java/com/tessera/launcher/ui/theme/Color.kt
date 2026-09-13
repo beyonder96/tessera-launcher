@@ -3,7 +3,7 @@ package com.tessera.launcher.ui.theme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Paleta Monocromática Ultra-Polida - Searcho & Niagara Style
+// Paleta Monocromática Ultra-Polida - Tessera & Niagara Style
 val DarkBackground = Color(0xFF000000)
 val DarkBackgroundTranslucent = Color.Transparent
 val AmoledBlack = Color(0xFF000000)

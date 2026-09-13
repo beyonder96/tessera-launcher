@@ -1,12 +1,12 @@
 # Tessera Launcher
 
-> Launcher Android moderna e ultra-minimalista desenvolvida em **Kotlin** e **Jetpack Compose**, combinando a estética monocromática do **Searcho** com a navegação vertical rápida e ergonômica inspirada no **Niagara Launcher**.
+> Launcher Android moderna e ultra-minimalista desenvolvida em **Kotlin** e **Jetpack Compose**, combinando estética monocromática minimalista com a navegação vertical rápida e ergonômica inspirada no **Niagara Launcher**.
 
 ---
 
 ## ✨ Características Principais
 
-- **Design System Monocromático (Searcho Style):**
+- **Design System Monocromático:**
   - Fundo preto AMOLED (`#000000`) com suporte a wallpaper translúcido (`windowShowWallpaper`).
   - Superfícies em `#141414` com bordas sutis de `1.dp` em `#262626`.
   - Tipografia geométrica estrita off-white (`#ECECEC`) e elementos secundários em `#757575`.
@@ -14,7 +14,7 @@
   - Ícones monocromáticos processados via GPU com `ColorMatrix` no Compose.
 
 - **Lupa Flutuante com Animação Estilo Gemini:**
-  - Na tela inicial, exibe apenas a elegante Lupa flutuante (Searcho FAB).
+  - Na tela inicial, exibe apenas a elegante Lupa flutuante (Tessera FAB).
   - Ao ser clicada, suas bordas executam uma animação fluida de brilho perimétrico em gradiente (estilo Gemini glow) enquanto se expande para a barra completa e revela os widgets.
 
 - **Suporte a Widgets Nativos do Android (`AppWidgetHost`):**

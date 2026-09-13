@@ -9,6 +9,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,7 +68,8 @@ fun AppListItem(
     modifier: Modifier = Modifier,
     iconShape: String = "DEFAULT",
     isThemedIcons: Boolean = false,
-    isHideAppLabels: Boolean = false
+    isHideAppLabels: Boolean = false,
+    isRightAligned: Boolean = false
 ) {
     val shape = remember(iconShape) {
         when (iconShape) {
@@ -101,55 +104,56 @@ fun AppListItem(
                 onLongClick = onLongClick
             )
             .padding(horizontal = 24.dp, vertical = if (isHideAppLabels) 10.dp else 7.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (isRightAligned) Arrangement.End else Arrangement.Start
     ) {
-        val iconModifier = if (iconShape == "LOSANGO") {
-            Modifier
-                .size(34.dp)
-                .rotate(45f)
-                .clip(shape)
-        } else if (iconShape == "CYLINDER") {
-            Modifier
-                .width(32.dp)
-                .height(42.dp)
-                .clip(shape)
-        } else {
-            Modifier
-                .size(40.dp)
-                .clip(shape)
-        }
-
-        if (imageBitmap != null) {
-            Box(
-                modifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                androidx.compose.foundation.Image(
-                    bitmap = imageBitmap,
-                    contentDescription = app.label,
-                    colorFilter = colorFilter,
-                    modifier = iconModifier
-                )
-            }
-        } else {
-            Box(
-                modifier = Modifier
+        val iconComposable: @Composable () -> Unit = {
+            val iconModifier = if (iconShape == "LOSANGO") {
+                Modifier
+                    .size(34.dp)
+                    .rotate(45f)
+                    .clip(shape)
+            } else if (iconShape == "CYLINDER") {
+                Modifier
+                    .width(32.dp)
+                    .height(42.dp)
+                    .clip(shape)
+            } else {
+                Modifier
                     .size(40.dp)
                     .clip(shape)
-                    .background(DarkSurfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = app.firstLetter.toString(),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = TextSecondary
-                )
+            }
+
+            if (imageBitmap != null) {
+                Box(
+                    modifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.Image(
+                        bitmap = imageBitmap,
+                        contentDescription = app.label,
+                        colorFilter = colorFilter,
+                        modifier = iconModifier
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(shape)
+                        .background(DarkSurfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = app.firstLetter.toString(),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = TextSecondary
+                    )
+                }
             }
         }
 
-        if (!isHideAppLabels) {
-            Spacer(modifier = Modifier.width(16.dp))
-
+        val textComposable: @Composable (Modifier) -> Unit = { textMod ->
             Text(
                 text = app.label,
                 style = MaterialTheme.typography.bodyLarge.copy(
@@ -158,8 +162,24 @@ fun AppListItem(
                 ),
                 color = TextPrimary,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                textAlign = if (isRightAligned) TextAlign.End else TextAlign.Start,
+                modifier = textMod
             )
+        }
+
+        if (isRightAligned) {
+            if (!isHideAppLabels) {
+                textComposable(Modifier.weight(1f))
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            iconComposable()
+        } else {
+            iconComposable()
+            if (!isHideAppLabels) {
+                Spacer(modifier = Modifier.width(16.dp))
+                textComposable(Modifier.weight(1f))
+            }
         }
     }
 }

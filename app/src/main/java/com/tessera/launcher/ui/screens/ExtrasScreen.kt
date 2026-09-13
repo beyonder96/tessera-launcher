@@ -63,7 +63,7 @@ fun ExtrasScreen(
     uiState: LauncherUiState,
     onBack: () -> Unit,
     onNavigateToFolders: () -> Unit,
-    onNavigateToSearchos: () -> Unit,
+    onNavigateToCommands: () -> Unit,
     onOpenHiddenApps: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -152,12 +152,12 @@ fun ExtrasScreen(
 
                 HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
 
-                // 3. Searchos
+                // 3. Comandos
                 ExtrasRowItem(
                     icon = Icons.Outlined.Code,
-                    title = "Searchos",
-                    subtitle = "Símbolos rápidos de busca — como /c para contatos.",
-                    onClick = onNavigateToSearchos
+                    title = "Comandos",
+                    subtitle = "Prefixos rápidos de ação — como @con para contatos.",
+                    onClick = onNavigateToCommands
                 )
 
                 HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)

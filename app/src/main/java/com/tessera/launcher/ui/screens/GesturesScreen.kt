@@ -479,9 +479,9 @@ fun GesturesScreen(
                             .padding(bottom = 20.dp)
                     )
 
-                    // Seção: CONFIGURAÇÕES SEARCHO
+                    // Seção: CONFIGURAÇÕES TESSERA
                     Text(
-                        text = "CONFIGURAÇÕES SEARCHO",
+                        text = "CONFIGURAÇÕES TESSERA",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
@@ -658,7 +658,7 @@ private fun BrowseAppsSheetContent(
             )
         }
 
-        // Barra de Busca "Searcho..."
+        // Barra de Busca "Tessera..."
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -687,7 +687,7 @@ private fun BrowseAppsSheetContent(
                     singleLine = true,
                     decorationBox = { inner ->
                         if (searchQuery.isEmpty()) {
-                            Text("Searcho...", color = TextTertiary, fontSize = 14.sp)
+                            Text("Tessera...", color = TextTertiary, fontSize = 14.sp)
                         }
                         inner()
                     },

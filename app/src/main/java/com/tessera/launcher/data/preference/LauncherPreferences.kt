@@ -256,14 +256,17 @@ class LauncherPreferences(context: Context) {
     fun isShowStatusBarEnabled(): Boolean = prefs.getBoolean(KEY_SHOW_STATUS_BAR, true)
     fun setShowStatusBarEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SHOW_STATUS_BAR, enabled).apply()
 
-    fun getSearchoActivationSymbol(): String = prefs.getString("searcho_symbol", "@") ?: "@"
-    fun setSearchoActivationSymbol(symbol: String) = prefs.edit().putString("searcho_symbol", symbol).apply()
+    fun getCommandActivationSymbol(): String = prefs.getString("command_symbol", "@") ?: "@"
+    fun setCommandActivationSymbol(symbol: String) = prefs.edit().putString("command_symbol", symbol).apply()
 
     fun getFoldersRaw(): String = prefs.getString("folders_data", "") ?: ""
     fun setFoldersRaw(raw: String) = prefs.edit().putString("folders_data", raw).apply()
 
-    fun getSearchosRaw(): String = prefs.getString("searchos_data", "") ?: ""
-    fun setSearchosRaw(raw: String) = prefs.edit().putString("searchos_data", raw).apply()
+    fun getCommandsRaw(): String = prefs.getString("commands_data", "") ?: ""
+    fun setCommandsRaw(raw: String) = prefs.edit().putString("commands_data", raw).apply()
+
+    fun isDrawerRightAligned(): Boolean = prefs.getBoolean("drawer_right_aligned", false)
+    fun setDrawerRightAligned(aligned: Boolean) = prefs.edit().putBoolean("drawer_right_aligned", aligned).apply()
 
     // Gestos
     fun isDoubleTapEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_DOUBLE_TAP_ENABLED, true)
@@ -330,10 +333,10 @@ class LauncherPreferences(context: Context) {
     fun getSearchBarTextType(): String = prefs.getString(KEY_SEARCH_BAR_TEXT_TYPE, "app_name") ?: "app_name"
     fun setSearchBarTextType(type: String) = prefs.edit().putString(KEY_SEARCH_BAR_TEXT_TYPE, type).apply()
 
-    fun getSearchBarCustomText(): String = prefs.getString(KEY_SEARCH_BAR_CUSTOM_TEXT, "Searcho...") ?: "Searcho..."
+    fun getSearchBarCustomText(): String = prefs.getString(KEY_SEARCH_BAR_CUSTOM_TEXT, "Tessera...") ?: "Tessera..."
     fun setSearchBarCustomText(text: String) = prefs.edit().putString(KEY_SEARCH_BAR_CUSTOM_TEXT, text).apply()
 
-    fun getFontFamilyType(): String = prefs.getString(KEY_FONT_FAMILY_TYPE, "searcho") ?: "searcho"
+    fun getFontFamilyType(): String = prefs.getString(KEY_FONT_FAMILY_TYPE, "tessera") ?: "tessera"
     fun setFontFamilyType(type: String) = prefs.edit().putString(KEY_FONT_FAMILY_TYPE, type).apply()
 
     fun getCustomFontPath(): String = prefs.getString(KEY_CUSTOM_FONT_PATH, "") ?: ""
@@ -459,9 +462,15 @@ class LauncherPreferences(context: Context) {
     fun isAppCategoriesEnabled(): Boolean = prefs.getBoolean(KEY_APP_CATEGORIES_ENABLED, true)
     fun setAppCategoriesEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_APP_CATEGORIES_ENABLED, enabled).apply()
 
-    // Prompt Bar na Lupa (Gemini AI)
+    // Prompt Bar na Lupa (AI Engine: Groq / Gemini)
     fun isAiSearchEnabled(): Boolean = prefs.getBoolean(KEY_AI_SEARCH_ENABLED, true)
     fun setAiSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_AI_SEARCH_ENABLED, enabled).apply()
+
+    fun getAiProvider(): String = prefs.getString("ai_provider", "GROQ") ?: "GROQ"
+    fun setAiProvider(provider: String) = prefs.edit().putString("ai_provider", provider).apply()
+
+    fun getGroqApiKey(): String = prefs.getString("groq_api_key", "") ?: ""
+    fun setGroqApiKey(key: String) = prefs.edit().putString("groq_api_key", key.trim()).apply()
 
     fun getGeminiApiKey(): String = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
     fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim()).apply()

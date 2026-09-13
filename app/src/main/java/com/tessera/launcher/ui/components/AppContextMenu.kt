@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Shortcut
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -88,6 +89,7 @@ fun AppContextMenu(
     onChangeIconPack: (String?) -> Unit = {},
     onDismiss: () -> Unit,
     onOpenAppSettings: () -> Unit,
+    onHideApp: () -> Unit = {},
     onUninstallApp: () -> Unit
 ) {
     var showIconPicker by remember { mutableStateOf(false) }
@@ -330,6 +332,48 @@ fun AppContextMenu(
                         )
                         Text(
                             text = "Permissões, dados e detalhes",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 12.sp
+                            ),
+                            color = TextSecondary
+                        )
+                    }
+                }
+
+                // Ação: Ocultar Aplicativo
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(color = Color(0x22FFFFFF)),
+                            onClick = {
+                                onDismiss()
+                                onHideApp()
+                            }
+                        )
+                        .padding(horizontal = 12.dp, vertical = 11.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.VisibilityOff,
+                        contentDescription = "Ocultar app",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
+                        Text(
+                            text = "Ocultar app",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            ),
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Remover da lista e proteger com PIN",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),

@@ -25,8 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -59,18 +57,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.tessera.launcher.ui.state.CommandItem
 import com.tessera.launcher.ui.state.LauncherUiState
-import com.tessera.launcher.ui.state.SearchoItem
 import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkSurface
@@ -81,17 +77,17 @@ import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
-private val SearchoCardShape = RoundedCornerShape(24.dp)
-private val SearchoCardBackground = Color(0xFF0F0F12)
-private val SearchoCardBorder = Color(0xFF1D1D22)
-private val SearchoDividerColor = Color(0xFF18181D)
-private val SearchoIconBackground = Color(0xFF19191E)
-private val SearchoChipBackground = Color(0xFF1B1C22)
-private val SearchoChipBorder = Color(0xFF2C2D35)
+private val CommandCardShape = RoundedCornerShape(24.dp)
+private val CommandCardBackground = Color(0xFF0F0F12)
+private val CommandCardBorder = Color(0xFF1D1D22)
+private val CommandDividerColor = Color(0xFF18181D)
+private val CommandIconBackground = Color(0xFF19191E)
+private val CommandChipBackground = Color(0xFF1B1C22)
+private val CommandChipBorder = Color(0xFF2C2D35)
 private val DeleteRedColor = Color(0xFFCF6679)
 
 @Composable
-fun SearchosScreen(
+fun CommandsScreen(
     viewModel: MainViewModel,
     uiState: LauncherUiState,
     onBack: () -> Unit,
@@ -114,7 +110,7 @@ fun SearchosScreen(
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
-        // Top Bar Centrada: Botão Voltar + "SEARCHOS"
+        // Top Bar Centrada: Botão Voltar + "COMANDOS"
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -143,7 +139,7 @@ fun SearchosScreen(
             }
 
             Text(
-                text = "SEARCHOS",
+                text = "COMANDOS",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
@@ -173,9 +169,9 @@ fun SearchosScreen(
             )
 
             Surface(
-                shape = SearchoCardShape,
-                color = SearchoCardBackground,
-                border = BorderStroke(1.dp, SearchoCardBorder),
+                shape = CommandCardShape,
+                color = CommandCardBackground,
+                border = BorderStroke(1.dp, CommandCardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -193,7 +189,7 @@ fun SearchosScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(SearchoIconBackground),
+                            .background(CommandIconBackground),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -217,7 +213,7 @@ fun SearchosScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Símbolo atual: \"${uiState.searchoActivationSymbol}\"",
+                            text = "Símbolo atual: \"${uiState.commandActivationSymbol}\"",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                             color = TextSecondary
                         )
@@ -234,9 +230,9 @@ fun SearchosScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Bloco 2: SEARCHOS ATIVOS
+            // Bloco 2: COMANDOS ATIVOS
             Text(
-                text = "SEARCHOS ATIVOS",
+                text = "COMANDOS ATIVOS",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -247,21 +243,21 @@ fun SearchosScreen(
             )
 
             Surface(
-                shape = SearchoCardShape,
-                color = SearchoCardBackground,
-                border = BorderStroke(1.dp, SearchoCardBorder),
+                shape = CommandCardShape,
+                color = CommandCardBackground,
+                border = BorderStroke(1.dp, CommandCardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
-                    uiState.searchosList.forEachIndexed { index, item ->
-                        SearchoRowItem(
+                    uiState.commandsList.forEachIndexed { index, item ->
+                        CommandRowItem(
                             item = item,
-                            onDelete = { viewModel.removeSearcho(item.id) }
+                            onDelete = { viewModel.removeCommand(item.id) }
                         )
-                        HorizontalDivider(color = SearchoDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = CommandDividerColor, thickness = 1.dp)
                     }
 
-                    // Item: + Adicionar Searcho
+                    // Item: + Adicionar Comando
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -277,7 +273,7 @@ fun SearchosScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(SearchoIconBackground),
+                                .background(CommandIconBackground),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -292,7 +288,7 @@ fun SearchosScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Adicionar Searcho",
+                                text = "Adicionar Comando",
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -301,7 +297,7 @@ fun SearchosScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Veja tudo o que a barra pode fazer.",
+                                text = "Atalhos rápidos para a barra de busca.",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                 color = TextSecondary
                             )
@@ -332,9 +328,9 @@ fun SearchosScreen(
             )
 
             Surface(
-                shape = SearchoCardShape,
-                color = SearchoCardBackground,
-                border = BorderStroke(1.dp, SearchoCardBorder),
+                shape = CommandCardShape,
+                color = CommandCardBackground,
+                border = BorderStroke(1.dp, CommandCardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -344,7 +340,7 @@ fun SearchosScreen(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = {
-                                Toast.makeText(context, "Ações rápidas do sistema personalizadas.", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Ações rápidas do sistema disponíveis via @s", Toast.LENGTH_SHORT).show()
                             }
                         )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -354,7 +350,7 @@ fun SearchosScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(SearchoIconBackground),
+                            .background(CommandIconBackground),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -369,7 +365,7 @@ fun SearchosScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Personalizar ações rápidas",
+                            text = "Ações Rápidas",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -378,7 +374,7 @@ fun SearchosScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Escolha quais ações do sistema aparecem.",
+                            text = "Use @s para acessar lanterna, volume e atalhos rápidos.",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                             color = TextSecondary
                         )
@@ -398,7 +394,7 @@ fun SearchosScreen(
     }
 
     if (showSymbolDialog) {
-        var newSymbol by remember { mutableStateOf(uiState.searchoActivationSymbol) }
+        var newSymbol by remember { mutableStateOf(uiState.commandActivationSymbol) }
         Dialog(onDismissRequest = { showSymbolDialog = false }) {
             Surface(
                 shape = CardShape,
@@ -424,8 +420,8 @@ fun SearchosScreen(
                         listOf("@", "/", "#", "!").forEach { sym ->
                             Surface(
                                 shape = PillShape,
-                                color = if (newSymbol == sym) Color.White else SearchoIconBackground,
-                                border = BorderStroke(1.dp, if (newSymbol == sym) Color.White else SearchoChipBorder),
+                                color = if (newSymbol == sym) Color.White else CommandIconBackground,
+                                border = BorderStroke(1.dp, if (newSymbol == sym) Color.White else CommandChipBorder),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { newSymbol = sym }
@@ -461,7 +457,7 @@ fun SearchosScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .clickable {
-                                    viewModel.setSearchoActivationSymbol(newSymbol)
+                                    viewModel.setCommandActivationSymbol(newSymbol)
                                     showSymbolDialog = false
                                 }
                                 .padding(8.dp)
@@ -487,7 +483,7 @@ fun SearchosScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     Text(
-                        text = "Novo Searcho",
+                        text = "Novo Comando",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -558,7 +554,7 @@ fun SearchosScreen(
                             modifier = Modifier
                                 .clickable {
                                     if (title.isNotBlank() && prefix.isNotBlank()) {
-                                        viewModel.addSearcho(title.trim(), prefix.trim())
+                                        viewModel.addCommand(title.trim(), prefix.trim())
                                         showAddDialog = false
                                     }
                                 }
@@ -572,8 +568,8 @@ fun SearchosScreen(
 }
 
 @Composable
-private fun SearchoRowItem(
-    item: SearchoItem,
+private fun CommandRowItem(
+    item: CommandItem,
     onDelete: () -> Unit
 ) {
     val icon = when (item.iconType) {
@@ -602,7 +598,7 @@ private fun SearchoRowItem(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(SearchoIconBackground),
+                .background(CommandIconBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -632,11 +628,10 @@ private fun SearchoRowItem(
             )
         }
 
-        // Chip do Prefixo (ex: "@wa") Conforme Imagens 1 e 2
         Surface(
             shape = PillShape,
-            color = SearchoChipBackground,
-            border = BorderStroke(1.dp, SearchoChipBorder),
+            color = CommandChipBackground,
+            border = BorderStroke(1.dp, CommandChipBorder),
             modifier = Modifier.padding(end = 12.dp)
         ) {
             Text(
@@ -649,7 +644,6 @@ private fun SearchoRowItem(
             )
         }
 
-        // Ícone de Remoção (Lixeira Vermelha) Conforme Imagens 1 e 2
         Icon(
             imageVector = Icons.Outlined.Delete,
             contentDescription = "Remover",

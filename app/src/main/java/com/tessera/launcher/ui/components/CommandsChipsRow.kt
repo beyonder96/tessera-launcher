@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.People
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material3.Icon
@@ -38,13 +37,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tessera.launcher.ui.state.SearchoItem
+import com.tessera.launcher.ui.state.CommandItem
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 
 @Composable
-fun SearchosChipsRow(
-    searchosList: List<SearchoItem>,
+fun CommandsChipsRow(
+    commandsList: List<CommandItem>,
     onChipClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -53,12 +52,11 @@ fun SearchosChipsRow(
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(searchosList, key = { it.id }) { item ->
+        items(commandsList, key = { it.id }) { item ->
             val icon: ImageVector = when (item.id) {
                 "ai" -> Icons.Outlined.AutoAwesome
                 "calc" -> Icons.Outlined.Calculate
                 "contacts" -> Icons.Outlined.People
-                "files" -> Icons.Outlined.Folder
                 "send_message", "messages" -> Icons.Outlined.Chat
                 "whatsapp", "telegram" -> Icons.Outlined.Send
                 else -> Icons.Outlined.Edit

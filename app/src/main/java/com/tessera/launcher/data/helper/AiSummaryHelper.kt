@@ -13,9 +13,6 @@ import kotlinx.coroutines.withContext
 class AiSummaryHelper {
     
     suspend fun summarizePost(post: FeedPost): String = withContext(Dispatchers.Default) {
-        // Simulate network/inference delay
-        delay(500)
-        
         val textLength = post.body.length
         
         if (textLength < 50) {

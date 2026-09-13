@@ -6,6 +6,9 @@ import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -26,9 +29,9 @@ class FeedRepository(
         private const val BLUESKY_BASE = "https://public.api.bsky.app/xrpc/"
         private const val CACHE_TTL_MS = 15 * 60 * 1000L
         private const val DEFAULT_LIMIT = 20
-        private const val CONNECT_TIMEOUT = 8_000
-        private const val READ_TIMEOUT = 10_000
-        private const val USER_AGENT = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
+        private const val CONNECT_TIMEOUT = 4_000
+        private const val READ_TIMEOUT = 5_000
+        private const val USER_AGENT = "android:com.tessera.launcher:v1.8.8 (by /u/tessera_launcher)"
     }
 
     private var lastFetchTime: Long = 0L
@@ -48,34 +51,39 @@ class FeedRepository(
             val enabledSources = preferences.getFeedEnabledSources()
             val posts = mutableListOf<FeedPost>()
 
-            if (FeedSource.REDDIT.name in enabledSources) {
-                val subreddits = preferences.getFeedSubreddits()
-                for (sub in subreddits) {
-                    val cleanSub = sub.trim().removePrefix("/r/").removePrefix("r/").removePrefix("/").trim()
-                    if (cleanSub.isNotBlank()) {
-                        runCatching {
-                            val redditPosts = fetchRedditSubreddit(cleanSub)
-                            posts.addAll(redditPosts)
-                        }.onFailure { Log.w(TAG, "Falha ao buscar r/$cleanSub: ${it.message}") }
-                    }
-                }
-            }
+            coroutineScope {
+                val deferredList = mutableListOf<kotlinx.coroutines.Deferred<List<FeedPost>>>()
 
-            if (FeedSource.BLUESKY.name in enabledSources) {
-                val handles = preferences.getFeedBlueskyHandles()
-                for (handle in handles) {
-                    val cleanHandle = handle.trim().removePrefix("@").trim()
-                    if (cleanHandle.isNotBlank()) {
-                        runCatching {
-                            val bskyPosts = fetchBlueskyAuthor(cleanHandle)
-                            posts.addAll(bskyPosts)
-                        }.onFailure { Log.w(TAG, "Falha ao buscar @$cleanHandle: ${it.message}") }
+                if (FeedSource.REDDIT.name in enabledSources) {
+                    val subreddits = preferences.getFeedSubreddits()
+                    for (sub in subreddits) {
+                        val cleanSub = sub.trim().removePrefix("/r/").removePrefix("r/").removePrefix("/").trim()
+                        if (cleanSub.isNotBlank()) {
+                            deferredList.add(async(Dispatchers.IO) {
+                                runCatching { fetchRedditSubreddit(cleanSub) }.getOrDefault(emptyList())
+                            })
+                        }
                     }
                 }
+
+                if (FeedSource.BLUESKY.name in enabledSources) {
+                    val handles = preferences.getFeedBlueskyHandles()
+                    for (handle in handles) {
+                        val cleanHandle = handle.trim().removePrefix("@").trim()
+                        if (cleanHandle.isNotBlank()) {
+                            deferredList.add(async(Dispatchers.IO) {
+                                runCatching { fetchBlueskyAuthor(cleanHandle) }.getOrDefault(emptyList())
+                            })
+                        }
+                    }
+                }
+
+                val results = deferredList.awaitAll()
+                results.forEach { posts.addAll(it) }
             }
 
             if (posts.isEmpty()) {
-                // Fallback resiliente: buscar notícias de tecnologia se as redes principais estiverem bloqueadas
+                // Fallback resiliente imediato: RSS confiável (G1 Tecnologia, Ars Technica, The Verge)
                 val fallbackNews = fetchFallbackRss()
                 posts.addAll(fallbackNews)
             }
@@ -90,7 +98,7 @@ class FeedRepository(
             } else {
                 var sorted = posts.distinctBy { it.id }.sortedByDescending { it.createdAt }
 
-                // Aplicar resumos de IA se habilitado
+                // Aplicar resumos de IA se habilitado de forma rápida
                 if (preferences.isFeedAiSummariesEnabled()) {
                     val aiHelper = com.tessera.launcher.data.helper.AiSummaryHelper()
                     sorted = sorted.map { post ->
@@ -382,6 +390,7 @@ class FeedRepository(
 
     private suspend fun fetchFallbackRss(): List<FeedPost> = withContext(Dispatchers.IO) {
         val fallbackUrls = listOf(
+            "https://g1.globo.com/rss/g1/tecnologia/" to "G1 Tecnologia",
             "https://www.theverge.com/rss/index.xml" to "The Verge",
             "https://feeds.arstechnica.com/arstechnica/index" to "Ars Technica"
         )

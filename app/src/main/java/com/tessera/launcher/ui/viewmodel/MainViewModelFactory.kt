@@ -23,7 +23,6 @@ class MainViewModelFactory(
             val prefs = LauncherPreferences(context.applicationContext)
             val quickSettingsHelper = QuickSettingsHelper(context.applicationContext)
             val contactSearchHelper = ContactSearchHelper(context.applicationContext)
-            val fileSearchHelper = com.tessera.launcher.data.helper.FileSearchHelper(context.applicationContext)
             val messageSearchHelper = com.tessera.launcher.data.helper.MessageSearchHelper(context.applicationContext)
             val weatherHelper = com.tessera.launcher.data.helper.WeatherHelper(context.applicationContext, prefs)
             val feedRepository = FeedRepository(context.applicationContext, prefs)
@@ -34,7 +33,6 @@ class MainViewModelFactory(
                 prefs,
                 quickSettingsHelper,
                 contactSearchHelper,
-                fileSearchHelper,
                 messageSearchHelper,
                 weatherHelper,
                 feedRepository,

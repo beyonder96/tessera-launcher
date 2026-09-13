@@ -1053,16 +1053,24 @@ private fun VerseFocusWidgetCard(
     isLiquidGlass: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
-    val quotes = remember {
+    val verses = remember {
         listOf(
-            "“NOTHING HEARD, NOTHING SAID”",
-            "“O Senhor é o meu pastor; de nada terei falta.”",
-            "“Foco no essencial, simplifique tudo o resto.”",
-            "“Tudo posso naquele que me fortalece.”",
-            "“A simplicidade é o último grau de sofisticação.”"
+            "“O Senhor é o meu pastor; de nada terei falta.” — Salmos 23:1 (NVI)",
+            "“Tudo posso naquele que me fortalece.” — Filipenses 4:13 (NVI)",
+            "“Confie no Senhor de todo o seu coração e não se apoie em seu próprio entendimento.” — Provérbios 3:5 (NVI)",
+            "“Porque sou eu que conheço os planos que tenho para vocês, diz o Senhor: planos de prosperidade.” — Jeremias 29:11 (NVI)",
+            "“Não fui eu que lhe ordenei? Seja forte e corajoso! O Senhor, o seu Deus, estará com você.” — Josué 1:9 (NVI)",
+            "“Entregue o seu caminho ao Senhor; confie nele, e ele agirá.” — Salmos 37:5 (NVI)",
+            "“Mas os que esperam no Senhor renovam as suas forças. Voam alto como águias.” — Isaías 40:31 (NVI)",
+            "“Venham a mim, todos os que estão cansados e sobrecarregados, e eu darei descanso a vocês.” — Mateus 11:28 (NVI)",
+            "“Lâmpada para os meus pés é a tua palavra e luz, para o meu caminho.” — Salmos 119:105 (NVI)",
+            "“Mil poderão cair ao seu lado, dez mil à sua direita, mas nada o atingirá.” — Salmos 91:7 (NVI)",
+            "“Pois Deus não nos deu espírito de covardia, mas de poder, de amor e de equilíbrio.” — 2 Timóteo 1:7 (NVI)",
+            "“Buscai primeiro o Reino de Deus e a sua justiça, e todas as coisas vos serão acrescentadas.” — Mateus 6:33 (NVI)"
         )
     }
-    var currentQuoteIndex by remember { mutableIntStateOf(0) }
+    val dayOfYear = remember { java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR) }
+    var currentVerseIndex by remember { mutableIntStateOf(dayOfYear % verses.size) }
 
     val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
     val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
@@ -1077,7 +1085,7 @@ private fun VerseFocusWidgetCard(
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
-                onClick = { currentQuoteIndex = (currentQuoteIndex + 1) % quotes.size },
+                onClick = { currentVerseIndex = (currentVerseIndex + 1) % verses.size },
                 onLongClick = onLongClick
             ),
         verticalAlignment = Alignment.CenterVertically
@@ -1092,10 +1100,10 @@ private fun VerseFocusWidgetCard(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "”",
+                text = "✞",
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 26.sp
+                    fontSize = 20.sp
                 ),
                 color = quoteIconColor
             )
@@ -1103,7 +1111,7 @@ private fun VerseFocusWidgetCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Coluna com Cabeçalho e Citação
+        // Coluna com Cabeçalho e Versículo NVI
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.SpaceBetween
@@ -1114,7 +1122,7 @@ private fun VerseFocusWidgetCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Foco do dia",
+                    text = "Versículo do dia (NVI)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
@@ -1125,22 +1133,22 @@ private fun VerseFocusWidgetCard(
 
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
-                    contentDescription = "Alternar",
+                    contentDescription = "Alternar versículo",
                     tint = headerColor,
                     modifier = Modifier
                         .size(15.dp)
                         .clickable {
-                            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.size
+                            currentVerseIndex = (currentVerseIndex + 1) % verses.size
                         }
                 )
             }
 
             Text(
-                text = quotes[currentQuoteIndex],
+                text = verses[currentVerseIndex],
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 12.sp
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 12.sp,
+                    lineHeight = 15.sp
                 ),
                 color = quoteTextColor,
                 maxLines = 2,

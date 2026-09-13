@@ -106,9 +106,24 @@ class IconPackHelper(private val context: Context) {
             if (parser != null) {
                 var eventType = parser.eventType
                 while (eventType != XmlPullParser.END_DOCUMENT) {
-                    if (eventType == XmlPullParser.START_TAG && parser.name == "item") {
-                        val component = parser.getAttributeValue(null, "component")
-                        val drawableName = parser.getAttributeValue(null, "drawable")
+                    if (eventType == XmlPullParser.START_TAG && (parser.name.equals("item", ignoreCase = true))) {
+                        var component: String? = null
+                        var drawableName: String? = null
+                        val count = parser.attributeCount
+                        for (i in 0 until count) {
+                            val attrName = parser.getAttributeName(i)
+                            if (attrName.equals("component", ignoreCase = true)) {
+                                component = parser.getAttributeValue(i)
+                            } else if (attrName.equals("drawable", ignoreCase = true)) {
+                                drawableName = parser.getAttributeValue(i)
+                            }
+                        }
+                        if (component.isNullOrBlank()) {
+                            component = parser.getAttributeValue(null, "component")
+                        }
+                        if (drawableName.isNullOrBlank()) {
+                            drawableName = parser.getAttributeValue(null, "drawable")
+                        }
 
                         if (!component.isNullOrBlank() && !drawableName.isNullOrBlank()) {
                             // Extrai do formato "ComponentInfo{com.whatsapp/com.whatsapp.HomeActivity}"

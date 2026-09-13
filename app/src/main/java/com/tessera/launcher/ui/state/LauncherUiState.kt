@@ -43,13 +43,15 @@ enum class SettingsSubScreen {
     WIDGETS_CENTER,
     EXTRAS,
     FOLDERS,
-    SEARCHOS,
+    COMMANDS,
     GESTURES,
     IN_APP_SEARCH,
     HIDDEN_APPS,
     CUSTOMIZATION,
     PERMISSIONS,
-    FEED
+    FEED,
+    DEVELOPER,
+    TRANSPARENCY
 }
 
 data class AppFolder(
@@ -58,7 +60,7 @@ data class AppFolder(
     val packageNames: List<String> = emptyList()
 )
 
-data class SearchoItem(
+data class CommandItem(
     val id: String,
     val title: String,
     val prefix: String,
@@ -73,31 +75,21 @@ data class AppShortcutItem(
     val icon: Drawable? = null
 )
 
-data class FileSearchResult(
-    val id: Long,
-    val title: String,
-    val path: String,
-    val mimeType: String?,
-    val sizeBytes: Long,
-    val uriString: String
-)
-
-val DEFAULT_SEARCHOS_LIST = listOf(
-    SearchoItem("ai", "Gemini IA", "@ai", "ai"),
-    SearchoItem("calc", "Calculadora", "@calc", "calculator"),
-    SearchoItem("tasks", "Tarefas", "@t", "tasks"),
-    SearchoItem("notes", "Notas", "@n", "notes"),
-    SearchoItem("quick_actions", "Ações rápidas", "@s", "quick_actions"),
-    SearchoItem("send_message", "Enviar mensagem", "@msg", "send_message"),
-    SearchoItem("keep", "Google Keep", "@kp", "keep"),
-    SearchoItem("messages", "Mensagens", "@sms", "messages"),
-    SearchoItem("whatsapp", "Mensagens do WhatsApp", "@wa", "whatsapp"),
-    SearchoItem("telegram", "Mensagens do Telegram", "@tg", "telegram"),
-    SearchoItem("notifications", "Notificações", "@ntf", "notifications"),
-    SearchoItem("contacts", "Contatos", "@con", "contacts"),
-    SearchoItem("files", "Arquivos", "@files", "files"),
-    SearchoItem("activity", "Sua atividade", "@fd", "activity"),
-    SearchoItem("obsidian", "Obsidian", "@ob", "obsidian")
+val DEFAULT_COMMANDS_LIST = listOf(
+    CommandItem("ai", "IA Assistente", "@ai", "ai"),
+    CommandItem("calc", "Calculadora", "@calc", "calculator"),
+    CommandItem("tasks", "Tarefas", "@t", "tasks"),
+    CommandItem("notes", "Notas", "@n", "notes"),
+    CommandItem("quick_actions", "Ações rápidas", "@s", "quick_actions"),
+    CommandItem("send_message", "Enviar mensagem", "@msg", "send_message"),
+    CommandItem("keep", "Google Keep", "@kp", "keep"),
+    CommandItem("messages", "Mensagens", "@sms", "messages"),
+    CommandItem("whatsapp", "Mensagens do WhatsApp", "@wa", "whatsapp"),
+    CommandItem("telegram", "Mensagens do Telegram", "@tg", "telegram"),
+    CommandItem("notifications", "Notificações", "@ntf", "notifications"),
+    CommandItem("contacts", "Contatos", "@con", "contacts"),
+    CommandItem("activity", "Sua atividade", "@fd", "activity"),
+    CommandItem("obsidian", "Obsidian", "@ob", "obsidian")
 )
 
 data class LauncherUiState(
@@ -148,8 +140,8 @@ data class LauncherUiState(
     val iconShape: String = "DEFAULT",
     val selectedIconPack: String? = null,
     val isShowStatusBarEnabled: Boolean = true,
-    val searchoActivationSymbol: String = "@",
-    val searchosList: List<SearchoItem> = DEFAULT_SEARCHOS_LIST,
+    val commandActivationSymbol: String = "@",
+    val commandsList: List<CommandItem> = DEFAULT_COMMANDS_LIST,
     val appFolders: List<AppFolder> = emptyList(),
 
     // Gestos
@@ -166,10 +158,8 @@ data class LauncherUiState(
     val isSwipeRightEnabled: Boolean = false,
     val swipeRightAction: String = "system_settings",
 
-    // Busca em Apps & Arquivos
+    // Busca em Apps
     val inAppSearchPackages: Set<String> = emptySet(),
-    val isFilesSearchEnabled: Boolean = true,
-    val matchingFiles: List<FileSearchResult> = emptyList(),
 
     // Apps Ocultos & PIN
     val allInstalledApps: List<AppInfo> = emptyList(),
@@ -181,10 +171,11 @@ data class LauncherUiState(
     val customAppIcons: Map<String, String> = emptyMap(),
 
     // Customização Avançada
+    val isDrawerRightAligned: Boolean = false,
     val searchBarStyle: String = "split_pill",
     val searchBarTextType: String = "app_name",
-    val searchBarCustomText: String = "Searcho...",
-    val fontFamilyType: String = "searcho",
+    val searchBarCustomText: String = "Tessera...",
+    val fontFamilyType: String = "tessera",
     val customFontPath: String = "",
     val isSystemWallpaperEnabled: Boolean = false,
     val solidWallpaperColor: String = "#000000",
@@ -254,8 +245,10 @@ data class LauncherUiState(
     val isAppCategoriesEnabled: Boolean = true,
     val selectedAppCategory: AppCategory = AppCategory.ALL,
 
-    // Prompt Bar na Lupa (Gemini AI)
+    // Prompt Bar na Lupa (AI Engine: Groq / Gemini)
     val isAiSearchEnabled: Boolean = true,
+    val aiProvider: String = "GROQ",
+    val groqApiKey: String = "",
     val geminiApiKey: String = "",
     val aiSearchResponse: String? = null,
     val isAiSearchLoading: Boolean = false,

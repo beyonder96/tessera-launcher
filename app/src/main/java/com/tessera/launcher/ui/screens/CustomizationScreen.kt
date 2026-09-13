@@ -146,7 +146,7 @@ fun CustomizationScreen(
                 selectedPack = uiState.selectedIconPack,
                 installedPacks = viewModel.getInstalledIconPacks(),
                 onSelectPack = { pack ->
-                    viewModel.reloadAppsWithIconPack(pack)
+                    viewModel.setSelectedIconPack(pack)
                 },
                 onDismiss = { openModal = null },
                 isAmoled = uiState.isAmoledMode
@@ -647,6 +647,45 @@ fun CustomizationScreen(
                             )
                         )
                     }
+
+                    CustomDivider(isLight = isLight)
+
+                    // Alinhar apps à direita (Modo Canhoto / Uso com outra mão)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Alinhar apps à direita",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Inverte a posição dos itens para facilitar o alcance com a outra mão",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = textSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = uiState.isDrawerRightAligned,
+                            onCheckedChange = { viewModel.setDrawerRightAligned(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = textSecondary,
+                                uncheckedTrackColor = Color(0xFF222228),
+                                uncheckedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
                 }
             }
 
@@ -684,11 +723,11 @@ fun CustomizationScreen(
                         icon = Icons.Outlined.TextFields,
                         title = "Texto da barra",
                         subtitle = when (uiState.searchBarTextType) {
-                            "app_name" -> "Searcho..."
+                            "app_name" -> "Tessera..."
                             "current_time" -> "Hora atual"
                             "greeting" -> "Saudação"
                             "custom" -> uiState.searchBarCustomText.ifBlank { "Texto próprio" }
-                            else -> "Searcho..."
+                            else -> "Tessera..."
                         },
                         onClick = { openModal = "text" },
                         isLight = isLight
@@ -718,10 +757,10 @@ fun CustomizationScreen(
                         icon = Icons.Outlined.FontDownload,
                         title = "Typography",
                         subtitle = when (uiState.fontFamilyType) {
-                            "searcho" -> "Searcho"
+                            "tessera" -> "Tessera"
                             "system" -> "System"
                             "custom" -> "Custom Font"
-                            else -> "Searcho"
+                            else -> "Tessera"
                         },
                         onClick = { openModal = "typography" },
                         isLight = isLight
