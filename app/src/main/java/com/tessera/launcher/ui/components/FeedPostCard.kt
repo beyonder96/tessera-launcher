@@ -78,34 +78,36 @@ fun FeedPostCard(
                 )
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.ArrowUpward,
-                    contentDescription = "Score",
-                    modifier = Modifier.size(12.dp),
-                    tint = tertiaryTextColor
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = post.score.toString(),
-                    color = tertiaryTextColor,
-                    fontSize = 11.sp
-                )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Icon(
-                    imageVector = Icons.Outlined.ChatBubbleOutline,
-                    contentDescription = "Comments",
-                    modifier = Modifier.size(12.dp),
-                    tint = tertiaryTextColor
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = post.commentCount.toString(),
-                    color = tertiaryTextColor,
-                    fontSize = 11.sp
-                )
+            if (post.score > 0 || post.commentCount > 0) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Outlined.ArrowUpward,
+                        contentDescription = "Score",
+                        modifier = Modifier.size(12.dp),
+                        tint = tertiaryTextColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = post.score.toString(),
+                        color = tertiaryTextColor,
+                        fontSize = 11.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.width(16.dp))
+                    
+                    Icon(
+                        imageVector = Icons.Outlined.ChatBubbleOutline,
+                        contentDescription = "Comments",
+                        modifier = Modifier.size(12.dp),
+                        tint = tertiaryTextColor
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = post.commentCount.toString(),
+                        color = tertiaryTextColor,
+                        fontSize = 11.sp
+                    )
+                }
             }
 
             if (post.aiSummary != null) {

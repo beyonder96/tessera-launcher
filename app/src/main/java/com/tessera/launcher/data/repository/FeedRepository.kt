@@ -54,6 +54,12 @@ class FeedRepository(
             coroutineScope {
                 val deferredList = mutableListOf<kotlinx.coroutines.Deferred<List<FeedPost>>>()
 
+                if (FeedSource.NEWS.name in enabledSources) {
+                    deferredList.add(async(Dispatchers.IO) {
+                        runCatching { fetchBrazilianNewsRss() }.getOrDefault(emptyList())
+                    })
+                }
+
                 if (FeedSource.REDDIT.name in enabledSources) {
                     val subreddits = preferences.getFeedSubreddits()
                     for (sub in subreddits) {
@@ -388,16 +394,43 @@ class FeedRepository(
         }
     }
 
-    private suspend fun fetchFallbackRss(): List<FeedPost> = withContext(Dispatchers.IO) {
-        val fallbackUrls = listOf(
+    private suspend fun fetchBrazilianNewsRss(): List<FeedPost> = withContext(Dispatchers.IO) {
+        val newsSources = listOf(
             "https://g1.globo.com/rss/g1/tecnologia/" to "G1 Tecnologia",
+            "https://rss.tecmundo.com.br/feed" to "TecMundo",
+            "https://canaltech.com.br/rss/" to "Canaltech"
+        )
+        val posts = mutableListOf<FeedPost>()
+        coroutineScope {
+            val deferred = newsSources.map { (url, name) ->
+                async {
+                    runCatching {
+                        val xml = httpGet(url)
+                        if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
+                            parseStandardRss(xml, name, FeedSource.NEWS)
+                        } else {
+                            emptyList()
+                        }
+                    }.getOrDefault(emptyList())
+                }
+            }
+            deferred.awaitAll().forEach { posts.addAll(it) }
+        }
+        posts
+    }
+
+    private suspend fun fetchFallbackRss(): List<FeedPost> = withContext(Dispatchers.IO) {
+        val brNews = fetchBrazilianNewsRss()
+        if (brNews.isNotEmpty()) return@withContext brNews
+
+        val globalUrls = listOf(
             "https://www.theverge.com/rss/index.xml" to "The Verge",
             "https://feeds.arstechnica.com/arstechnica/index" to "Ars Technica"
         )
-        for ((url, name) in fallbackUrls) {
+        for ((url, name) in globalUrls) {
             val xml = httpGet(url)
             if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
-                val parsed = parseStandardRss(xml, name, FeedSource.BLUESKY)
+                val parsed = parseStandardRss(xml, name, FeedSource.NEWS)
                 if (parsed.isNotEmpty()) return@withContext parsed
             }
         }

@@ -1,5 +1,6 @@
 package com.tessera.launcher.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -84,6 +85,67 @@ fun FeedSettingsScreen(
             )
 
             if (uiState.isFeedEnabled) {
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "PRESETS REGIONAIS",
+                    color = textSecondary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.W600,
+                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        shape = PillShape,
+                        color = surfaceColor,
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                viewModel.setFeedEnabledSources(setOf("NEWS", "REDDIT", "BLUESKY"))
+                                viewModel.setFeedSubreddits(listOf("tecnologia", "brasil", "gamesEcultura"))
+                                viewModel.setFeedBlueskyHandles(listOf("g1.globo.com", "tecmundo.com.br", "canaltech.com.br"))
+                                viewModel.refreshFeed()
+                            }
+                    ) {
+                        Text(
+                            text = "🇧🇷 Brasil (PT-BR)",
+                            color = textColor,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    }
+
+                    Surface(
+                        shape = PillShape,
+                        color = surfaceColor,
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable {
+                                viewModel.setFeedEnabledSources(setOf("REDDIT", "BLUESKY"))
+                                viewModel.setFeedSubreddits(listOf("technology", "androiddev", "worldnews"))
+                                viewModel.setFeedBlueskyHandles(listOf("theverge.com", "techcrunch.com", "bsky.app"))
+                                viewModel.refreshFeed()
+                            }
+                    ) {
+                        Text(
+                            text = "🌐 Global (EN)",
+                            color = textColor,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(

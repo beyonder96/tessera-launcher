@@ -1,6 +1,7 @@
 package com.tessera.launcher.ui.viewmodel
 
 import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tessera.launcher.data.helper.CalendarHelper
@@ -1636,6 +1637,14 @@ class MainViewModel(
         _uiState.update { it.copy(feedEnabledSources = current) }
     }
 
+    fun setFeedEnabledSources(sources: Set<String>) {
+        preferences.setFeedEnabledSources(sources)
+        val enumSources = sources.mapNotNull {
+            try { FeedSource.valueOf(it) } catch (_: Exception) { null }
+        }.toSet()
+        _uiState.update { it.copy(feedEnabledSources = enumSources) }
+    }
+
     fun setFeedAiSummariesEnabled(enabled: Boolean) {
         preferences.setFeedAiSummariesEnabled(enabled)
         _uiState.update { it.copy(isFeedAiSummariesEnabled = enabled) }
@@ -1738,4 +1747,161 @@ class MainViewModel(
         preferences.setDrawerRightAligned(aligned)
         _uiState.update { it.copy(isDrawerRightAligned = aligned) }
     }
+
+    // Backup & Restauração de Configurações
+    fun exportBackup(context: Context, uri: Uri): Boolean {
+        return try {
+            val json = preferences.exportBackupJson()
+            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                outputStream.write(json.toByteArray(Charsets.UTF_8))
+                outputStream.flush()
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun importBackup(context: Context, uri: Uri): Boolean {
+        return try {
+            val json = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                inputStream.bufferedReader(Charsets.UTF_8).readText()
+            } ?: return false
+
+            val success = preferences.importBackupJson(json)
+            if (success) {
+                reloadAllSettings()
+            }
+            success
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun reloadAllSettings() {
+        _uiState.update { current ->
+            current.copy(
+                enabledWidgets = preferences.getEnabledWidgets(),
+                defaultMusicApp = preferences.getDefaultMusicPackage(),
+                defaultCalendarApp = preferences.getDefaultCalendarPackage(),
+                photoWidgetUri = preferences.getPhotoWidgetUri(),
+                isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
+                isAmoledMode = preferences.isAmoledMode(),
+                isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
+                isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
+                isAutoLaunchEnabled = preferences.isAutoLaunchEnabled(),
+                isCollapseDockEnabled = preferences.isCollapseDockEnabled(),
+                isWidgetExpanded = !preferences.isCollapseDockEnabled(),
+                isExactSearchEnabled = preferences.isExactSearchEnabled(),
+                isAppShortcutsEnabled = preferences.isAppShortcutsEnabled(),
+                isWebSearchEnabled = preferences.isWebSearchEnabled(),
+                isContactsSearchEnabled = preferences.isContactsSearchEnabled(),
+                isMessagesSearchEnabled = preferences.isMessagesSearchEnabled(),
+                isCalculatorCardEnabled = preferences.isCalculatorCardEnabled(),
+                isDinoWidgetEnabled = preferences.isDinoWidgetEnabled(),
+                isNotesWidgetEnabled = preferences.isNotesWidgetEnabled(),
+                isSwitchOnMusicPlayEnabled = preferences.isSwitchOnMusicPlayEnabled(),
+                defaultWidgetCardIndex = preferences.getDefaultWidgetCardIndex(),
+                notesTasks = parseNotes(preferences.getNotesRaw()),
+                iconShape = preferences.getIconShape(),
+                selectedIconPack = preferences.getSelectedIconPack(),
+                isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
+                commandActivationSymbol = preferences.getCommandActivationSymbol(),
+                commandsList = parseCommands(preferences.getCommandsRaw()),
+                appFolders = parseFolders(preferences.getFoldersRaw()),
+
+                // Gestos
+                isDoubleTapEnabled = preferences.isDoubleTapEnabled(),
+                doubleTapAction = preferences.getDoubleTapAction(),
+                isHoldEnabled = preferences.isHoldEnabled(),
+                holdAction = preferences.getHoldAction(),
+                isSwipeDownEnabled = preferences.isSwipeDownEnabled(),
+                swipeDownAction = preferences.getSwipeDownAction(),
+                isSwipeUpEnabled = preferences.isSwipeUpEnabled(),
+                swipeUpAction = preferences.getSwipeUpAction(),
+                isSwipeLeftEnabled = preferences.isSwipeLeftEnabled(),
+                swipeLeftAction = preferences.getSwipeLeftAction(),
+                isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
+                swipeRightAction = preferences.getSwipeRightAction(),
+
+                // Busca em Apps
+                inAppSearchPackages = preferences.getInAppSearchPackages(),
+
+                // Apps Ocultos & PIN
+                hiddenAppsPin = preferences.getHiddenAppsPin(),
+                hiddenAppsPackages = preferences.getHiddenAppsPackages(),
+
+                // Ícones Customizados
+                customAppIcons = parseCustomIcons(preferences.getCustomAppIconsRaw()),
+
+                // Customização Avançada
+                isDrawerRightAligned = preferences.isDrawerRightAligned(),
+                searchBarStyle = preferences.getSearchBarStyle(),
+                searchBarTextType = preferences.getSearchBarTextType(),
+                searchBarCustomText = preferences.getSearchBarCustomText(),
+                fontFamilyType = preferences.getFontFamilyType(),
+                customFontPath = preferences.getCustomFontPath(),
+                isSystemWallpaperEnabled = preferences.isSystemWallpaperEnabled(),
+                solidWallpaperColor = preferences.getSolidWallpaperColor(),
+                solidWallpaperTarget = preferences.getSolidWallpaperTarget(),
+                isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
+                isHideAppLabelsEnabled = preferences.isHideAppLabelsEnabled(),
+                selectedLanguage = preferences.getSelectedLanguage(),
+                homeWallpaperDimming = preferences.getHomeWallpaperDimming(),
+                isDrawerGlassEnabled = preferences.isDrawerGlassEnabled(),
+                drawerGlassOpacity = preferences.getDrawerGlassOpacity(),
+                searchBarOpacity = preferences.getSearchBarOpacity(),
+                themeMode = preferences.getThemeMode(),
+
+                // Clima & Localização
+                isWeatherCelsius = preferences.isWeatherCelsius(),
+                isWeatherAutoLocation = preferences.isWeatherAutoLocation(),
+                customWeatherCity = preferences.getCustomWeatherCity(),
+
+                // Configurações & Estilos dos Widgets
+                batteryWidgetStyle = preferences.getBatteryWidgetStyle(),
+                mediaWidgetStyle = preferences.getMediaWidgetStyle(),
+                notesWidgetFilter = preferences.getNotesWidgetFilter(),
+                calendarHowFarAhead = preferences.getCalendarHowFarAhead(),
+                calendarHideFinished = preferences.isCalendarHideFinished(),
+                calendarIs24hFormat = preferences.isCalendar24hFormat(),
+
+                // Feed Social
+                isFeedEnabled = preferences.isFeedEnabled(),
+                feedSubreddits = preferences.getFeedSubreddits(),
+                feedBlueskyHandles = preferences.getFeedBlueskyHandles(),
+                feedEnabledSources = preferences.getFeedEnabledSources()
+                    .mapNotNull { name -> runCatching { FeedSource.valueOf(name) }.getOrNull() }
+                    .toSet()
+                    .ifEmpty { setOf(FeedSource.REDDIT) },
+                isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
+
+                // Smart Dock (Previsão Contextual)
+                isSmartDockEnabled = preferences.isSmartDockEnabled(),
+                smartDockAppCount = preferences.getSmartDockAppCount(),
+
+                // Smart Glance (Now & Next)
+                isSmartGlanceEnabled = preferences.isSmartGlanceEnabled(),
+
+                // Categorias de Apps na Gaveta
+                isAppCategoriesEnabled = preferences.isAppCategoriesEnabled(),
+
+                // Prompt Bar na Lupa (Groq / Gemini AI)
+                isAiSearchEnabled = preferences.isAiSearchEnabled(),
+                aiProvider = preferences.getAiProvider(),
+                groqApiKey = preferences.getGroqApiKey(),
+                geminiApiKey = preferences.getGeminiApiKey()
+            )
+        }
+        reloadAppsWithIconPack(preferences.getSelectedIconPack())
+        refreshPredictedApps()
+        refreshCalendarAndPermissions()
+        refreshWeather()
+        if (preferences.isSmartGlanceEnabled()) {
+            refreshSmartGlance()
+        }
+    }
 }
+

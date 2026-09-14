@@ -107,7 +107,7 @@ fun FeedScreen(
                 }
                 items(enabledSources.toList()) { source ->
                     SourceChip(
-                        name = source.displayName,
+                        name = source.chipName,
                         isSelected = localSelectedSource == source,
                         isLightMode = isLightMode,
                         onClick = { 

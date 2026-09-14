@@ -61,9 +61,21 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v1.9.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v1.9.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.0.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.0.0)
 
-### 🆕 Novidades na v1.9.0
+### 🆕 Novidades na v2.0.0
+- 🌊 **The Niagara Wave no Indexador Alfabético:** Efeito de onda elástica em arco que projeta suavemente as letras até 46dp para fora acompanhando o toque, com lupa amplificadora flutuante e feedback tátil háptico a cada transição.
+- 🌫️ **Desvanecimento de Bordas (*Fading Edges*):** Gradiente suave de transparência no topo e na base da lista de aplicativos e busca, criando um visual limpo e refinado que se integra perfeitamente ao fundo.
+- 💎 **Frosted Glass Scrim & Desfoque Profundo:** Desfoque vítreo aprimorado de 85px até 160px com gradiente vertical escurecido de alta fidelidade, eliminando conflito visual com relógios ou papéis de parede dinâmicos.
+- 🇧🇷 **Feed de Notícias do Brasil em Português:** Integração de notícias em tempo real de canais nacionais (G1 Tecnologia, TecMundo, Canaltech, r/tecnologia) com botão de predefinição rápida de idioma (🇧🇷 Brasil / 🌐 Global).
+- 🤖 **Sugestões da IA na Gaveta de Apps:** Card superior na gaveta com predições contextuais de aplicativos baseadas na IA e rotina do usuário.
+- 👉 **Gesto Swipe-Right nos Apps:** Deslize para a direita sobre qualquer aplicativo para revelar instantaneamente seus atalhos do sistema Android e menu de ações rápidas.
+- 💾 **Backup & Restauração em JSON:** Exporte e importe com um toque todas as suas preferências, pastas, comandos, estilos e atalhos em arquivo JSON via seletor nativo de documentos.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v1.9.0</b></summary>
+
 - ⚡ **Groq AI Ultra-Rápido Integrado:** Substituição completa do Gemini pelo Groq Cloud AI, oferecendo respostas quase instantâneas através dos modelos LLaMA 3.3 70B Versatile, LLaMA 3.1 8B Instant e Mixtral 8x7B, com suporte a chave de API customizada e ajuste fino de temperatura.
 - 🧑‍💻 **Tela de Perfil do Desenvolvedor (Estilo Notion):** Novo design elegante e minimalista inspirado no Notion para a tela do desenvolvedor, com avatar, bio, stack tecnológica, links sociais, visão do projeto e botão de contato direto.
 - 🔍 **Tela de Transparência & Auditoria:** Detalhamento completo da arquitetura local-first da launcher, ausência total de telemetria/rastreamento, auditoria de permissões do sistema Android e créditos a todas as bibliotecas open-source utilizadas.
@@ -72,7 +84,7 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 📖 **Versículos Bíblicos NVI no Widget/Glance:** Frases e versículos bíblicos na Nova Versão Internacional integrados dinamicamente nos widgets contextuais.
 - 🛡️ **Remoção Completa da Marca Registrada Searcho & Busca de Arquivos:** Desacoplamento e remoção total de referências ao Searcho e do indexador legado de arquivos, consolidando a identidade única e limpa do Tessera Launcher.
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.8.7</b></summary>
 

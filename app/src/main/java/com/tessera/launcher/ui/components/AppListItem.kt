@@ -4,9 +4,12 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -25,7 +28,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +42,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,12 +76,54 @@ fun AppListItem(
     app: AppInfo,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    onSwipeRight: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     iconShape: String = "DEFAULT",
     isThemedIcons: Boolean = false,
     isHideAppLabels: Boolean = false,
     isRightAligned: Boolean = false
 ) {
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = dragOffsetX,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = 550f),
+        label = "item_swipe_offset"
+    )
+    val haptic = LocalHapticFeedback.current
+    var hasHapticTriggered by remember { mutableStateOf(false) }
+
+    val swipeModifier = if (onSwipeRight != null) {
+        Modifier.pointerInput(app.packageName) {
+            detectHorizontalDragGestures(
+                onDragStart = {
+                    hasHapticTriggered = false
+                },
+                onDragEnd = {
+                    if (dragOffsetX >= 75f) {
+                        onSwipeRight()
+                    }
+                    dragOffsetX = 0f
+                    hasHapticTriggered = false
+                },
+                onDragCancel = {
+                    dragOffsetX = 0f
+                    hasHapticTriggered = false
+                },
+                onHorizontalDrag = { change, dragAmount ->
+                    if (dragAmount > 0 || dragOffsetX > 0f) {
+                        val next = (dragOffsetX + dragAmount).coerceIn(0f, 130f)
+                        dragOffsetX = next
+                        if (next >= 75f && !hasHapticTriggered) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            hasHapticTriggered = true
+                        }
+                        change.consume()
+                    }
+                }
+            )
+        }
+    } else Modifier
+
     val shape = remember(iconShape) {
         when (iconShape) {
             "CIRCLE" -> CircleShape
@@ -97,13 +150,20 @@ fun AppListItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .then(swipeModifier)
+            .graphicsLayer { translationX = animatedOffsetX }
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = Color(0x22FFFFFF)),
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .padding(horizontal = 24.dp, vertical = if (isHideAppLabels) 10.dp else 7.dp),
+            .padding(
+                start = 24.dp,
+                end = if (isRightAligned && isHideAppLabels) 36.dp else 24.dp,
+                top = if (isHideAppLabels) 10.dp else 7.dp,
+                bottom = if (isHideAppLabels) 10.dp else 7.dp
+            ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (isRightAligned) Arrangement.End else Arrangement.Start
     ) {

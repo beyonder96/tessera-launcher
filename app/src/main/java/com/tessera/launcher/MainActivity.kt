@@ -127,7 +127,7 @@ class MainActivity : ComponentActivity() {
                             scaled.toInt().coerceIn(10, 160)
                         }
                     } else if (isOpen) {
-                        45
+                        85
                     } else {
                         0
                     }

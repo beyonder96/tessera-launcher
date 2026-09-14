@@ -89,7 +89,7 @@ if (-not $SkipBuild) {
 # 4. Commit, Tag e Push
 if ($Version) {
     Write-Host "`n Registrando Git commit e tag v$TargetVersion..." -ForegroundColor Cyan
-    & git add app/build.gradle.kts README.md apk/ keystore/ .agents/
+    & git add app/build.gradle.kts README.md apk/ keystore/ .agents/ app/src/
     & git commit -m "chore(release): v$TargetVersion"
     & git tag -a "v$TargetVersion" -m "Release v$TargetVersion"
     & git push origin main

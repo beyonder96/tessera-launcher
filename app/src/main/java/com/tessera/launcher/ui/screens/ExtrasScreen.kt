@@ -1,5 +1,8 @@
 package com.tessera.launcher.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,12 +21,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Visibility
@@ -41,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,12 +81,40 @@ fun ExtrasScreen(
         0.dp
     }
 
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            val success = viewModel.exportBackup(context, uri)
+            Toast.makeText(
+                context,
+                if (success) "Backup exportado com sucesso!" else "Erro ao exportar backup",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            val success = viewModel.importBackup(context, uri)
+            Toast.makeText(
+                context,
+                if (success) "Configurações restauradas com sucesso!" else "Erro ao restaurar backup (arquivo inválido)",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground)
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+            .verticalScroll(rememberScrollState())
     ) {
         // Top Bar Centrada: Botão Voltar + "EXTRAS"
         Box(
@@ -101,7 +137,7 @@ fun ExtrasScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
                     tint = TextPrimary,
                     modifier = Modifier.size(22.dp)
@@ -230,6 +266,56 @@ fun ExtrasScreen(
                 }
             }
         }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "BACKUP E RESTAURAÇÃO",
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp
+            ),
+            color = TextSecondary,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+        )
+
+        // Card de Backup & Restauração
+        Surface(
+            shape = ExtrasCardShape,
+            color = ExtrasCardBackground,
+            border = BorderStroke(1.dp, ExtrasCardBorder),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                // 1. Exportar backup
+                ExtrasRowItem(
+                    icon = Icons.Outlined.FileDownload,
+                    title = "Exportar backup",
+                    subtitle = "Salva suas preferências, pastas e atalhos em um arquivo JSON.",
+                    onClick = {
+                        val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+                        exportLauncher.launch("tessera_backup_$timestamp.json")
+                    }
+                )
+
+                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+
+                // 2. Restaurar backup
+                ExtrasRowItem(
+                    icon = Icons.Outlined.FileUpload,
+                    title = "Restaurar backup",
+                    subtitle = "Restaura todas as configurações a partir de um backup JSON salvo.",
+                    onClick = {
+                        importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 

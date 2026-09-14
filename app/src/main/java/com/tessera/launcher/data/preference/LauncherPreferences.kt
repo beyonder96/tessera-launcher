@@ -418,21 +418,23 @@ class LauncherPreferences(context: Context) {
     fun setFeedEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_FEED_ENABLED, enabled).apply()
 
     fun getFeedSubreddits(): List<String> {
-        val raw = prefs.getString(KEY_FEED_SUBREDDITS, "technology,androiddev,worldnews") ?: ""
+        val defaultSubs = if (java.util.Locale.getDefault().language == "pt") "tecnologia,brasil,gamesEcultura" else "technology,androiddev,worldnews"
+        val raw = prefs.getString(KEY_FEED_SUBREDDITS, defaultSubs) ?: defaultSubs
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
     }
     fun setFeedSubreddits(subs: List<String>) =
         prefs.edit().putString(KEY_FEED_SUBREDDITS, subs.joinToString(",")).apply()
 
     fun getFeedBlueskyHandles(): List<String> {
-        val raw = prefs.getString(KEY_FEED_BLUESKY_HANDLES, "theverge.com,techcrunch.com,bsky.app") ?: "theverge.com,techcrunch.com,bsky.app"
+        val defaultHandles = if (java.util.Locale.getDefault().language == "pt") "g1.globo.com,tecmundo.com.br,canaltech.com.br" else "theverge.com,techcrunch.com,bsky.app"
+        val raw = prefs.getString(KEY_FEED_BLUESKY_HANDLES, defaultHandles) ?: defaultHandles
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }
     }
     fun setFeedBlueskyHandles(handles: List<String>) =
         prefs.edit().putString(KEY_FEED_BLUESKY_HANDLES, handles.joinToString(",")).apply()
 
     fun getFeedEnabledSources(): Set<String> {
-        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "REDDIT,BLUESKY") ?: "REDDIT,BLUESKY"
+        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "NEWS,REDDIT,BLUESKY") ?: "NEWS,REDDIT,BLUESKY"
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
     }
     fun setFeedEnabledSources(sources: Set<String>) =
@@ -474,4 +476,65 @@ class LauncherPreferences(context: Context) {
 
     fun getGeminiApiKey(): String = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
     fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim()).apply()
+
+    // Backup & Restauração
+    fun exportBackupJson(): String {
+        val root = org.json.JSONObject()
+        root.put("version", 1)
+        root.put("app", "Tessera Launcher")
+        root.put("timestamp", System.currentTimeMillis())
+
+        val preferencesObj = org.json.JSONObject()
+        val allEntries = prefs.all
+        for ((key, value) in allEntries) {
+            when (value) {
+                is Boolean -> preferencesObj.put(key, value)
+                is Int -> preferencesObj.put(key, value)
+                is Long -> preferencesObj.put(key, value)
+                is Float -> preferencesObj.put(key, value.toDouble())
+                is String -> preferencesObj.put(key, value)
+                is Set<*> -> {
+                    val arr = org.json.JSONArray()
+                    for (item in value) {
+                        arr.put(item.toString())
+                    }
+                    preferencesObj.put(key, arr)
+                }
+            }
+        }
+        root.put("preferences", preferencesObj)
+        return root.toString(2)
+    }
+
+    fun importBackupJson(jsonStr: String): Boolean {
+        return try {
+            val root = org.json.JSONObject(jsonStr)
+            val preferencesObj = root.optJSONObject("preferences") ?: return false
+
+            val editor = prefs.edit()
+            val keys = preferencesObj.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                val value = preferencesObj.get(key)
+                when (value) {
+                    is Boolean -> editor.putBoolean(key, value)
+                    is Int -> editor.putInt(key, value)
+                    is Long -> editor.putLong(key, value)
+                    is Double -> editor.putFloat(key, value.toFloat())
+                    is String -> editor.putString(key, value)
+                    is org.json.JSONArray -> {
+                        val set = mutableSetOf<String>()
+                        for (i in 0 until value.length()) {
+                            set.add(value.getString(i))
+                        }
+                        editor.putStringSet(key, set)
+                    }
+                }
+            }
+            editor.apply()
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

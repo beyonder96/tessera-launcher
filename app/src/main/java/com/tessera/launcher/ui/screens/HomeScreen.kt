@@ -57,8 +57,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -115,6 +121,37 @@ import kotlin.math.abs
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import com.tessera.launcher.ui.state.FeedState
+
+private fun Modifier.fadingEdges(
+    topFade: Dp = 32.dp,
+    bottomFade: Dp = 44.dp
+): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val topFadePx = topFade.toPx()
+        val bottomFadePx = bottomFade.toPx()
+        if (topFadePx > 0f) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color.Black),
+                    startY = 0f,
+                    endY = topFadePx
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
+        if (bottomFadePx > 0f) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Black, Color.Transparent),
+                    startY = size.height - bottomFadePx,
+                    endY = size.height
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
+    }
 
 @Composable
 fun HomeScreen(
@@ -331,17 +368,34 @@ fun HomeScreen(
             }
         }
 
-        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass)
+        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
-            // Escala a película vítrea de acordo com o slider de intensidade (0% a 100%)
-            val baseMin = if (uiState.isLightMode) 0.04f else 0.08f
-            val baseMax = if (uiState.isLightMode) 0.42f else 0.62f
+            val baseMin = if (uiState.isLightMode) 0.55f else 0.70f
+            val baseMax = if (uiState.isLightMode) 0.85f else 0.90f
             val factor = (uiState.drawerGlassOpacity.coerceIn(0, 100) / 100f)
             baseMin + (baseMax - baseMin) * factor
         } else if (uiState.isAmoledMode) {
             1f
         } else {
-            0.58f
+            if (uiState.isLightMode) 0.76f else 0.82f
+        }
+
+        val drawerBackdropBrush = remember(uiState.isLightMode, drawerBackdropAlpha) {
+            if (uiState.isLightMode) {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFF2F2F7).copy(alpha = (drawerBackdropAlpha * 0.88f).coerceAtMost(1f)),
+                        Color(0xFFE5E5EA).copy(alpha = drawerBackdropAlpha)
+                    )
+                )
+            } else {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0F0F14).copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
+                        Color.Black.copy(alpha = drawerBackdropAlpha)
+                    )
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -352,7 +406,7 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = drawerBackdropAlpha))
+                    .background(drawerBackdropBrush)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -416,11 +470,11 @@ fun HomeScreen(
                                     uiState.matchingContacts.isNotEmpty() ||
                                     matchingFolder != null
                                 ) {
-                                    LazyColumn(
-                                        state = listState,
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.Bottom
-                                    ) {
+                                     LazyColumn(
+                                         state = listState,
+                                         modifier = Modifier.fillMaxSize().fadingEdges(topFade = 24.dp, bottomFade = 36.dp),
+                                         verticalArrangement = Arrangement.Bottom
+                                     ) {
                                         // Resposta IA (Gemini)
                                         if (isAiSearchActive) {
                                             item(key = "ai_response_card") {
@@ -515,11 +569,11 @@ fun HomeScreen(
                                 )
                             }
                             is AppsListState.Success -> {
-                                LazyColumn(
-                                    state = listState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
-                                ) {
+                                 LazyColumn(
+                                     state = listState,
+                                     modifier = Modifier.fillMaxSize().fadingEdges(topFade = 32.dp, bottomFade = 44.dp),
+                                     verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
+                                 ) {
                                     // Modo Calculadora isolado (@calc)
                                     val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
                                     val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
@@ -621,9 +675,45 @@ fun HomeScreen(
                                      }
                                  }
 
-                                 // Aplicativos filtrados (ocultos em modo calculadora/contatos)
-                                 if (!isCalcMode && !isContactsMode) {
-                                     items(
+                                  // Aplicativos filtrados (ocultos em modo calculadora/contatos)
+                                  if (!isCalcMode && !isContactsMode) {
+                                      // Sugestões da IA no Topo da Gaveta (Estilo Niagara)
+                                      if (uiState.searchQuery.isEmpty() &&
+                                          uiState.selectedAppCategory == com.tessera.launcher.data.model.AppCategory.ALL &&
+                                          uiState.isSmartDockEnabled &&
+                                          uiState.predictedApps.isNotEmpty()
+                                      ) {
+                                          item(key = "ai_suggested_header") {
+                                              Text(
+                                                  text = "SUGESTÕES DA IA",
+                                                  style = MaterialTheme.typography.labelSmall.copy(
+                                                      fontSize = 11.sp,
+                                                      fontWeight = FontWeight.Bold,
+                                                      letterSpacing = 1.sp
+                                                  ),
+                                                  color = TextSecondary,
+                                                  modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                              )
+                                          }
+                                          item(key = "ai_suggested_row") {
+                                              SmartDockRow(
+                                                  apps = uiState.predictedApps,
+                                                  onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                  onAppLongClick = { app -> selectedAppForMenu = app },
+                                                  iconShape = uiState.iconShape,
+                                                  isThemedIcons = uiState.isThemedIconsEnabled,
+                                                  isLightMode = uiState.isLightMode,
+                                                  isAmoledMode = uiState.isAmoledMode,
+                                                  isEmbedded = true,
+                                                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                                              )
+                                          }
+                                          item(key = "ai_suggested_divider") {
+                                              Spacer(modifier = Modifier.height(10.dp))
+                                          }
+                                      }
+
+                                      items(
                                          items = uiState.filteredApps,
                                          key = { it.packageName }
                                      ) { app ->
@@ -643,6 +733,9 @@ fun HomeScreen(
                                              }
                                          },
                                          onLongClick = {
+                                             selectedAppForMenu = app
+                                         },
+                                         onSwipeRight = {
                                              selectedAppForMenu = app
                                          }
                                      )

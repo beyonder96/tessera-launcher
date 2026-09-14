@@ -39,10 +39,12 @@ data class FeedPost(
         get() = when (source) {
             FeedSource.REDDIT -> "r/${subreddit?.removePrefix("/r/")?.removePrefix("r/") ?: "reddit"}"
             FeedSource.BLUESKY -> "@${authorHandle.removePrefix("@")}"
+            FeedSource.NEWS -> author.ifBlank { "Notícias" }
         }
 }
 
-enum class FeedSource(val displayName: String) {
-    REDDIT("Reddit"),
-    BLUESKY("Bluesky")
+enum class FeedSource(val displayName: String, val chipName: String = displayName) {
+    NEWS("Notícias Brasil (G1, TecMundo, Canaltech)", "Notícias"),
+    REDDIT("Reddit", "Reddit"),
+    BLUESKY("Bluesky", "Bluesky")
 }
