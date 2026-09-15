@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -90,12 +91,16 @@ fun SearchSettingsScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground)
-            .padding(WindowInsets.statusBars.asPaddingValues())
-            .padding(WindowInsets.navigationBars.asPaddingValues())
+            .padding(top = safeTopPadding)
+            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
         // Top Bar Centrada: Botão Voltar + "BUSCA"
         Box(
@@ -320,9 +325,19 @@ fun SearchSettingsScreen(
                     SearchToggleRow(
                         icon = Icons.Outlined.AutoAwesome,
                         title = "Respostas com IA na Busca",
-                        subtitle = "Digite @ai <pergunta> para obter respostas ultrarrápidas",
+                        subtitle = "Respostas instantâneas do Groq/Gemini ao pesquisar ou com @groq/@ai",
                         checked = uiState.isAiSearchEnabled,
                         onCheckedChange = { viewModel.setAiSearchEnabled(it) }
+                    )
+
+                    HorizontalDivider(color = SearchDividerColor, thickness = 1.dp)
+
+                    SearchToggleRow(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Efeito Gemini ao Expandir",
+                        subtitle = "Borda gradiente multicolorida animada e brilho ambiente ao abrir a busca",
+                        checked = uiState.isGeminiGlowEnabled,
+                        onCheckedChange = { viewModel.setGeminiGlowEnabled(it) }
                     )
 
                     if (uiState.isAiSearchEnabled) {

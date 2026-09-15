@@ -53,6 +53,17 @@ class LauncherPreferences(context: Context) {
         private const val KEY_GESTURE_SWIPE_LEFT_ACTION = "gesture_swipe_left_action"
         private const val KEY_GESTURE_SWIPE_RIGHT_ENABLED = "gesture_swipe_right_enabled"
         private const val KEY_GESTURE_SWIPE_RIGHT_ACTION = "gesture_swipe_right_action"
+        private const val KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ENABLED = "gesture_swipe_down_two_fingers_enabled"
+        private const val KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ACTION = "gesture_swipe_down_two_fingers_action"
+        private const val KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ENABLED = "gesture_swipe_up_two_fingers_enabled"
+        private const val KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ACTION = "gesture_swipe_up_two_fingers_action"
+        private const val KEY_GESTURE_PINCH_IN_ENABLED = "gesture_pinch_in_enabled"
+        private const val KEY_GESTURE_PINCH_IN_ACTION = "gesture_pinch_in_action"
+        private const val KEY_GESTURE_PINCH_OUT_ENABLED = "gesture_pinch_out_enabled"
+        private const val KEY_GESTURE_PINCH_OUT_ACTION = "gesture_pinch_out_action"
+        private const val KEY_GESTURE_DOUBLE_FINGER_TAP_ENABLED = "gesture_double_finger_tap_enabled"
+        private const val KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION = "gesture_double_finger_tap_action"
+        private const val KEY_GEMINI_GLOW_ENABLED = "gemini_glow_enabled"
 
         // Busca em Apps & Arquivos
         private const val KEY_IN_APP_SEARCH_PACKAGES = "in_app_search_packages"
@@ -304,6 +315,41 @@ class LauncherPreferences(context: Context) {
 
     fun getSwipeRightAction(): String = prefs.getString(KEY_GESTURE_SWIPE_RIGHT_ACTION, "system_settings") ?: "system_settings"
     fun setSwipeRightAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_RIGHT_ACTION, action).apply()
+
+    // Gestos com Dois Dedos
+    fun isSwipeDownTwoFingersEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ENABLED, true)
+    fun setSwipeDownTwoFingersEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ENABLED, enabled).apply()
+
+    fun getSwipeDownTwoFingersAction(): String = prefs.getString(KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ACTION, "quick_settings") ?: "quick_settings"
+    fun setSwipeDownTwoFingersAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_DOWN_TWO_FINGERS_ACTION, action).apply()
+
+    fun isSwipeUpTwoFingersEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ENABLED, true)
+    fun setSwipeUpTwoFingersEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ENABLED, enabled).apply()
+
+    fun getSwipeUpTwoFingersAction(): String = prefs.getString(KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ACTION, "notifications") ?: "notifications"
+    fun setSwipeUpTwoFingersAction(action: String) = prefs.edit().putString(KEY_GESTURE_SWIPE_UP_TWO_FINGERS_ACTION, action).apply()
+
+    fun isPinchInEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_PINCH_IN_ENABLED, true)
+    fun setPinchInEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_PINCH_IN_ENABLED, enabled).apply()
+
+    fun getPinchInAction(): String = prefs.getString(KEY_GESTURE_PINCH_IN_ACTION, "launcher_settings") ?: "launcher_settings"
+    fun setPinchInAction(action: String) = prefs.edit().putString(KEY_GESTURE_PINCH_IN_ACTION, action).apply()
+
+    fun isPinchOutEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_PINCH_OUT_ENABLED, true)
+    fun setPinchOutEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_PINCH_OUT_ENABLED, enabled).apply()
+
+    fun getPinchOutAction(): String = prefs.getString(KEY_GESTURE_PINCH_OUT_ACTION, "open_keyboard") ?: "open_keyboard"
+    fun setPinchOutAction(action: String) = prefs.edit().putString(KEY_GESTURE_PINCH_OUT_ACTION, action).apply()
+
+    fun isDoubleFingerTapEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_DOUBLE_FINGER_TAP_ENABLED, true)
+    fun setDoubleFingerTapEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_DOUBLE_FINGER_TAP_ENABLED, enabled).apply()
+
+    fun getDoubleFingerTapAction(): String = prefs.getString(KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION, "ai_search") ?: "ai_search"
+    fun setDoubleFingerTapAction(action: String) = prefs.edit().putString(KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION, action).apply()
+
+    // Efeito de Expansão Estilo Gemini na Barra
+    fun isGeminiGlowEnabled(): Boolean = prefs.getBoolean(KEY_GEMINI_GLOW_ENABLED, true)
+    fun setGeminiGlowEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GEMINI_GLOW_ENABLED, enabled).apply()
 
     // Busca em Apps & Arquivos
     fun getInAppSearchPackages(): Set<String> {

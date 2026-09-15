@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Icon
@@ -112,7 +113,8 @@ fun AppListSkeleton(
 @Composable
 fun AppListEmptyState(
     query: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onAskAi: ((String) -> Unit)? = null
 ) {
     Surface(
         modifier = modifier
@@ -147,10 +149,49 @@ fun AppListEmptyState(
             )
 
             if (query.isNotBlank()) {
+                if (onAskAi != null) {
+                    Spacer(modifier = Modifier.height(18.dp))
+                    Surface(
+                        shape = com.tessera.launcher.ui.theme.PillShape,
+                        color = Color(0xFF14141E),
+                        border = BorderStroke(1.dp, Brush.horizontalGradient(com.tessera.launcher.ui.theme.GeminiGlowColors)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .clip(com.tessera.launcher.ui.theme.PillShape)
+                            .clickable { onAskAi(query) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.AutoAwesome,
+                                contentDescription = null,
+                                tint = com.tessera.launcher.ui.theme.GeminiCyan,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Perguntar ao Groq (IA)",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                ),
+                                color = TextPrimary
+                            )
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
                 SearchExternalActions(
                     query = query,
                     isLiquidGlass = false,
+                    onAskAi = onAskAi,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

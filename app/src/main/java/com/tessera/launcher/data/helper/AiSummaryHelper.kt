@@ -27,6 +27,11 @@ class AiSummaryHelper {
         }
         
         // Generic fallback summary
-        "IA: Discussão geral sobre ${post.subreddit ?: post.authorHandle}."
+        val topicName = when (post.source) {
+            com.tessera.launcher.data.model.FeedSource.NEWS -> post.author.ifBlank { "Notícias" }
+            com.tessera.launcher.data.model.FeedSource.REDDIT -> "r/${post.subreddit ?: "reddit"}"
+            com.tessera.launcher.data.model.FeedSource.BLUESKY -> "@${post.authorHandle.removePrefix("@")}"
+        }
+        "IA: Destaque de $topicName."
     }
 }

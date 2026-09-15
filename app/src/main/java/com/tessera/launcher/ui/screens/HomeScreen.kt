@@ -14,6 +14,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -279,6 +281,81 @@ fun HomeScreen(
                     }
                 )
             }
+            // Gestos com Dois Dedos (Swipe com 2 dedos, Pinça para dentro/fora e Toque com 2 dedos)
+            .pointerInput(
+                uiState.isDrawerOpen,
+                uiState.isSwipeDownTwoFingersEnabled,
+                uiState.swipeDownTwoFingersAction,
+                uiState.isSwipeUpTwoFingersEnabled,
+                uiState.swipeUpTwoFingersAction,
+                uiState.isPinchInEnabled,
+                uiState.pinchInAction,
+                uiState.isPinchOutEnabled,
+                uiState.pinchOutAction,
+                uiState.isDoubleFingerTapEnabled,
+                uiState.doubleFingerTapAction
+            ) {
+                if (uiState.isDrawerOpen) return@pointerInput
+                awaitEachGesture {
+                    val firstDown = awaitFirstDown(requireUnconsumed = false)
+                    var hadTwoPointers = false
+                    var initialDistance = 0f
+                    var lastDistance = 0f
+                    var initialCenterY = 0f
+                    var lastCenterY = 0f
+                    val startTime = System.currentTimeMillis()
+
+                    do {
+                        val event = awaitPointerEvent()
+                        val activePointers = event.changes.filter { it.pressed }
+                        if (activePointers.size >= 2) {
+                            hadTwoPointers = true
+                            val p1 = activePointers[0].position
+                            val p2 = activePointers[1].position
+                            val currentDist = kotlin.math.hypot(p1.x - p2.x, p1.y - p2.y)
+                            val currentCenter = (p1.y + p2.y) / 2f
+
+                            if (initialDistance == 0f) {
+                                initialDistance = currentDist
+                                initialCenterY = currentCenter
+                            }
+                            lastDistance = currentDist
+                            lastCenterY = currentCenter
+                            event.changes.forEach { it.consume() }
+                        }
+                    } while (event.changes.any { it.pressed })
+
+                    if (hadTwoPointers && initialDistance > 0f) {
+                        val duration = System.currentTimeMillis() - startTime
+                        val deltaY = lastCenterY - initialCenterY
+                        val distanceDiff = lastDistance - initialDistance
+                        val distanceRatio = if (initialDistance > 0f) lastDistance / initialDistance else 1f
+
+                        when {
+                            // Pinçar para dentro (Pinch in)
+                            distanceRatio < 0.75f && distanceDiff < -40f && uiState.isPinchInEnabled -> {
+                                viewModel.executeGestureAction(uiState.pinchInAction, context)
+                            }
+                            // Pinçar para fora (Pinch out)
+                            distanceRatio > 1.30f && distanceDiff > 40f && uiState.isPinchOutEnabled -> {
+                                viewModel.executeGestureAction(uiState.pinchOutAction, context)
+                            }
+                            // Deslizar 2 dedos para cima
+                            deltaY < -50f && kotlin.math.abs(deltaY) > kotlin.math.abs(distanceDiff) && uiState.isSwipeUpTwoFingersEnabled -> {
+                                viewModel.executeGestureAction(uiState.swipeUpTwoFingersAction, context)
+                            }
+                            // Deslizar 2 dedos para baixo
+                            deltaY > 50f && kotlin.math.abs(deltaY) > kotlin.math.abs(distanceDiff) && uiState.isSwipeDownTwoFingersEnabled -> {
+                                viewModel.executeGestureAction(uiState.swipeDownTwoFingersAction, context)
+                            }
+                            // Toque com dois dedos (rápido e sem grande deslocamento)
+                            duration < 350 && kotlin.math.abs(deltaY) < 25f && kotlin.math.abs(distanceDiff) < 25f && uiState.isDoubleFingerTapEnabled -> {
+                                viewModel.executeGestureAction(uiState.doubleFingerTapAction, context)
+                            }
+                        }
+                    }
+                }
+            }
             // Gestos de Deslizar: Cima, Baixo, Esquerda, Direita
             .pointerInput(uiState.isDrawerOpen, uiState.isSwipeDownEnabled, uiState.swipeDownAction, uiState.isSwipeUpEnabled, uiState.swipeUpAction) {
                 var totalDragX = 0f
@@ -461,7 +538,8 @@ fun HomeScreen(
                                     uiState.aiSearchResponse != null ||
                                     uiState.aiSearchError != null ||
                                     uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
-                                    uiState.searchQuery.startsWith("@gemini", ignoreCase = true)
+                                    uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
+                                    uiState.searchQuery.startsWith("@groq", ignoreCase = true)
                                 )
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
@@ -475,7 +553,7 @@ fun HomeScreen(
                                          modifier = Modifier.fillMaxSize().fadingEdges(topFade = 24.dp, bottomFade = 36.dp),
                                          verticalArrangement = Arrangement.Bottom
                                      ) {
-                                        // Resposta IA (Gemini)
+                                        // Resposta IA (Gemini / Groq)
                                         if (isAiSearchActive) {
                                             item(key = "ai_response_card") {
                                                 AiResponseCard(
@@ -483,6 +561,7 @@ fun HomeScreen(
                                                     response = uiState.aiSearchResponse,
                                                     isLoading = uiState.isAiSearchLoading,
                                                     error = uiState.aiSearchError,
+                                                    provider = uiState.aiProvider,
                                                     onRetry = { viewModel.executeAiSearch() },
                                                     onOpenSettings = {
                                                         viewModel.openSettings()
@@ -553,13 +632,17 @@ fun HomeScreen(
                                                     query = uiState.searchQuery,
                                                     inAppSearchPackages = uiState.inAppSearchPackages,
                                                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    onAskAi = { viewModel.executeAiSearch(it) },
                                                     modifier = Modifier.padding(top = 8.dp)
                                                 )
                                             }
                                         }
                                     }
                                 } else {
-                                    AppListEmptyState(query = state.query)
+                                    AppListEmptyState(
+                                        query = state.query,
+                                        onAskAi = { viewModel.executeAiSearch(it) }
+                                    )
                                 }
                             }
                             is AppsListState.Error -> {
@@ -578,9 +661,10 @@ fun HomeScreen(
                                     val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
                                     val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
                                     val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
-                                            uiState.searchQuery.startsWith("@gemini", ignoreCase = true)
+                                            uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
+                                            uiState.searchQuery.startsWith("@groq", ignoreCase = true)
 
-                                    // Resposta IA (Gemini)
+                                    // Resposta IA (Gemini / Groq)
                                     val isAiSearchActive = uiState.isAiSearchEnabled && (
                                         uiState.isAiSearchLoading ||
                                         uiState.aiSearchResponse != null ||
@@ -595,6 +679,7 @@ fun HomeScreen(
                                                 response = uiState.aiSearchResponse,
                                                 isLoading = uiState.isAiSearchLoading,
                                                 error = uiState.aiSearchError,
+                                                provider = uiState.aiProvider,
                                                 onRetry = { viewModel.executeAiSearch() },
                                                 onOpenSettings = {
                                                     viewModel.openSettings()
@@ -749,6 +834,7 @@ fun HomeScreen(
                                             query = uiState.searchQuery,
                                             inAppSearchPackages = uiState.inAppSearchPackages,
                                             isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                            onAskAi = { viewModel.executeAiSearch(it) },
                                             modifier = Modifier.padding(top = 8.dp)
                                         )
                                     }
@@ -832,6 +918,9 @@ fun HomeScreen(
                 isAmoledMode = uiState.isAmoledMode,
                 isLightMode = uiState.isLightMode,
                 searchBarOpacity = uiState.searchBarOpacity,
+                isGeminiGlowEnabled = uiState.isGeminiGlowEnabled,
+                onAiSearchClick = { viewModel.executeAiSearch() },
+                onSearchSubmit = { viewModel.submitSearch(it) },
                 widgetContent = if (showWidgets) {
                     {
                         WidgetsPanel(

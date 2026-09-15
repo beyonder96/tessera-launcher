@@ -163,6 +163,17 @@ class MainViewModel(
             swipeLeftAction = preferences.getSwipeLeftAction(),
             isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
             swipeRightAction = preferences.getSwipeRightAction(),
+            isSwipeDownTwoFingersEnabled = preferences.isSwipeDownTwoFingersEnabled(),
+            swipeDownTwoFingersAction = preferences.getSwipeDownTwoFingersAction(),
+            isSwipeUpTwoFingersEnabled = preferences.isSwipeUpTwoFingersEnabled(),
+            swipeUpTwoFingersAction = preferences.getSwipeUpTwoFingersAction(),
+            isPinchInEnabled = preferences.isPinchInEnabled(),
+            pinchInAction = preferences.getPinchInAction(),
+            isPinchOutEnabled = preferences.isPinchOutEnabled(),
+            pinchOutAction = preferences.getPinchOutAction(),
+            isDoubleFingerTapEnabled = preferences.isDoubleFingerTapEnabled(),
+            doubleFingerTapAction = preferences.getDoubleFingerTapAction(),
+            isGeminiGlowEnabled = preferences.isGeminiGlowEnabled(),
 
             // Busca em Apps
             inAppSearchPackages = preferences.getInAppSearchPackages(),
@@ -396,8 +407,10 @@ class MainViewModel(
         val symbol = _uiState.value.commandActivationSymbol
         val cleanPrompt = prompt
             .removePrefix("@ai")
+            .removePrefix("@groq")
             .removePrefix("@gemini")
             .removePrefix("${symbol}ai")
+            .removePrefix("${symbol}groq")
             .removePrefix("${symbol}gemini")
             .trim()
 
@@ -409,7 +422,9 @@ class MainViewModel(
                 it.copy(
                     isAiSearchLoading = true,
                     aiSearchError = null,
-                    aiSearchResponse = null
+                    aiSearchResponse = null,
+                    isDrawerOpen = true,
+                    isSearchExpanded = true
                 )
             }
             val provider = _uiState.value.aiProvider
@@ -442,6 +457,24 @@ class MainViewModel(
         }
     }
 
+    fun submitSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isBlank()) return
+
+        val state = _uiState.value
+        val matchingApps = state.filteredApps
+        // Se houver exatamente 1 app correspondente exato, abre diretamente
+        if (matchingApps.size == 1 && matchingApps.first().label.equals(trimmed, ignoreCase = true)) {
+            launchApp(matchingApps.first().packageName)
+            return
+        }
+
+        // Se não houver apps correspondentes ou for uma pergunta ou se IA estiver habilitada, executa Groq IA
+        if (matchingApps.isEmpty() || trimmed.endsWith("?") || trimmed.startsWith("@") || state.isAiSearchEnabled) {
+            executeAiSearch(trimmed)
+        }
+    }
+
     fun onSearchQueryChange(query: String) {
         val hasQuery = query.isNotBlank()
         val symbol = _uiState.value.commandActivationSymbol
@@ -460,16 +493,18 @@ class MainViewModel(
             return
         }
 
-        // 2. IA / Assistente: Ativado via @ai / @gemini
+        // 2. IA / Assistente: Ativado via @ai / @groq / @gemini
         val isAiCommand = query.startsWith("@ai", ignoreCase = true) ||
+                query.startsWith("@groq", ignoreCase = true) ||
                 query.startsWith("@gemini", ignoreCase = true) ||
                 query.startsWith("${symbol}ai", ignoreCase = true) ||
+                query.startsWith("${symbol}groq", ignoreCase = true) ||
                 query.startsWith("${symbol}gemini", ignoreCase = true)
 
         if (isAiCommand) {
             val aiPrompt = query
-                .removePrefix("@ai").removePrefix("@gemini")
-                .removePrefix("${symbol}ai").removePrefix("${symbol}gemini")
+                .removePrefix("@ai").removePrefix("@groq").removePrefix("@gemini")
+                .removePrefix("${symbol}ai").removePrefix("${symbol}groq").removePrefix("${symbol}gemini")
                 .trim()
 
             autoLaunchJob?.cancel()
@@ -1163,6 +1198,11 @@ class MainViewModel(
                 }
             }
             actionKey == "open_feed" -> openFeed()
+            actionKey == "ai_search" -> {
+                expandSearch()
+                openDrawer()
+                onSearchQueryChange("@ai ")
+            }
             actionKey.startsWith("app:") -> {
                 val pkg = actionKey.removePrefix("app:")
                 launchApp(pkg)
@@ -1251,6 +1291,54 @@ class MainViewModel(
     fun setSwipeRightAction(action: String) {
         preferences.setSwipeRightAction(action)
         _uiState.update { it.copy(swipeRightAction = action) }
+    }
+
+    // Gestos com Dois Dedos
+    fun setSwipeDownTwoFingersEnabled(enabled: Boolean) {
+        preferences.setSwipeDownTwoFingersEnabled(enabled)
+        _uiState.update { it.copy(isSwipeDownTwoFingersEnabled = enabled) }
+    }
+    fun setSwipeDownTwoFingersAction(action: String) {
+        preferences.setSwipeDownTwoFingersAction(action)
+        _uiState.update { it.copy(swipeDownTwoFingersAction = action) }
+    }
+    fun setSwipeUpTwoFingersEnabled(enabled: Boolean) {
+        preferences.setSwipeUpTwoFingersEnabled(enabled)
+        _uiState.update { it.copy(isSwipeUpTwoFingersEnabled = enabled) }
+    }
+    fun setSwipeUpTwoFingersAction(action: String) {
+        preferences.setSwipeUpTwoFingersAction(action)
+        _uiState.update { it.copy(swipeUpTwoFingersAction = action) }
+    }
+    fun setPinchInEnabled(enabled: Boolean) {
+        preferences.setPinchInEnabled(enabled)
+        _uiState.update { it.copy(isPinchInEnabled = enabled) }
+    }
+    fun setPinchInAction(action: String) {
+        preferences.setPinchInAction(action)
+        _uiState.update { it.copy(pinchInAction = action) }
+    }
+    fun setPinchOutEnabled(enabled: Boolean) {
+        preferences.setPinchOutEnabled(enabled)
+        _uiState.update { it.copy(isPinchOutEnabled = enabled) }
+    }
+    fun setPinchOutAction(action: String) {
+        preferences.setPinchOutAction(action)
+        _uiState.update { it.copy(pinchOutAction = action) }
+    }
+    fun setDoubleFingerTapEnabled(enabled: Boolean) {
+        preferences.setDoubleFingerTapEnabled(enabled)
+        _uiState.update { it.copy(isDoubleFingerTapEnabled = enabled) }
+    }
+    fun setDoubleFingerTapAction(action: String) {
+        preferences.setDoubleFingerTapAction(action)
+        _uiState.update { it.copy(doubleFingerTapAction = action) }
+    }
+
+    // Efeito de Expansão Estilo Gemini
+    fun setGeminiGlowEnabled(enabled: Boolean) {
+        preferences.setGeminiGlowEnabled(enabled)
+        _uiState.update { it.copy(isGeminiGlowEnabled = enabled) }
     }
 
     // Busca em Apps
@@ -1825,6 +1913,17 @@ class MainViewModel(
                 swipeLeftAction = preferences.getSwipeLeftAction(),
                 isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
                 swipeRightAction = preferences.getSwipeRightAction(),
+                isSwipeDownTwoFingersEnabled = preferences.isSwipeDownTwoFingersEnabled(),
+                swipeDownTwoFingersAction = preferences.getSwipeDownTwoFingersAction(),
+                isSwipeUpTwoFingersEnabled = preferences.isSwipeUpTwoFingersEnabled(),
+                swipeUpTwoFingersAction = preferences.getSwipeUpTwoFingersAction(),
+                isPinchInEnabled = preferences.isPinchInEnabled(),
+                pinchInAction = preferences.getPinchInAction(),
+                isPinchOutEnabled = preferences.isPinchOutEnabled(),
+                pinchOutAction = preferences.getPinchOutAction(),
+                isDoubleFingerTapEnabled = preferences.isDoubleFingerTapEnabled(),
+                doubleFingerTapAction = preferences.getDoubleFingerTapAction(),
+                isGeminiGlowEnabled = preferences.isGeminiGlowEnabled(),
 
                 // Busca em Apps
                 inAppSearchPackages = preferences.getInAppSearchPackages(),

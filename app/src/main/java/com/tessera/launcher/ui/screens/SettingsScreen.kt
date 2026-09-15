@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -358,11 +359,15 @@ fun SettingsScreen(
     val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
     val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
 
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 14.dp
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(screenBg)
-            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(top = safeTopPadding)
     ) {
         Column(
             modifier = Modifier

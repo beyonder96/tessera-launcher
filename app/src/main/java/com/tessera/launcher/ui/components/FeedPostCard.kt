@@ -10,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.FeedPost
+import com.tessera.launcher.data.repository.FeedRepository
 import com.tessera.launcher.ui.theme.*
 
 @Composable
@@ -56,9 +58,16 @@ fun FeedPostCard(
                 )
             }
 
-            if (post.title != null) {
+            val displayTitle = remember(post.title) {
+                post.title?.let { FeedRepository.formatFeedText(it) }?.takeIf { it.isNotBlank() }
+            }
+            val displayBody = remember(post.body, displayTitle) {
+                FeedRepository.formatFeedText(post.body, displayTitle)
+            }
+
+            if (displayTitle != null) {
                 Text(
-                    text = post.title,
+                    text = displayTitle,
                     color = primaryTextColor,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
@@ -67,9 +76,9 @@ fun FeedPostCard(
                 )
             }
 
-            if (post.body.isNotBlank()) {
+            if (displayBody.isNotBlank()) {
                 Text(
-                    text = post.body,
+                    text = displayBody,
                     color = secondaryTextColor,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Normal,

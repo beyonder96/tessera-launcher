@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.input.pointer.pointerInput
@@ -154,11 +155,15 @@ fun CustomizationScreen(
         }
     }
 
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(bg)
-            .padding(WindowInsets.statusBars.asPaddingValues())
+            .padding(top = safeTopPadding)
     ) {
         Column(
             modifier = Modifier

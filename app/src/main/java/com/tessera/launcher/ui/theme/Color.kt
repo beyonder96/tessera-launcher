@@ -112,3 +112,33 @@ val TextTertiary = Color(0xFF48484A)
 val AccentWhite = Color(0xFFFFFFFF)
 val SkeletonBase = Color(0xFF141416)
 val SkeletonHighlight = Color(0xFF222226)
+
+// Tokens de Cores & Efeitos estilo Google Gemini
+val GeminiCyan = Color(0xFF00E5FF)
+val GeminiBlue = Color(0xFF4285F4)
+val GeminiPurple = Color(0xFF9C27B0)
+val GeminiMagenta = Color(0xFFE040FB)
+val GeminiAmber = Color(0xFFFF9100)
+
+val GeminiGlowColors = listOf(
+    Color(0xFF4285F4),
+    Color(0xFF9C27B0),
+    Color(0xFFE040FB),
+    Color(0xFFFF9100),
+    Color(0xFF00E5FF),
+    Color(0xFF4285F4)
+)
+
+fun geminiSweepBrush(alpha: Float = 1f): Brush {
+    val a = alpha.coerceIn(0f, 1f)
+    return Brush.sweepGradient(
+        colors = GeminiGlowColors.map { it.copy(alpha = it.alpha * a) }
+    )
+}
+
+fun geminiLinearBrush(alpha: Float = 1f): Brush {
+    val a = alpha.coerceIn(0f, 1f)
+    return Brush.linearGradient(
+        colors = GeminiGlowColors.map { it.copy(alpha = it.alpha * a) }
+    )
+}

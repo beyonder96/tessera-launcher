@@ -61,9 +61,19 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.0.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.0.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.1.0)
 
-### 🆕 Novidades na v2.0.0
+### 🆕 Novidades na v2.1.0
+- 📰 **Feed de Notícias Formatado & Limpo:** Correção definitiva de símbolos de CDATA (`]]>`) e tags HTML residuais nas notícias (G1, TecMundo, etc.), decodificação completa de entidades HTML em português e deduplicação de títulos repetidos.
+- 🧠 **Busca Integrada com Groq IA (`llama-3.3-70b-versatile`):** Perguntas digitadas na barra agora ativam a IA diretamente no teclado ou através do novo cartão interativo "Perguntar ao Groq (IA)" quando não há apps correspondentes, com suporte ao comando `@groq` e botão de atalho rápido.
+- ✨ **Efeito Gemini ao Expandir a Barra:** Borda em gradiente rotativo multicolorido animado com halo ambiente difuso (*bloom*) ao expandir a barra de pesquisa, inspirado no Google Gemini.
+- ✌️ **Gestos Multitoque com Dois Dedos:** Suporte nativo e configurável a deslizar 2 dedos para baixo, deslizar 2 dedos para cima, pinçar para dentro (*Pinch in*), pinçar para fora (*Pinch out*) e toque com dois dedos, com atribuição flexível a qualquer ação, aplicativo ou pesquisa com IA.
+- 📱 **Correção do Recorte de Câmera (*Display Cutout*):** Altura e espaçamento superior do menu de configurações e sub-telas ajustados dinamicamente para não colidir com a câmera frontal (punch hole).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.0.0</b></summary>
+
 - 🌊 **The Niagara Wave no Indexador Alfabético:** Efeito de onda elástica em arco que projeta suavemente as letras até 46dp para fora acompanhando o toque, com lupa amplificadora flutuante e feedback tátil háptico a cada transição.
 - 🌫️ **Desvanecimento de Bordas (*Fading Edges*):** Gradiente suave de transparência no topo e na base da lista de aplicativos e busca, criando um visual limpo e refinado que se integra perfeitamente ao fundo.
 - 💎 **Frosted Glass Scrim & Desfoque Profundo:** Desfoque vítreo aprimorado de 85px até 160px com gradiente vertical escurecido de alta fidelidade, eliminando conflito visual com relógios ou papéis de parede dinâmicos.
@@ -72,7 +82,7 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 👉 **Gesto Swipe-Right nos Apps:** Deslize para a direita sobre qualquer aplicativo para revelar instantaneamente seus atalhos do sistema Android e menu de ações rápidas.
 - 💾 **Backup & Restauração em JSON:** Exporte e importe com um toque todas as suas preferências, pastas, comandos, estilos e atalhos em arquivo JSON via seletor nativo de documentos.
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v1.9.0</b></summary>
 

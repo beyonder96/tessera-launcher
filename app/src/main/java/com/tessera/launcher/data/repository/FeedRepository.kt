@@ -32,6 +32,117 @@ class FeedRepository(
         private const val CONNECT_TIMEOUT = 4_000
         private const val READ_TIMEOUT = 5_000
         private const val USER_AGENT = "android:com.tessera.launcher:v1.8.8 (by /u/tessera_launcher)"
+
+        /**
+         * Sanitiza e formata profundamente textos de matérias e posts (RSS, Reddit, Bluesky):
+         * - Remove marcadores CDATA residuais (<![CDATA[ e ]]>)
+         * - Remove tags HTML, scripts, estilos, comentários e tabelas
+         * - Decodifica entidades HTML nomeadas e numéricas (&quot;, &amp;, &ndash;, etc.)
+         * - Remove links e marcações markdown
+         * - Remove repetições do título no início do corpo da matéria
+         * - Remove símbolos residuais ou pontuações no início do texto
+         * - Normaliza espaçamentos e quebras
+         */
+        fun formatFeedText(raw: String?, titleToDeduplicate: String? = null): String {
+            if (raw.isNullOrBlank()) return ""
+
+            var text = raw
+                // 1. Remover marcadores CDATA e comentários XML/HTML em qualquer posição
+                .replace("<![CDATA[", "")
+                .replace("]]>", "")
+                .replace("]]", "")
+                .replace("]>", "")
+                .replace(Regex("<!--[\\s\\S]*?-->"), " ")
+                .replace(Regex("<script[\\s\\S]*?</script>", RegexOption.IGNORE_CASE), " ")
+                .replace(Regex("<style[\\s\\S]*?</style>", RegexOption.IGNORE_CASE), " ")
+                .replace(Regex("<table[\\s\\S]*?</table>", RegexOption.IGNORE_CASE), " ")
+
+            // 2. Quebras de bloco HTML para espaços delimitados
+            text = text
+                .replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), " ")
+                .replace(Regex("</?(?:p|div|li|tr|h[1-6]|blockquote)[^>]*>", RegexOption.IGNORE_CASE), " ")
+                .replace(Regex("<[^>]+>"), " ") // Remove qualquer outra tag HTML restante
+
+            // 3. Decodificar entidades HTML (tratar dupla codificação primeiro)
+            if (text.contains("&amp;")) {
+                text = text.replace("&amp;", "&")
+            }
+            text = try {
+                android.text.Html.fromHtml(text, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+            } catch (_: Throwable) {
+                text
+                    .replace("&quot;", "\"")
+                    .replace("&#39;", "'")
+                    .replace("&apos;", "'")
+                    .replace("&lt;", "<")
+                    .replace("&gt;", ">")
+                    .replace("&nbsp;", " ")
+                    .replace("&ndash;", "–")
+                    .replace("&mdash;", "—")
+                    .replace("&hellip;", "…")
+                    .replace("&ldquo;", "“")
+                    .replace("&rdquo;", "”")
+                    .replace("&lsquo;", "‘")
+                    .replace("&rsquo;", "’")
+                    .replace("&aacute;", "á")
+                    .replace("&eacute;", "é")
+                    .replace("&iacute;", "í")
+                    .replace("&oacute;", "ó")
+                    .replace("&uacute;", "ú")
+                    .replace("&atilde;", "ã")
+                    .replace("&otilde;", "õ")
+                    .replace("&ccedil;", "ç")
+                    .replace("&Aacute;", "Á")
+                    .replace("&Eacute;", "É")
+                    .replace("&Iacute;", "Í")
+                    .replace("&Oacute;", "Ó")
+                    .replace("&Uacute;", "Ú")
+                    .replace("&Atilde;", "Ã")
+                    .replace("&Otilde;", "Õ")
+                    .replace("&Ccedil;", "Ç")
+                    .replace("&ecirc;", "ê")
+                    .replace("&ocirc;", "ô")
+                    .replace("&Ecirc;", "Ê")
+                    .replace("&Ocirc;", "Ô")
+            }
+
+            // 4. Limpar espaços invisíveis, marcadores Markdown e códigos
+            text = text
+                .replace('\u00A0', ' ')
+                .replace("\u200B", "")
+                .replace(Regex("\\[link\\]|\\[comments\\]", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("\\[([^\\]]+)\\]\\([^\\)]+\\)"), "$1") // Markdown links
+                .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1") // Markdown bold
+                .replace(Regex("\\*([^*]+)\\*"), "$1") // Markdown italic
+
+            // 5. Normalizar espaços
+            text = text.replace(Regex("\\s+"), " ").trim()
+
+            // 6. Remover título duplicado no início do texto (comum em RSS de notícias)
+            if (!titleToDeduplicate.isNullOrBlank()) {
+                val cleanTitle = titleToDeduplicate.trim()
+                val withoutTitle = when {
+                    text.startsWith(cleanTitle, ignoreCase = true) -> text.substring(cleanTitle.length).trim()
+                    else -> {
+                        val prefix = cleanTitle.take(25).trim()
+                        if (prefix.length >= 15 && text.startsWith(prefix, ignoreCase = true)) {
+                            val matchingEnd = text.indexOfAny(charArrayOf('.', ':', '—', '-', '\n'), startIndex = prefix.length)
+                            if (matchingEnd in prefix.length..cleanTitle.length + 15) {
+                                text.substring(matchingEnd + 1).trim()
+                            } else text
+                        } else text
+                    }
+                }
+                if (withoutTitle.isNotBlank()) {
+                    text = withoutTitle
+                }
+            }
+
+            // 7. Remover símbolos soltos ou pontuações que possam ter sobrado no início
+            text = text.replace(Regex("^[\\s\\]\\>\\-\\–\\—\\:\\.\\,\\•\\*\\|#@!~]+"), "").trim()
+
+            return text
+        }
     }
 
     private var lastFetchTime: Long = 0L
@@ -171,10 +282,7 @@ class FeedRepository(
         for (match in entryRegex.findAll(xml)) {
             val entry = match.value
             val rawTitle = titleRegex.find(entry)?.groupValues?.getOrNull(1) ?: continue
-            val title = unescapeHtml(rawTitle)
-                .replace(Regex("<[^>]+>"), " ")
-                .replace(Regex("\\s+"), " ")
-                .trim()
+            val title = formatFeedText(rawTitle)
             if (title.isBlank()) continue
 
             val author = authorRegex.find(entry)?.groupValues?.getOrNull(1)?.removePrefix("/u/") ?: "reddit"
@@ -190,15 +298,7 @@ class FeedRepository(
             }
 
             val rawContent = contentRegex.find(entry)?.groupValues?.getOrNull(1) ?: ""
-            val unescapedContent = unescapeHtml(rawContent)
-            val bodyText = unescapedContent
-                .replace(Regex("<!--[\\s\\S]*?-->"), "")
-                .replace(Regex("<table[\\s\\S]*?</table>", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("<[^>]+>"), " ")
-                .replace(Regex("\\[link\\]|\\[comments\\]", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("\\s+"), " ")
-                .trim()
-                .take(500)
+            val bodyText = formatFeedText(rawContent, titleToDeduplicate = title).take(500)
 
             posts.add(
                 FeedPost(
@@ -240,8 +340,8 @@ class FeedRepository(
             val thumbnail = data.optString("thumbnail", "")
                 .takeIf { it.startsWith("http") }
 
-            val cleanTitle = unescapeHtml(title).trim()
-            val cleanBody = unescapeHtml(selftext).trim().take(500)
+            val cleanTitle = formatFeedText(title)
+            val cleanBody = formatFeedText(selftext, titleToDeduplicate = cleanTitle).take(500)
 
             posts.add(
                 FeedPost(
@@ -334,8 +434,8 @@ class FeedRepository(
                     source = FeedSource.BLUESKY,
                     author = displayName,
                     authorHandle = authorHandle,
-                    title = externalTitle?.takeIf { it.isNotBlank() },
-                    body = text.take(500),
+                    title = externalTitle?.takeIf { it.isNotBlank() }?.let { formatFeedText(it) }?.takeIf { it.isNotBlank() },
+                    body = formatFeedText(text, titleToDeduplicate = externalTitle).take(500),
                     score = likeCount,
                     commentCount = replyCount,
                     url = webUrl,
@@ -347,17 +447,7 @@ class FeedRepository(
         return posts
     }
 
-    private fun unescapeHtml(text: String): String {
-        return text
-            .replace("&amp;", "&")
-            .replace("&lt;", "<")
-            .replace("&gt;", ">")
-            .replace("&quot;", "\"")
-            .replace("&#39;", "'")
-            .replace("&apos;", "'")
-            .replace("&nbsp;", " ")
-            .replace("&#32;", " ")
-    }
+    private fun unescapeHtml(text: String): String = formatFeedText(text)
 
     private fun httpGet(urlString: String): String? {
         var connection: HttpURLConnection? = null
@@ -441,25 +531,29 @@ class FeedRepository(
         val posts = mutableListOf<FeedPost>()
         val isAtom = xml.contains("<feed") || xml.contains("<entry")
         val itemRegex = if (isAtom) Regex("<entry[\\s\\S]*?</entry>") else Regex("<item[\\s\\S]*?</item>")
-        val titleRegex = Regex("<title(?:[^>]*)>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</title>")
+        val titleRegex = Regex("<title(?:[^>]*)>([\\s\\S]*?)</title>")
         val linkRegex = if (isAtom) Regex("<link[^>]+href=[\"']([^\"']+)[\"']") else Regex("<link>([^<]+)</link>")
-        val descRegex = Regex("<(?:description|summary|content)(?:[^>]*)>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</(?:description|summary|content)>")
+        val descRegex = Regex("<(?:description|summary|content:encoded|content)(?:[^>]*)>([\\s\\S]*?)</(?:description|summary|content:encoded|content)>")
         val pubDateRegex = Regex("<(?:pubDate|updated|dc:date)>([^<]+)</(?:pubDate|updated|dc:date)>")
         val authorRegex = Regex("<(?:author|dc:creator)>\\s*(?:<name>)?([^<]+)(?:</name>)?</(?:author|dc:creator)>")
-        val thumbRegex = Regex("(?:url=[\"']([^\"']+\\.(?:jpg|jpeg|png|webp)[^\"']*)[\"']|<media:content[^>]+url=[\"']([^\"']+)[\"'])")
+        val thumbRegex = Regex("(?:url=[\"']([^\"']+\\.(?:jpg|jpeg|png|webp)[^\"']*)[\"']|<media:content[^>]+url=[\"']([^\"']+)[\"']|<img[^>]+src=[\"']([^\"']+)[\"'])")
 
         for (match in itemRegex.findAll(xml)) {
             val item = match.value
             val rawTitle = titleRegex.find(item)?.groupValues?.getOrNull(1) ?: continue
-            val title = unescapeHtml(rawTitle).replace(Regex("<[^>]+>"), " ").trim()
+            val title = formatFeedText(rawTitle)
             if (title.isBlank()) continue
 
             val link = linkRegex.find(item)?.groupValues?.getOrNull(1)?.trim() ?: ""
             val rawDesc = descRegex.find(item)?.groupValues?.getOrNull(1) ?: ""
-            val body = unescapeHtml(rawDesc).replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim().take(400)
-            val author = authorRegex.find(item)?.groupValues?.getOrNull(1)?.trim()?.ifBlank { defaultAuthor } ?: defaultAuthor
+            val body = formatFeedText(rawDesc, titleToDeduplicate = title).take(450)
+            val author = authorRegex.find(item)?.groupValues?.getOrNull(1)?.trim()?.let { formatFeedText(it) }?.ifBlank { defaultAuthor } ?: defaultAuthor
             val dateStr = pubDateRegex.find(item)?.groupValues?.getOrNull(1)?.trim()
-            val thumb = thumbRegex.find(item)?.let { m -> m.groupValues.getOrNull(1)?.ifBlank { null } ?: m.groupValues.getOrNull(2) }
+            val thumb = thumbRegex.find(item)?.let { m ->
+                m.groupValues.getOrNull(1)?.ifBlank { null }
+                    ?: m.groupValues.getOrNull(2)?.ifBlank { null }
+                    ?: m.groupValues.getOrNull(3)?.ifBlank { null }
+            }
 
             val timestamp = try {
                 if (dateStr != null) {
@@ -528,14 +622,19 @@ class FeedRepository(
                     FeedSource.REDDIT
                 }
 
+                val rawTitle = obj.optString("title").takeIf { it != "null" && it.isNotBlank() }
+                val rawBody = obj.optString("body", "")
+                val cleanTitle = rawTitle?.let { formatFeedText(it) }?.takeIf { it.isNotBlank() }
+                val cleanBody = formatFeedText(rawBody, cleanTitle)
+
                 posts.add(
                     FeedPost(
                         id = obj.optString("id", "cached_$i"),
                         source = source,
                         author = obj.optString("author", ""),
                         authorHandle = obj.optString("authorHandle", ""),
-                        title = obj.optString("title").takeIf { it != "null" && it.isNotBlank() },
-                        body = obj.optString("body", ""),
+                        title = cleanTitle,
+                        body = cleanBody,
                         subreddit = obj.optString("subreddit").takeIf { it != "null" && it.isNotBlank() },
                         score = obj.optInt("score", 0),
                         commentCount = obj.optInt("commentCount", 0),

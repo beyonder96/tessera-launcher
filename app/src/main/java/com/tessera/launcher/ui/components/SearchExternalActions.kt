@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -52,7 +53,8 @@ fun SearchExternalActions(
     query: String,
     inAppSearchPackages: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
-    isLiquidGlass: Boolean = true
+    isLiquidGlass: Boolean = true,
+    onAskAi: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val border = if (isLiquidGlass) {
@@ -107,11 +109,20 @@ fun SearchExternalActions(
                 )
             }
 
-            // Lado Direito: Ações rápidas de Apps (YouTube, Play Store, etc.)
+            // Lado Direito: Ações rápidas de Apps (IA, YouTube, Play Store, etc.)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Groq IA
+                if (onAskAi != null) {
+                    AppSearchQuickIcon(
+                        icon = Icons.Outlined.AutoAwesome,
+                        description = "Groq IA",
+                        onClick = { onAskAi(query) }
+                    )
+                }
+
                 // Maps (se habilitado ou padrão)
                 if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.apps.maps")) {
                     AppSearchQuickIcon(

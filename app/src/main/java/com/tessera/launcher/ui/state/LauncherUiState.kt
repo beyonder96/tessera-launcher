@@ -77,6 +77,7 @@ data class AppShortcutItem(
 
 val DEFAULT_COMMANDS_LIST = listOf(
     CommandItem("ai", "IA Assistente", "@ai", "ai"),
+    CommandItem("groq", "Groq IA (Llama 3.3)", "@groq", "groq"),
     CommandItem("calc", "Calculadora", "@calc", "calculator"),
     CommandItem("tasks", "Tarefas", "@t", "tasks"),
     CommandItem("notes", "Notas", "@n", "notes"),
@@ -157,6 +158,21 @@ data class LauncherUiState(
     val swipeLeftAction: String = "launcher_settings",
     val isSwipeRightEnabled: Boolean = false,
     val swipeRightAction: String = "system_settings",
+
+    // Gestos com Dois Dedos
+    val isSwipeDownTwoFingersEnabled: Boolean = true,
+    val swipeDownTwoFingersAction: String = "quick_settings",
+    val isSwipeUpTwoFingersEnabled: Boolean = true,
+    val swipeUpTwoFingersAction: String = "notifications",
+    val isPinchInEnabled: Boolean = true,
+    val pinchInAction: String = "launcher_settings",
+    val isPinchOutEnabled: Boolean = true,
+    val pinchOutAction: String = "open_keyboard",
+    val isDoubleFingerTapEnabled: Boolean = true,
+    val doubleFingerTapAction: String = "ai_search",
+
+    // Efeito de Expansão Estilo Gemini na Barra
+    val isGeminiGlowEnabled: Boolean = true,
 
     // Busca em Apps
     val inAppSearchPackages: Set<String> = emptySet(),

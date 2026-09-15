@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -101,12 +102,16 @@ fun WidgetsCenterScreen(
     val secondaryTextColor = if (isLight) Color(0xFF64748B) else TextSecondary
     val tertiaryTextColor = if (isLight) Color(0xFF94A3B8) else TextTertiary
 
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(screenBg)
-            .padding(WindowInsets.statusBars.asPaddingValues())
-            .padding(WindowInsets.navigationBars.asPaddingValues())
+            .padding(top = safeTopPadding)
+            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
         // Top Bar Centrada: Botão Voltar + "CENTRAL DE WIDGETS"
         Box(

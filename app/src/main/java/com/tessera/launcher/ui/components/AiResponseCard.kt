@@ -8,6 +8,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -65,6 +66,7 @@ fun AiResponseCard(
     onRetry: () -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
+    provider: String = "GROQ",
     isLightMode: Boolean = false,
     isAmoledMode: Boolean = false
 ) {
@@ -83,6 +85,12 @@ fun AiResponseCard(
     val textPrimaryCol = if (isLightMode) LightTextPrimary else TextPrimary
     val textSecondaryCol = if (isLightMode) LightTextSecondary else TextSecondary
 
+    val providerHeader = if (provider.equals("GEMINI", true)) {
+        "RESPOSTA RÁPIDA • GEMINI FLASH"
+    } else {
+        "RESPOSTA RÁPIDA • GROQ (LLAMA 3.3)"
+    }
+
     Surface(
         shape = CardShape,
         color = surfaceBg,
@@ -93,6 +101,15 @@ fun AiResponseCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // Acento com gradiente estilo Gemini no topo do card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .clip(PillShape)
+                    .background(com.tessera.launcher.ui.theme.geminiLinearBrush(0.85f))
+            )
+
             // Cabeçalho: Ícone IA + Título + Botão de Ação
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -101,14 +118,14 @@ fun AiResponseCard(
                 Icon(
                     imageVector = Icons.Outlined.AutoAwesome,
                     contentDescription = null,
-                    tint = textSecondaryCol,
+                    tint = com.tessera.launcher.ui.theme.GeminiCyan,
                     modifier = Modifier.size(16.dp)
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = "RESPOSTA RÁPIDA • GEMINI",
+                    text = providerHeader,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -128,7 +145,7 @@ fun AiResponseCard(
                                 indication = ripple(),
                                 onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("Resposta Gemini", response))
+                                    clipboard.setPrimaryClip(ClipData.newPlainText("Resposta IA", response))
                                     Toast.makeText(context, "Resposta copiada", Toast.LENGTH_SHORT).show()
                                 }
                             ),

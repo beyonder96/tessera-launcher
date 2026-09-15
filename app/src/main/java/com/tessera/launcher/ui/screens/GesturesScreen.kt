@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -32,6 +33,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.GridView
@@ -99,6 +101,7 @@ fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
         actionKey == "lock_screen" -> "Bloquear Tela"
         actionKey == "open_keyboard" -> "Abrir teclado"
         actionKey == "open_feed" -> "Abrir Feed Social"
+        actionKey == "ai_search" -> "Pesquisa com IA (Groq / Gemini)"
         actionKey.startsWith("app:") -> {
             val pkg = actionKey.removePrefix("app:")
             apps.firstOrNull { it.packageName == pkg }?.label ?: "Abrir aplicativo"
@@ -117,7 +120,12 @@ enum class GestureTarget {
     SWIPE_DOWN,
     SWIPE_UP,
     SWIPE_LEFT,
-    SWIPE_RIGHT
+    SWIPE_RIGHT,
+    SWIPE_DOWN_TWO_FINGERS,
+    SWIPE_UP_TWO_FINGERS,
+    PINCH_IN,
+    PINCH_OUT,
+    DOUBLE_FINGER_TAP
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,17 +141,19 @@ fun GesturesScreen(
 
     val allApps = (uiState.appsState as? com.tessera.launcher.ui.state.AppsListState.Success)?.apps ?: emptyList()
 
-    val statusBarPadding = if (uiState.isShowStatusBarEnabled) {
+    val statusBarTop = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     } else {
         0.dp
     }
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground)
-            .padding(top = statusBarPadding)
+            .padding(top = safeTopPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
         // Top Bar Centrada: Seta voltar + "GESTOS"
@@ -410,6 +420,137 @@ fun GesturesScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Seção 3: GESTOS COM DOIS DEDOS
+            Text(
+                text = "GESTOS COM DOIS DEDOS",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = TextTertiary,
+                modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+            )
+
+            Surface(
+                shape = GesturesCardShape,
+                color = GesturesCardBackground,
+                border = BorderStroke(1.dp, GesturesCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    // 1. Deslizar 2 dedos para baixo
+                    GestureToggleRow(
+                        icon = Icons.Outlined.ArrowDownward,
+                        title = "Deslizar 2 dedos para baixo",
+                        subtitle = "Deslize dois dedos para baixo na tela inicial.",
+                        checked = uiState.isSwipeDownTwoFingersEnabled,
+                        onCheckedChange = { viewModel.setSwipeDownTwoFingersEnabled(it) }
+                    )
+                    if (uiState.isSwipeDownTwoFingersEnabled) {
+                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        GestureActionRow(
+                            title = "Ação de deslizar 2 dedos para baixo",
+                            subtitle = getActionDisplayName(uiState.swipeDownTwoFingersAction, allApps),
+                            onClick = {
+                                isBrowsingApps = false
+                                activeGesturePicker = GestureTarget.SWIPE_DOWN_TWO_FINGERS
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+
+                    // 2. Deslizar 2 dedos para cima
+                    GestureToggleRow(
+                        icon = Icons.Outlined.ArrowUpward,
+                        title = "Deslizar 2 dedos para cima",
+                        subtitle = "Deslize dois dedos para cima na tela inicial.",
+                        checked = uiState.isSwipeUpTwoFingersEnabled,
+                        onCheckedChange = { viewModel.setSwipeUpTwoFingersEnabled(it) }
+                    )
+                    if (uiState.isSwipeUpTwoFingersEnabled) {
+                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        GestureActionRow(
+                            title = "Ação de deslizar 2 dedos para cima",
+                            subtitle = getActionDisplayName(uiState.swipeUpTwoFingersAction, allApps),
+                            onClick = {
+                                isBrowsingApps = false
+                                activeGesturePicker = GestureTarget.SWIPE_UP_TWO_FINGERS
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+
+                    // 3. Pinçar para dentro (Pinch in)
+                    GestureToggleRow(
+                        icon = Icons.Outlined.TouchApp,
+                        title = "Pinçar para dentro (Pinch in)",
+                        subtitle = "Aproxime dois dedos na tela inicial.",
+                        checked = uiState.isPinchInEnabled,
+                        onCheckedChange = { viewModel.setPinchInEnabled(it) }
+                    )
+                    if (uiState.isPinchInEnabled) {
+                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        GestureActionRow(
+                            title = "Ação ao pinçar para dentro",
+                            subtitle = getActionDisplayName(uiState.pinchInAction, allApps),
+                            onClick = {
+                                isBrowsingApps = false
+                                activeGesturePicker = GestureTarget.PINCH_IN
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+
+                    // 4. Pinçar para fora (Pinch out)
+                    GestureToggleRow(
+                        icon = Icons.Outlined.TouchApp,
+                        title = "Pinçar para fora (Pinch out)",
+                        subtitle = "Afaste dois dedos na tela inicial.",
+                        checked = uiState.isPinchOutEnabled,
+                        onCheckedChange = { viewModel.setPinchOutEnabled(it) }
+                    )
+                    if (uiState.isPinchOutEnabled) {
+                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        GestureActionRow(
+                            title = "Ação ao pinçar para fora",
+                            subtitle = getActionDisplayName(uiState.pinchOutAction, allApps),
+                            onClick = {
+                                isBrowsingApps = false
+                                activeGesturePicker = GestureTarget.PINCH_OUT
+                            }
+                        )
+                    }
+
+                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+
+                    // 5. Toque com 2 dedos
+                    GestureToggleRow(
+                        icon = Icons.Outlined.TouchApp,
+                        title = "Toque com dois dedos",
+                        subtitle = "Toque simultaneamente com dois dedos na tela.",
+                        checked = uiState.isDoubleFingerTapEnabled,
+                        onCheckedChange = { viewModel.setDoubleFingerTapEnabled(it) }
+                    )
+                    if (uiState.isDoubleFingerTapEnabled) {
+                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        GestureActionRow(
+                            title = "Ação do toque com dois dedos",
+                            subtitle = getActionDisplayName(uiState.doubleFingerTapAction, allApps),
+                            onClick = {
+                                isBrowsingApps = false
+                                activeGesturePicker = GestureTarget.DOUBLE_FINGER_TAP
+                            }
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -424,6 +565,11 @@ fun GesturesScreen(
             GestureTarget.SWIPE_UP -> uiState.swipeUpAction
             GestureTarget.SWIPE_LEFT -> uiState.swipeLeftAction
             GestureTarget.SWIPE_RIGHT -> uiState.swipeRightAction
+            GestureTarget.SWIPE_DOWN_TWO_FINGERS -> uiState.swipeDownTwoFingersAction
+            GestureTarget.SWIPE_UP_TWO_FINGERS -> uiState.swipeUpTwoFingersAction
+            GestureTarget.PINCH_IN -> uiState.pinchInAction
+            GestureTarget.PINCH_OUT -> uiState.pinchOutAction
+            GestureTarget.DOUBLE_FINGER_TAP -> uiState.doubleFingerTapAction
         }
 
         val onSelectAction: (String) -> Unit = { newAction ->
@@ -434,6 +580,11 @@ fun GesturesScreen(
                 GestureTarget.SWIPE_UP -> viewModel.setSwipeUpAction(newAction)
                 GestureTarget.SWIPE_LEFT -> viewModel.setSwipeLeftAction(newAction)
                 GestureTarget.SWIPE_RIGHT -> viewModel.setSwipeRightAction(newAction)
+                GestureTarget.SWIPE_DOWN_TWO_FINGERS -> viewModel.setSwipeDownTwoFingersAction(newAction)
+                GestureTarget.SWIPE_UP_TWO_FINGERS -> viewModel.setSwipeUpTwoFingersAction(newAction)
+                GestureTarget.PINCH_IN -> viewModel.setPinchInAction(newAction)
+                GestureTarget.PINCH_OUT -> viewModel.setPinchOutAction(newAction)
+                GestureTarget.DOUBLE_FINGER_TAP -> viewModel.setDoubleFingerTapAction(newAction)
             }
             activeGesturePicker = null
             isBrowsingApps = false
@@ -532,6 +683,12 @@ fun GesturesScreen(
                         title = "Configurações rápidas",
                         isSelected = currentAction == "quick_settings",
                         onClick = { onSelectAction("quick_settings") }
+                    )
+                    ActionOptionItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Pesquisa com IA (Groq / Gemini)",
+                        isSelected = currentAction == "ai_search",
+                        onClick = { onSelectAction("ai_search") }
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

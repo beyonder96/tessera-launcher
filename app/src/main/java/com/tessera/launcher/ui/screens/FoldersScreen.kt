@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -104,17 +105,19 @@ fun FoldersScreen(
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
-    val statusBarPadding = if (uiState.isShowStatusBarEnabled) {
+    val statusBarTop = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     } else {
         0.dp
     }
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(DarkBackground)
-            .padding(top = statusBarPadding)
+            .padding(top = safeTopPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
         // Top Bar: Seta voltar + "PASTAS"
