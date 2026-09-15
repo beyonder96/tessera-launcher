@@ -67,9 +67,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -175,6 +177,15 @@ fun HomeScreen(
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
     var isNotesTasksOpen by remember { mutableStateOf(false) }
     var folderToView by remember { mutableStateOf<AppFolder?>(null) }
+    val haptic = LocalHapticFeedback.current
+
+    val isRestingHomeScreen = !uiState.isDrawerOpen &&
+        !uiState.isSettingsOpen &&
+        !uiState.isFeedOpen &&
+        !uiState.isSearchExpanded &&
+        uiState.searchQuery.isEmpty() &&
+        folderToView == null &&
+        selectedAppForMenu == null
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
@@ -266,16 +277,25 @@ fun HomeScreen(
             .fillMaxSize()
             .background(baseBackgroundColor)
             .padding(top = statusBarTopPadding)
-            // Gestos de Toque: Toque duplo e Manter pressionado
-            .pointerInput(uiState.isDoubleTapEnabled, uiState.doubleTapAction, uiState.isHoldEnabled, uiState.holdAction, uiState.isDrawerOpen) {
+            // Gestos de Toque: Toque duplo e Manter pressionado (Restritos à Tela Inicial Limpa)
+            .pointerInput(
+                isRestingHomeScreen,
+                uiState.isDoubleTapEnabled,
+                uiState.doubleTapAction,
+                uiState.isHoldEnabled,
+                uiState.holdAction
+            ) {
+                if (!isRestingHomeScreen) return@pointerInput
                 detectTapGestures(
                     onDoubleTap = {
-                        if (uiState.isDoubleTapEnabled && !uiState.isDrawerOpen) {
+                        if (isRestingHomeScreen && uiState.isDoubleTapEnabled) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.executeGestureAction(uiState.doubleTapAction, context)
                         }
                     },
                     onLongPress = {
-                        if (uiState.isHoldEnabled && !uiState.isDrawerOpen) {
+                        if (isRestingHomeScreen && uiState.isHoldEnabled) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.executeGestureAction(uiState.holdAction, context)
                         }
                     }
@@ -283,7 +303,7 @@ fun HomeScreen(
             }
             // Gestos com Dois Dedos (Swipe com 2 dedos, Pinça para dentro/fora e Toque com 2 dedos)
             .pointerInput(
-                uiState.isDrawerOpen,
+                isRestingHomeScreen,
                 uiState.isSwipeDownTwoFingersEnabled,
                 uiState.swipeDownTwoFingersAction,
                 uiState.isSwipeUpTwoFingersEnabled,
@@ -295,9 +315,10 @@ fun HomeScreen(
                 uiState.isDoubleFingerTapEnabled,
                 uiState.doubleFingerTapAction
             ) {
-                if (uiState.isDrawerOpen) return@pointerInput
+                if (!isRestingHomeScreen) return@pointerInput
                 awaitEachGesture {
                     val firstDown = awaitFirstDown(requireUnconsumed = false)
+                    if (!isRestingHomeScreen) return@awaitEachGesture
                     var hadTwoPointers = false
                     var initialDistance = 0f
                     var lastDistance = 0f
@@ -334,30 +355,46 @@ fun HomeScreen(
                         when {
                             // Pinçar para dentro (Pinch in)
                             distanceRatio < 0.75f && distanceDiff < -40f && uiState.isPinchInEnabled -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.executeGestureAction(uiState.pinchInAction, context)
                             }
                             // Pinçar para fora (Pinch out)
                             distanceRatio > 1.30f && distanceDiff > 40f && uiState.isPinchOutEnabled -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.executeGestureAction(uiState.pinchOutAction, context)
                             }
                             // Deslizar 2 dedos para cima
                             deltaY < -50f && kotlin.math.abs(deltaY) > kotlin.math.abs(distanceDiff) && uiState.isSwipeUpTwoFingersEnabled -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.executeGestureAction(uiState.swipeUpTwoFingersAction, context)
                             }
                             // Deslizar 2 dedos para baixo
                             deltaY > 50f && kotlin.math.abs(deltaY) > kotlin.math.abs(distanceDiff) && uiState.isSwipeDownTwoFingersEnabled -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.executeGestureAction(uiState.swipeDownTwoFingersAction, context)
                             }
                             // Toque com dois dedos (rápido e sem grande deslocamento)
                             duration < 350 && kotlin.math.abs(deltaY) < 25f && kotlin.math.abs(distanceDiff) < 25f && uiState.isDoubleFingerTapEnabled -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 viewModel.executeGestureAction(uiState.doubleFingerTapAction, context)
                             }
                         }
                     }
                 }
             }
-            // Gestos de Deslizar: Cima, Baixo, Esquerda, Direita
-            .pointerInput(uiState.isDrawerOpen, uiState.isSwipeDownEnabled, uiState.swipeDownAction, uiState.isSwipeUpEnabled, uiState.swipeUpAction) {
+            // Gestos de Deslizar: Cima, Baixo, Esquerda, Direita (Restritos à Tela Inicial Limpa)
+            .pointerInput(
+                isRestingHomeScreen,
+                uiState.isSwipeDownEnabled,
+                uiState.swipeDownAction,
+                uiState.isSwipeUpEnabled,
+                uiState.swipeUpAction,
+                uiState.isSwipeLeftEnabled,
+                uiState.swipeLeftAction,
+                uiState.isSwipeRightEnabled,
+                uiState.swipeRightAction
+            ) {
+                if (!isRestingHomeScreen) return@pointerInput
                 var totalDragX = 0f
                 var totalDragY = 0f
                 detectDragGestures(
@@ -366,38 +403,39 @@ fun HomeScreen(
                         totalDragY = 0f
                     },
                     onDragEnd = {
+                        if (!isRestingHomeScreen) return@detectDragGestures
                         val absX = abs(totalDragX)
                         val absY = abs(totalDragY)
                         if (absY > absX && absY > 55f) {
                             if (totalDragY < 0) { // Deslizar para CIMA
-                                if (!uiState.isDrawerOpen) {
-                                    if (uiState.isSwipeUpEnabled &&
-                                        uiState.swipeUpAction != "open_drawer" && uiState.swipeUpAction != "open_keyboard"
-                                    ) {
-                                        viewModel.executeGestureAction(uiState.swipeUpAction, context)
-                                    } else {
-                                        viewModel.expandSearch()
-                                        viewModel.openDrawer()
-                                        try {
-                                            focusRequester.requestFocus()
-                                            keyboardController?.show()
-                                        } catch (_: Exception) {}
-                                    }
+                                if (uiState.isSwipeUpEnabled &&
+                                    uiState.swipeUpAction != "open_drawer" && uiState.swipeUpAction != "open_keyboard"
+                                ) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.executeGestureAction(uiState.swipeUpAction, context)
+                                } else {
+                                    viewModel.expandSearch()
+                                    viewModel.openDrawer()
+                                    try {
+                                        focusRequester.requestFocus()
+                                        keyboardController?.show()
+                                    } catch (_: Exception) {}
                                 }
                             } else { // Deslizar para BAIXO
-                                if (uiState.isDrawerOpen) {
-                                    viewModel.closeDrawer()
-                                } else if (uiState.isSwipeDownEnabled) {
+                                if (uiState.isSwipeDownEnabled) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.executeGestureAction(uiState.swipeDownAction, context)
                                 }
                             }
-                        } else if (absX > absY && absX > 55f && !uiState.isDrawerOpen) {
+                        } else if (absX > absY && absX > 55f) {
                             if (totalDragX < 0) { // Deslizar para a ESQUERDA
                                 if (uiState.isSwipeLeftEnabled) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.executeGestureAction(uiState.swipeLeftAction, context)
                                 }
                             } else { // Deslizar para a DIREITA
                                 if (uiState.isSwipeRightEnabled) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.executeGestureAction(uiState.swipeRightAction, context)
                                 }
                             }
@@ -421,6 +459,23 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = (uiState.homeWallpaperDimming / 100f).coerceIn(0f, 1f)))
+            )
+        }
+
+        // Toque de Descarte Suave: Quando a busca estiver expandida na home, toque fora recolhe a busca e esconde o teclado
+        if (uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            keyboardController?.hide()
+                            focusManager.clearFocus()
+                            viewModel.collapseSearch()
+                        }
+                    )
             )
         }
 
@@ -895,7 +950,6 @@ fun HomeScreen(
         ) {
 
             val showWidgets = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isWidgetExpanded && uiState.searchQuery.isEmpty()
-            val showSmartDock = !uiState.isDrawerOpen && (uiState.isSearchExpanded || !uiState.isCollapseDockEnabled) && uiState.isSmartDockEnabled && uiState.predictedApps.isNotEmpty() && uiState.searchQuery.isEmpty()
 
             SearchMorphingDock(
                 isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
@@ -973,21 +1027,13 @@ fun HomeScreen(
                             isAmoledMode = uiState.isAmoledMode,
                             isLightMode = uiState.isLightMode,
                             smartGlanceBriefing = uiState.smartGlanceBriefing,
-                            isSmartGlanceEnabled = uiState.isSmartGlanceEnabled
-                        )
-                    }
-                } else null,
-                smartDockContent = if (showSmartDock) {
-                    {
-                        SmartDockRow(
-                            apps = uiState.predictedApps,
+                            isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
+                            predictedApps = uiState.predictedApps,
+                            isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
                             onAppClick = { app -> viewModel.launchApp(app.packageName) },
                             onAppLongClick = { app -> selectedAppForMenu = app },
                             iconShape = uiState.iconShape,
-                            isThemedIcons = uiState.isThemedIconsEnabled,
-                            isLightMode = uiState.isLightMode,
-                            isAmoledMode = uiState.isAmoledMode,
-                            isEmbedded = true
+                            isThemedIcons = uiState.isThemedIconsEnabled
                         )
                     }
                 } else null

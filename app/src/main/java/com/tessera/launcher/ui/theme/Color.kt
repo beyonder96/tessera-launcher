@@ -113,12 +113,38 @@ val AccentWhite = Color(0xFFFFFFFF)
 val SkeletonBase = Color(0xFF141416)
 val SkeletonHighlight = Color(0xFF222226)
 
-// Tokens de Cores & Efeitos estilo Google Gemini
+// Tokens de Cores & Efeitos estilo Google Gemini & Luz Branca de IA
 val GeminiCyan = Color(0xFF00E5FF)
 val GeminiBlue = Color(0xFF4285F4)
 val GeminiPurple = Color(0xFF9C27B0)
 val GeminiMagenta = Color(0xFFE040FB)
 val GeminiAmber = Color(0xFFFF9100)
+
+// Luz Branca Pura Especular estilo Ativação de IA de Smartphones (Pixel / Galaxy AI / Circle to Search)
+val PhoneAiWhiteGlowColors = listOf(
+    Color(0x22FFFFFF),
+    Color(0x88FFFFFF),
+    Color(0xFFFFFFFF),
+    Color(0xFFFFFFFF),
+    Color(0x88FFFFFF),
+    Color(0x22FFFFFF)
+)
+
+val PhoneAiLightGlowColors = listOf(
+    Color(0x2278909C),
+    Color(0x8890A4AE),
+    Color(0xFFFFFFFF),
+    Color(0xFFFFFFFF),
+    Color(0x8890A4AE),
+    Color(0x2278909C)
+)
+
+fun phoneAiWhiteBrush(alpha: Float = 1f): Brush {
+    val a = alpha.coerceIn(0f, 1f)
+    return Brush.linearGradient(
+        colors = PhoneAiWhiteGlowColors.map { it.copy(alpha = it.alpha * a) }
+    )
+}
 
 val GeminiGlowColors = listOf(
     Color(0xFF4285F4),
@@ -142,3 +168,4 @@ fun geminiLinearBrush(alpha: Float = 1f): Brush {
         colors = GeminiGlowColors.map { it.copy(alpha = it.alpha * a) }
     )
 }
+

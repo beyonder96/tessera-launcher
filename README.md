@@ -61,16 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.1.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.2.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.2.0)
 
-### 🆕 Novidades na v2.1.0
+### 🆕 Novidades na v2.2.0
+- 💡 **Luz Branca Pura de IA na Barra de Busca:** Substituição do gradiente multicolorido por feixe luminoso e borda de luz branca pura especular animada com efeito difuso suave (*bloom underglow*) e pulso de respiração orgânico, recriando a estética nativa de ativação de assistentes de IA em smartphones modernos (como Circle to Search, Pixel e Galaxy AI).
+- 🛡️ **Gestos Restritos Rigorosamente à Tela Inicial em Repouso:** Garantia total de que nenhum gesto de 1 ou 2 dedos (swipes, toque duplo, pinça) interfira na navegação ou consuma toques quando o usuário estiver no Feed Social, na tela de Configurações, na Gaveta de Apps ou com a Barra de Busca expandida.
+- 📳 **Feedback Háptico Tátil nos Gestos:** Resposta de vibração sutil ao confirmar o acionamento de gestos na tela inicial.
+- 🧩 **Apps Sugeridos (IA) como Novo Widget Dedicado:** A linha fixa de apps sugeridos foi movida para fora da doca de busca (restaurando a altura compacta original da barra e widgets) e transformada em um card dedicado de `54.dp` integrado à Central de Widgets, permitindo ativá-lo, desativá-lo e selecioná-lo como cartão padrão.
+- 🍃 **Descarte Fluido ao Tocar Fora:** Tocar na área vazia da tela inicial com a barra de busca expandida agora a recolhe imediatamente e esconde o teclado com suavidade.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.1.0</b></summary>
+
 - 📰 **Feed de Notícias Formatado & Limpo:** Correção definitiva de símbolos de CDATA (`]]>`) e tags HTML residuais nas notícias (G1, TecMundo, etc.), decodificação completa de entidades HTML em português e deduplicação de títulos repetidos.
 - 🧠 **Busca Integrada com Groq IA (`llama-3.3-70b-versatile`):** Perguntas digitadas na barra agora ativam a IA diretamente no teclado ou através do novo cartão interativo "Perguntar ao Groq (IA)" quando não há apps correspondentes, com suporte ao comando `@groq` e botão de atalho rápido.
 - ✨ **Efeito Gemini ao Expandir a Barra:** Borda em gradiente rotativo multicolorido animado com halo ambiente difuso (*bloom*) ao expandir a barra de pesquisa, inspirado no Google Gemini.
 - ✌️ **Gestos Multitoque com Dois Dedos:** Suporte nativo e configurável a deslizar 2 dedos para baixo, deslizar 2 dedos para cima, pinçar para dentro (*Pinch in*), pinçar para fora (*Pinch out*) e toque com dois dedos, com atribuição flexível a qualquer ação, aplicativo ou pesquisa com IA.
 - 📱 **Correção do Recorte de Câmera (*Display Cutout*):** Altura e espaçamento superior do menu de configurações e sub-telas ajustados dinamicamente para não colidir com a câmera frontal (punch hole).
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.0.0</b></summary>
 

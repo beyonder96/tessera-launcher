@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BatteryStd
@@ -212,6 +213,20 @@ fun WidgetsCenterScreen(
                         subtitle = "Notas rápidas, lista de tarefas e entradas do diário",
                         checked = uiState.isNotesWidgetEnabled,
                         onCheckedChange = { viewModel.setNotesWidgetEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                    WidgetCenterToggleRow(
+                        icon = Icons.Outlined.Apps,
+                        title = "Apps Sugeridos (IA)",
+                        subtitle = "Card de apps previstos pelo seu uso e rotina na barra de widgets",
+                        checked = uiState.isSmartDockEnabled,
+                        onCheckedChange = { viewModel.setSmartDockEnabled(it) },
                         isLightMode = isLight,
                         iconBgColor = iconBg,
                         primaryTextColor = primaryTextColor,
@@ -489,7 +504,8 @@ fun WidgetsCenterScreen(
                         )
                     }
 
-                    if (uiState.isSmartGlanceEnabled) {
+                    val showExtraRow = uiState.isSmartGlanceEnabled || uiState.isSmartDockEnabled
+                    if (showExtraRow) {
                         Spacer(modifier = Modifier.height(18.dp))
 
                         Row(
@@ -498,16 +514,42 @@ fun WidgetsCenterScreen(
                                 .padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            // 8: Smart Glance ("Now & Next")
-                            WidgetCardSelectorCircle(
-                                label = "Now & Next\n(Smart Glance)",
-                                icon = Icons.Outlined.AutoAwesome,
-                                isSelected = uiState.defaultWidgetCardIndex == 8,
-                                onClick = { viewModel.setDefaultWidgetCardIndex(8) },
-                                isLightMode = isLight,
-                                iconBgColor = iconBg,
-                                modifier = Modifier.fillMaxWidth(0.25f)
-                            )
+                            if (uiState.isSmartGlanceEnabled) {
+                                // 8: Smart Glance ("Now & Next")
+                                WidgetCardSelectorCircle(
+                                    label = "Now & Next\n(Smart Glance)",
+                                    icon = Icons.Outlined.AutoAwesome,
+                                    isSelected = uiState.defaultWidgetCardIndex == 8,
+                                    onClick = { viewModel.setDefaultWidgetCardIndex(8) },
+                                    isLightMode = isLight,
+                                    iconBgColor = iconBg,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (uiState.isSmartDockEnabled) {
+                                // 9: Apps Sugeridos (IA)
+                                WidgetCardSelectorCircle(
+                                    label = "Apps\nsugeridos (IA)",
+                                    icon = Icons.Outlined.Apps,
+                                    isSelected = uiState.defaultWidgetCardIndex == 9,
+                                    onClick = { viewModel.setDefaultWidgetCardIndex(9) },
+                                    isLightMode = isLight,
+                                    iconBgColor = iconBg,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            if (uiState.isSmartGlanceEnabled && !uiState.isSmartDockEnabled) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
+                            } else if (!uiState.isSmartGlanceEnabled && uiState.isSmartDockEnabled) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
+                            } else if (uiState.isSmartGlanceEnabled && uiState.isSmartDockEnabled) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }

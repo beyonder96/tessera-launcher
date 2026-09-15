@@ -1,5 +1,6 @@
 package com.tessera.launcher.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
@@ -103,8 +104,7 @@ fun SearchMorphingDock(
     isGeminiGlowEnabled: Boolean = true,
     onAiSearchClick: () -> Unit = {},
     onSearchSubmit: (String) -> Unit = {},
-    widgetContent: (@Composable () -> Unit)? = null,
-    smartDockContent: (@Composable () -> Unit)? = null
+    widgetContent: (@Composable () -> Unit)? = null
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -113,7 +113,7 @@ fun SearchMorphingDock(
 
     val isSplit = searchBarStyle.startsWith("split_")
 
-    val hasTopContent = widgetContent != null || smartDockContent != null
+    val hasTopContent = widgetContent != null
     val dockShape = when (searchBarStyle) {
         "pill", "split_pill" -> if (hasTopContent) RoundedCornerShape(26.dp) else PillShape
         "rounded", "split_rounded" -> RoundedCornerShape(20.dp)
@@ -128,16 +128,26 @@ fun SearchMorphingDock(
         else -> CircleShape
     }
 
-    // Animação Contínua do Gradiente Dinâmico Estilo Gemini
-    val infiniteTransition = rememberInfiniteTransition(label = "gemini_glow")
-    val geminiAngle by infiniteTransition.animateFloat(
+    // Animação Contínua da Luz Branca Pura Especular de IA (Estilo Ativação Nativa de Celular)
+    val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
+    val aiGlowAngle by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 4000, easing = LinearEasing),
+            animation = tween(durationMillis = 3500, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "gemini_rotation"
+        label = "ai_glow_rotation"
+    )
+
+    val aiPulse by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ai_glow_pulse"
     )
 
     val geminiExpandProgress by animateFloatAsState(
@@ -149,13 +159,14 @@ fun SearchMorphingDock(
         label = "gemini_expand_progress"
     )
 
-    val rad = Math.toRadians(geminiAngle.toDouble())
+    val rad = Math.toRadians(aiGlowAngle.toDouble())
     val cosVal = Math.cos(rad).toFloat()
     val sinVal = Math.sin(rad).toFloat()
 
-    val geminiBorderBrush = remember(geminiAngle) {
+    val aiBorderBrush = remember(aiGlowAngle, isLightMode) {
         Brush.linearGradient(
-            colors = com.tessera.launcher.ui.theme.GeminiGlowColors,
+            colors = if (isLightMode) com.tessera.launcher.ui.theme.PhoneAiLightGlowColors
+                     else com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors,
             start = Offset(x = 500f * (1f - cosVal), y = 200f * (1f - sinVal)),
             end = Offset(x = 500f * (1f + cosVal), y = 200f * (1f + sinVal))
         )
@@ -165,7 +176,7 @@ fun SearchMorphingDock(
     val shouldUseLiquidGlass = (isLiquidGlass && !isAmoledMode) || opacityFraction < 0.98f
 
     val dockBorder = if (isGeminiGlowEnabled && isExpanded) {
-        BorderStroke(1.5.dp, geminiBorderBrush)
+        BorderStroke(1.5.dp, aiBorderBrush)
     } else if (shouldUseLiquidGlass) {
         if (isLightMode) {
             BorderStroke(1.dp, lightLiquidGlassBorderBrush(opacityFraction))
@@ -316,29 +327,38 @@ fun SearchMorphingDock(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Center
             ) {
-                // Card Principal Integrado (Widget no topo + Busca na base) com Aura Luminosa Gemini
+                // Card Principal Integrado (Widget no topo + Busca na base) com Aura Luminosa de Luz Branca Pura de IA
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Halo Luminoso Difuso Estilo Google Gemini (Bloom Underglow)
+                    // Halo Luminoso Difuso de Luz Branca Pura Especular (Bloom Underglow estilo Ativação de IA de Celular)
                     if (isGeminiGlowEnabled && geminiExpandProgress > 0.01f) {
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
                                 .graphicsLayer {
-                                    alpha = 0.45f * geminiExpandProgress
+                                    alpha = (if (isLightMode) 0.35f else 0.55f) * geminiExpandProgress * aiPulse
                                     scaleX = 1.03f
                                     scaleY = 1.08f
                                 }
                                 .background(
                                     Brush.radialGradient(
-                                        colors = listOf(
-                                            Color(0x667C4DFF),
-                                            Color(0x4000E5FF),
-                                            Color(0x20FF4081),
-                                            Color.Transparent
-                                        )
+                                        colors = if (isLightMode) {
+                                            listOf(
+                                                Color(0x35B0BEC5),
+                                                Color(0x15CFD8DC),
+                                                Color(0x05ECEFF1),
+                                                Color.Transparent
+                                            )
+                                        } else {
+                                            listOf(
+                                                Color(0x55FFFFFF),
+                                                Color(0x22FFFFFF),
+                                                Color(0x08FFFFFF),
+                                                Color.Transparent
+                                            )
+                                        }
                                     ),
                                     shape = dockShape
                                 )
@@ -364,20 +384,20 @@ fun SearchMorphingDock(
                             .padding(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = if (widgetContent != null || smartDockContent != null) 12.dp else 4.dp,
-                                bottom = if (widgetContent != null || smartDockContent != null) 4.dp else 4.dp
+                                top = if (widgetContent != null) 12.dp else 4.dp,
+                                bottom = if (widgetContent != null) 4.dp else 4.dp
                             )
                     ) {
                         // Reflexo especular superior do Liquid Design
                         if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
                             Box(
                                 modifier = Modifier
-                                    .matchParentSize()
-                                    .clip(dockShape)
-                                    .background(
-                                        if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
-                                        else liquidGlassSheenBrush(opacityFraction)
-                                    )
+                                .matchParentSize()
+                                .clip(dockShape)
+                                .background(
+                                    if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
+                                    else liquidGlassSheenBrush(opacityFraction)
+                                )
                             )
                         }
 
@@ -398,23 +418,6 @@ fun SearchMorphingDock(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 8.dp, vertical = 6.dp)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                            }
-
-                            if (smartDockContent != null) {
-                                smartDockContent()
-                                Spacer(modifier = Modifier.height(4.dp))
-                                HorizontalDivider(
-                                    color = if (isLightMode) {
-                                        Color(0xFFE2E8F0).copy(alpha = opacityFraction.coerceAtLeast(0.3f))
-                                    } else {
-                                        Color.White.copy(alpha = 0.08f * opacityFraction.coerceAtLeast(0.35f))
-                                    },
-                                    thickness = 1.dp,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                             }

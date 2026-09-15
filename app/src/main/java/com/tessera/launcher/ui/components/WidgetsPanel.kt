@@ -96,6 +96,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Warning
 import com.tessera.launcher.data.helper.SmartGlanceActionType
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
+import com.tessera.launcher.data.model.AppInfo
 import java.util.Calendar
 
 private enum class PanelCardType {
@@ -107,8 +108,10 @@ private enum class PanelCardType {
     WEATHER,
     DINO,
     NOTES,
-    SMART_GLANCE
+    SMART_GLANCE,
+    PREDICTED_APPS
 }
+
 
 @Composable
 fun WidgetsPanel(
@@ -158,9 +161,15 @@ fun WidgetsPanel(
     isAmoledMode: Boolean = false,
     isLightMode: Boolean = false,
     smartGlanceBriefing: SmartGlanceBriefing? = null,
-    isSmartGlanceEnabled: Boolean = true
+    isSmartGlanceEnabled: Boolean = true,
+    predictedApps: List<AppInfo> = emptyList(),
+    isPredictedAppsWidgetEnabled: Boolean = true,
+    onAppClick: (AppInfo) -> Unit = {},
+    onAppLongClick: ((AppInfo) -> Unit)? = null,
+    iconShape: String = "DEFAULT",
+    isThemedIcons: Boolean = true
 ) {
-    val activeCards = remember(isSmartGlanceEnabled, isDinoWidgetEnabled, isNotesWidgetEnabled) {
+    val activeCards = remember(isSmartGlanceEnabled, isDinoWidgetEnabled, isNotesWidgetEnabled, isPredictedAppsWidgetEnabled, predictedApps.size) {
         buildList {
             add(PanelCardType.QUICK_ACTIONS)
             add(PanelCardType.BATTERY)
@@ -171,6 +180,7 @@ fun WidgetsPanel(
             if (isDinoWidgetEnabled) add(PanelCardType.DINO)
             if (isNotesWidgetEnabled) add(PanelCardType.NOTES)
             if (isSmartGlanceEnabled) add(PanelCardType.SMART_GLANCE)
+            if (isPredictedAppsWidgetEnabled && predictedApps.isNotEmpty()) add(PanelCardType.PREDICTED_APPS)
         }
     }
     val pageCount = activeCards.size
@@ -185,6 +195,7 @@ fun WidgetsPanel(
         6 -> PanelCardType.DINO
         7 -> PanelCardType.NOTES
         8 -> PanelCardType.SMART_GLANCE
+        9 -> PanelCardType.PREDICTED_APPS
         else -> PanelCardType.QUICK_ACTIONS
     }
     val targetPageIndex = activeCards.indexOf(targetCardType).let { if (it >= 0) it else 0 }
@@ -346,6 +357,17 @@ fun WidgetsPanel(
                         isLightMode = isLightMode,
                         isLiquidGlass = isLiquidGlass,
                         onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
+                    )
+                }
+                PanelCardType.PREDICTED_APPS -> {
+                    PredictedAppsWidgetCard(
+                        apps = predictedApps,
+                        onAppClick = onAppClick,
+                        onAppLongClick = onAppLongClick,
+                        iconShape = iconShape,
+                        isThemedIcons = isThemedIcons,
+                        isLightMode = isLightMode,
+                        isAmoledMode = isAmoledMode
                     )
                 }
                 null -> {}
@@ -1549,4 +1571,34 @@ private fun SmartGlanceWidgetCard(
         }
     }
 }
+
+@Composable
+private fun PredictedAppsWidgetCard(
+    apps: List<AppInfo>,
+    onAppClick: (AppInfo) -> Unit,
+    onAppLongClick: ((AppInfo) -> Unit)?,
+    iconShape: String = "DEFAULT",
+    isThemedIcons: Boolean = true,
+    isLightMode: Boolean = false,
+    isAmoledMode: Boolean = false
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center
+    ) {
+        SmartDockRow(
+            apps = apps,
+            onAppClick = onAppClick,
+            onAppLongClick = onAppLongClick,
+            iconShape = iconShape,
+            isThemedIcons = isThemedIcons,
+            isLightMode = isLightMode,
+            isAmoledMode = isAmoledMode,
+            isEmbedded = true
+        )
+    }
+}
+
 

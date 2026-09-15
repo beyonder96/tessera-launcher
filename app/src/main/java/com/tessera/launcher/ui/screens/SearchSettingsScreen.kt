@@ -334,8 +334,8 @@ fun SearchSettingsScreen(
 
                     SearchToggleRow(
                         icon = Icons.Outlined.AutoAwesome,
-                        title = "Efeito Gemini ao Expandir",
-                        subtitle = "Borda gradiente multicolorida animada e brilho ambiente ao abrir a busca",
+                        title = "Luz de IA ao Expandir",
+                        subtitle = "Borda de luz branca pura animada e aura suave estilo ativação de IA do celular",
                         checked = uiState.isGeminiGlowEnabled,
                         onCheckedChange = { viewModel.setGeminiGlowEnabled(it) }
                     )

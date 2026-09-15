@@ -154,7 +154,7 @@ fun AppListEmptyState(
                     Surface(
                         shape = com.tessera.launcher.ui.theme.PillShape,
                         color = Color(0xFF14141E),
-                        border = BorderStroke(1.dp, Brush.horizontalGradient(com.tessera.launcher.ui.theme.GeminiGlowColors)),
+                        border = BorderStroke(1.dp, com.tessera.launcher.ui.theme.phoneAiWhiteBrush(0.8f)),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
@@ -171,7 +171,7 @@ fun AppListEmptyState(
                             Icon(
                                 imageVector = Icons.Outlined.AutoAwesome,
                                 contentDescription = null,
-                                tint = com.tessera.launcher.ui.theme.GeminiCyan,
+                                tint = Color.White,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
