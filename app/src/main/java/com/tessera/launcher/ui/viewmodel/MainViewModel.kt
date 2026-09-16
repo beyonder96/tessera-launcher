@@ -1822,13 +1822,17 @@ class MainViewModel(
     }
 
     fun setGroqApiKey(key: String) {
-        preferences.setGroqApiKey(key)
-        _uiState.update { it.copy(groqApiKey = key.trim()) }
+        val cleanKey = key.trim().removeSurrounding("\"").removeSurrounding("'")
+        preferences.setGroqApiKey(cleanKey)
+        _uiState.update { it.copy(groqApiKey = cleanKey, aiSearchError = null) }
+        aiEngine.resetGroqModel()
     }
 
     fun setGeminiApiKey(key: String) {
-        preferences.setGeminiApiKey(key)
-        _uiState.update { it.copy(geminiApiKey = key.trim()) }
+        val cleanKey = key.trim().removeSurrounding("\"").removeSurrounding("'")
+        preferences.setGeminiApiKey(cleanKey)
+        _uiState.update { it.copy(geminiApiKey = cleanKey, aiSearchError = null) }
+        aiEngine.resetGroqModel()
     }
 
     fun setDrawerRightAligned(aligned: Boolean) {

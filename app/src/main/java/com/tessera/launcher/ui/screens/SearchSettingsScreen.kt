@@ -348,7 +348,7 @@ fun SearchSettingsScreen(
                         SearchNavRow(
                             icon = Icons.Outlined.RocketLaunch,
                             title = "Provedor de IA",
-                            subtitle = if (uiState.aiProvider.equals("GEMINI", true)) "Google Gemini 2.0 Flash" else "Groq (Llama 3.3 70B — Gratuito)",
+                            subtitle = if (uiState.aiProvider.equals("GEMINI", true)) "Google Gemini 2.0 Flash" else "Groq Cloud (Gratuito e Ultra-rápido)",
                             onClick = { showProviderDialog = true }
                         )
 
@@ -373,8 +373,8 @@ fun SearchSettingsScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Column {
-                                                Text("Groq (Llama 3.3 70B)", fontWeight = FontWeight.SemiBold, color = TextPrimary)
-                                                Text("Ultra-rápido, tier 100% gratuito (Recomendado)", fontSize = 12.sp, color = TextSecondary)
+                                                Text("Groq Cloud IA", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                                Text("Inferência ultra-rápida, tier 100% gratuito (Recomendado)", fontSize = 12.sp, color = TextSecondary)
                                             }
                                         }
                                         Row(

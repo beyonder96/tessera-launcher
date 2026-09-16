@@ -61,16 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.2.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.2.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.2.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.2.1)
 
-### 🆕 Novidades na v2.2.0
+### 🆕 Novidades na v2.2.1
+- 🧠 **Resolução Dinâmica e Multi-Modelo Groq IA:** Correção definitiva do erro HTTP 404 causado pela descontinuação de modelos estáticos no tier gratuito/developer da Groq. O motor de IA agora realiza autodescoberta (`GET /models`) dos modelos ativos e autorizados para a conta do usuário, com cascata inteligente de fallback automático entre modelos modernos de alto desempenho (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, `meta-llama/llama-4-scout`, `qwen/qwen3.6`, etc.).
+- 🛡️ **Sanitização de Chaves de API e Mensagens Detalhadas:** Remoção automática de aspas e espaços acidentais colados nas chaves do Groq e Gemini, com captura e exibição de mensagens claras da API em caso de problemas de credenciais ou limites de quota.
+- 🎨 **Interface Refinada para Provedores de IA:** Ajuste dos textos, diálogos e cartões de resposta para refletir de forma limpa o ecossistema Groq Cloud IA.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.2.0</b></summary>
+
 - 💡 **Luz Branca Pura de IA na Barra de Busca:** Substituição do gradiente multicolorido por feixe luminoso e borda de luz branca pura especular animada com efeito difuso suave (*bloom underglow*) e pulso de respiração orgânico, recriando a estética nativa de ativação de assistentes de IA em smartphones modernos (como Circle to Search, Pixel e Galaxy AI).
 - 🛡️ **Gestos Restritos Rigorosamente à Tela Inicial em Repouso:** Garantia total de que nenhum gesto de 1 ou 2 dedos (swipes, toque duplo, pinça) interfira na navegação ou consuma toques quando o usuário estiver no Feed Social, na tela de Configurações, na Gaveta de Apps ou com a Barra de Busca expandida.
 - 📳 **Feedback Háptico Tátil nos Gestos:** Resposta de vibração sutil ao confirmar o acionamento de gestos na tela inicial.
 - 🧩 **Apps Sugeridos (IA) como Novo Widget Dedicado:** A linha fixa de apps sugeridos foi movida para fora da doca de busca (restaurando a altura compacta original da barra e widgets) e transformada em um card dedicado de `54.dp` integrado à Central de Widgets, permitindo ativá-lo, desativá-lo e selecioná-lo como cartão padrão.
 - 🍃 **Descarte Fluido ao Tocar Fora:** Tocar na área vazia da tela inicial com a barra de busca expandida agora a recolhe imediatamente e esconde o teclado com suavidade.
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.1.0</b></summary>
 

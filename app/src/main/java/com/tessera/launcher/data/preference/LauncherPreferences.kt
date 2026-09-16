@@ -518,10 +518,10 @@ class LauncherPreferences(context: Context) {
     fun setAiProvider(provider: String) = prefs.edit().putString("ai_provider", provider).apply()
 
     fun getGroqApiKey(): String = prefs.getString("groq_api_key", "") ?: ""
-    fun setGroqApiKey(key: String) = prefs.edit().putString("groq_api_key", key.trim()).apply()
+    fun setGroqApiKey(key: String) = prefs.edit().putString("groq_api_key", key.trim().removeSurrounding("\"").removeSurrounding("'")).apply()
 
     fun getGeminiApiKey(): String = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
-    fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim()).apply()
+    fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim().removeSurrounding("\"").removeSurrounding("'")).apply()
 
     // Backup & Restauração
     fun exportBackupJson(): String {

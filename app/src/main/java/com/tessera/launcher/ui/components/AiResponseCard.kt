@@ -88,7 +88,7 @@ fun AiResponseCard(
     val providerHeader = if (provider.equals("GEMINI", true)) {
         "RESPOSTA RÁPIDA • GEMINI FLASH"
     } else {
-        "RESPOSTA RÁPIDA • GROQ (LLAMA 3.3)"
+        "RESPOSTA RÁPIDA • GROQ IA"
     }
 
     Surface(
