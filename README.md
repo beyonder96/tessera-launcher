@@ -61,19 +61,21 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.3.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.3.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.3.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.3.1)
 
-### 🆕 Novidades na v2.3.0
-- 🔴 **Central de Widgets Nothing OS (Tela −1):** Substituição da tela lateral clássica de notícias por um dashboard pessoal elegante e funcional inspirado na linguagem visual do Nothing OS:
-  - **Relógio Dot-Matrix:** Horário digital estilizado pontilhado com dois pontos vermelhos característicos, data completa e indicador de clima em tempo real.
-  - **Quick Settings Reais:** Dois tiles destacados para Wi-Fi e Bluetooth, acompanhados de 4 botões circulares táteis: Lanterna com acionamento físico do flash da câmera, controle do Modo de Som (Normal, Vibração, Silencioso), atalho para Calculadora e Alarme.
-  - **Anel de Bateria Nothing:** Indicador circular de nível de bateria do smartphone com animação de carregamento e status do sistema.
-  - **Tape Recorder Media Player (Now Playing):** Card de música inspirado em fita cassete com carretéis animados girando durante a reprodução e controles completos de faixa sincronizados com Spotify e YouTube Music.
-  - **Clima & Agenda Integrados:** Previsão do tempo detalhada e próximo compromisso da Google Agenda.
-  - **Seletor de Modo:** Liberdade total em *Configurações > Tela Lateral (−1)* para escolher entre Central Nothing OS, Feed Social clássico ou Desativada.
-- 🌫️ **Borrão Dinâmico de Papel de Parede (Home e Gaveta de Apps):** Substituição da sobreposição preta opaca de escurecimento por desfoque vítreo real nativo (`window.setBackgroundBlurRadius`) na Home em repouso (ajustável de 0 a 100%), com aprofundamento suave e automático ao abrir a gaveta de aplicativos para garantir foco e legibilidade perfeitos sobre o vidro fosco (*Frosted Glass*).
+### 🆕 Novidades na v2.3.1
+- 🌫️ **Borrão de Fundo Acelerado por GPU (`RenderEffect`):** Correção definitiva da aplicação de desfoque no papel de parede na tela inicial e gaveta de aplicativos. O desfoque agora é processado diretamente pelo Jetpack Compose via shaders GPU de alta performance, contornando limitações do SurfaceFlinger e funcionando de forma universal em qualquer aparelho (Samsung One UI, Xiaomi HyperOS, Motorola, Pixel, etc.).
+- 🖼️ **Seletor de Papel de Parede Nativo (PhotoPicker):** Opção direta em *Configurações > Customização* para escolher qualquer imagem da galeria com o seletor moderno do Android, com armazenamento local seguro e botão para sincronizar com 1 clique o papel de parede e tela de bloqueio do sistema.
+- 💫 **Transição Fluida Home ↔ Gaveta de Apps:** Animação suave e contínua do raio de borrão entre o estado de repouso da Home e a abertura da gaveta de aplicativos ou pesquisa.
 
 ### 📋 Versões Anteriores
+<details>
+<summary><b>v2.3.0</b></summary>
+
+- 🔴 **Central de Widgets Nothing OS (Tela −1):** Substituição da tela lateral clássica de notícias por um dashboard pessoal elegante e funcional inspirado na linguagem visual do Nothing OS (Relógio Dot-Matrix, Quick Settings reais para Lanterna e Volume, Anel de Bateria, Tape Recorder e Agenda).
+- 🌫️ **Borrão Dinâmico de Papel de Parede:** Slider de desfoque vítreo na Home em repouso e aprofundamento na gaveta de apps.
+
+</details>
 <details>
 <summary><b>v2.2.1</b></summary>
 

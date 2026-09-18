@@ -83,6 +83,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_FONT_FAMILY_TYPE = "font_family_type"
         private const val KEY_CUSTOM_FONT_PATH = "custom_font_path"
         private const val KEY_SYSTEM_WALLPAPER_ENABLED = "system_wallpaper_enabled"
+        private const val KEY_CUSTOM_WALLPAPER_PATH = "custom_wallpaper_path"
         private const val KEY_SOLID_WALLPAPER_COLOR = "solid_wallpaper_color"
         private const val KEY_SOLID_WALLPAPER_TARGET = "solid_wallpaper_target"
         private const val KEY_THEMED_ICONS_ENABLED = "themed_icons_enabled"
@@ -392,6 +393,9 @@ class LauncherPreferences(context: Context) {
 
     fun isSystemWallpaperEnabled(): Boolean = prefs.getBoolean(KEY_SYSTEM_WALLPAPER_ENABLED, false)
     fun setSystemWallpaperEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SYSTEM_WALLPAPER_ENABLED, enabled).apply()
+
+    fun getCustomWallpaperPath(): String? = prefs.getString(KEY_CUSTOM_WALLPAPER_PATH, null)
+    fun setCustomWallpaperPath(path: String?) = prefs.edit().putString(KEY_CUSTOM_WALLPAPER_PATH, path).apply()
 
     fun getSolidWallpaperColor(): String = prefs.getString(KEY_SOLID_WALLPAPER_COLOR, "#000000") ?: "#000000"
     fun setSolidWallpaperColor(hex: String) = prefs.edit().putString(KEY_SOLID_WALLPAPER_COLOR, hex).apply()

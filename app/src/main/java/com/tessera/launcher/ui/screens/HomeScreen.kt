@@ -7,11 +7,13 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -58,6 +60,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
@@ -65,7 +69,9 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -161,12 +167,45 @@ private fun Modifier.fadingEdges(
 fun HomeScreen(
     viewModel: MainViewModel,
     onPickPhoto: () -> Unit,
+    onPickWallpaper: () -> Unit = {},
     onRequestCalendarPermission: () -> Unit,
     onRequestContactsPermission: () -> Unit = {},
     onRequestLocationPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val wallpaperBitmap by viewModel.wallpaperBitmap.collectAsStateWithLifecycle()
+
+    val isDrawerOrSearchOpen = uiState.isDrawerOpen || uiState.isSearchExpanded || uiState.searchQuery.isNotEmpty()
+    val isOtherOpen = uiState.isSettingsOpen || uiState.isFeedOpen
+
+    val targetBlurDp = when {
+        isDrawerOrSearchOpen -> {
+            val base = if (uiState.homeWallpaperBlur > 0) {
+                ((uiState.homeWallpaperBlur / 100f) * 20f + 25f).dp
+            } else {
+                28.dp
+            }
+            val extra = if (uiState.isDrawerGlassEnabled && uiState.drawerGlassOpacity > 0) {
+                ((uiState.drawerGlassOpacity / 100f) * 20f).dp
+            } else {
+                12.dp
+            }
+            (base + extra).coerceIn(25.dp, 65.dp)
+        }
+        isOtherOpen -> 25.dp
+        else -> {
+            if (uiState.homeWallpaperBlur <= 0) 0.dp
+            else ((uiState.homeWallpaperBlur / 100f) * 40f).dp
+        }
+    }
+
+    val animatedBlurDp by animateDpAsState(
+        targetValue = targetBlurDp,
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        label = "wallpaperBlurAnimation"
+    )
+
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -276,9 +315,57 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(baseBackgroundColor)
-            .padding(top = statusBarTopPadding)
-            // Gestos de Toque: Toque duplo e Manter pressionado (Restritos à Tela Inicial Limpa)
-            .pointerInput(
+    ) {
+        // Camada 0: Papel de Parede da Tela Inicial com Borrão Dinâmico Acelerado por GPU
+        if (uiState.isSystemWallpaperEnabled) {
+            if (wallpaperBitmap != null) {
+                Image(
+                    bitmap = wallpaperBitmap!!.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (animatedBlurDp > 0.dp) {
+                                Modifier
+                                    .graphicsLayer {
+                                        scaleX = 1.10f
+                                        scaleY = 1.10f
+                                    }
+                                    .blur(radius = animatedBlurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                            } else {
+                                Modifier
+                            }
+                        ),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            // Camada de Escurecimento / Tint Suave para Legibilidade dos Widgets e Textos
+            val restingDimAlpha = ((uiState.homeWallpaperBlur / 100f) * 0.40f).coerceIn(0f, 0.45f)
+            val effectiveAlpha = if (wallpaperBitmap != null) {
+                restingDimAlpha
+            } else {
+                ((uiState.homeWallpaperBlur / 100f) * 0.50f).coerceIn(0f, 0.65f)
+            }
+            if (effectiveAlpha > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            if (uiState.isLightMode) Color.White.copy(alpha = effectiveAlpha * 0.5f)
+                            else Color.Black.copy(alpha = effectiveAlpha)
+                        )
+                )
+            }
+        }
+
+        // Camada Principal da Launcher (com padding da barra de status e gestos)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = statusBarTopPadding)
+                // Gestos de Toque: Toque duplo e Manter pressionado (Restritos à Tela Inicial Limpa)
+                .pointerInput(
                 isRestingHomeScreen,
                 uiState.isDoubleTapEnabled,
                 uiState.doubleTapAction,
@@ -1041,6 +1128,7 @@ fun HomeScreen(
             SettingsScreen(
                 viewModel = viewModel,
                 onPickPhoto = onPickPhoto,
+                onPickWallpaper = onPickWallpaper,
                 onRequestCalendarPermission = onRequestCalendarPermission,
                 onRequestContactsPermission = onRequestContactsPermission
             )
@@ -1235,6 +1323,7 @@ fun HomeScreen(
                 )
             }
         }
+    }
     }
 }
 

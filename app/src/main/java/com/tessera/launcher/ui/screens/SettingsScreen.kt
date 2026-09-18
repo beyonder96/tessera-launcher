@@ -115,6 +115,7 @@ private val IconCircleBackground = Color(0xFF16161C)
 fun SettingsScreen(
     viewModel: MainViewModel,
     onPickPhoto: () -> Unit,
+    onPickWallpaper: () -> Unit = {},
     onRequestCalendarPermission: () -> Unit,
     onRequestContactsPermission: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -231,6 +232,7 @@ fun SettingsScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
+                onPickWallpaper = onPickWallpaper,
                 modifier = modifier
             )
             return

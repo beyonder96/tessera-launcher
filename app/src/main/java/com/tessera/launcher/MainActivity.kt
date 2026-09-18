@@ -43,6 +43,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Seletor de Papel de Parede Personalizado (Photo Picker Nativo)
+    private val wallpaperPickerLauncher = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.setCustomWallpaper(uri, this)
+        }
+    }
+
     // Launcher de Permissão de Calendário
     private val calendarPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -176,6 +185,11 @@ class MainActivity : ComponentActivity() {
                             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                         )
                     },
+                    onPickWallpaper = {
+                        wallpaperPickerLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    },
                     onRequestCalendarPermission = {
                         calendarPermissionLauncher.launch(Manifest.permission.READ_CALENDAR)
                     },
@@ -201,6 +215,9 @@ class MainActivity : ComponentActivity() {
             viewModel.refreshCalendarAndPermissions()
             viewModel.refreshWeather()
             viewModel.refreshPredictedApps()
+            if (viewModel.uiState.value.customWallpaperPath == null && viewModel.uiState.value.isSystemWallpaperEnabled) {
+                viewModel.loadWallpaper()
+            }
         }
     }
 }

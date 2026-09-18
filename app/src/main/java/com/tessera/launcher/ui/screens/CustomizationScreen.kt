@@ -1,6 +1,7 @@
 package com.tessera.launcher.ui.screens
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,8 +36,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Image
@@ -93,6 +97,7 @@ fun CustomizationScreen(
     viewModel: MainViewModel,
     uiState: LauncherUiState,
     onBack: () -> Unit,
+    onPickWallpaper: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -273,18 +278,14 @@ fun CustomizationScreen(
 
                     CustomDivider(isLight = isLight)
 
-                    // Alterar Papel de Parede
+                    // Escolher Imagem de Papel de Parede (Photo Picker Nativo da Galeria)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = {
-                                    context.startActivity(Intent(Intent.ACTION_SET_WALLPAPER).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    })
-                                }
+                                onClick = onPickWallpaper
                             )
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -293,13 +294,13 @@ fun CustomizationScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF191920)),
+                                .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Image,
+                                imageVector = Icons.Outlined.AddPhotoAlternate,
                                 contentDescription = null,
-                                tint = TextPrimary,
+                                tint = textPrimary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -308,27 +309,215 @@ fun CustomizationScreen(
 
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Alterar Papel de Parede",
+                                text = if (uiState.customWallpaperPath != null) "Trocar Imagem de Fundo" else "Escolher Imagem de Fundo",
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 15.sp
                                 ),
-                                color = TextPrimary
+                                color = textPrimary
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Abre o seletor do sistema para escolher a imagem",
+                                text = "Aplica borrão vítreo suave em tempo real a 120Hz",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = textSecondary
                             )
                         }
 
                         Icon(
                             imageVector = Icons.Outlined.ChevronRight,
                             contentDescription = null,
-                            tint = TextTertiary,
+                            tint = textSecondary,
                             modifier = Modifier.size(20.dp)
                         )
+                    }
+
+                    if (uiState.customWallpaperPath != null) {
+                        CustomDivider(isLight = isLight)
+
+                        // Sincronizar com Papel de Parede do Sistema
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        val success = viewModel.applyCustomWallpaperToSystem(context)
+                                        Toast.makeText(
+                                            context,
+                                            if (success) "Papel de parede aplicado ao sistema e tela de bloqueio!" else "Não foi possível aplicar ao sistema.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = null,
+                                    tint = textPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Aplicar ao Sistema e Bloqueio",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Define esta mesma imagem no Android e na tela de bloqueio",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = textSecondary
+                                )
+                            }
+                        }
+
+                        CustomDivider(isLight = isLight)
+
+                        // Remover Papel de Parede Personalizado
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        viewModel.clearCustomWallpaper(context)
+                                        Toast.makeText(context, "Imagem de fundo removida.", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isLight) Color(0xFFFFEBEE) else Color(0xFF2A1518)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF5252),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Remover Imagem Personalizada",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = Color(0xFFFF5252)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Volta a exibir o papel de parede padrão",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = textSecondary
+                                )
+                            }
+                        }
+                    } else {
+                        CustomDivider(isLight = isLight)
+
+                        // Alterar Papel de Parede via Sistema
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        context.startActivity(Intent(Intent.ACTION_SET_WALLPAPER).apply {
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        })
+                                    }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Image,
+                                    contentDescription = null,
+                                    tint = textPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Papel de Parede do Android",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Abre as configurações de papel de parede do aparelho",
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = textSecondary
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.Outlined.ChevronRight,
+                                contentDescription = null,
+                                tint = textSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Dica de compatibilidade Android 13+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .background(
+                                    if (isLight) Color(0xFFEAEAEA) else Color(0xFF14141A),
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "💡 Dica: Para obter desfoque vítreo em alta definição a 120Hz no Android 13+, use 'Escolher Imagem de Fundo' para selecionar a imagem pela galeria.",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 16.sp),
+                                color = textSecondary
+                            )
+                        }
                     }
 
                     CustomDivider()

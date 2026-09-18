@@ -2,6 +2,14 @@ package com.tessera.launcher.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.app.WallpaperManager
+import java.io.File
+import java.io.FileOutputStream
+import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tessera.launcher.data.helper.CalendarHelper
@@ -193,6 +201,7 @@ class MainViewModel(
             fontFamilyType = preferences.getFontFamilyType(),
             customFontPath = preferences.getCustomFontPath(),
             isSystemWallpaperEnabled = preferences.isSystemWallpaperEnabled(),
+            customWallpaperPath = preferences.getCustomWallpaperPath(),
             solidWallpaperColor = preferences.getSolidWallpaperColor(),
             solidWallpaperTarget = preferences.getSolidWallpaperTarget(),
             isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
@@ -253,6 +262,9 @@ class MainViewModel(
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
 
+    private val _wallpaperBitmap = MutableStateFlow<Bitmap?>(null)
+    val wallpaperBitmap: StateFlow<Bitmap?> = _wallpaperBitmap.asStateFlow()
+
     private var allApps: List<AppInfo> = emptyList()
     private var autoLaunchJob: Job? = null
 
@@ -264,6 +276,7 @@ class MainViewModel(
         refreshCalendarAndPermissions()
         refreshWeather()
         refreshSmartGlance()
+        loadWallpaper()
     }
 
     fun observeInstalledApps() {
@@ -1432,6 +1445,140 @@ class MainViewModel(
     fun setSystemWallpaperEnabled(enabled: Boolean) {
         preferences.setSystemWallpaperEnabled(enabled)
         _uiState.update { it.copy(isSystemWallpaperEnabled = enabled) }
+        if (enabled && _wallpaperBitmap.value == null) {
+            loadWallpaper()
+        }
+    }
+
+    fun loadWallpaper() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val path = preferences.getCustomWallpaperPath()
+            if (!path.isNullOrBlank()) {
+                val file = File(path)
+                if (file.exists() && file.length() > 0) {
+                    val bitmap = decodeSampledBitmap(file.absolutePath, appContext)
+                    if (bitmap != null) {
+                        _wallpaperBitmap.value = bitmap
+                        return@launch
+                    }
+                }
+            }
+            // Fallback: tenta ler o papel de parede do sistema se o Android permitir
+            val systemBitmap = loadSystemWallpaperFallback(appContext)
+            _wallpaperBitmap.value = systemBitmap
+        }
+    }
+
+    private fun loadSystemWallpaperFallback(context: Context): Bitmap? {
+        return try {
+            val wm = WallpaperManager.getInstance(context)
+            val drawable = wm.drawable ?: wm.peekDrawable() ?: return null
+            if (drawable is BitmapDrawable) {
+                drawable.bitmap
+            } else {
+                val w = drawable.intrinsicWidth.coerceAtLeast(1)
+                val h = drawable.intrinsicHeight.coerceAtLeast(1)
+                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bmp)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bmp
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun decodeSampledBitmap(filePath: String, context: Context): Bitmap? {
+        return try {
+            val metrics = context.resources.displayMetrics
+            val reqWidth = metrics.widthPixels.coerceAtLeast(1080)
+            val reqHeight = metrics.heightPixels.coerceAtLeast(1920)
+
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(filePath, options)
+
+            options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight)
+            options.inJustDecodeBounds = false
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888
+
+            BitmapFactory.decodeFile(filePath, options)
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
+        val height = options.outHeight
+        val width = options.outWidth
+        var inSampleSize = 1
+        if (height > reqHeight || width > reqWidth) {
+            val halfHeight = height / 2
+            val halfWidth = width / 2
+            while ((halfHeight / inSampleSize) >= reqHeight && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        return inSampleSize
+    }
+
+    fun setCustomWallpaper(uri: Uri, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val targetFile = File(context.filesDir, "custom_wallpaper.jpg")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(targetFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                preferences.setCustomWallpaperPath(targetFile.absolutePath)
+                preferences.setSystemWallpaperEnabled(true)
+
+                val bitmap = decodeSampledBitmap(targetFile.absolutePath, context)
+                _wallpaperBitmap.value = bitmap
+                _uiState.update {
+                    it.copy(
+                        customWallpaperPath = targetFile.absolutePath,
+                        isSystemWallpaperEnabled = true
+                    )
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("MainViewModel", "Erro ao salvar papel de parede customizado", e)
+            }
+        }
+    }
+
+    fun clearCustomWallpaper(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val targetFile = File(context.filesDir, "custom_wallpaper.jpg")
+                if (targetFile.exists()) {
+                    targetFile.delete()
+                }
+            } catch (_: Exception) {}
+            preferences.setCustomWallpaperPath(null)
+            val fallback = loadSystemWallpaperFallback(context)
+            _wallpaperBitmap.value = fallback
+            _uiState.update { it.copy(customWallpaperPath = null) }
+        }
+    }
+
+    fun applyCustomWallpaperToSystem(context: Context): Boolean {
+        return try {
+            val bitmap = _wallpaperBitmap.value ?: return false
+            val wm = WallpaperManager.getInstance(context)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                wm.setBitmap(bitmap, null, true, WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK)
+            } else {
+                wm.setBitmap(bitmap)
+            }
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("MainViewModel", "Erro ao aplicar wallpaper ao sistema", e)
+            false
+        }
     }
 
     fun setSolidWallpaperColor(hex: String) {
@@ -1962,6 +2109,7 @@ class MainViewModel(
                 fontFamilyType = preferences.getFontFamilyType(),
                 customFontPath = preferences.getCustomFontPath(),
                 isSystemWallpaperEnabled = preferences.isSystemWallpaperEnabled(),
+                customWallpaperPath = preferences.getCustomWallpaperPath(),
                 solidWallpaperColor = preferences.getSolidWallpaperColor(),
                 solidWallpaperTarget = preferences.getSolidWallpaperTarget(),
                 isThemedIconsEnabled = preferences.isThemedIconsEnabled(),

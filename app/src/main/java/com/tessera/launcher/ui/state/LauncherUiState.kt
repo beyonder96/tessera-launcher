@@ -194,6 +194,7 @@ data class LauncherUiState(
     val fontFamilyType: String = "tessera",
     val customFontPath: String = "",
     val isSystemWallpaperEnabled: Boolean = false,
+    val customWallpaperPath: String? = null,
     val solidWallpaperColor: String = "#000000",
     val solidWallpaperTarget: String = "both",
     val isThemedIconsEnabled: Boolean = false,
