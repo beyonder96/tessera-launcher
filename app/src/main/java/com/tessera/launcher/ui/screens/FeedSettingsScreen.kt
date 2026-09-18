@@ -86,38 +86,9 @@ fun FeedSettingsScreen(
                 modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
             )
 
-            // Opção 1: Central Nothing OS
+            // Opção 1: Desativada (Padrão Limpo)
             LateralModeCard(
-                title = "Central Nothing OS (Recomendado)",
-                description = "Dashboard com Relógio Dot-Matrix, Quick Settings reais (Lanterna, Som, Wi-Fi, Bluetooth), Bateria, Player de Mídia e Clima.",
-                isSelected = uiState.leftScreenMode == "nothing_hub",
-                onClick = { viewModel.setLeftScreenMode("nothing_hub") },
-                textColor = textColor,
-                textSecondary = textSecondary,
-                surfaceColor = surfaceColor,
-                borderColor = borderColor,
-                hasAccentDot = true
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Opção 2: Feed Social
-            LateralModeCard(
-                title = "Feed Social (Notícias)",
-                description = "Linha do tempo clássica de notícias (G1, TecMundo, Reddit) com feeds RSS e resumos por IA.",
-                isSelected = uiState.leftScreenMode == "feed",
-                onClick = { viewModel.setLeftScreenMode("feed") },
-                textColor = textColor,
-                textSecondary = textSecondary,
-                surfaceColor = surfaceColor,
-                borderColor = borderColor
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Opção 3: Desativada
-            LateralModeCard(
-                title = "Desativada",
+                title = "Desativada (Padrão)",
                 description = "Nenhuma tela lateral ao deslizar para a direita na tela inicial.",
                 isSelected = uiState.leftScreenMode == "disabled",
                 onClick = { viewModel.setLeftScreenMode("disabled") },
@@ -127,50 +98,21 @@ fun FeedSettingsScreen(
                 borderColor = borderColor
             )
 
-            if (uiState.leftScreenMode == "nothing_hub") {
-                Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = "RECURSOS DA CENTRAL NOTHING OS",
-                    color = textSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.W600,
-                    modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
-                )
+            // Opção 2: Feed Social
+            LateralModeCard(
+                title = "Feed Social & Notícias",
+                description = "Linha do tempo de notícias (Reddit, Bluesky, RSS) com resumos por IA.",
+                isSelected = uiState.leftScreenMode == "feed",
+                onClick = { viewModel.setLeftScreenMode("feed") },
+                textColor = textColor,
+                textSecondary = textSecondary,
+                surfaceColor = surfaceColor,
+                borderColor = borderColor
+            )
 
-                Surface(
-                    shape = CardShape,
-                    color = surfaceColor,
-                    border = BorderStroke(1.dp, borderColor),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "A Central Nothing OS é ativada ao deslizar para a direita na Home. Ela opera de forma 100% offline-first com controles diretos de hardware (lanterna, modos de som), status do sistema e player de mídia sem distrações.",
-                            color = textSecondary,
-                            fontSize = 13.sp,
-                            lineHeight = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                viewModel.navigateBackSettings()
-                                viewModel.openFeed()
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD71921)),
-                            shape = PillShape,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "Testar e Abrir Central Agora",
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            } else if (uiState.leftScreenMode == "feed") {
+            if (uiState.leftScreenMode == "feed") {
                 Spacer(modifier = Modifier.height(20.dp))
             
                 // Ativar Feed Social

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -131,37 +132,6 @@ import kotlin.math.abs
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import com.tessera.launcher.ui.state.FeedState
-
-private fun Modifier.fadingEdges(
-    topFade: Dp = 32.dp,
-    bottomFade: Dp = 44.dp
-): Modifier = this
-    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-    .drawWithContent {
-        drawContent()
-        val topFadePx = topFade.toPx()
-        val bottomFadePx = bottomFade.toPx()
-        if (topFadePx > 0f) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, Color.Black),
-                    startY = 0f,
-                    endY = topFadePx
-                ),
-                blendMode = BlendMode.DstIn
-            )
-        }
-        if (bottomFadePx > 0f) {
-            drawRect(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color.Black, Color.Transparent),
-                    startY = size.height - bottomFadePx,
-                    endY = size.height
-                ),
-                blendMode = BlendMode.DstIn
-            )
-        }
-    }
 
 @Composable
 fun HomeScreen(
@@ -345,7 +315,7 @@ fun HomeScreen(
             val effectiveAlpha = if (wallpaperBitmap != null) {
                 restingDimAlpha
             } else {
-                ((uiState.homeWallpaperBlur / 100f) * 0.50f).coerceIn(0f, 0.65f)
+                ((uiState.homeWallpaperBlur / 100f) * 0.20f).coerceIn(0f, 0.25f)
             }
             if (effectiveAlpha > 0f) {
                 Box(
@@ -682,11 +652,12 @@ fun HomeScreen(
                                     uiState.matchingContacts.isNotEmpty() ||
                                     matchingFolder != null
                                 ) {
-                                     LazyColumn(
-                                         state = listState,
-                                         modifier = Modifier.fillMaxSize().fadingEdges(topFade = 24.dp, bottomFade = 36.dp),
-                                         verticalArrangement = Arrangement.Bottom
-                                     ) {
+                                      LazyColumn(
+                                          state = listState,
+                                          contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
+                                          modifier = Modifier.fillMaxSize(),
+                                          verticalArrangement = Arrangement.Bottom
+                                      ) {
                                         // Resposta IA (Gemini / Groq)
                                         if (isAiSearchActive) {
                                             item(key = "ai_response_card") {
@@ -788,7 +759,8 @@ fun HomeScreen(
                             is AppsListState.Success -> {
                                  LazyColumn(
                                      state = listState,
-                                     modifier = Modifier.fillMaxSize().fadingEdges(topFade = 32.dp, bottomFade = 44.dp),
+                                     contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
+                                     modifier = Modifier.fillMaxSize(),
                                      verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                                  ) {
                                     // Modo Calculadora isolado (@calc)
@@ -1287,41 +1259,33 @@ fun HomeScreen(
             )
         }
 
-        // Central Nothing OS ou Feed Social — Tela −1 (Slide Horizontal)
+        // Feed Social — Tela −1 (Slide Horizontal)
         AnimatedVisibility(
-            visible = uiState.isFeedOpen,
+            visible = uiState.isFeedOpen && uiState.leftScreenMode == "feed",
             enter = slideInHorizontally(
                 initialOffsetX = { -it },
-                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                animationSpec = tween(220, easing = FastOutSlowInEasing)
             ) + fadeIn(animationSpec = tween(200)),
             exit = slideOutHorizontally(
                 targetOffsetX = { -it },
-                animationSpec = tween(180, easing = FastOutSlowInEasing)
+                animationSpec = tween(190, easing = FastOutSlowInEasing)
             ) + fadeOut(animationSpec = tween(180))
         ) {
-            if (uiState.leftScreenMode == "feed") {
-                FeedScreen(
-                    feedState = uiState.feedState,
-                    activeSource = null,
-                    enabledSources = uiState.feedEnabledSources,
-                    isLightMode = uiState.isLightMode,
-                    onSourceSelected = { },
-                    onPostClick = { url ->
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        }
-                        runCatching { context.startActivity(intent) }
-                    },
-                    onRefresh = { viewModel.refreshFeed() },
-                    onClose = { viewModel.closeFeed() }
-                )
-            } else {
-                NothingHubScreen(
-                    viewModel = viewModel,
-                    uiState = uiState,
-                    onClose = { viewModel.closeFeed() }
-                )
-            }
+            FeedScreen(
+                feedState = uiState.feedState,
+                activeSource = null,
+                enabledSources = uiState.feedEnabledSources,
+                isLightMode = uiState.isLightMode,
+                onSourceSelected = { },
+                onPostClick = { url ->
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    runCatching { context.startActivity(intent) }
+                },
+                onRefresh = { viewModel.refreshFeed() },
+                onClose = { viewModel.closeFeed() }
+            )
         }
     }
     }

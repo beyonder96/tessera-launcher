@@ -1,5 +1,6 @@
 package com.tessera.launcher.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -11,6 +12,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -115,16 +120,16 @@ fun SearchMorphingDock(
 
     val hasTopContent = widgetContent != null
     val dockShape = when (searchBarStyle) {
-        "pill", "split_pill" -> if (hasTopContent) RoundedCornerShape(26.dp) else PillShape
-        "rounded", "split_rounded" -> RoundedCornerShape(20.dp)
-        "square", "split_square" -> RoundedCornerShape(8.dp)
-        else -> if (hasTopContent) RoundedCornerShape(26.dp) else PillShape
+        "pill", "split_pill" -> if (hasTopContent) RoundedCornerShape(28.dp) else RoundedCornerShape(32.dp)
+        "rounded", "split_rounded" -> RoundedCornerShape(22.dp)
+        "square", "split_square" -> RoundedCornerShape(12.dp)
+        else -> if (hasTopContent) RoundedCornerShape(28.dp) else RoundedCornerShape(32.dp)
     }
 
     val buttonShape = when (searchBarStyle) {
         "split_pill" -> CircleShape
-        "split_rounded" -> RoundedCornerShape(18.dp)
-        "split_square" -> RoundedCornerShape(8.dp)
+        "split_rounded" -> RoundedCornerShape(20.dp)
+        "split_square" -> RoundedCornerShape(12.dp)
         else -> CircleShape
     }
 
@@ -175,6 +180,25 @@ fun SearchMorphingDock(
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
     val shouldUseLiquidGlass = (isLiquidGlass && !isAmoledMode) || opacityFraction < 0.98f
 
+    // Borda moderna com gradiente sutil de luz física especular
+    val modernSpecularBorder = remember(isLightMode, opacityFraction) {
+        if (isLightMode) {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.80f * opacityFraction).coerceIn(0.20f, 0.95f)),
+                    Color(0x22000000).copy(alpha = (0.25f * opacityFraction).coerceIn(0.05f, 0.35f))
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.32f * opacityFraction).coerceIn(0.10f, 0.40f)),
+                    Color.White.copy(alpha = (0.06f * opacityFraction).coerceIn(0.02f, 0.12f))
+                )
+            )
+        }
+    }
+
     val dockBorder = if (isGeminiGlowEnabled && isExpanded) {
         BorderStroke(1.5.dp, aiBorderBrush)
     } else if (shouldUseLiquidGlass) {
@@ -184,13 +208,7 @@ fun SearchMorphingDock(
             BorderStroke(1.dp, liquidGlassBorderBrush(opacityFraction))
         }
     } else {
-        val borderColor = when {
-            isLightMode -> LightCardBorder
-            isAmoledMode -> AmoledCardBorder
-            isExpanded -> DarkSurfaceBorderHover
-            else -> DarkSurfaceBorder
-        }
-        BorderStroke(1.dp, borderColor)
+        BorderStroke(1.dp, modernSpecularBorder)
     }
 
     val dockBgModifier = if (shouldUseLiquidGlass) {
@@ -200,23 +218,44 @@ fun SearchMorphingDock(
             Modifier.background(liquidGlassSurfaceBrush(opacityFraction))
         }
     } else if (isAmoledMode) {
-        Modifier.background(AmoledCardBackground)
+        Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    AmoledCardBackground,
+                    Color(0xFF070709)
+                )
+            )
+        )
     } else if (isLightMode) {
-        Modifier.background(LightCardBackground)
+        Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFFFFFFFF),
+                    Color(0xFFF6F7FA)
+                )
+            )
+        )
     } else {
-        Modifier.background(DarkSurface)
+        Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFF16161D),
+                    Color(0xFF0F0F14)
+                )
+            )
+        )
     }
 
-    val shadowElevation = (8.dp * opacityFraction)
+    val shadowElevation = (10.dp * opacityFraction)
     val shadowAmbientColor = if (isLightMode) {
-        Color.Black.copy(alpha = 0.05f * opacityFraction)
+        Color(0x14000000)
     } else {
-        Color.Black.copy(alpha = 0.12f * opacityFraction)
+        Color.Black.copy(alpha = 0.25f * opacityFraction)
     }
     val shadowSpotColor = if (opacityFraction < 0.95f) {
         Color.Transparent
     } else {
-        if (isLightMode) Color(0x18000000) else Color.Black.copy(alpha = 0.35f)
+        if (isLightMode) Color(0x22000000) else Color.Black.copy(alpha = 0.45f)
     }
 
     val dockTextPrimary = if (isLightMode) {
@@ -251,11 +290,11 @@ fun SearchMorphingDock(
     }
 
     val placeholderText = when (searchBarTextType) {
-        "app_name" -> "Tessera..."
+        "app_name" -> "Pesquisar..."
         "current_time" -> if (currentTime.isNotBlank()) currentTime else "09:41"
         "greeting" -> greeting
-        "custom" -> searchBarCustomText.ifBlank { "Tessera..." }
-        else -> "Tessera..."
+        "custom" -> searchBarCustomText.ifBlank { "Pesquisar..." }
+        else -> "Pesquisar..."
     }
 
     val targetWidth = if (isExpanded) screenWidth - 32.dp else 56.dp
@@ -286,11 +325,11 @@ fun SearchMorphingDock(
         contentAlignment = Alignment.Center
     ) {
         if (!isExpanded) {
-            // Estado Recolhido: Círculo ou pílula compacta com feedback de clique elástico
+            // Estado Recolhido: Cápsula Flutuante Compacta com Feedback de Mola
             Box(
                 modifier = Modifier
                     .width(animatedWidth)
-                    .height(56.dp)
+                    .height(54.dp)
                     .graphicsLayer {
                         scaleX = dockScale
                         scaleY = dockScale
@@ -311,6 +350,21 @@ fun SearchMorphingDock(
                     ),
                 contentAlignment = Alignment.Center
             ) {
+                // Brilho especular sutil na borda superior
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(dockShape)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = if (isLightMode) 0.18f else 0.08f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = "Expandir pesquisa",
@@ -319,7 +373,7 @@ fun SearchMorphingDock(
                 )
             }
         } else {
-            // Estado Expandido: Doca Unificada com Widgets integrados no topo + Botão de Configurações alinhado à base
+            // Estado Expandido: Doca Moderna com Widgets e Barra de Pesquisa Refinada
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -327,35 +381,35 @@ fun SearchMorphingDock(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.Center
             ) {
-                // Card Principal Integrado (Widget no topo + Busca na base) com Aura Luminosa de Luz Branca Pura de IA
+                // Card Principal Integrado com Aura Luminosa
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    // Halo Luminoso Difuso de Luz Branca Pura Especular (Bloom Underglow estilo Ativação de IA de Celular)
+                    // Halo Luminoso Difuso com Física Suave
                     if (isGeminiGlowEnabled && geminiExpandProgress > 0.01f) {
                         Box(
                             modifier = Modifier
                                 .matchParentSize()
                                 .graphicsLayer {
-                                    alpha = (if (isLightMode) 0.35f else 0.55f) * geminiExpandProgress * aiPulse
-                                    scaleX = 1.03f
-                                    scaleY = 1.08f
+                                    alpha = (if (isLightMode) 0.30f else 0.45f) * geminiExpandProgress * aiPulse
+                                    scaleX = 1.02f
+                                    scaleY = 1.06f
                                 }
                                 .background(
                                     Brush.radialGradient(
                                         colors = if (isLightMode) {
                                             listOf(
-                                                Color(0x35B0BEC5),
-                                                Color(0x15CFD8DC),
-                                                Color(0x05ECEFF1),
+                                                Color(0x3090CAF9),
+                                                Color(0x15BBDEFB),
+                                                Color(0x05E3F2FD),
                                                 Color.Transparent
                                             )
                                         } else {
                                             listOf(
-                                                Color(0x55FFFFFF),
-                                                Color(0x22FFFFFF),
-                                                Color(0x08FFFFFF),
+                                                Color(0x40FFFFFF),
+                                                Color(0x18FFFFFF),
+                                                Color(0x06FFFFFF),
                                                 Color.Transparent
                                             )
                                         }
@@ -385,19 +439,19 @@ fun SearchMorphingDock(
                                 start = 16.dp,
                                 end = 16.dp,
                                 top = if (widgetContent != null) 12.dp else 4.dp,
-                                bottom = if (widgetContent != null) 4.dp else 4.dp
+                                bottom = if (widgetContent != null) 6.dp else 4.dp
                             )
                     ) {
                         // Reflexo especular superior do Liquid Design
                         if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
                             Box(
                                 modifier = Modifier
-                                .matchParentSize()
-                                .clip(dockShape)
-                                .background(
-                                    if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
-                                    else liquidGlassSheenBrush(opacityFraction)
-                                )
+                                    .matchParentSize()
+                                    .clip(dockShape)
+                                    .background(
+                                        if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
+                                        else liquidGlassSheenBrush(opacityFraction)
+                                    )
                             )
                         }
 
@@ -422,12 +476,12 @@ fun SearchMorphingDock(
                                 Spacer(modifier = Modifier.height(2.dp))
                             }
 
-                            // Linha de Busca
+                            // Linha de Busca Moderna
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp)
+                                    .height(50.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Search,
@@ -445,7 +499,7 @@ fun SearchMorphingDock(
                                         )
                                 )
 
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 BasicTextField(
                                     value = searchQuery,
@@ -474,7 +528,7 @@ fun SearchMorphingDock(
                                                 Text(
                                                     text = placeholderText,
                                                     color = dockPlaceholderColor,
-                                                    fontSize = 16.sp,
+                                                    fontSize = 15.sp,
                                                     fontFamily = FontFamily.SansSerif
                                                 )
                                             }
@@ -487,68 +541,117 @@ fun SearchMorphingDock(
                                         .focusRequester(focusRequester)
                                 )
 
-                                if (searchQuery.isNotEmpty()) {
-                                    // Botão de Busca Rápida com IA (Groq)
-                                    Icon(
-                                        imageVector = Icons.Outlined.AutoAwesome,
-                                        contentDescription = "Perguntar ao Groq",
-                                        tint = com.tessera.launcher.ui.theme.GeminiCyan,
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .clickable(
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                indication = null,
-                                                onClick = onAiSearchClick
+                                // Ações Dinâmicas da Barra com Animações Fluidas
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    AnimatedVisibility(
+                                        visible = searchQuery.isNotEmpty(),
+                                        enter = fadeIn(animationSpec = tween(150)) + scaleIn(
+                                            animationSpec = spring(
+                                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                                stiffness = Spring.StiffnessMedium
                                             )
-                                    )
+                                        ),
+                                        exit = fadeOut(animationSpec = tween(120)) + scaleOut()
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            // Botão de Busca com IA (Groq / Gemini)
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0x1800E5FF))
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null,
+                                                        onClick = onAiSearchClick
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.AutoAwesome,
+                                                    contentDescription = "Perguntar com IA",
+                                                    tint = com.tessera.launcher.ui.theme.GeminiCyan,
+                                                    modifier = Modifier.size(17.dp)
+                                                )
+                                            }
 
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
 
-                                    Icon(
-                                        imageVector = Icons.Outlined.Close,
-                                        contentDescription = "Limpar busca",
-                                        tint = dockPlaceholderColor,
-                                        modifier = Modifier
-                                            .size(20.dp)
-                                            .clickable(
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                indication = null,
-                                                onClick = { onQueryChange("") }
-                                            )
-                                    )
-                                } else {
-                                    // Ícone de IA para atalho direto quando vazio
-                                    Icon(
-                                        imageVector = Icons.Outlined.AutoAwesome,
-                                        contentDescription = "IA Assistente",
-                                        tint = dockIconTint.copy(alpha = 0.65f),
-                                        modifier = Modifier
-                                            .size(18.dp)
-                                            .clickable(
-                                                interactionSource = remember { MutableInteractionSource() },
-                                                indication = null,
-                                                onClick = onAiSearchClick
-                                            )
-                                    )
+                                            // Botão de Limpar Busca
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(30.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (isLightMode) Color(0x12000000)
+                                                        else Color(0x1FFFFFFF)
+                                                    )
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null,
+                                                        onClick = { onQueryChange("") }
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Close,
+                                                    contentDescription = "Limpar busca",
+                                                    tint = dockTextPrimary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
 
-                                    if (!isSplit) {
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Icon(
-                                            imageVector = Icons.Outlined.Settings,
-                                            contentDescription = "Configurações",
-                                            tint = dockGearTint,
+                                    if (searchQuery.isEmpty()) {
+                                        // Ícone de IA para atalho direto quando vazio
+                                        Box(
                                             modifier = Modifier
-                                                .size(20.dp)
+                                                .size(32.dp)
+                                                .clip(CircleShape)
                                                 .clickable(
                                                     interactionSource = remember { MutableInteractionSource() },
                                                     indication = null,
-                                                    onClick = {
-                                                        keyboardController?.hide()
-                                                        focusManager.clearFocus()
-                                                        onOpenSettings()
-                                                    }
+                                                    onClick = onAiSearchClick
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.AutoAwesome,
+                                                contentDescription = "IA Assistente",
+                                                tint = dockIconTint.copy(alpha = 0.75f),
+                                                modifier = Modifier.size(19.dp)
+                                            )
+                                        }
+
+                                        if (!isSplit) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(CircleShape)
+                                                    .clickable(
+                                                        interactionSource = remember { MutableInteractionSource() },
+                                                        indication = null,
+                                                        onClick = {
+                                                            keyboardController?.hide()
+                                                            focusManager.clearFocus()
+                                                            onOpenSettings()
+                                                        }
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Outlined.Settings,
+                                                    contentDescription = "Configurações",
+                                                    tint = dockGearTint,
+                                                    modifier = Modifier.size(20.dp)
                                                 )
-                                        )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -574,7 +677,7 @@ fun SearchMorphingDock(
                     Box(
                         modifier = Modifier
                             .padding(bottom = 4.dp)
-                            .size(48.dp)
+                            .size(50.dp)
                             .graphicsLayer {
                                 scaleX = settingsScale
                                 scaleY = settingsScale

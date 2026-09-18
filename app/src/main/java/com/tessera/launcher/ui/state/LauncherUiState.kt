@@ -241,8 +241,8 @@ data class LauncherUiState(
     // Modal de Configuração por Toque Longo
     val activeWidgetConfigModal: WidgetConfigType? = null,
 
-    // Tela Lateral (-1): Central Nothing OS ou Feed Social
-    val leftScreenMode: String = "nothing_hub", // "nothing_hub", "feed", "disabled"
+    // Tela Lateral (-1): Feed Social ou Desativado
+    val leftScreenMode: String = "disabled", // "feed", "disabled"
     val isFeedEnabled: Boolean = true,
     val isFeedOpen: Boolean = false,
     val feedState: FeedState = FeedState.Loading,

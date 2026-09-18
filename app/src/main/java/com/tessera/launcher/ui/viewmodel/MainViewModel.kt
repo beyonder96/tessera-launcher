@@ -7,6 +7,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.app.WallpaperManager
+import android.os.Build
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -1472,6 +1473,14 @@ class MainViewModel(
     private fun loadSystemWallpaperFallback(context: Context): Bitmap? {
         return try {
             val wm = WallpaperManager.getInstance(context)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                val fileBitmap = runCatching {
+                    wm.getWallpaperFile(WallpaperManager.FLAG_SYSTEM)?.use { pfd ->
+                        BitmapFactory.decodeFileDescriptor(pfd.fileDescriptor)
+                    }
+                }.getOrNull()
+                if (fileBitmap != null) return fileBitmap
+            }
             val drawable = wm.drawable ?: wm.peekDrawable() ?: return null
             if (drawable is BitmapDrawable) {
                 drawable.bitmap
@@ -1818,17 +1827,11 @@ class MainViewModel(
             .lowercase()
     }
 
-    // Tela Lateral (-1): Central Nothing OS ou Feed Social
+    // Tela Lateral (-1): Feed Social
     fun openFeed() {
-        if (_uiState.value.leftScreenMode == "disabled") return
-        if (_uiState.value.leftScreenMode == "feed" && !_uiState.value.isFeedEnabled) return
+        if (_uiState.value.leftScreenMode != "feed" || !_uiState.value.isFeedEnabled) return
         _uiState.update { it.copy(isFeedOpen = true) }
-        if (_uiState.value.leftScreenMode == "feed") {
-            loadFeed()
-        } else {
-            refreshWeather()
-            refreshCalendarAndPermissions()
-        }
+        loadFeed()
     }
 
     fun closeFeed() {

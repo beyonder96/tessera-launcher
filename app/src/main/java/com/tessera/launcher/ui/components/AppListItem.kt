@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -143,6 +144,17 @@ fun AppListItem(
         }
     }
 
+    val itemInteractionSource = remember { MutableInteractionSource() }
+    val isItemPressed by itemInteractionSource.collectIsPressedAsState()
+    val itemScale by animateFloatAsState(
+        targetValue = if (isItemPressed) 0.96f else 1f,
+        animationSpec = spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "app_item_press_scale"
+    )
+
     val imageBitmap: ImageBitmap? = remember(app.bitmap, app.icon) {
         app.bitmap?.asImageBitmap() ?: app.icon?.let { drawableToBitmap(it).asImageBitmap() }
     }
@@ -151,9 +163,13 @@ fun AppListItem(
         modifier = modifier
             .fillMaxWidth()
             .then(swipeModifier)
-            .graphicsLayer { translationX = animatedOffsetX }
+            .graphicsLayer {
+                translationX = animatedOffsetX
+                scaleX = itemScale
+                scaleY = itemScale
+            }
             .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
+                interactionSource = itemInteractionSource,
                 indication = ripple(color = Color(0x22FFFFFF)),
                 onClick = onClick,
                 onLongClick = onLongClick

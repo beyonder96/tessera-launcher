@@ -110,7 +110,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_SEARCH_BAR_OPACITY = "search_bar_opacity"
         private const val KEY_THEME_MODE = "theme_mode"
 
-        // Tela Lateral (-1): Central Nothing OS ou Feed Social
+        // Tela Lateral (-1): Feed Social ou Desativado
         private const val KEY_LEFT_SCREEN_MODE = "left_screen_mode"
         private const val KEY_FEED_ENABLED = "feed_enabled"
         private const val KEY_FEED_SUBREDDITS = "feed_subreddits"
@@ -478,8 +478,8 @@ class LauncherPreferences(context: Context) {
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
     fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
 
-    // Tela Lateral (-1): Central Nothing OS ou Feed Social
-    fun getLeftScreenMode(): String = prefs.getString(KEY_LEFT_SCREEN_MODE, "nothing_hub") ?: "nothing_hub"
+    // Tela Lateral (-1): Feed Social ou Desativado
+    fun getLeftScreenMode(): String = prefs.getString(KEY_LEFT_SCREEN_MODE, "disabled") ?: "disabled"
     fun setLeftScreenMode(mode: String) = prefs.edit().putString(KEY_LEFT_SCREEN_MODE, mode).apply()
 
     // Feed Social

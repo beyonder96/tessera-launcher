@@ -460,7 +460,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Dashboard,
                         title = "Tela Lateral (−1)",
-                        subtitle = if (uiState.leftScreenMode == "nothing_hub") "Central Nothing OS (ativa)" else if (uiState.leftScreenMode == "feed") "Feed Social de notícias" else "Desativada",
+                        subtitle = if (uiState.leftScreenMode == "feed") "Feed Social de notícias" else "Desativada",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FEED) },
                         isLight = isLight
                     )
