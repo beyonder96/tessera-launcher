@@ -61,14 +61,27 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.2.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.2.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.3.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.3.0)
 
-### 🆕 Novidades na v2.2.1
+### 🆕 Novidades na v2.3.0
+- 🔴 **Central de Widgets Nothing OS (Tela −1):** Substituição da tela lateral clássica de notícias por um dashboard pessoal elegante e funcional inspirado na linguagem visual do Nothing OS:
+  - **Relógio Dot-Matrix:** Horário digital estilizado pontilhado com dois pontos vermelhos característicos, data completa e indicador de clima em tempo real.
+  - **Quick Settings Reais:** Dois tiles destacados para Wi-Fi e Bluetooth, acompanhados de 4 botões circulares táteis: Lanterna com acionamento físico do flash da câmera, controle do Modo de Som (Normal, Vibração, Silencioso), atalho para Calculadora e Alarme.
+  - **Anel de Bateria Nothing:** Indicador circular de nível de bateria do smartphone com animação de carregamento e status do sistema.
+  - **Tape Recorder Media Player (Now Playing):** Card de música inspirado em fita cassete com carretéis animados girando durante a reprodução e controles completos de faixa sincronizados com Spotify e YouTube Music.
+  - **Clima & Agenda Integrados:** Previsão do tempo detalhada e próximo compromisso da Google Agenda.
+  - **Seletor de Modo:** Liberdade total em *Configurações > Tela Lateral (−1)* para escolher entre Central Nothing OS, Feed Social clássico ou Desativada.
+- 🌫️ **Borrão Dinâmico de Papel de Parede (Home e Gaveta de Apps):** Substituição da sobreposição preta opaca de escurecimento por desfoque vítreo real nativo (`window.setBackgroundBlurRadius`) na Home em repouso (ajustável de 0 a 100%), com aprofundamento suave e automático ao abrir a gaveta de aplicativos para garantir foco e legibilidade perfeitos sobre o vidro fosco (*Frosted Glass*).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.2.1</b></summary>
+
 - 🧠 **Resolução Dinâmica e Multi-Modelo Groq IA:** Correção definitiva do erro HTTP 404 causado pela descontinuação de modelos estáticos no tier gratuito/developer da Groq. O motor de IA agora realiza autodescoberta (`GET /models`) dos modelos ativos e autorizados para a conta do usuário, com cascata inteligente de fallback automático entre modelos modernos de alto desempenho (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `llama-3.1-8b-instant`, `llama-3.3-70b-versatile`, `meta-llama/llama-4-scout`, `qwen/qwen3.6`, etc.).
 - 🛡️ **Sanitização de Chaves de API e Mensagens Detalhadas:** Remoção automática de aspas e espaços acidentais colados nas chaves do Groq e Gemini, com captura e exibição de mensagens claras da API em caso de problemas de credenciais ou limites de quota.
 - 🎨 **Interface Refinada para Provedores de IA:** Ajuste dos textos, diálogos e cartões de resposta para refletir de forma limpa o ecossistema Groq Cloud IA.
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.2.0</b></summary>
 

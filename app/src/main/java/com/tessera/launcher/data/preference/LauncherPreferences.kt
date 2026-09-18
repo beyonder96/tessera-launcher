@@ -102,13 +102,15 @@ class LauncherPreferences(context: Context) {
         private const val KEY_WEATHER_CUSTOM_LAT = "weather_custom_lat"
         private const val KEY_WEATHER_CUSTOM_LON = "weather_custom_lon"
         private const val KEY_CACHED_WEATHER_JSON = "cached_weather_json"
+        private const val KEY_HOME_WALLPAPER_BLUR = "home_wallpaper_blur"
         private const val KEY_HOME_WALLPAPER_DIMMING = "home_wallpaper_dimming"
         private const val KEY_DRAWER_GLASS_ENABLED = "drawer_glass_enabled"
         private const val KEY_DRAWER_GLASS_OPACITY = "drawer_glass_opacity"
         private const val KEY_SEARCH_BAR_OPACITY = "search_bar_opacity"
         private const val KEY_THEME_MODE = "theme_mode"
 
-        // Feed Social
+        // Tela Lateral (-1): Central Nothing OS ou Feed Social
+        private const val KEY_LEFT_SCREEN_MODE = "left_screen_mode"
         private const val KEY_FEED_ENABLED = "feed_enabled"
         private const val KEY_FEED_SUBREDDITS = "feed_subreddits"
         private const val KEY_FEED_BLUESKY_HANDLES = "feed_bluesky_handles"
@@ -444,8 +446,21 @@ class LauncherPreferences(context: Context) {
     fun getCachedWeatherJson(): String? = prefs.getString(KEY_CACHED_WEATHER_JSON, null)
     fun setCachedWeatherJson(json: String?) = prefs.edit().putString(KEY_CACHED_WEATHER_JSON, json).apply()
 
-    fun getHomeWallpaperDimming(): Int = prefs.getInt(KEY_HOME_WALLPAPER_DIMMING, 20)
-    fun setHomeWallpaperDimming(percent: Int) = prefs.edit().putInt(KEY_HOME_WALLPAPER_DIMMING, percent).apply()
+    fun getHomeWallpaperBlur(): Int {
+        if (prefs.contains(KEY_HOME_WALLPAPER_BLUR)) {
+            return prefs.getInt(KEY_HOME_WALLPAPER_BLUR, 20)
+        }
+        return prefs.getInt(KEY_HOME_WALLPAPER_DIMMING, 20)
+    }
+    fun setHomeWallpaperBlur(percent: Int) {
+        prefs.edit()
+            .putInt(KEY_HOME_WALLPAPER_BLUR, percent)
+            .putInt(KEY_HOME_WALLPAPER_DIMMING, percent)
+            .apply()
+    }
+
+    fun getHomeWallpaperDimming(): Int = getHomeWallpaperBlur()
+    fun setHomeWallpaperDimming(percent: Int) = setHomeWallpaperBlur(percent)
 
     fun isDrawerGlassEnabled(): Boolean = prefs.getBoolean(KEY_DRAWER_GLASS_ENABLED, true)
     fun setDrawerGlassEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_DRAWER_GLASS_ENABLED, enabled).apply()
@@ -458,6 +473,10 @@ class LauncherPreferences(context: Context) {
 
     fun getThemeMode(): String = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
     fun setThemeMode(mode: String) = prefs.edit().putString(KEY_THEME_MODE, mode).apply()
+
+    // Tela Lateral (-1): Central Nothing OS ou Feed Social
+    fun getLeftScreenMode(): String = prefs.getString(KEY_LEFT_SCREEN_MODE, "nothing_hub") ?: "nothing_hub"
+    fun setLeftScreenMode(mode: String) = prefs.edit().putString(KEY_LEFT_SCREEN_MODE, mode).apply()
 
     // Feed Social
     fun isFeedEnabled(): Boolean = prefs.getBoolean(KEY_FEED_ENABLED, true)

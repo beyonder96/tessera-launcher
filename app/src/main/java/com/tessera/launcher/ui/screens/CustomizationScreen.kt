@@ -263,10 +263,10 @@ fun CustomizationScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         PillPercentSlider(
-                            title = "Escurecimento Home",
-                            subtitle = "Menos brilho para aumentar o contraste",
-                            percent = uiState.homeWallpaperDimming,
-                            onPercentChange = { viewModel.setHomeWallpaperDimming(it) },
+                            title = "Borrão da Tela Inicial",
+                            subtitle = "Desfoque vítreo suave do papel de parede",
+                            percent = uiState.homeWallpaperBlur,
+                            onPercentChange = { viewModel.setHomeWallpaperBlur(it) },
                             isLight = isLight
                         )
                     }

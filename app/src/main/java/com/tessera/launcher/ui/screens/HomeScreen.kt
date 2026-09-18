@@ -453,14 +453,6 @@ fun HomeScreen(
                 )
             }
     ) {
-        // Escurecimento do Papel de Parede (Home Wallpaper Dimming)
-        if (uiState.homeWallpaperDimming > 0) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = (uiState.homeWallpaperDimming / 100f).coerceIn(0f, 1f)))
-            )
-        }
 
         // Toque de Descarte Suave: Quando a busca estiver expandida na home, toque fora recolhe a busca e esconde o teclado
         if (uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
@@ -502,8 +494,8 @@ fun HomeScreen(
 
         // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
-            val baseMin = if (uiState.isLightMode) 0.55f else 0.70f
-            val baseMax = if (uiState.isLightMode) 0.85f else 0.90f
+            val baseMin = if (uiState.isLightMode) 0.45f else (if (uiState.isSystemWallpaperEnabled) 0.48f else 0.68f)
+            val baseMax = if (uiState.isLightMode) 0.75f else (if (uiState.isSystemWallpaperEnabled) 0.74f else 0.88f)
             val factor = (uiState.drawerGlassOpacity.coerceIn(0, 100) / 100f)
             baseMin + (baseMax - baseMin) * factor
         } else if (uiState.isAmoledMode) {
@@ -1207,7 +1199,7 @@ fun HomeScreen(
             )
         }
 
-        // Feed Social — Tela −1 (Slide Horizontal)
+        // Central Nothing OS ou Feed Social — Tela −1 (Slide Horizontal)
         AnimatedVisibility(
             visible = uiState.isFeedOpen,
             enter = slideInHorizontally(
@@ -1219,21 +1211,29 @@ fun HomeScreen(
                 animationSpec = tween(180, easing = FastOutSlowInEasing)
             ) + fadeOut(animationSpec = tween(180))
         ) {
-            FeedScreen(
-                feedState = uiState.feedState,
-                activeSource = null,
-                enabledSources = uiState.feedEnabledSources,
-                isLightMode = uiState.isLightMode,
-                onSourceSelected = { },
-                onPostClick = { url ->
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    runCatching { context.startActivity(intent) }
-                },
-                onRefresh = { viewModel.refreshFeed() },
-                onClose = { viewModel.closeFeed() }
-            )
+            if (uiState.leftScreenMode == "feed") {
+                FeedScreen(
+                    feedState = uiState.feedState,
+                    activeSource = null,
+                    enabledSources = uiState.feedEnabledSources,
+                    isLightMode = uiState.isLightMode,
+                    onSourceSelected = { },
+                    onPostClick = { url ->
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        runCatching { context.startActivity(intent) }
+                    },
+                    onRefresh = { viewModel.refreshFeed() },
+                    onClose = { viewModel.closeFeed() }
+                )
+            } else {
+                NothingHubScreen(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    onClose = { viewModel.closeFeed() }
+                )
+            }
         }
     }
 }

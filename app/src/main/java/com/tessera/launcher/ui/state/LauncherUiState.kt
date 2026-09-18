@@ -222,6 +222,7 @@ data class LauncherUiState(
     val isSearchingCities: Boolean = false,
 
     // Customização Visual Avançada
+    val homeWallpaperBlur: Int = 20,
     val homeWallpaperDimming: Int = 20,
     val isDrawerGlassEnabled: Boolean = true,
     val drawerGlassOpacity: Int = 20,
@@ -239,7 +240,8 @@ data class LauncherUiState(
     // Modal de Configuração por Toque Longo
     val activeWidgetConfigModal: WidgetConfigType? = null,
 
-    // Feed Social
+    // Tela Lateral (-1): Central Nothing OS ou Feed Social
+    val leftScreenMode: String = "nothing_hub", // "nothing_hub", "feed", "disabled"
     val isFeedEnabled: Boolean = true,
     val isFeedOpen: Boolean = false,
     val feedState: FeedState = FeedState.Loading,

@@ -114,22 +114,39 @@ class MainActivity : ComponentActivity() {
                 uiState.isDrawerGlassEnabled,
                 uiState.drawerGlassOpacity,
                 uiState.isSettingsOpen,
-                uiState.isFeedOpen
+                uiState.isFeedOpen,
+                uiState.homeWallpaperBlur
             ) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val isOpen = uiState.isDrawerOpen || uiState.isSearchExpanded || uiState.searchQuery.isNotEmpty() || uiState.isSettingsOpen || uiState.isFeedOpen
-                    val targetBlur = if (isOpen && uiState.isDrawerGlassEnabled) {
-                        if (uiState.drawerGlassOpacity <= 0) {
-                            0
-                        } else {
-                            // Mapeia 1..100% para um desfoque vítreo real de 10px até 160px
-                            val scaled = (uiState.drawerGlassOpacity / 100f) * 150f + 10f
-                            scaled.toInt().coerceIn(10, 160)
+                    val isAppListOrSearchOpen = uiState.isDrawerOpen || uiState.isSearchExpanded || uiState.searchQuery.isNotEmpty()
+                    val isOtherScreenOpen = uiState.isSettingsOpen || uiState.isFeedOpen
+
+                    val targetBlur = when {
+                        isAppListOrSearchOpen -> {
+                            // Borrão profundo ao abrir a lista de apps / busca para máximo contraste
+                            val baseBlur = if (uiState.homeWallpaperBlur > 0) {
+                                ((uiState.homeWallpaperBlur / 100f) * 80f + 30f).toInt()
+                            } else {
+                                60
+                            }
+                            val extraBlur = if (uiState.isDrawerGlassEnabled && uiState.drawerGlassOpacity > 0) {
+                                ((uiState.drawerGlassOpacity / 100f) * 70f).toInt()
+                            } else {
+                                35
+                            }
+                            (baseBlur + extraBlur).coerceIn(40, 160)
                         }
-                    } else if (isOpen) {
-                        85
-                    } else {
-                        0
+                        isOtherScreenOpen -> {
+                            85
+                        }
+                        else -> {
+                            // Tela inicial (Home em repouso): aplica o borrão no papel de parede configurado pelo usuário
+                            if (uiState.homeWallpaperBlur <= 0) {
+                                0
+                            } else {
+                                ((uiState.homeWallpaperBlur / 100f) * 110f + 10f).toInt().coerceIn(10, 120)
+                            }
+                        }
                     }
 
                     // Blurring nativo do fundo da janela e do papel de parede (Android 12+)

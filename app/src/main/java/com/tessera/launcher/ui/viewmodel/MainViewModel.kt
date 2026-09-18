@@ -198,7 +198,9 @@ class MainViewModel(
             isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
             isHideAppLabelsEnabled = preferences.isHideAppLabelsEnabled(),
             selectedLanguage = preferences.getSelectedLanguage(),
-            homeWallpaperDimming = preferences.getHomeWallpaperDimming(),
+            leftScreenMode = preferences.getLeftScreenMode(),
+            homeWallpaperBlur = preferences.getHomeWallpaperBlur(),
+            homeWallpaperDimming = preferences.getHomeWallpaperBlur(),
             isDrawerGlassEnabled = preferences.isDrawerGlassEnabled(),
             drawerGlassOpacity = preferences.getDrawerGlassOpacity(),
             searchBarOpacity = preferences.getSearchBarOpacity(),
@@ -939,9 +941,16 @@ class MainViewModel(
         _uiState.update { it.copy(themeMode = mode, isAmoledMode = isAmoled) }
     }
 
-    fun setHomeWallpaperDimming(percent: Int) {
-        preferences.setHomeWallpaperDimming(percent)
-        _uiState.update { it.copy(homeWallpaperDimming = percent) }
+    fun setHomeWallpaperBlur(percent: Int) {
+        preferences.setHomeWallpaperBlur(percent)
+        _uiState.update { it.copy(homeWallpaperBlur = percent, homeWallpaperDimming = percent) }
+    }
+
+    fun setHomeWallpaperDimming(percent: Int) = setHomeWallpaperBlur(percent)
+
+    fun setLeftScreenMode(mode: String) {
+        preferences.setLeftScreenMode(mode)
+        _uiState.update { it.copy(leftScreenMode = mode) }
     }
 
     fun setDrawerGlassEnabled(enabled: Boolean) {
@@ -1662,11 +1671,17 @@ class MainViewModel(
             .lowercase()
     }
 
-    // Feed Social
+    // Tela Lateral (-1): Central Nothing OS ou Feed Social
     fun openFeed() {
-        if (!_uiState.value.isFeedEnabled) return
+        if (_uiState.value.leftScreenMode == "disabled") return
+        if (_uiState.value.leftScreenMode == "feed" && !_uiState.value.isFeedEnabled) return
         _uiState.update { it.copy(isFeedOpen = true) }
-        loadFeed()
+        if (_uiState.value.leftScreenMode == "feed") {
+            loadFeed()
+        } else {
+            refreshWeather()
+            refreshCalendarAndPermissions()
+        }
     }
 
     fun closeFeed() {
@@ -1952,7 +1967,9 @@ class MainViewModel(
                 isThemedIconsEnabled = preferences.isThemedIconsEnabled(),
                 isHideAppLabelsEnabled = preferences.isHideAppLabelsEnabled(),
                 selectedLanguage = preferences.getSelectedLanguage(),
-                homeWallpaperDimming = preferences.getHomeWallpaperDimming(),
+                leftScreenMode = preferences.getLeftScreenMode(),
+                homeWallpaperBlur = preferences.getHomeWallpaperBlur(),
+                homeWallpaperDimming = preferences.getHomeWallpaperBlur(),
                 isDrawerGlassEnabled = preferences.isDrawerGlassEnabled(),
                 drawerGlassOpacity = preferences.getDrawerGlassOpacity(),
                 searchBarOpacity = preferences.getSearchBarOpacity(),

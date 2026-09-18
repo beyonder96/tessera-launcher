@@ -19,6 +19,14 @@ Sempre que solicitado para gerar release, gerar APKs ou publicar versão:
   & ".\.agents\skills\release-apk\scripts\release.ps1" -Version "X.Y.Z"
   ```
 
-### 2. CI/CD Remoto (GitHub Actions)
+### 2. Slash Command / Skill de Validação Rápida (`/check`)
+Sempre que fizer alterações em código Kotlin ou quiser validar sintaxe rapidamente:
+- Execute a skill `check` em `.agents/skills/check/SKILL.md`
+- Ou rode o script direto:
+  ```powershell
+  & ".\.agents\skills\check\scripts\check.ps1"
+  ```
+
+### 3. CI/CD Remoto (GitHub Actions)
 - Arquivo: `.github/workflows/release.yml`
 - Gatilho: Push de tag `v*` ou disparo manual no GitHub Actions.
