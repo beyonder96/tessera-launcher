@@ -61,16 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.4.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.4.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.4.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.4.1)
 
-### 🆕 Novidades na v2.4.0
+### 🆕 Novidades na v2.4.1
+- 🌐 **Google Search Grounding no Gemini 2.0 Flash:** Suporte à ferramenta nativa de busca em tempo real do Google. O Gemini agora consulta a web ao vivo para responder sobre eventos recentes, notícias, esportes, cotações e clima com dados frescos e precisos.
+- 🧠 **Upgrade de Inteligência no Groq Cloud:** Priorização de modelos de alta capacidade com **Llama 3.3 70B Versatile** (70 bilhões de parâmetros) e **DeepSeek R1 Distill 70B**, elevando significativamente a qualidade das respostas e o raciocínio em português.
+- 🎯 **Interface de Busca Sem Redundâncias:** Remoção dos ícones duplicados de IA de dentro da barra de busca e da linha de atalhos ao lado do Maps, mantendo com exclusividade o botão principal `Perguntar ao Groq (IA)`.
+- 📅 **Widget de Calendário Limpo & Minimalista:** Remoção do indicador de progresso do dia que causava uma faixa branca indesejada cortando a base do widget, centralizando a tipografia de forma harmônica.
+- 🛠️ **Ajustes no Menu de Configurações:** Correção de alinhamento vertical e cores do seletor segmentado de papel de parede em *Customization* e remoção do atalho legado da Tela Lateral (−1).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.4.0</b></summary>
+
 - 🔍 **Nova Barra de Pesquisa Moderna & Flutuante:** Redesign completo com formato de cápsula fluida (*32dp smooth pill*), acabamento *glassmorphic* com borda especular física de luz, sombra difusa ambiente e micro-interações refinadas (botão de limpar animado com mola, botão de IA pulsante e feedback tátil ao toque).
 - ⚡ **Eliminação Completa de Travamentos (120 FPS):** Remoção do gargalo de GPU `CompositingStrategy.Offscreen` na lista de aplicativos. O scroll agora roda a 120 FPS nativos com `contentPadding` direto sem perda de quadros ou stuttering.
 - 📳 **Animações Táteis com Física de Mola nos Apps:** Cada aplicativo da gaveta reage ao toque com escala elástica orgânica (`spring physics`) antes do lançamento, elevando a percepção de resposta e acabamento da launcher.
 - 🧹 **Remoção Completa da Central Nothing OS:** Remoção integral dos componentes e widgets legados da Nothing OS, deixando o launcher mais leve, limpo e com a tela lateral desativada por padrão.
 - 🎨 **Ajuste de Escurecimento de Fundo:** Contenção do escurecimento excessivo de fundo na tela inicial para manter a visibilidade do papel de parede.
 
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.3.1</b></summary>
 

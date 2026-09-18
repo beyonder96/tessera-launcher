@@ -758,9 +758,6 @@ private fun CalendarWidgetCard(
     val dayNames = listOf("DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO")
     val dayOfWeek = dayNames.getOrElse(cal.get(Calendar.DAY_OF_WEEK) - 1) { "MONDAY" }
 
-    val currentMinuteOfDay = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-    val dayProgress = (currentMinuteOfDay / 1440f).coerceIn(0.05f, 1f)
-
     val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
     val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
     val dayColor = if (isLightMode) Color(0xFF0F172A) else Color.White
@@ -768,8 +765,6 @@ private fun CalendarWidgetCard(
     val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
     val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
     val linkColor = if (isLightMode) Color(0xFF334155) else Color(0xFFAAAAAA)
-    val progressColor = if (isLightMode) Color(0xFF0F172A) else Color(0xFFCCCCCC)
-    val progressTrack = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF262630)
 
     Row(
         modifier = Modifier
@@ -817,7 +812,7 @@ private fun CalendarWidgetCard(
         // Conteúdo Direito
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Center
         ) {
             // Linha Superior: Dia da semana + Horário
             Row(
@@ -845,7 +840,9 @@ private fun CalendarWidgetCard(
                 )
             }
 
-            // Linha Central: Subtítulo do evento / data + Atalho "Calendar ↗"
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Linha Inferior: Subtítulo do evento / data + Atalho "Calendar ↗"
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -872,17 +869,6 @@ private fun CalendarWidgetCard(
                     modifier = Modifier.clickable { onCalendarClick() }
                 )
             }
-
-            // Linha Inferior: Progresso fino do dia
-            LinearProgressIndicator(
-                progress = { dayProgress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(2.dp)
-                    .clip(CircleShape),
-                color = progressColor,
-                trackColor = progressTrack
-            )
         }
     }
 }

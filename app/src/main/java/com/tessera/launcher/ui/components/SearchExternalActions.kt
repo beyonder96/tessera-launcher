@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -114,14 +113,6 @@ fun SearchExternalActions(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Groq IA
-                if (onAskAi != null) {
-                    AppSearchQuickIcon(
-                        icon = Icons.Outlined.AutoAwesome,
-                        description = "Groq IA",
-                        onClick = { onAskAi(query) }
-                    )
-                }
 
                 // Maps (se habilitado ou padrão)
                 if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.apps.maps")) {

@@ -539,13 +539,13 @@ fun CustomizationScreen(
                                         fontWeight = FontWeight.Medium,
                                         fontSize = 15.sp
                                     ),
-                                    color = TextPrimary
+                                    color = textPrimary
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = "Usa uma cor lisa em vez de papel de parede.",
                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                    color = TextSecondary
+                                    color = textSecondary
                                 )
                             }
 
@@ -585,9 +585,10 @@ fun CustomizationScreen(
                                 .fillMaxWidth()
                                 .height(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131318))
-                                .border(1.dp, Color(0xFF22222A), RoundedCornerShape(12.dp))
+                                .background(if (isLight) Color(0xFFEAEAEE) else Color(0xFF131318))
+                                .border(1.dp, if (isLight) Color(0xFFDCDCE2) else Color(0xFF22222A), RoundedCornerShape(12.dp))
                                 .padding(3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val targets = listOf(
@@ -600,8 +601,15 @@ fun CustomizationScreen(
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
+                                        .fillMaxHeight()
                                         .clip(RoundedCornerShape(9.dp))
-                                        .background(if (isSelected) Color(0xFF282832) else Color.Transparent)
+                                        .background(
+                                            if (isSelected) {
+                                                if (isLight) Color.White else Color(0xFF282832)
+                                            } else {
+                                                Color.Transparent
+                                            }
+                                        )
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
@@ -618,7 +626,7 @@ fun CustomizationScreen(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             letterSpacing = 0.8.sp
                                         ),
-                                        color = if (isSelected) TextPrimary else TextSecondary
+                                        color = if (isSelected) textPrimary else textSecondary
                                     )
                                 }
                             }

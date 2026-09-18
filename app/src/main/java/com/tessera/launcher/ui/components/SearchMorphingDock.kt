@@ -556,53 +556,28 @@ fun SearchMorphingDock(
                                         ),
                                         exit = fadeOut(animationSpec = tween(120)) + scaleOut()
                                     ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            // Botão de Busca com IA (Groq / Gemini)
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color(0x1800E5FF))
-                                                    .clickable(
-                                                        interactionSource = remember { MutableInteractionSource() },
-                                                        indication = null,
-                                                        onClick = onAiSearchClick
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.AutoAwesome,
-                                                    contentDescription = "Perguntar com IA",
-                                                    tint = com.tessera.launcher.ui.theme.GeminiCyan,
-                                                    modifier = Modifier.size(17.dp)
+                                        // Botão de Limpar Busca
+                                        Box(
+                                            modifier = Modifier
+                                                .size(30.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (isLightMode) Color(0x12000000)
+                                                    else Color(0x1FFFFFFF)
                                                 )
-                                            }
-
-                                            Spacer(modifier = Modifier.width(6.dp))
-
-                                            // Botão de Limpar Busca
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(30.dp)
-                                                    .clip(CircleShape)
-                                                    .background(
-                                                        if (isLightMode) Color(0x12000000)
-                                                        else Color(0x1FFFFFFF)
-                                                    )
-                                                    .clickable(
-                                                        interactionSource = remember { MutableInteractionSource() },
-                                                        indication = null,
-                                                        onClick = { onQueryChange("") }
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.Close,
-                                                    contentDescription = "Limpar busca",
-                                                    tint = dockTextPrimary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
+                                                .clickable(
+                                                    interactionSource = remember { MutableInteractionSource() },
+                                                    indication = null,
+                                                    onClick = { onQueryChange("") }
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Close,
+                                                contentDescription = "Limpar busca",
+                                                tint = dockTextPrimary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
                                         }
                                     }
 

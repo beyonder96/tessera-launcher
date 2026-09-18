@@ -28,12 +28,11 @@ class AiEngine {
         private const val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
         private const val SYSTEM_PROMPT = "Responda de forma extremamente concisa, direta e objetiva em no máximo 2 ou 3 frases em Português do Brasil. Sem introduções vazias ou saudações."
 
-        // Modelos candidatos ordenados por prioridade (desempenho + disponibilidade em tiers gratuitos/developer)
+        // Modelos candidatos ordenados por prioridade (inteligência máxima + desempenho em tiers gratuitos)
         private val CANDIDATE_GROQ_MODELS = listOf(
-            "openai/gpt-oss-120b",
-            "openai/gpt-oss-20b",
-            "llama-3.1-8b-instant",
             "llama-3.3-70b-versatile",
+            "deepseek-r1-distill-llama-70b",
+            "llama-3.1-8b-instant",
             "meta-llama/llama-4-scout-17b-16e-instruct",
             "qwen/qwen3.6-27b",
             "llama-3.2-3b-preview",
@@ -341,6 +340,11 @@ class AiEngine {
                     put(contentObj)
                 }
                 put("contents", contents)
+                put("tools", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("googleSearch", JSONObject())
+                    })
+                })
             }
 
             OutputStreamWriter(connection.outputStream, "UTF-8").use { writer ->
