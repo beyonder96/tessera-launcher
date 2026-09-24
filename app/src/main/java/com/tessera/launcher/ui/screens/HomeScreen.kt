@@ -231,8 +231,11 @@ fun HomeScreen(
     }
 
     // Abertura automática e confiável do teclado ao abrir busca ou drawer
-    LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen) {
-        if ((uiState.isSearchExpanded || uiState.isDrawerOpen) && uiState.isAutoOpenKeyboard) {
+    LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen, uiState.searchQuery) {
+        val isExplicitAiSearch = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
+                uiState.searchQuery.contains("@groq", ignoreCase = true) ||
+                uiState.searchQuery.contains("@gemini", ignoreCase = true)
+        if ((uiState.isSearchExpanded || uiState.isDrawerOpen) && (uiState.isAutoOpenKeyboard || isExplicitAiSearch)) {
             delay(90)
             try {
                 focusRequester.requestFocus()
@@ -563,7 +566,7 @@ fun HomeScreen(
                         },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 16.dp)
+                            .padding(top = 40.dp)
                     )
                 }
 
@@ -667,8 +670,25 @@ fun HomeScreen(
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                     .padding(bottom = if (uiState.isWidgetExpanded && !uiState.isDrawerOpen) 310.dp else 84.dp)
             ) {
-                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) 8.dp else 32.dp
+                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 8.dp else 32.dp
                 Spacer(modifier = Modifier.height(drawerTopPadding))
+
+                // Indicativo de Foco no topo da página
+                if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isFocusProfilesFeatureEnabled) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FocusProfileChip(
+                            currentProfile = uiState.focusProfile,
+                            onClick = { viewModel.openFocusModal() },
+                            isLightMode = uiState.isLightMode,
+                            accentColor = uiState.activeAccentColor
+                        )
+                    }
+                }
 
                 Row(
                     modifier = Modifier
@@ -687,9 +707,9 @@ fun HomeScreen(
                                     uiState.isAiSearchLoading ||
                                     uiState.aiSearchResponse != null ||
                                     uiState.aiSearchError != null ||
-                                    uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
-                                    uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
-                                    uiState.searchQuery.startsWith("@groq", ignoreCase = true)
+                                    uiState.searchQuery.contains("@ai", ignoreCase = true) ||
+                                    uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
+                                    uiState.searchQuery.contains("@groq", ignoreCase = true)
                                 )
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
@@ -826,9 +846,9 @@ fun HomeScreen(
                                     // Modo Calculadora isolado (@calc)
                                     val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
                                     val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
-                                    val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
-                                            uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
-                                            uiState.searchQuery.startsWith("@groq", ignoreCase = true)
+                                    val isAiCommand = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
+                                            uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
+                                            uiState.searchQuery.contains("@groq", ignoreCase = true)
 
                                     // Resposta IA (Gemini / Groq)
                                     val isAiSearchActive = uiState.isAiSearchEnabled && (
@@ -1053,41 +1073,15 @@ fun HomeScreen(
                 }
             }
 
-            // Barra de Categorias e Chip de Foco (na parte de baixo, em cima da barra de pesquisa)
-            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
-                val showFocusChip = uiState.isFocusProfilesFeatureEnabled
-                if (uiState.isAppCategoriesEnabled) {
-                    AppCategoriesBar(
-                        selectedCategory = uiState.selectedAppCategory,
-                        onCategorySelected = { category -> viewModel.selectAppCategory(category) },
-                        isLightMode = uiState.isLightMode,
-                        accentColor = uiState.activeAccentColor,
-                        leadingContent = if (showFocusChip) {
-                            {
-                                FocusProfileChip(
-                                    currentProfile = uiState.focusProfile,
-                                    onClick = { viewModel.openFocusModal() },
-                                    isLightMode = uiState.isLightMode,
-                                    accentColor = uiState.activeAccentColor
-                                )
-                            }
-                        } else null,
-                        modifier = Modifier.padding(bottom = 6.dp)
-                    )
-                } else if (showFocusChip) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp)
-                    ) {
-                        FocusProfileChip(
-                            currentProfile = uiState.focusProfile,
-                            onClick = { viewModel.openFocusModal() },
-                            isLightMode = uiState.isLightMode,
-                            accentColor = uiState.activeAccentColor
-                        )
-                    }
-                }
+            // Barra de Categorias (na parte de baixo, em cima da barra de pesquisa)
+            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
+                AppCategoriesBar(
+                    selectedCategory = uiState.selectedAppCategory,
+                    onCategorySelected = { category -> viewModel.selectAppCategory(category) },
+                    isLightMode = uiState.isLightMode,
+                    accentColor = uiState.activeAccentColor,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
             }
         }
     }
@@ -1124,9 +1118,9 @@ fun HomeScreen(
                 isAmoledMode = uiState.isAmoledMode,
                 isLightMode = uiState.isLightMode,
                 searchBarOpacity = uiState.searchBarOpacity,
-                isGeminiGlowEnabled = uiState.isGeminiGlowEnabled,
-                onAiSearchClick = { viewModel.executeAiSearch() },
-                onSearchSubmit = { viewModel.submitSearch(it) },
+                onAiSearchClick = {
+                    if (uiState.searchQuery.isBlank()) viewModel.onSearchQueryChange("@ai ") else viewModel.executeAiSearch()
+                },
                 widgetContent = if (showWidgets) {
                     {
                         WidgetsPanel(

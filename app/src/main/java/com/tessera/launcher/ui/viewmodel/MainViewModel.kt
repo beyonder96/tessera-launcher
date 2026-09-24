@@ -272,6 +272,7 @@ class MainViewModel(
             // Fase 3: Smart Stacks e Tempo de Tela
             isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
             isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
+            hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
 
             // Fase 4: Perfis de Foco
             focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
@@ -443,12 +444,12 @@ class MainViewModel(
     fun executeAiSearch(prompt: String = _uiState.value.searchQuery) {
         val symbol = _uiState.value.commandActivationSymbol
         val cleanPrompt = prompt
-            .removePrefix("@ai")
-            .removePrefix("@groq")
-            .removePrefix("@gemini")
-            .removePrefix("${symbol}ai")
-            .removePrefix("${symbol}groq")
-            .removePrefix("${symbol}gemini")
+            .replace("@ai", "", ignoreCase = true)
+            .replace("@groq", "", ignoreCase = true)
+            .replace("@gemini", "", ignoreCase = true)
+            .replace("${symbol}ai", "", ignoreCase = true)
+            .replace("${symbol}groq", "", ignoreCase = true)
+            .replace("${symbol}gemini", "", ignoreCase = true)
             .trim()
 
         if (cleanPrompt.isBlank()) return
@@ -530,18 +531,22 @@ class MainViewModel(
             return
         }
 
-        // 2. IA / Assistente: Ativado via @ai / @groq / @gemini
-        val isAiCommand = query.startsWith("@ai", ignoreCase = true) ||
-                query.startsWith("@groq", ignoreCase = true) ||
-                query.startsWith("@gemini", ignoreCase = true) ||
-                query.startsWith("${symbol}ai", ignoreCase = true) ||
-                query.startsWith("${symbol}groq", ignoreCase = true) ||
-                query.startsWith("${symbol}gemini", ignoreCase = true)
+        // 2. IA / Assistente: Ativado via @ai / @groq / @gemini (no início, fim ou meio)
+        val isAiCommand = query.contains("@ai", ignoreCase = true) ||
+                query.contains("@groq", ignoreCase = true) ||
+                query.contains("@gemini", ignoreCase = true) ||
+                query.contains("${symbol}ai", ignoreCase = true) ||
+                query.contains("${symbol}groq", ignoreCase = true) ||
+                query.contains("${symbol}gemini", ignoreCase = true)
 
         if (isAiCommand) {
             val aiPrompt = query
-                .removePrefix("@ai").removePrefix("@groq").removePrefix("@gemini")
-                .removePrefix("${symbol}ai").removePrefix("${symbol}groq").removePrefix("${symbol}gemini")
+                .replace("@ai", "", ignoreCase = true)
+                .replace("@groq", "", ignoreCase = true)
+                .replace("@gemini", "", ignoreCase = true)
+                .replace("${symbol}ai", "", ignoreCase = true)
+                .replace("${symbol}groq", "", ignoreCase = true)
+                .replace("${symbol}gemini", "", ignoreCase = true)
                 .trim()
 
             autoLaunchJob?.cancel()
@@ -1520,7 +1525,8 @@ class MainViewModel(
     fun refreshScreenTime() {
         viewModelScope.launch(Dispatchers.IO) {
             val info = screenTimeHelper.getDailyScreenTime()
-            _uiState.update { it.copy(screenTimeInfo = info) }
+            val hasPerm = screenTimeHelper.hasUsagePermission()
+            _uiState.update { it.copy(screenTimeInfo = info, hasUsageAccessPermission = hasPerm) }
         }
     }
 
@@ -1844,6 +1850,8 @@ class MainViewModel(
             enabledServices.contains(context.packageName)
         } catch (_: Exception) { false }
 
+        val hasUsage = screenTimeHelper.hasUsagePermission()
+
         _uiState.update {
             it.copy(
                 isDefaultLauncher = isDefault,
@@ -1851,6 +1859,7 @@ class MainViewModel(
                 hasMusicPermission = hasMusic,
                 hasMediaImagesPermission = hasImages,
                 hasAccessibilityService = hasA11y,
+                hasUsageAccessPermission = hasUsage,
                 hasContactsPermission = contactSearchHelper.hasContactsPermission(),
                 hasNotificationAccess = TesseraMediaService.isNotificationAccessGranted(context),
                 hasLocationPermission = weatherHelper.hasLocationPermission()
@@ -2314,6 +2323,7 @@ class MainViewModel(
                 isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
                 isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
                 isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
+                hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
                 focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
                 isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
                 isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()

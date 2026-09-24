@@ -61,9 +61,18 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.5.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.5.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.1)
 
-### 🆕 Novidades na v2.5.0
+### 🆕 Novidades na v2.5.1
+- 🎯 **Posicionamento do Cursor na Busca por Gesto (`@ai `):** O cursor de digitação agora é posicionado automaticamente no final do texto após `@ai `, evitando que novas palavras sejam inseridas antes do `@` e permitindo digitar a pergunta imediatamente.
+- 📱 **Visibilidade e Permissão em "Dados de Uso do App / Bem-Estar Digital":** Declaração explícita de `PACKAGE_USAGE_STATS` no manifesto e suporte a deep-link direto por pacote, fazendo o Tessera Launcher aparecer na lista de permissões de uso do sistema Android e nas configurações de permissões do launcher.
+- 🏝️ **Ajuste Ergonômico da Dynamic Island (`LiveCapsule`):** Espaçamento superior da cápsula flutuante aumentado para 40.dp, posicionando-a confortavelmente abaixo do orifício da câmera frontal (punch hole) e da barra de status.
+- 🏷️ **Indicativo de Foco no Topo da Gaveta:** O chip indicador de Perfil de Foco foi movido da parte inferior (onde se sobrepunha à doca de busca) para o topo da lista de aplicativos, deixando a barra de busca limpa e os controles ergonômicos.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.5.0</b></summary>
+
 - 🧘 **Perfis de Foco Contextuais (Trabalho, Desconexão e Padrão):** Novo sistema nativo de bem-estar digital. Oculte distrações e redes sociais recreativas durante o expediente ou ative o modo zen com apenas utilitários essenciais. Inclui chip de status na gaveta, modal *Liquid Glass* e agendamento automático em dias úteis (09h às 18h).
 - ⏱️ **Widget Minimalista de Tempo de Tela (54.dp):** Medição diária nativa via `UsageStatsManager` com filtragem em background, exibição de tempo total acumulado em destaque com cor do tema, barras proporcionais dos 3 apps mais utilizados e atalho direto para o Bem-Estar Digital.
 - 🔀 **Smart Stacks & Rotação Contextual Inteligente:** Navegação bidimensional na doca de widgets com suporte a deslizar para cima e para baixo com resposta elástica. Rotação contextual inteligente priorizando o Player em reprodução, Bateria ao carregar, Agenda em eventos próximos, Tempo de Tela à noite e Clima pela manhã.
@@ -73,8 +82,7 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🎨 **Sistema Accent Pop:** 6 paletas de destaque (Nothing Red, Cyber Neon Green, Electric Amber, Cyan Pulse, Purple Haze e Monocromático) aplicadas com elegância nos indexadores, badges e barras.
 - 🛡️ **Desbloqueio Biométrico Nativo no Cofre:** Proteção por impressão digital (`BiometricPrompt`) com fallback de PIN para apps ocultos.
 - 💫 **Física de Molas Expressivas & Haptics 2.0:** Transições no carrossel de widgets e nos chips com molas físicas elásticas (`Spring.DampingRatioLowBouncy`), compressão tátil orgânica ao pressionar e vibrações sub-milissegundo.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.4.1</b></summary>
 

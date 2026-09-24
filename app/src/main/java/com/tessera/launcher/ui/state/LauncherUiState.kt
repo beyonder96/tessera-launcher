@@ -215,6 +215,7 @@ data class LauncherUiState(
     val hasMusicPermission: Boolean = false,
     val hasMediaImagesPermission: Boolean = false,
     val hasAccessibilityService: Boolean = false,
+    val hasUsageAccessPermission: Boolean = false,
 
     // Clima & Localização
     val weatherInfo: WeatherInfo? = null,

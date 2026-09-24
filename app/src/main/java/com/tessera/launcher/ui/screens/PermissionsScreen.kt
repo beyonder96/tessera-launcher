@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Notifications
@@ -384,6 +385,35 @@ fun PermissionsScreen(
                             context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             })
+                        },
+                        isLightMode = isLight,
+                        iconBoxBg = iconBoxBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    PermissionDivider(dividerColor)
+
+                    // 4. Acesso a Dados de Uso (Tempo de tela / Bem-Estar)
+                    PermissionRow(
+                        icon = Icons.Outlined.HourglassEmpty,
+                        title = "Acesso a dados de uso",
+                        subtitle = "Permite calcular o tempo de uso de tela e apps do Bem-Estar Digital",
+                        isChecked = uiState.hasUsageAccessPermission,
+                        onCheckedChange = {
+                            val packageUriIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            try {
+                                context.startActivity(packageUriIntent)
+                            } catch (_: Exception) {
+                                try {
+                                    context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    })
+                                } catch (_: Exception) {}
+                            }
                         },
                         isLightMode = isLight,
                         iconBoxBg = iconBoxBg,

@@ -48,8 +48,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,8 +68,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.AmoledCardBackground
@@ -117,6 +122,24 @@ fun SearchMorphingDock(
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val isSplit = searchBarStyle.startsWith("split_")
+
+    var textFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = searchQuery,
+                selection = TextRange(searchQuery.length)
+            )
+        )
+    }
+
+    LaunchedEffect(searchQuery) {
+        if (searchQuery != textFieldValue.text) {
+            textFieldValue = TextFieldValue(
+                text = searchQuery,
+                selection = TextRange(searchQuery.length)
+            )
+        }
+    }
 
     val hasTopContent = widgetContent != null
     val dockShape = when (searchBarStyle) {
@@ -502,8 +525,13 @@ fun SearchMorphingDock(
                                 Spacer(modifier = Modifier.width(12.dp))
 
                                 BasicTextField(
-                                    value = searchQuery,
-                                    onValueChange = onQueryChange,
+                                    value = textFieldValue,
+                                    onValueChange = { newTfv ->
+                                        textFieldValue = newTfv
+                                        if (newTfv.text != searchQuery) {
+                                            onQueryChange(newTfv.text)
+                                        }
+                                    },
                                     textStyle = TextStyle(
                                         color = dockTextPrimary,
                                         fontSize = 16.sp,
@@ -516,7 +544,7 @@ fun SearchMorphingDock(
                                         onSearch = {
                                             focusManager.clearFocus()
                                             keyboardController?.hide()
-                                            onSearchSubmit(searchQuery)
+                                            onSearchSubmit(textFieldValue.text)
                                         }
                                     ),
                                     decorationBox = { innerTextField ->
