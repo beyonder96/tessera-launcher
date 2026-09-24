@@ -90,6 +90,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.data.helper.ContactInfo
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.ui.components.AiResponseCard
 import com.tessera.launcher.ui.components.Alphabet
 import com.tessera.launcher.ui.components.AlphabetScroller
@@ -100,7 +101,12 @@ import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
 import com.tessera.launcher.ui.components.AppListSkeleton
 import com.tessera.launcher.ui.components.CalculatorCard
+import com.tessera.launcher.ui.components.EditorialClockWidget
+import com.tessera.launcher.ui.components.FocusProfileChip
+import com.tessera.launcher.ui.components.FocusProfileModal
 import com.tessera.launcher.ui.components.FolderSearchCard
+import com.tessera.launcher.ui.components.LiveCapsule
+import com.tessera.launcher.ui.components.OmniResultCard
 import com.tessera.launcher.ui.components.BatteryConfigBottomSheet
 import com.tessera.launcher.ui.components.CalendarConfigBottomSheet
 import com.tessera.launcher.ui.components.FolderViewBottomSheet
@@ -204,6 +210,7 @@ fun HomeScreen(
                 viewModel.checkNotificationAccess(context)
                 viewModel.refreshCalendarAndPermissions()
                 viewModel.refreshWeather()
+                viewModel.refreshScreenTime()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -528,13 +535,52 @@ fun HomeScreen(
             )
         }
 
-        // Centro da Tela Inicial: Moldura de Foto Minimalista
+        // Centro da Tela Inicial: Relógio Tipográfico de Autor & Moldura de Foto Minimalista
         if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
+                // Live Capsule (Mini HUD flutuante no topo para mídia e bateria)
+                if (uiState.isLiveCapsuleEnabled) {
+                    LiveCapsule(
+                        mediaPlayback = uiState.mediaPlayback,
+                        isCharging = uiState.isCharging,
+                        batteryPercentage = uiState.batteryPercentage,
+                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                        isAmoledMode = uiState.isAmoledMode,
+                        isLightMode = uiState.isLightMode,
+                        accentColor = uiState.activeAccentColor,
+                        onMediaClick = {
+                            uiState.mediaPlayback.packageName?.let { pkg ->
+                                viewModel.launchApp(pkg)
+                            }
+                        },
+                        onPlayPauseClick = {
+                            TesseraMediaService.togglePlayPause()
+                        },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 16.dp)
+                    )
+                }
+
+                // Relógio Tipográfico de Autor (Nothing Dot-Matrix, Stacked, Oversized, Minimal)
+                if (uiState.homeClockStyle != "NONE") {
+                    EditorialClockWidget(
+                        clockStyle = uiState.homeClockStyle,
+                        formattedTime = uiState.formattedTime,
+                        formattedDate = uiState.formattedDate,
+                        accentColor = uiState.activeAccentColor,
+                        isLightMode = uiState.isLightMode,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(bottom = if (uiState.isPhotoWidgetEnabled) 170.dp else 70.dp)
+                    )
+                }
+
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
@@ -648,6 +694,7 @@ fun HomeScreen(
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
                                 if (isAiSearchActive ||
+                                    uiState.omniSearchResult != null ||
                                     uiState.calculatorResult != null ||
                                     uiState.matchingContacts.isNotEmpty() ||
                                     matchingFolder != null
@@ -686,6 +733,19 @@ fun HomeScreen(
                                                     query = uiState.searchQuery,
                                                     result = result,
                                                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                        }
+
+                                        // Omni-Search Avançado (Cálculos, Moedas, Unidades, Ações Rápidas)
+                                        uiState.omniSearchResult?.let { omniResult ->
+                                            item(key = "omni_result_empty") {
+                                                OmniResultCard(
+                                                    result = omniResult,
+                                                    accentColor = uiState.activeAccentColor,
+                                                    isLightMode = uiState.isLightMode,
+                                                    isAmoledMode = uiState.isAmoledMode,
                                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
@@ -825,6 +885,19 @@ fun HomeScreen(
                                         }
                                     }
 
+                                    // Omni-Search Avançado (Cálculos, Moedas, Unidades, Ações Rápidas)
+                                    uiState.omniSearchResult?.let { omniResult ->
+                                        item(key = "omni_result_card") {
+                                            OmniResultCard(
+                                                result = omniResult,
+                                                accentColor = uiState.activeAccentColor,
+                                                isLightMode = uiState.isLightMode,
+                                                isAmoledMode = uiState.isAmoledMode,
+                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                    }
+
                                 // Contatos encontrados (oculto em modo calculadora)
                                 if (!isCalcMode && uiState.matchingContacts.isNotEmpty()) {
                                     item(key = "contacts_header") {
@@ -954,6 +1027,7 @@ fun HomeScreen(
                 if (uiState.appsState is AppsListState.Success && uiState.searchQuery.isEmpty()) {
                     AlphabetScroller(
                         availableLetters = uiState.availableLetters.toSet(),
+                        accentColor = uiState.activeAccentColor,
                         onLetterSelected = { letter ->
                             val targetIndex = uiState.letterIndexMap[letter] ?: run {
                                 val alphabetIndex = Alphabet.indexOf(letter)
@@ -979,14 +1053,41 @@ fun HomeScreen(
                 }
             }
 
-            // Barra de Categorias de Aplicativos (na parte de baixo, em cima da barra de pesquisa)
-            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
-                AppCategoriesBar(
-                    selectedCategory = uiState.selectedAppCategory,
-                    onCategorySelected = { category -> viewModel.selectAppCategory(category) },
-                    isLightMode = uiState.isLightMode,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
+            // Barra de Categorias e Chip de Foco (na parte de baixo, em cima da barra de pesquisa)
+            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
+                val showFocusChip = uiState.isFocusProfilesFeatureEnabled
+                if (uiState.isAppCategoriesEnabled) {
+                    AppCategoriesBar(
+                        selectedCategory = uiState.selectedAppCategory,
+                        onCategorySelected = { category -> viewModel.selectAppCategory(category) },
+                        isLightMode = uiState.isLightMode,
+                        accentColor = uiState.activeAccentColor,
+                        leadingContent = if (showFocusChip) {
+                            {
+                                FocusProfileChip(
+                                    currentProfile = uiState.focusProfile,
+                                    onClick = { viewModel.openFocusModal() },
+                                    isLightMode = uiState.isLightMode,
+                                    accentColor = uiState.activeAccentColor
+                                )
+                            }
+                        } else null,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
+                } else if (showFocusChip) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                    ) {
+                        FocusProfileChip(
+                            currentProfile = uiState.focusProfile,
+                            onClick = { viewModel.openFocusModal() },
+                            isLightMode = uiState.isLightMode,
+                            accentColor = uiState.activeAccentColor
+                        )
+                    }
+                }
             }
         }
     }
@@ -1084,7 +1185,11 @@ fun HomeScreen(
                             onAppClick = { app -> viewModel.launchApp(app.packageName) },
                             onAppLongClick = { app -> selectedAppForMenu = app },
                             iconShape = uiState.iconShape,
-                            isThemedIcons = uiState.isThemedIconsEnabled
+                            isThemedIcons = uiState.isThemedIconsEnabled,
+                            accentColor = uiState.activeAccentColor,
+                            screenTimeInfo = uiState.screenTimeInfo,
+                            isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
+                            isSmartStackRotateEnabled = uiState.isSmartStackRotateEnabled
                         )
                     }
                 } else null
@@ -1245,6 +1350,19 @@ fun HomeScreen(
                 onToggleTask = { viewModel.toggleNoteTask(it) },
                 onRemoveTask = { viewModel.removeNoteTask(it) },
                 onDismiss = { isNotesTasksOpen = false }
+            )
+        }
+
+        if (uiState.isFocusModalOpen) {
+            FocusProfileModal(
+                currentProfile = uiState.focusProfile,
+                isScheduleEnabled = uiState.isFocusScheduleEnabled,
+                onSelectProfile = { viewModel.setFocusProfile(it) },
+                onToggleSchedule = { viewModel.setFocusScheduleEnabled(it) },
+                onDismiss = { viewModel.closeFocusModal() },
+                isAmoledMode = uiState.isAmoledMode,
+                isLightMode = uiState.isLightMode,
+                accentColor = uiState.activeAccentColor
             )
         }
 

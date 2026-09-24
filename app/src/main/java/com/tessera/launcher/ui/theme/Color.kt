@@ -169,3 +169,32 @@ fun geminiLinearBrush(alpha: Float = 1f): Brush {
     )
 }
 
+// Accent Tints (Cores de Destaque Pop)
+val AccentMonochrome = Color(0xFFFFFFFF)
+val AccentNothingRed = Color(0xFFFF2E2E)
+val AccentNeonGreen = Color(0xFF00E676)
+val AccentElectricAmber = Color(0xFFFF9100)
+val AccentCyanPulse = Color(0xFF00E5FF)
+val AccentPurpleHaze = Color(0xFFB388FF)
+
+data class AccentColorOption(
+    val id: String,
+    val displayName: String,
+    val color: Color
+)
+
+val ACCENT_COLOR_OPTIONS = listOf(
+    AccentColorOption("MONOCHROME", "Monocromático", AccentMonochrome),
+    AccentColorOption("NOTHING_RED", "Nothing Red", AccentNothingRed),
+    AccentColorOption("NEON_GREEN", "Neon Green", AccentNeonGreen),
+    AccentColorOption("ELECTRIC_AMBER", "Electric Amber", AccentElectricAmber),
+    AccentColorOption("CYAN_PULSE", "Cyan Pulse", AccentCyanPulse),
+    AccentColorOption("PURPLE_HAZE", "Purple Haze", AccentPurpleHaze)
+)
+
+fun getAccentColor(name: String, isLightMode: Boolean = false): Color {
+    val option = ACCENT_COLOR_OPTIONS.firstOrNull { it.id.equals(name, ignoreCase = true) }
+    val base = option?.color ?: AccentMonochrome
+    return if (isLightMode && base == AccentMonochrome) Color(0xFF111827) else base
+}
+

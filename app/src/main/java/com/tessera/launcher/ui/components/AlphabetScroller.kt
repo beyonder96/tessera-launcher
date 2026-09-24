@@ -53,7 +53,8 @@ val Alphabet = ('A'..'Z').toList() + '#'
 fun AlphabetScroller(
     availableLetters: Set<Char>,
     onLetterSelected: (Char) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    accentColor: Color = Color.White
 ) {
     var columnHeightPx by remember { mutableIntStateOf(1) }
     var selectedLetter by remember { mutableStateOf<Char?>(null) }
@@ -157,7 +158,7 @@ fun AlphabetScroller(
                     fontFamily = FontFamily.SansSerif,
                     fontWeight = if (isCurrentChar || curveFactor > 0.6f) FontWeight.Bold else FontWeight.Normal,
                     color = when {
-                        isCurrentChar -> Color.White
+                        isCurrentChar -> accentColor
                         curveFactor > 0.3f -> TextPrimary
                         isAvailable -> TextPrimary.copy(alpha = 0.7f)
                         else -> TextTertiary.copy(alpha = 0.45f)
@@ -189,14 +190,14 @@ fun AlphabetScroller(
                     .shadow(elevation = 14.dp, shape = CircleShape)
                     .clip(CircleShape)
                     .background(Color(0xE614141A))
-                    .border(BorderStroke(1.dp, Color(0x33FFFFFF)), CircleShape),
+                    .border(BorderStroke(1.5.dp, if (accentColor != Color.White) accentColor.copy(alpha = 0.8f) else Color(0x33FFFFFF)), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = selectedLetter.toString(),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = if (accentColor != Color.White) accentColor else Color.White
                 )
             }
         }

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -194,6 +195,16 @@ fun ExtrasScreen(
                     title = "Comandos",
                     subtitle = "Prefixos rápidos de ação — como @con para contatos.",
                     onClick = onNavigateToCommands
+                )
+
+                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+
+                // 4. Perfis de Foco
+                ExtrasRowItem(
+                    icon = Icons.Outlined.SelfImprovement,
+                    title = "Perfis de foco",
+                    subtitle = "Modos Trabalho, Desconexão e agendamento automático.",
+                    onClick = { viewModel.openFocusModal() }
                 )
 
                 HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)

@@ -12,6 +12,11 @@ import com.tessera.launcher.data.model.AppCategory
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
+import androidx.compose.ui.graphics.Color
+import com.tessera.launcher.data.helper.OmniResult
+import com.tessera.launcher.data.helper.ScreenTimeInfo
+import com.tessera.launcher.data.model.FocusProfile
+import com.tessera.launcher.ui.theme.getAccentColor
 
 sealed interface AppsListState {
     data object Loading : AppsListState
@@ -271,7 +276,28 @@ data class LauncherUiState(
     val geminiApiKey: String = "",
     val aiSearchResponse: String? = null,
     val isAiSearchLoading: Boolean = false,
-    val aiSearchError: String? = null
+    val aiSearchError: String? = null,
+
+    // Fase 1: Relógio da Home, Accent Color e Biometria
+    val homeClockStyle: String = "NONE",
+    val accentColorName: String = "MONOCHROME",
+    val isBiometricUnlockEnabled: Boolean = true,
+
+    // Fase 2: Live Capsule (Mini HUD) e Omni-Search
+    val isLiveCapsuleEnabled: Boolean = true,
+    val omniSearchResult: OmniResult? = null,
+
+    // Fase 3: Smart Stacks & Tempo de Tela
+    val isSmartStackRotateEnabled: Boolean = true,
+    val isScreenTimeWidgetEnabled: Boolean = true,
+    val screenTimeInfo: ScreenTimeInfo? = null,
+
+    // Fase 4: Perfis de Foco
+    val focusProfile: FocusProfile = FocusProfile.OFF,
+    val isFocusScheduleEnabled: Boolean = false,
+    val isFocusProfilesFeatureEnabled: Boolean = true,
+    val isFocusModalOpen: Boolean = false
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
+    val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)
 }

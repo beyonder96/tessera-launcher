@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import java.util.Calendar
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -97,7 +98,13 @@ import androidx.compose.material.icons.outlined.Warning
 import com.tessera.launcher.data.helper.SmartGlanceActionType
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import com.tessera.launcher.data.model.AppInfo
-import java.util.Calendar
+import com.tessera.launcher.data.helper.ScreenTimeInfo
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import kotlinx.coroutines.launch
 
 private enum class PanelCardType {
     QUICK_ACTIONS,
@@ -109,7 +116,8 @@ private enum class PanelCardType {
     DINO,
     NOTES,
     SMART_GLANCE,
-    PREDICTED_APPS
+    PREDICTED_APPS,
+    SCREEN_TIME
 }
 
 
@@ -167,9 +175,20 @@ fun WidgetsPanel(
     onAppClick: (AppInfo) -> Unit = {},
     onAppLongClick: ((AppInfo) -> Unit)? = null,
     iconShape: String = "DEFAULT",
-    isThemedIcons: Boolean = true
+    isThemedIcons: Boolean = true,
+    accentColor: Color = Color.White,
+    screenTimeInfo: ScreenTimeInfo? = null,
+    isScreenTimeWidgetEnabled: Boolean = true,
+    isSmartStackRotateEnabled: Boolean = true
 ) {
-    val activeCards = remember(isSmartGlanceEnabled, isDinoWidgetEnabled, isNotesWidgetEnabled, isPredictedAppsWidgetEnabled, predictedApps.size) {
+    val activeCards = remember(
+        isSmartGlanceEnabled,
+        isDinoWidgetEnabled,
+        isNotesWidgetEnabled,
+        isPredictedAppsWidgetEnabled,
+        isScreenTimeWidgetEnabled,
+        predictedApps.size
+    ) {
         buildList {
             add(PanelCardType.QUICK_ACTIONS)
             add(PanelCardType.BATTERY)
@@ -181,6 +200,7 @@ fun WidgetsPanel(
             if (isNotesWidgetEnabled) add(PanelCardType.NOTES)
             if (isSmartGlanceEnabled) add(PanelCardType.SMART_GLANCE)
             if (isPredictedAppsWidgetEnabled && predictedApps.isNotEmpty()) add(PanelCardType.PREDICTED_APPS)
+            if (isScreenTimeWidgetEnabled) add(PanelCardType.SCREEN_TIME)
         }
     }
     val pageCount = activeCards.size
@@ -196,9 +216,38 @@ fun WidgetsPanel(
         7 -> PanelCardType.NOTES
         8 -> PanelCardType.SMART_GLANCE
         9 -> PanelCardType.PREDICTED_APPS
+        10 -> PanelCardType.SCREEN_TIME
         else -> PanelCardType.QUICK_ACTIONS
     }
-    val targetPageIndex = activeCards.indexOf(targetCardType).let { if (it >= 0) it else 0 }
+
+    val contextualCardType = remember(
+        isSmartStackRotateEnabled,
+        mediaPlayback.isPlaying,
+        isCharging,
+        batteryPercentage,
+        nextCalendarEvent,
+        currentTime,
+        targetCardType
+    ) {
+        if (!isSmartStackRotateEnabled) return@remember targetCardType
+        if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying && activeCards.contains(PanelCardType.MEDIA)) {
+            PanelCardType.MEDIA
+        } else if ((isCharging || batteryPercentage <= 20) && activeCards.contains(PanelCardType.BATTERY)) {
+            PanelCardType.BATTERY
+        } else if (nextCalendarEvent != null && activeCards.contains(PanelCardType.CALENDAR)) {
+            PanelCardType.CALENDAR
+        } else {
+            val hour = runCatching { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }.getOrDefault(12)
+            if (hour in 19..23 && activeCards.contains(PanelCardType.SCREEN_TIME)) {
+                PanelCardType.SCREEN_TIME
+            } else if (hour in 6..10 && activeCards.contains(PanelCardType.WEATHER)) {
+                PanelCardType.WEATHER
+            } else {
+                targetCardType
+            }
+        }
+    }
+    val targetPageIndex = activeCards.indexOf(contextualCardType).let { if (it >= 0) it else 0 }
 
     val initialPage = remember {
         if (isSwitchOnMusicPlayEnabled && mediaPlayback.isPlaying) {
@@ -239,6 +288,10 @@ fun WidgetsPanel(
         }
     }
 
+    val haptic = LocalHapticFeedback.current
+    val coroutineScope = rememberCoroutineScope()
+    var verticalDragAccumulator by remember { mutableFloatStateOf(0f) }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -247,7 +300,45 @@ fun WidgetsPanel(
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp),
+                .height(54.dp)
+                .pointerInput(pageCount) {
+                    detectVerticalDragGestures(
+                        onDragStart = { verticalDragAccumulator = 0f },
+                        onDragEnd = { verticalDragAccumulator = 0f },
+                        onDragCancel = { verticalDragAccumulator = 0f },
+                        onVerticalDrag = { change, dragAmount ->
+                            change.consume()
+                            verticalDragAccumulator += dragAmount
+                            if (verticalDragAccumulator < -40f && pageCount > 1) {
+                                verticalDragAccumulator = 0f
+                                coroutineScope.launch {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    val next = (pagerState.currentPage + 1) % pageCount
+                                    pagerState.animateScrollToPage(
+                                        page = next,
+                                        animationSpec = androidx.compose.animation.core.spring(
+                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                }
+                            } else if (verticalDragAccumulator > 40f && pageCount > 1) {
+                                verticalDragAccumulator = 0f
+                                coroutineScope.launch {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    val prev = (pagerState.currentPage - 1 + pageCount) % pageCount
+                                    pagerState.animateScrollToPage(
+                                        page = prev,
+                                        animationSpec = androidx.compose.animation.core.spring(
+                                            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy,
+                                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    )
+                },
             contentPadding = PaddingValues(horizontal = 0.dp),
             pageSpacing = 16.dp
         ) { page ->
@@ -368,6 +459,17 @@ fun WidgetsPanel(
                         isThemedIcons = isThemedIcons,
                         isLightMode = isLightMode,
                         isAmoledMode = isAmoledMode
+                    )
+                }
+                PanelCardType.SCREEN_TIME -> {
+                    ScreenTimeWidgetCard(
+                        screenTimeInfo = screenTimeInfo,
+                        accentColor = accentColor,
+                        isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
+                        isLiquidGlass = isLiquidGlass,
+                        onCardClick = {},
+                        onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
                     )
                 }
                 null -> {}

@@ -35,8 +35,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import android.content.Context
+import android.os.Build
+import android.os.CancellationSignal
+import android.hardware.biometrics.BiometricPrompt
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Search
@@ -101,6 +107,60 @@ private fun drawableToBitmap(drawable: Drawable?): Bitmap? {
     return bitmap
 }
 
+private fun canUseBiometrics(context: Context): Boolean {
+    return try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val bm = context.getSystemService(android.hardware.biometrics.BiometricManager::class.java)
+            bm?.canAuthenticate(
+                android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+                android.hardware.biometrics.BiometricManager.Authenticators.BIOMETRIC_WEAK
+            ) == android.hardware.biometrics.BiometricManager.BIOMETRIC_SUCCESS
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            context.packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_FINGERPRINT)
+        } else {
+            val fm = context.getSystemService(android.hardware.fingerprint.FingerprintManager::class.java)
+            fm?.isHardwareDetected == true && fm.hasEnrolledFingerprints()
+        }
+    } catch (_: Exception) {
+        false
+    }
+}
+
+private fun triggerBiometricPrompt(
+    context: Context,
+    onSuccess: () -> Unit,
+    onCancelOrFallback: () -> Unit
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        try {
+            val prompt = BiometricPrompt.Builder(context)
+                .setTitle("Apps Ocultos")
+                .setSubtitle("Confirme sua identidade com biometria")
+                .setNegativeButton("Digitar PIN", context.mainExecutor) { _, _ ->
+                    onCancelOrFallback()
+                }
+                .build()
+
+            val signal = CancellationSignal()
+            prompt.authenticate(signal, context.mainExecutor, object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult?) {
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
+                    super.onAuthenticationError(errorCode, errString)
+                    onCancelOrFallback()
+                }
+            })
+        } catch (_: Exception) {
+            onCancelOrFallback()
+        }
+    } else {
+        onCancelOrFallback()
+    }
+}
+
 @Composable
 fun HiddenAppsScreen(
     viewModel: MainViewModel,
@@ -115,6 +175,21 @@ fun HiddenAppsScreen(
     var newPinInput by remember { mutableStateOf("") }
     var showSetPinDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+
+    val isBiometricsAvailable = remember(context) { canUseBiometrics(context) }
+
+    LaunchedEffect(isUnlocked, uiState.isBiometricUnlockEnabled) {
+        if (!isUnlocked && uiState.isBiometricUnlockEnabled && uiState.hiddenAppsPin.isNotEmpty() && isBiometricsAvailable) {
+            triggerBiometricPrompt(
+                context = context,
+                onSuccess = {
+                    isUnlocked = true
+                    viewModel.unlockHiddenAppsWithPin(uiState.hiddenAppsPin)
+                },
+                onCancelOrFallback = { }
+            )
+        }
+    }
 
     val allApps = remember(uiState.allInstalledApps, uiState.appsState) {
         if (uiState.allInstalledApps.isNotEmpty()) {
@@ -260,6 +335,40 @@ fun HiddenAppsScreen(
                         .background(Color(0xFF19191E), RoundedCornerShape(12.dp))
                         .padding(vertical = 12.dp, horizontal = 16.dp)
                 )
+
+                if (isBiometricsAvailable) {
+                    Spacer(modifier = Modifier.height(28.dp))
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFF1E1E26))
+                            .clickable {
+                                triggerBiometricPrompt(
+                                    context = context,
+                                    onSuccess = {
+                                        isUnlocked = true
+                                        viewModel.unlockHiddenAppsWithPin(uiState.hiddenAppsPin)
+                                    },
+                                    onCancelOrFallback = { }
+                                )
+                            }
+                            .padding(horizontal = 20.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Fingerprint,
+                            contentDescription = "Desbloquear com Biometria",
+                            tint = uiState.activeAccentColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Usar Biometria",
+                            style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
+                            color = TextPrimary
+                        )
+                    }
+                }
             }
         } else {
             // Seção de Acesso Rápido aos Apps já Ocultos
@@ -441,6 +550,42 @@ fun HiddenAppsScreen(
                         .clickable { showSetPinDialog = true }
                         .padding(4.dp)
                 )
+            }
+
+            // Alternador de Biometria
+            if (isBiometricsAvailable && uiState.hiddenAppsPin.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 22.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.Fingerprint,
+                            contentDescription = null,
+                            tint = uiState.activeAccentColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Desbloquear com Biometria",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = uiState.isBiometricUnlockEnabled,
+                        onCheckedChange = { viewModel.setBiometricUnlockEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Black,
+                            checkedTrackColor = uiState.activeAccentColor,
+                            uncheckedThumbColor = Color(0xFF636366),
+                            uncheckedTrackColor = Color(0xFF2C2C2E)
+                        )
+                    )
+                }
             }
 
             // Lista de Aplicativos

@@ -8,7 +8,8 @@ enum class WidgetType(val displayName: String) {
     BATTERY("Bateria & Sinais"),
     CALENDAR("Data & Calendário"),
     MEDIA("Player de Mídia"),
-    WEATHER("Clima & Temperatura")
+    WEATHER("Clima & Temperatura"),
+    SCREEN_TIME("Tempo de Tela (Bem-Estar)")
 }
 
 class LauncherPreferences(context: Context) {
@@ -133,6 +134,23 @@ class LauncherPreferences(context: Context) {
         // Prompt Bar na Lupa (Gemini AI)
         private const val KEY_AI_SEARCH_ENABLED = "ai_search_enabled"
         private const val KEY_GEMINI_API_KEY = "gemini_api_key"
+
+        // Fase 1: Relógio da Home, Accent Color e Biometria
+        private const val KEY_HOME_CLOCK_STYLE = "home_clock_style"
+        private const val KEY_ACCENT_COLOR = "accent_color"
+        private const val KEY_BIOMETRIC_UNLOCK_ENABLED = "biometric_unlock_enabled"
+
+        // Fase 2: Live Capsule
+        private const val KEY_LIVE_CAPSULE_ENABLED = "live_capsule_enabled"
+
+        // Fase 3: Smart Stacks e Tempo de Tela
+        private const val KEY_SMART_STACK_ROTATE_ENABLED = "smart_stack_rotate_enabled"
+        private const val KEY_SCREEN_TIME_WIDGET_ENABLED = "screen_time_widget_enabled"
+
+        // Fase 4: Perfis de Foco
+        private const val KEY_FOCUS_PROFILE = "focus_profile"
+        private const val KEY_FOCUS_SCHEDULE_ENABLED = "focus_schedule_enabled"
+        private const val KEY_FOCUS_PROFILES_FEATURE_ENABLED = "focus_profiles_feature_enabled"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -605,5 +623,79 @@ class LauncherPreferences(context: Context) {
         } catch (_: Exception) {
             false
         }
+    }
+
+    fun getHomeClockStyle(): String {
+        return prefs.getString(KEY_HOME_CLOCK_STYLE, "NONE") ?: "NONE"
+    }
+
+    fun setHomeClockStyle(style: String) {
+        prefs.edit().putString(KEY_HOME_CLOCK_STYLE, style).apply()
+    }
+
+    fun getAccentColor(): String {
+        return prefs.getString(KEY_ACCENT_COLOR, "MONOCHROME") ?: "MONOCHROME"
+    }
+
+    fun setAccentColor(accentColor: String) {
+        prefs.edit().putString(KEY_ACCENT_COLOR, accentColor).apply()
+    }
+
+    fun isBiometricUnlockEnabled(): Boolean {
+        return prefs.getBoolean(KEY_BIOMETRIC_UNLOCK_ENABLED, true)
+    }
+
+    fun setBiometricUnlockEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_BIOMETRIC_UNLOCK_ENABLED, enabled).apply()
+    }
+
+    fun isLiveCapsuleEnabled(): Boolean {
+        return prefs.getBoolean(KEY_LIVE_CAPSULE_ENABLED, true)
+    }
+
+    fun setLiveCapsuleEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_LIVE_CAPSULE_ENABLED, enabled).apply()
+    }
+
+    // Fase 3: Smart Stacks e Tempo de Tela
+    fun isSmartStackRotateEnabled(): Boolean {
+        return prefs.getBoolean(KEY_SMART_STACK_ROTATE_ENABLED, true)
+    }
+
+    fun setSmartStackRotateEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SMART_STACK_ROTATE_ENABLED, enabled).apply()
+    }
+
+    fun isScreenTimeWidgetEnabled(): Boolean {
+        return prefs.getBoolean(KEY_SCREEN_TIME_WIDGET_ENABLED, true)
+    }
+
+    fun setScreenTimeWidgetEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_SCREEN_TIME_WIDGET_ENABLED, enabled).apply()
+    }
+
+    // Fase 4: Perfis de Foco
+    fun getFocusProfile(): String {
+        return prefs.getString(KEY_FOCUS_PROFILE, "off") ?: "off"
+    }
+
+    fun setFocusProfile(profileId: String) {
+        prefs.edit().putString(KEY_FOCUS_PROFILE, profileId).apply()
+    }
+
+    fun isFocusScheduleEnabled(): Boolean {
+        return prefs.getBoolean(KEY_FOCUS_SCHEDULE_ENABLED, false)
+    }
+
+    fun setFocusScheduleEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_FOCUS_SCHEDULE_ENABLED, enabled).apply()
+    }
+
+    fun isFocusProfilesFeatureEnabled(): Boolean {
+        return prefs.getBoolean(KEY_FOCUS_PROFILES_FEATURE_ENABLED, true)
+    }
+
+    fun setFocusProfilesFeatureEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_FOCUS_PROFILES_FEATURE_ENABLED, enabled).apply()
     }
 }

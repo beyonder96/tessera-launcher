@@ -1036,3 +1036,199 @@ private fun DragHandleIndicator() {
         )
     }
 }
+
+// -------------------------------------------------------------
+// 7. MODAL: ESTILO DO RELÓGIO DA HOME (EDITORIAL CLOCKS)
+// -------------------------------------------------------------
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeClockStyleBottomSheet(
+    currentStyle: String,
+    onSelectStyle: (String) -> Unit,
+    onDismiss: () -> Unit,
+    isAmoled: Boolean = true
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+
+    val clockOptions = listOf(
+        "NONE" to ("Nenhum" to "Área limpa e minimalista (Padrão)"),
+        "NOTHING_DOT" to ("Nothing Dot-Matrix" to "Grade de pontos retrô-futurista inspirada no Nothing OS"),
+        "STACKED_BOLD" to ("Stacked Bold" to "Horas e minutos geométricos em caixa alta empilhados"),
+        "OVERSIZED_THIN" to ("Oversized Thin" to "Numerais gigantes ultrafinos com data sutil"),
+        "CLEAN_MINIMAL" to ("Clean Minimal" to "Linha única moderna em fonte monospace")
+    )
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = containerBg,
+        dragHandle = { DragHandleIndicator() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 36.dp)
+        ) {
+            Text(
+                text = "ESTILO DO RELÓGIO DA HOME",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = TextSecondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            clockOptions.forEach { (styleKey, info) ->
+                val (title, description) = info
+                val isSelected = currentStyle.equals(styleKey, ignoreCase = true)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isSelected) Color(0xFF1E1E26) else Color.Transparent)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                onSelectStyle(styleKey)
+                                onDismiss()
+                            }
+                        )
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            ),
+                            color = if (isSelected) TextPrimary else TextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = TextTertiary
+                        )
+                    }
+
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = "Selecionado",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// 8. MODAL: COR DE DESTAQUE (ACCENT POP)
+// -------------------------------------------------------------
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AccentColorBottomSheet(
+    currentColorName: String,
+    onSelectColor: (String) -> Unit,
+    onDismiss: () -> Unit,
+    isAmoled: Boolean = true
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = containerBg,
+        dragHandle = { DragHandleIndicator() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 36.dp)
+        ) {
+            Text(
+                text = "COR DE DESTAQUE (ACCENT POP)",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = TextSecondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            com.tessera.launcher.ui.theme.ACCENT_COLOR_OPTIONS.forEach { option ->
+                val isSelected = currentColorName.equals(option.id, ignoreCase = true)
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (isSelected) Color(0xFF1E1E26) else Color.Transparent)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                onSelectColor(option.id)
+                                onDismiss()
+                            }
+                        )
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(option.color)
+                            .border(BorderStroke(1.dp, Color(0x33FFFFFF)), CircleShape)
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = option.displayName,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        ),
+                        color = if (isSelected) TextPrimary else TextSecondary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = "Selecionado",
+                            tint = option.color,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

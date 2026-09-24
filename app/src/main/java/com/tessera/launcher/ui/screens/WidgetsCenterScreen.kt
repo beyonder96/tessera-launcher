@@ -38,11 +38,13 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.FormatQuote
+import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.SportsEsports
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.HorizontalDivider
@@ -232,6 +234,20 @@ fun WidgetsCenterScreen(
                         primaryTextColor = primaryTextColor,
                         secondaryTextColor = secondaryTextColor
                     )
+
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                    WidgetCenterToggleRow(
+                        icon = Icons.Outlined.HourglassEmpty,
+                        title = "Tempo de tela (Bem-Estar)",
+                        subtitle = "Tempo diário de uso e ranking dos principais apps no dock",
+                        checked = uiState.isScreenTimeWidgetEnabled,
+                        onCheckedChange = { viewModel.setScreenTimeWidgetEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
                 }
             }
 
@@ -340,6 +356,24 @@ fun WidgetsCenterScreen(
                         subtitle = "Trocar para o player automaticamente quando o áudio começar",
                         checked = uiState.isSwitchOnMusicPlayEnabled,
                         onCheckedChange = { viewModel.setSwitchOnMusicPlayEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    HorizontalDivider(
+                        color = dividerColor,
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+
+                    WidgetCenterToggleRow(
+                        icon = Icons.Outlined.SwapVert,
+                        title = "Smart Stacks (Rotação Inteligente)",
+                        subtitle = "Alterne widgets com deslize vertical e exiba cards contextuais conforme seu momento do dia",
+                        checked = uiState.isSmartStackRotateEnabled,
+                        onCheckedChange = { viewModel.setSmartStackRotateEnabled(it) },
                         isLightMode = isLight,
                         iconBgColor = iconBg,
                         primaryTextColor = primaryTextColor,
@@ -504,7 +538,7 @@ fun WidgetsCenterScreen(
                         )
                     }
 
-                    val showExtraRow = uiState.isSmartGlanceEnabled || uiState.isSmartDockEnabled
+                    val showExtraRow = uiState.isSmartGlanceEnabled || uiState.isSmartDockEnabled || uiState.isScreenTimeWidgetEnabled
                     if (showExtraRow) {
                         Spacer(modifier = Modifier.height(18.dp))
 
@@ -514,6 +548,7 @@ fun WidgetsCenterScreen(
                                 .padding(horizontal = 8.dp),
                             horizontalArrangement = Arrangement.Start
                         ) {
+                            var itemsInRow = 0
                             if (uiState.isSmartGlanceEnabled) {
                                 // 8: Smart Glance ("Now & Next")
                                 WidgetCardSelectorCircle(
@@ -525,6 +560,7 @@ fun WidgetsCenterScreen(
                                     iconBgColor = iconBg,
                                     modifier = Modifier.weight(1f)
                                 )
+                                itemsInRow++
                             }
                             if (uiState.isSmartDockEnabled) {
                                 // 9: Apps Sugeridos (IA)
@@ -537,17 +573,22 @@ fun WidgetsCenterScreen(
                                     iconBgColor = iconBg,
                                     modifier = Modifier.weight(1f)
                                 )
+                                itemsInRow++
                             }
-                            if (uiState.isSmartGlanceEnabled && !uiState.isSmartDockEnabled) {
-                                Spacer(modifier = Modifier.weight(1f))
-                                Spacer(modifier = Modifier.weight(1f))
-                                Spacer(modifier = Modifier.weight(1f))
-                            } else if (!uiState.isSmartGlanceEnabled && uiState.isSmartDockEnabled) {
-                                Spacer(modifier = Modifier.weight(1f))
-                                Spacer(modifier = Modifier.weight(1f))
-                                Spacer(modifier = Modifier.weight(1f))
-                            } else if (uiState.isSmartGlanceEnabled && uiState.isSmartDockEnabled) {
-                                Spacer(modifier = Modifier.weight(1f))
+                            if (uiState.isScreenTimeWidgetEnabled) {
+                                // 10: Tempo de tela
+                                WidgetCardSelectorCircle(
+                                    label = "Tempo\nde tela",
+                                    icon = Icons.Outlined.HourglassEmpty,
+                                    isSelected = uiState.defaultWidgetCardIndex == 10,
+                                    onClick = { viewModel.setDefaultWidgetCardIndex(10) },
+                                    isLightMode = isLight,
+                                    iconBgColor = iconBg,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                itemsInRow++
+                            }
+                            repeat((4 - itemsInRow).coerceAtLeast(0)) {
                                 Spacer(modifier = Modifier.weight(1f))
                             }
                         }

@@ -47,8 +47,12 @@ fun AppCategoriesBar(
     onCategorySelected: (AppCategory) -> Unit,
     modifier: Modifier = Modifier,
     isLightMode: Boolean = false,
-    categories: List<AppCategory> = AppCategory.entries
+    categories: List<AppCategory> = AppCategory.entries,
+    accentColor: Color = Color.White,
+    leadingContent: (@Composable () -> Unit)? = null
 ) {
+    val hasCustomAccent = accentColor != Color.White && accentColor != Color(0xFF111827)
+
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
@@ -57,11 +61,18 @@ fun AppCategoriesBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        if (leadingContent != null) {
+            item(key = "leading_focus_content") {
+                leadingContent()
+            }
+        }
+
         items(categories, key = { it.name }) { category ->
             val isSelected = category == selectedCategory
 
             val bgColor by animateColorAsState(
                 targetValue = when {
+                    isSelected && hasCustomAccent -> accentColor.copy(alpha = if (isLightMode) 0.16f else 0.24f)
                     isSelected && isLightMode -> Color(0xFF111827)
                     isSelected -> Color(0xFFF2F2F5)
                     isLightMode -> Color(0xFFFFFFFF).copy(alpha = 0.90f)
@@ -73,6 +84,7 @@ fun AppCategoriesBar(
 
             val borderColor by animateColorAsState(
                 targetValue = when {
+                    isSelected && hasCustomAccent -> accentColor
                     isSelected && isLightMode -> Color(0xFF111827)
                     isSelected -> Color.White
                     isLightMode -> Color(0xFFD1D5DB)
@@ -84,6 +96,7 @@ fun AppCategoriesBar(
 
             val textColor by animateColorAsState(
                 targetValue = when {
+                    isSelected && hasCustomAccent -> if (isLightMode) accentColor else Color.White
                     isSelected && isLightMode -> Color.White
                     isSelected -> Color(0xFF101014)
                     isLightMode -> Color(0xFF374151)

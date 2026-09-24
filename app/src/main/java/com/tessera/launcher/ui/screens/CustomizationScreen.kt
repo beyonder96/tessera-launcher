@@ -68,11 +68,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.ui.components.AccentColorBottomSheet
+import com.tessera.launcher.ui.components.HomeClockStyleBottomSheet
 import com.tessera.launcher.ui.components.IconPackBottomSheet
 import com.tessera.launcher.ui.components.IconShapeBottomSheet
 import com.tessera.launcher.ui.components.SearchBarStyleBottomSheet
 import com.tessera.launcher.ui.components.SearchBarTextBottomSheet
 import com.tessera.launcher.ui.components.TypographyBottomSheet
+import com.tessera.launcher.ui.theme.ACCENT_COLOR_OPTIONS
+import androidx.compose.material.icons.outlined.AccessTime
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBackground
@@ -154,6 +158,22 @@ fun CustomizationScreen(
                 onSelectPack = { pack ->
                     viewModel.setSelectedIconPack(pack)
                 },
+                onDismiss = { openModal = null },
+                isAmoled = uiState.isAmoledMode
+            )
+        }
+        "clock_style" -> {
+            HomeClockStyleBottomSheet(
+                currentStyle = uiState.homeClockStyle,
+                onSelectStyle = { viewModel.setHomeClockStyle(it) },
+                onDismiss = { openModal = null },
+                isAmoled = uiState.isAmoledMode
+            )
+        }
+        "accent_color" -> {
+            AccentColorBottomSheet(
+                currentColorName = uiState.accentColorName,
+                onSelectColor = { viewModel.setAccentColor(it) },
                 onDismiss = { openModal = null },
                 isAmoled = uiState.isAmoledMode
             )
@@ -901,6 +921,73 @@ fun CustomizationScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    // Relógio da Tela Inicial (Editorial Clocks)
+                    CustomSettingsRow(
+                        icon = Icons.Outlined.AccessTime,
+                        title = "Relógio da Tela Inicial",
+                        subtitle = when (uiState.homeClockStyle) {
+                            "NOTHING_DOT" -> "Nothing Dot-Matrix"
+                            "STACKED_BOLD" -> "Stacked Bold"
+                            "OVERSIZED_THIN" -> "Oversized Thin"
+                            "CLEAN_MINIMAL" -> "Clean Minimal"
+                            else -> "Nenhum (Área Limpa)"
+                        },
+                        onClick = { openModal = "clock_style" },
+                        isLight = isLight
+                    )
+
+                    CustomDivider(isLight = isLight)
+
+                    // Cor de Destaque (Accent Pop)
+                    CustomSettingsRow(
+                        icon = Icons.Outlined.Palette,
+                        title = "Cor de Destaque (Accent Pop)",
+                        subtitle = ACCENT_COLOR_OPTIONS.firstOrNull { it.id.equals(uiState.accentColorName, ignoreCase = true) }?.displayName ?: "Monocromático",
+                        onClick = { openModal = "accent_color" },
+                        isLight = isLight
+                    )
+
+                    CustomDivider(isLight = isLight)
+
+                    // Live Capsule (Mini HUD / Dynamic Island)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Live Capsule (Mini HUD)",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = textPrimary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Cápsula flutuante no topo com ondas sonoras e status",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = textSecondary
+                            )
+                        }
+
+                        Switch(
+                            checked = uiState.isLiveCapsuleEnabled,
+                            onCheckedChange = { viewModel.setLiveCapsuleEnabled(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.Black,
+                                checkedTrackColor = Color.White,
+                                uncheckedThumbColor = textSecondary,
+                                uncheckedTrackColor = Color(0xFF222228),
+                                uncheckedBorderColor = Color.Transparent
+                            )
+                        )
+                    }
+
+                    CustomDivider(isLight = isLight)
+
                     // Search Bar Style
                     CustomSettingsRow(
                         icon = Icons.Outlined.WebAsset,

@@ -61,16 +61,29 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.4.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.4.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.5.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.0)
 
-### 🆕 Novidades na v2.4.1
+### 🆕 Novidades na v2.5.0
+- 🧘 **Perfis de Foco Contextuais (Trabalho, Desconexão e Padrão):** Novo sistema nativo de bem-estar digital. Oculte distrações e redes sociais recreativas durante o expediente ou ative o modo zen com apenas utilitários essenciais. Inclui chip de status na gaveta, modal *Liquid Glass* e agendamento automático em dias úteis (09h às 18h).
+- ⏱️ **Widget Minimalista de Tempo de Tela (54.dp):** Medição diária nativa via `UsageStatsManager` com filtragem em background, exibição de tempo total acumulado em destaque com cor do tema, barras proporcionais dos 3 apps mais utilizados e atalho direto para o Bem-Estar Digital.
+- 🔀 **Smart Stacks & Rotação Contextual Inteligente:** Navegação bidimensional na doca de widgets com suporte a deslizar para cima e para baixo com resposta elástica. Rotação contextual inteligente priorizando o Player em reprodução, Bateria ao carregar, Agenda em eventos próximos, Tempo de Tela à noite e Clima pela manhã.
+- 🎵 **Live Capsule (Mini HUD Flutuante no Topo):** Dynamic Island não-intrusiva no topo da tela com visualizador de espectro sonoro animado em tempo real (`rememberInfiniteTransition`), botão de play/pause instantâneo e indicador de status de carregamento.
+- ⚡ **Omni-Search Avançado:** Barra de busca com motor local para conversões offline de moedas (USD, BRL, EUR, JPY, BTC), unidades métricas/imperiais (km/mi, kg/lbs, °C/°F), cálculo de porcentagem rápida e comandos com 1 toque `@wapp <número> <mensagem>` e `@call <número>`.
+- 🕰️ **Relógios Tipográficos de Autor (Editorial Clocks):** 5 opções para a tela inicial: Nothing Dot-Matrix dinâmico em Canvas, Stacked Bold Bauhaus, Oversized Thin, Clean Minimal e Nenhum, com toque direto para o despertador.
+- 🎨 **Sistema Accent Pop:** 6 paletas de destaque (Nothing Red, Cyber Neon Green, Electric Amber, Cyan Pulse, Purple Haze e Monocromático) aplicadas com elegância nos indexadores, badges e barras.
+- 🛡️ **Desbloqueio Biométrico Nativo no Cofre:** Proteção por impressão digital (`BiometricPrompt`) com fallback de PIN para apps ocultos.
+- 💫 **Física de Molas Expressivas & Haptics 2.0:** Transições no carrossel de widgets e nos chips com molas físicas elásticas (`Spring.DampingRatioLowBouncy`), compressão tátil orgânica ao pressionar e vibrações sub-milissegundo.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.4.1</b></summary>
+
 - 🌐 **Google Search Grounding no Gemini 2.0 Flash:** Suporte à ferramenta nativa de busca em tempo real do Google. O Gemini agora consulta a web ao vivo para responder sobre eventos recentes, notícias, esportes, cotações e clima com dados frescos e precisos.
 - 🧠 **Upgrade de Inteligência no Groq Cloud:** Priorização de modelos de alta capacidade com **Llama 3.3 70B Versatile** (70 bilhões de parâmetros) e **DeepSeek R1 Distill 70B**, elevando significativamente a qualidade das respostas e o raciocínio em português.
 - 🎯 **Interface de Busca Sem Redundâncias:** Remoção dos ícones duplicados de IA de dentro da barra de busca e da linha de atalhos ao lado do Maps, mantendo com exclusividade o botão principal `Perguntar ao Groq (IA)`.
 - 📅 **Widget de Calendário Limpo & Minimalista:** Remoção do indicador de progresso do dia que causava uma faixa branca indesejada cortando a base do widget, centralizando a tipografia de forma harmônica.
 - 🛠️ **Ajustes no Menu de Configurações:** Correção de alinhamento vertical e cores do seletor segmentado de papel de parede em *Customization* e remoção do atalho legado da Tela Lateral (−1).
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.4.0</b></summary>
 

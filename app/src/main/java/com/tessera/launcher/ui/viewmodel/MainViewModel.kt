@@ -124,6 +124,7 @@ class MainViewModel(
     private val smartGlanceEngine = com.tessera.launcher.data.helper.SmartGlanceEngine()
     private val categoryClassifier = com.tessera.launcher.data.helper.AppCategoryClassifier(appContext)
     private val aiEngine = com.tessera.launcher.data.helper.AiEngine()
+    private val screenTimeHelper = com.tessera.launcher.data.helper.ScreenTimeHelper(appContext)
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
@@ -258,7 +259,24 @@ class MainViewModel(
             isAiSearchEnabled = preferences.isAiSearchEnabled(),
             aiProvider = preferences.getAiProvider(),
             groqApiKey = preferences.getGroqApiKey(),
-            geminiApiKey = preferences.getGeminiApiKey()
+            geminiApiKey = preferences.getGeminiApiKey(),
+
+            // Fase 1: Relógio da Home, Accent Color e Biometria
+            homeClockStyle = preferences.getHomeClockStyle(),
+            accentColorName = preferences.getAccentColor(),
+            isBiometricUnlockEnabled = preferences.isBiometricUnlockEnabled(),
+
+            // Fase 2: Live Capsule
+            isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
+
+            // Fase 3: Smart Stacks e Tempo de Tela
+            isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
+            isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
+
+            // Fase 4: Perfis de Foco
+            focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
+            isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
+            isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -277,6 +295,8 @@ class MainViewModel(
         refreshCalendarAndPermissions()
         refreshWeather()
         refreshSmartGlance()
+        refreshScreenTime()
+        checkFocusSchedule()
         loadWallpaper()
     }
 
@@ -403,7 +423,8 @@ class MainViewModel(
                 matchingContacts = emptyList(),
                 aiSearchResponse = null,
                 aiSearchError = null,
-                isAiSearchLoading = false
+                isAiSearchLoading = false,
+                omniSearchResult = null
             )
         }
         applyFilter("")
@@ -528,6 +549,7 @@ class MainViewModel(
                 it.copy(
                     searchQuery = query,
                     calculatorResult = null,
+                    omniSearchResult = null,
                     matchingContacts = emptyList(),
                     filteredApps = emptyList(),
                     appsState = AppsListState.Success(emptyList()),
@@ -559,6 +581,7 @@ class MainViewModel(
                 it.copy(
                     searchQuery = query,
                     calculatorResult = calcResult,
+                    omniSearchResult = null,
                     matchingContacts = emptyList(),
                     filteredApps = emptyList(),
                     appsState = AppsListState.Success(emptyList()),
@@ -587,10 +610,18 @@ class MainViewModel(
             emptyList()
         }
 
+        // 5. Omni-Search: Avaliação instantânea de moedas, medidas, porcentagem e cálculos
+        val omniResult = if (hasQuery && !isOtherCommand) {
+            com.tessera.launcher.data.helper.OmniSearchEvaluator.evaluate(query)
+        } else {
+            null
+        }
+
         _uiState.update {
             it.copy(
                 searchQuery = query,
                 calculatorResult = null,
+                omniSearchResult = omniResult,
                 matchingContacts = contacts,
                 isDrawerOpen = if (hasQuery) true else it.isDrawerOpen,
                 isSearchExpanded = true,
@@ -620,7 +651,28 @@ class MainViewModel(
 
         val isExact = _uiState.value.isExactSearchEnabled
         val hiddenPkgs = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
-        val visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
+        var visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
+
+        // Fase 4: Filtragem pelo Perfil de Foco Ativo
+        val focus = _uiState.value.focusProfile
+        if (_uiState.value.isFocusProfilesFeatureEnabled && focus != com.tessera.launcher.data.model.FocusProfile.OFF) {
+            visibleApps = visibleApps.filter { app ->
+                val cat = categoryClassifier.classifyApp(app)
+                when (focus) {
+                    com.tessera.launcher.data.model.FocusProfile.WORK -> {
+                        // Modo Trabalho: oculta jogos e redes sociais recreativas
+                        cat != com.tessera.launcher.data.model.AppCategory.GAMES &&
+                                cat != com.tessera.launcher.data.model.AppCategory.SOCIAL
+                    }
+                    com.tessera.launcher.data.model.FocusProfile.MINDFUL -> {
+                        // Modo Desconexão: apenas utilitários e ferramentas de produtividade
+                        cat == com.tessera.launcher.data.model.AppCategory.UTILITIES ||
+                                cat == com.tessera.launcher.data.model.AppCategory.PRODUCTIVITY
+                    }
+                    com.tessera.launcher.data.model.FocusProfile.OFF -> true
+                }
+            }
+        }
 
         val filtered = if (trimmed.isEmpty()) {
             if (_uiState.value.isAppCategoriesEnabled && _uiState.value.selectedAppCategory != com.tessera.launcher.data.model.AppCategory.ALL) {
@@ -747,6 +799,7 @@ class MainViewModel(
                 isWidgetExpanded = !it.isCollapseDockEnabled,
                 searchQuery = "",
                 calculatorResult = null,
+                omniSearchResult = null,
                 matchingContacts = emptyList()
             )
         }
@@ -1441,6 +1494,95 @@ class MainViewModel(
     fun setCustomFontPath(path: String) {
         preferences.setCustomFontPath(path)
         _uiState.update { it.copy(customFontPath = path) }
+    }
+
+    fun setHomeClockStyle(style: String) {
+        preferences.setHomeClockStyle(style)
+        _uiState.update { it.copy(homeClockStyle = style) }
+    }
+
+    fun setAccentColor(accentColor: String) {
+        preferences.setAccentColor(accentColor)
+        _uiState.update { it.copy(accentColorName = accentColor) }
+    }
+
+    fun setBiometricUnlockEnabled(enabled: Boolean) {
+        preferences.setBiometricUnlockEnabled(enabled)
+        _uiState.update { it.copy(isBiometricUnlockEnabled = enabled) }
+    }
+
+    fun setLiveCapsuleEnabled(enabled: Boolean) {
+        preferences.setLiveCapsuleEnabled(enabled)
+        _uiState.update { it.copy(isLiveCapsuleEnabled = enabled) }
+    }
+
+    // Fase 3: Smart Stacks e Tempo de Tela
+    fun refreshScreenTime() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val info = screenTimeHelper.getDailyScreenTime()
+            _uiState.update { it.copy(screenTimeInfo = info) }
+        }
+    }
+
+    fun setSmartStackRotateEnabled(enabled: Boolean) {
+        preferences.setSmartStackRotateEnabled(enabled)
+        _uiState.update { it.copy(isSmartStackRotateEnabled = enabled) }
+    }
+
+    fun setScreenTimeWidgetEnabled(enabled: Boolean) {
+        preferences.setScreenTimeWidgetEnabled(enabled)
+        _uiState.update { it.copy(isScreenTimeWidgetEnabled = enabled) }
+        if (enabled) {
+            refreshScreenTime()
+        }
+    }
+
+    // Fase 4: Perfis de Foco Contextuais
+    fun setFocusProfile(profile: com.tessera.launcher.data.model.FocusProfile) {
+        preferences.setFocusProfile(profile.id)
+        _uiState.update { it.copy(focusProfile = profile) }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun setFocusScheduleEnabled(enabled: Boolean) {
+        preferences.setFocusScheduleEnabled(enabled)
+        _uiState.update { it.copy(isFocusScheduleEnabled = enabled) }
+        if (enabled) {
+            checkFocusSchedule()
+        }
+    }
+
+    fun setFocusProfilesFeatureEnabled(enabled: Boolean) {
+        preferences.setFocusProfilesFeatureEnabled(enabled)
+        _uiState.update { it.copy(isFocusProfilesFeatureEnabled = enabled) }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun openFocusModal() {
+        _uiState.update { it.copy(isFocusModalOpen = true) }
+    }
+
+    fun closeFocusModal() {
+        _uiState.update { it.copy(isFocusModalOpen = false) }
+    }
+
+    fun checkFocusSchedule() {
+        if (!_uiState.value.isFocusScheduleEnabled) return
+        val cal = java.util.Calendar.getInstance()
+        val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
+        val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
+        val isWorkday = dayOfWeek in java.util.Calendar.MONDAY..java.util.Calendar.FRIDAY
+        val isWorkHours = hour in 9..17 // 09:00 até 17:59 (18:00)
+
+        if (isWorkday && isWorkHours) {
+            if (_uiState.value.focusProfile != com.tessera.launcher.data.model.FocusProfile.WORK) {
+                setFocusProfile(com.tessera.launcher.data.model.FocusProfile.WORK)
+            }
+        } else {
+            if (_uiState.value.focusProfile == com.tessera.launcher.data.model.FocusProfile.WORK) {
+                setFocusProfile(com.tessera.launcher.data.model.FocusProfile.OFF)
+            }
+        }
     }
 
     fun setSystemWallpaperEnabled(enabled: Boolean) {
@@ -2163,13 +2305,26 @@ class MainViewModel(
                 isAiSearchEnabled = preferences.isAiSearchEnabled(),
                 aiProvider = preferences.getAiProvider(),
                 groqApiKey = preferences.getGroqApiKey(),
-                geminiApiKey = preferences.getGeminiApiKey()
+                geminiApiKey = preferences.getGeminiApiKey(),
+
+                // Fase 1, 2, 3 & 4
+                homeClockStyle = preferences.getHomeClockStyle(),
+                accentColorName = preferences.getAccentColor(),
+                isBiometricUnlockEnabled = preferences.isBiometricUnlockEnabled(),
+                isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
+                isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
+                isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
+                focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
+                isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
+                isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
             )
         }
         reloadAppsWithIconPack(preferences.getSelectedIconPack())
         refreshPredictedApps()
         refreshCalendarAndPermissions()
         refreshWeather()
+        refreshScreenTime()
+        checkFocusSchedule()
         if (preferences.isSmartGlanceEnabled()) {
             refreshSmartGlance()
         }
