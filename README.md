@@ -61,15 +61,23 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.5.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.5.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.2)
 
-### 🆕 Novidades na v2.5.1
+### 🆕 Novidades na v2.5.2
+- 🌐 **Suporte Completo a Progressive Web Apps (PWAs) & Atalhos Fixados:** Integração com a ação nativa do sistema `android.content.pm.action.CONFIRM_PIN_SHORTCUT` e suporte a transmissões legadas `com.android.launcher.action.INSTALL_SHORTCUT`. Navegadores como Google Chrome, Brave, Firefox, Edge e Samsung Internet agora ativam automaticamente as opções *"Instalar aplicativo"* e *"Adicionar à tela inicial"*.
+- 🖼️ **Diálogo Minimalista de Fixação:** Interface dedicada para confirmação de instalação de PWAs com renderização de ícone em alta definição, badge de identificação de aplicativo web e origem da instalação (ex: Chrome).
+- ⚡ **Cache Local de Ícones e Inicialização Direta:** Gerenciamento de atalhos e ícones com armazenamento interno dedicado para carregamento instantâneo sem lentidão, sincronização com `LauncherApps` do Android e disparo via `startShortcut`.
+- 📱 **PWAs Integrados na Gaveta e Dock Inteligente:** Aplicativos web aparecem em ordem alfabética na lista completa de apps com badge sutil `"PWA"`, com busca instantânea e menu de toque longo permitindo *"Remover atalho / PWA"*.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.5.1</b></summary>
+
 - 🎯 **Posicionamento do Cursor na Busca por Gesto (`@ai `):** O cursor de digitação agora é posicionado automaticamente no final do texto após `@ai `, evitando que novas palavras sejam inseridas antes do `@` e permitindo digitar a pergunta imediatamente.
 - 📱 **Visibilidade e Permissão em "Dados de Uso do App / Bem-Estar Digital":** Declaração explícita de `PACKAGE_USAGE_STATS` no manifesto e suporte a deep-link direto por pacote, fazendo o Tessera Launcher aparecer na lista de permissões de uso do sistema Android e nas configurações de permissões do launcher.
 - 🏝️ **Ajuste Ergonômico da Dynamic Island (`LiveCapsule`):** Espaçamento superior da cápsula flutuante aumentado para 40.dp, posicionando-a confortavelmente abaixo do orifício da câmera frontal (punch hole) e da barra de status.
 - 🏷️ **Indicativo de Foco no Topo da Gaveta:** O chip indicador de Perfil de Foco foi movido da parte inferior (onde se sobrepunha à doca de busca) para o topo da lista de aplicativos, deixando a barra de busca limpa e os controles ergonômicos.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.5.0</b></summary>
 
