@@ -90,7 +90,8 @@ fun AppContextMenu(
     onDismiss: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onHideApp: () -> Unit = {},
-    onUninstallApp: () -> Unit
+    onUninstallApp: () -> Unit,
+    onRemoveShortcut: () -> Unit = {}
 ) {
     var showIconPicker by remember { mutableStateOf(false) }
     var showUninstallConfirmDialog by remember { mutableStateOf(false) }
@@ -384,7 +385,7 @@ fun AppContextMenu(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Ação: Desinstalar Aplicativo
+                // Ação: Desinstalar Aplicativo ou Remover Atalho
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -401,14 +402,14 @@ fun AppContextMenu(
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.DeleteOutline,
-                        contentDescription = "Desinstalar",
+                        contentDescription = if (app.isShortcut) "Remover atalho" else "Desinstalar",
                         tint = Color(0xFFEF5350),
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
                         Text(
-                            text = "Desinstalar aplicativo",
+                            text = if (app.isShortcut) "Remover atalho / PWA" else "Desinstalar aplicativo",
                             style = MaterialTheme.typography.bodyLarge.copy(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
@@ -416,7 +417,7 @@ fun AppContextMenu(
                             color = Color(0xFFEF5350)
                         )
                         Text(
-                            text = "Remover este app do dispositivo",
+                            text = if (app.isShortcut) "Remover da gaveta de apps" else "Remover este app do dispositivo",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
@@ -616,7 +617,7 @@ fun AppContextMenu(
                         .padding(22.dp)
                 ) {
                     Text(
-                        text = "Desinstalar aplicativo?",
+                        text = if (app.isShortcut) "Remover atalho?" else "Desinstalar aplicativo?",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 17.sp
@@ -627,7 +628,11 @@ fun AppContextMenu(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
-                        text = "Deseja remover \"${app.label}\" do dispositivo?",
+                        text = if (app.isShortcut) {
+                            "Deseja remover o atalho \"${app.label}\" do Tessera Launcher?"
+                        } else {
+                            "Deseja remover \"${app.label}\" do dispositivo?"
+                        },
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             lineHeight = 20.sp
@@ -668,11 +673,15 @@ fun AppContextMenu(
                                 .clickable {
                                     showUninstallConfirmDialog = false
                                     onDismiss()
-                                    onUninstallApp()
+                                    if (app.isShortcut) {
+                                        onRemoveShortcut()
+                                    } else {
+                                        onUninstallApp()
+                                    }
                                 }
                         ) {
                             Text(
-                                text = "Desinstalar",
+                                text = if (app.isShortcut) "Remover" else "Desinstalar",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp

@@ -134,13 +134,90 @@ class AppRepository(
             }
         }
 
+        // Carrega PWAs e atalhos fixados do PinnedShortcutManager
+        val pinnedManager = com.tessera.launcher.data.helper.PinnedShortcutManager.getInstance(context)
+        val pinnedShortcuts = pinnedManager.getPinnedShortcuts()
+        for (shortcut in pinnedShortcuts) {
+            val cachedBitmap = pinnedManager.getShortcutIcon(shortcut.iconFileName)
+            val iconDrawable = cachedBitmap?.let { BitmapDrawable(context.resources, it) }
+            appsList.add(
+                AppInfo(
+                    label = shortcut.label,
+                    packageName = shortcut.packageName,
+                    activityName = "",
+                    icon = iconDrawable,
+                    bitmap = cachedBitmap,
+                    isShortcut = true,
+                    shortcutId = shortcut.id,
+                    shortcutIntentUri = shortcut.intentUri
+                )
+            )
+        }
+
+        // Sincroniza com atalhos fixados do sistema via LauncherApps se disponíveis
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+            if (launcherApps?.hasShortcutHostPermission() == true) {
+                try {
+                    val query = LauncherApps.ShortcutQuery().apply {
+                        setQueryFlags(LauncherApps.ShortcutQuery.FLAG_MATCH_PINNED)
+                    }
+                    val userManager = context.getSystemService(Context.USER_SERVICE) as? UserManager
+                    val profiles = userManager?.userProfiles ?: listOf(Process.myUserHandle())
+                    for (profile in profiles) {
+                        val systemPinned = launcherApps.getShortcuts(query, profile) ?: emptyList()
+                        for (shortcut in systemPinned) {
+                            val id = shortcut.id
+                            val pkg = shortcut.activity?.packageName ?: shortcut.`package`
+                            if (appsList.none { it.isShortcut && it.shortcutId == id && it.packageName == pkg }) {
+                                val label = shortcut.shortLabel?.toString() ?: shortcut.longLabel?.toString() ?: id
+                                val iconDrawable = try {
+                                    launcherApps.getShortcutBadgedIconDrawable(shortcut, context.resources.displayMetrics.densityDpi)
+                                        ?: launcherApps.getShortcutIconDrawable(shortcut, context.resources.displayMetrics.densityDpi)
+                                } catch (_: Exception) {
+                                    null
+                                }
+                                val iconBitmap = rasterizeDrawable(iconDrawable)
+                                val savedIconName = iconBitmap?.let { bmp ->
+                                    pinnedManager.saveShortcutIcon(id, bmp)
+                                }
+                                val isPwa = pkg in com.tessera.launcher.data.helper.PinnedShortcutManager.BROWSER_PACKAGES
+                                pinnedManager.saveShortcutMetadataOnly(
+                                    com.tessera.launcher.data.model.PinnedShortcutInfo(
+                                        id = id,
+                                        packageName = pkg,
+                                        label = label,
+                                        iconFileName = savedIconName,
+                                        isPwa = isPwa
+                                    )
+                                )
+                                appsList.add(
+                                    AppInfo(
+                                        label = label,
+                                        packageName = pkg,
+                                        activityName = "",
+                                        icon = iconDrawable,
+                                        bitmap = iconBitmap,
+                                        isShortcut = true,
+                                        shortcutId = id
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+
         // Ordenação alfabética natural respeitando acentos e locale:
         // Letras (A..Z) primeiro, seguidas por símbolos e números ('#') no final,
         // perfeitamente alinhado com o AlphabetScroller (A..Z + #)
         val collator = Collator.getInstance(Locale.getDefault()).apply {
             strength = Collator.PRIMARY
         }
-        appsList.distinctBy { it.packageName }
+        appsList.distinctBy {
+            if (it.isShortcut) "shortcut:${it.packageName}:${it.shortcutId ?: it.label}" else "app:${it.packageName}"
+        }
             .sortedWith { a, b ->
                 val aIsLetter = a.firstLetter in 'A'..'Z'
                 val bIsLetter = b.firstLetter in 'A'..'Z'
@@ -153,8 +230,8 @@ class AppRepository(
     }
 
     /**
-     * Observa mudanças nos aplicativos instalados/desinstalados/atualizados
-     * emitindo uma nova lista automaticamente via BroadcastReceiver.
+     * Observa mudanças nos aplicativos instalados/desinstalados/atualizados e atalhos fixados
+     * emitindo uma nova lista automaticamente via BroadcastReceiver e LauncherApps.Callback.
      */
     fun observeApps(
         iconPackPackage: String? = null,
@@ -180,24 +257,81 @@ class AppRepository(
             }
         }
 
-        val filter = IntentFilter().apply {
+        val shortcutChangeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                launch(ioDispatcher) {
+                    trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
+                }
+            }
+        }
+
+        val packageFilter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
             addAction(Intent.ACTION_PACKAGE_CHANGED)
             addDataScheme("package")
         }
 
+        val shortcutFilter = IntentFilter().apply {
+            addAction(com.tessera.launcher.data.helper.PinnedShortcutManager.ACTION_SHORTCUTS_CHANGED)
+        }
+
         androidx.core.content.ContextCompat.registerReceiver(
             context,
             packageChangeReceiver,
-            filter,
+            packageFilter,
             androidx.core.content.ContextCompat.RECEIVER_EXPORTED
         )
+
+        androidx.core.content.ContextCompat.registerReceiver(
+            context,
+            shortcutChangeReceiver,
+            shortcutFilter,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+
+        var launcherAppsCallback: LauncherApps.Callback? = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+            val cb = object : LauncherApps.Callback() {
+                override fun onPackageAdded(packageName: String?, user: android.os.UserHandle?) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+                override fun onPackageRemoved(packageName: String?, user: android.os.UserHandle?) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+                override fun onPackageChanged(packageName: String?, user: android.os.UserHandle?) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+                override fun onPackagesAvailable(packageNames: Array<out String>?, user: android.os.UserHandle?, replacing: Boolean) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+                override fun onPackagesUnavailable(packageNames: Array<out String>?, user: android.os.UserHandle?, replacing: Boolean) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+                override fun onShortcutsChanged(packageName: String, shortcuts: MutableList<android.content.pm.ShortcutInfo>, user: android.os.UserHandle) {
+                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                }
+            }
+            try {
+                launcherApps?.registerCallback(cb)
+                launcherAppsCallback = cb
+            } catch (_: Exception) {}
+        }
 
         awaitClose {
             try {
                 context.unregisterReceiver(packageChangeReceiver)
             } catch (_: IllegalArgumentException) {}
+            try {
+                context.unregisterReceiver(shortcutChangeReceiver)
+            } catch (_: IllegalArgumentException) {}
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && launcherAppsCallback != null) {
+                try {
+                    val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
+                    launcherApps?.unregisterCallback(launcherAppsCallback)
+                } catch (_: Exception) {}
+            }
         }
     }.flowOn(ioDispatcher)
 
@@ -207,6 +341,13 @@ class AppRepository(
         } ?: throw IllegalStateException("Não foi possível inicializar o aplicativo: $packageName")
 
         context.startActivity(launchIntent)
+    }
+
+    fun launchShortcutIntent(intentUri: String): Result<Unit> = runCatching {
+        val intent = Intent.parseUri(intentUri, Intent.URI_INTENT_SCHEME).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
     }
 
     /**

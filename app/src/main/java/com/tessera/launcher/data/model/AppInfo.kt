@@ -11,7 +11,10 @@ data class AppInfo(
     val icon: Drawable?,
     val bitmap: Bitmap? = null,
     val firstLetter: Char = computeFirstLetter(label),
-    val normalizedLabel: String = normalize(label)
+    val normalizedLabel: String = normalize(label),
+    val isShortcut: Boolean = false,
+    val shortcutId: String? = null,
+    val shortcutIntentUri: String? = null
 ) {
     companion object {
         fun computeFirstLetter(label: String): Char {

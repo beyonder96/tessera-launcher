@@ -20,4 +20,23 @@ class AppInfoTest {
         assertEquals('#', AppInfo.computeFirstLetter("@twitter"))
         assertEquals('#', AppInfo.computeFirstLetter(""))
     }
+
+    @Test
+    fun appInfo_withShortcut_preservesShortcutMetadata() {
+        val app = AppInfo(
+            label = "Twitter PWA",
+            packageName = "com.android.chrome",
+            activityName = "",
+            icon = null,
+            isShortcut = true,
+            shortcutId = "https://x.com/",
+            shortcutIntentUri = "intent:#Intent;action=android.intent.action.VIEW;end"
+        )
+
+        assertEquals("Twitter PWA", app.label)
+        assertEquals('T', app.firstLetter)
+        assertEquals(true, app.isShortcut)
+        assertEquals("https://x.com/", app.shortcutId)
+        assertEquals("intent:#Intent;action=android.intent.action.VIEW;end", app.shortcutIntentUri)
+    }
 }

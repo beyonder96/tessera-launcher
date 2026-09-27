@@ -230,18 +230,37 @@ fun AppListItem(
         }
 
         val textComposable: @Composable (Modifier) -> Unit = { textMod ->
-            Text(
-                text = app.label,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp
-                ),
-                color = TextPrimary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = if (isRightAligned) TextAlign.End else TextAlign.Start,
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if (isRightAligned) Arrangement.End else Arrangement.Start,
                 modifier = textMod
-            )
+            ) {
+                Text(
+                    text = app.label,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    ),
+                    color = TextPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = if (app.isShortcut) Modifier.weight(1f, fill = false) else Modifier
+                )
+                if (app.isShortcut) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "PWA",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color(0xFF8E8EA0),
+                        modifier = Modifier
+                            .background(Color(0xFF22222E), RoundedCornerShape(4.dp))
+                            .padding(horizontal = 4.dp, vertical = 1.dp)
+                    )
+                }
+            }
         }
 
         if (isRightAligned) {

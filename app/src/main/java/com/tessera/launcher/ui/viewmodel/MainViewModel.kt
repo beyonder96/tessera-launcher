@@ -1099,14 +1099,59 @@ class MainViewModel(
         }
     }
 
-    fun launchApp(packageName: String): Result<Unit> {
-        val result = appRepository.launchApp(packageName)
+    fun launchApp(app: AppInfo): Result<Unit> {
+        val result = if (app.isShortcut) {
+            if (!app.shortcutId.isNullOrBlank()) {
+                appRepository.launchShortcut(app.packageName, app.shortcutId)
+            } else if (!app.shortcutIntentUri.isNullOrBlank()) {
+                appRepository.launchShortcutIntent(app.shortcutIntentUri)
+            } else {
+                appRepository.launchApp(app.packageName)
+            }
+        } else {
+            appRepository.launchApp(app.packageName)
+        }
         if (result.isSuccess) {
             collapseSearch()
-            contextualPredictor.recordAppLaunch(packageName, appContext)
+            contextualPredictor.recordAppLaunch(app.packageName, appContext)
             refreshPredictedApps()
         }
         return result
+    }
+
+    fun launchApp(packageName: String): Result<Unit> {
+        val matchingApp = allApps.firstOrNull { it.packageName == packageName }
+        return if (matchingApp != null) {
+            launchApp(matchingApp)
+        } else {
+            val result = appRepository.launchApp(packageName)
+            if (result.isSuccess) {
+                collapseSearch()
+                contextualPredictor.recordAppLaunch(packageName, appContext)
+                refreshPredictedApps()
+            }
+            result
+        }
+    }
+
+    fun removePinnedShortcut(app: AppInfo) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val manager = com.tessera.launcher.data.helper.PinnedShortcutManager.getInstance(appContext)
+            manager.removeShortcut(app.packageName, app.shortcutId)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !app.shortcutId.isNullOrBlank()) {
+                val launcherApps = appContext.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? android.content.pm.LauncherApps
+                if (launcherApps?.hasShortcutHostPermission() == true) {
+                    try {
+                        val remainingIds = manager.getPinnedShortcuts()
+                            .filter { it.packageName == app.packageName }
+                            .map { it.id }
+                        launcherApps.pinShortcuts(app.packageName, remainingIds, android.os.Process.myUserHandle())
+                    } catch (_: Exception) {}
+                }
+            }
+            reloadApps()
+        }
     }
 
     fun reloadApps() {

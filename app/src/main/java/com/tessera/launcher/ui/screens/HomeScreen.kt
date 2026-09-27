@@ -802,7 +802,7 @@ fun HomeScreen(
                                                 FolderSearchCard(
                                                     folder = folder,
                                                     allApps = allApps,
-                                                    onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                    onAppClick = { app -> viewModel.launchApp(app) },
                                                     onAppLongClick = { app -> selectedAppForMenu = app },
                                                     onFolderClick = { f -> folderToView = f },
                                                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
@@ -950,7 +950,7 @@ fun HomeScreen(
                                              FolderSearchCard(
                                                  folder = folder,
                                                  allApps = allApps,
-                                                 onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                 onAppClick = { app -> viewModel.launchApp(app) },
                                                  onAppLongClick = { app -> selectedAppForMenu = app },
                                                  onFolderClick = { f -> folderToView = f },
                                                  isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
@@ -982,7 +982,7 @@ fun HomeScreen(
                                           item(key = "ai_suggested_row") {
                                               SmartDockRow(
                                                   apps = uiState.predictedApps,
-                                                  onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                                                  onAppClick = { app -> viewModel.launchApp(app) },
                                                   onAppLongClick = { app -> selectedAppForMenu = app },
                                                   iconShape = uiState.iconShape,
                                                   isThemedIcons = uiState.isThemedIconsEnabled,
@@ -999,7 +999,7 @@ fun HomeScreen(
 
                                       items(
                                          items = uiState.filteredApps,
-                                         key = { it.packageName }
+                                         key = { if (it.isShortcut) "shortcut_${it.packageName}_${it.shortcutId ?: it.label}" else "app_${it.packageName}" }
                                      ) { app ->
                                      AppListItem(
                                          app = app,
@@ -1008,7 +1008,7 @@ fun HomeScreen(
                                          isHideAppLabels = uiState.isHideAppLabelsEnabled,
                                          isRightAligned = uiState.isDrawerRightAligned,
                                          onClick = {
-                                             viewModel.launchApp(app.packageName).onFailure { error ->
+                                             viewModel.launchApp(app).onFailure { error ->
                                                  Toast.makeText(
                                                      context,
                                                      error.message ?: "Erro ao abrir aplicativo",
@@ -1176,7 +1176,7 @@ fun HomeScreen(
                             isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
                             predictedApps = uiState.predictedApps,
                             isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
-                            onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                            onAppClick = { app -> viewModel.launchApp(app) },
                             onAppLongClick = { app -> selectedAppForMenu = app },
                             iconShape = uiState.iconShape,
                             isThemedIcons = uiState.isThemedIconsEnabled,
@@ -1241,6 +1241,10 @@ fun HomeScreen(
                     } catch (_: Exception) {
                         Toast.makeText(context, "Não foi possível iniciar a desinstalação", Toast.LENGTH_SHORT).show()
                     }
+                },
+                onRemoveShortcut = {
+                    viewModel.removePinnedShortcut(app)
+                    Toast.makeText(context, "${app.label} removido", Toast.LENGTH_SHORT).show()
                 }
             )
         }
@@ -1364,7 +1368,7 @@ fun HomeScreen(
             FolderViewBottomSheet(
                 folder = folder,
                 allApps = allApps,
-                onAppClick = { app -> viewModel.launchApp(app.packageName) },
+                onAppClick = { app -> viewModel.launchApp(app) },
                 onAppLongClick = { app -> selectedAppForMenu = app },
                 onDismiss = { folderToView = null },
                 isAmoledMode = uiState.isAmoledMode
