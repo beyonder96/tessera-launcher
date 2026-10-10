@@ -3,40 +3,40 @@ package com.tessera.launcher.ui.theme
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
-// Paleta Monocromática Ultra-Polida - Tessera & Niagara Style
-val DarkBackground = Color(0xFF000000)
+// Paleta Monocromática Ultra-Polida — Padrão Cupertino & Minimalismo Calmo
+val DarkBackground = Color(0xFF0B0B0D) // Cinza escuro profundo para evitar black smear em OLED 120Hz
 val DarkBackgroundTranslucent = Color.Transparent
 val AmoledBlack = Color(0xFF000000)
-val AmoledCardBackground = Color(0xFF000000) // 100% Preto Puro no modo AMOLED
-val AmoledCardBorder = Color(0xFF18181E)
-val DarkSurface = Color(0xFF0F0F12)
-val DarkSurfaceVariant = Color(0xFF17171C)
-val DarkSurfaceBorder = Color(0xFF1E1E24)
-val DarkSurfaceBorderHover = Color(0xFF2E2E38)
+val AmoledCardBackground = Color(0xFF000000)
+val AmoledCardBorder = Color(0x15FFFFFF) // Micro-borda de luz especular a 8%
+val DarkSurface = Color(0xFF1C1C1E) // Superfície com elevação de profundidade
+val DarkSurfaceVariant = Color(0xFF2C2C2E)
+val DarkSurfaceBorder = Color(0x1AFFFFFF) // Contorno vítreo sutil a 10%
+val DarkSurfaceBorderHover = Color(0x30FFFFFF)
 
 // Modos Charcoal (Dark Slate) e Light
 val CharcoalBackground = Color(0xFF121215)
 val CharcoalCardBackground = Color(0xFF1A1A1F)
-val CharcoalCardBorder = Color(0xFF26262E)
-val LightBackground = Color(0xFFF6F7F9)
+val CharcoalCardBorder = Color(0x22FFFFFF)
+val LightBackground = Color(0xFFF2F2F7) // iOS System Grouped Background
 val LightCardBackground = Color(0xFFFFFFFF)
-val LightCardBorder = Color(0xFFE5E7EB)
-val LightTextPrimary = Color(0xFF111827)
-val LightTextSecondary = Color(0xFF6B7280)
-val LightTextTertiary = Color(0xFF9CA3AF)
-val LightIconBackground = Color(0xFFF1F3F5)
-val LightIconTint = Color(0xFF1F2937)
-val LightDivider = Color(0xFFE5E7EB)
+val LightCardBorder = Color(0x15000000)
+val LightTextPrimary = Color(0xFF1C1C1E)
+val LightTextSecondary = Color(0xFF8E8E93)
+val LightTextTertiary = Color(0xFFAEAEB2)
+val LightIconBackground = Color(0xFFE5E5EA)
+val LightIconTint = Color(0xFF1C1C1E)
+val LightDivider = Color(0x1A000000)
 val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF3F4F6)
+val LightSurfaceVariant = Color(0xFFF2F2F7)
 
-// Liquid Glass Tokens Dinâmicos e Escalonados (Estilo Minimalista Frosted Glass)
+// Tokens de Vidro Translúcido Cupertino (Apple Vibrancy & Frosted Lens)
 fun liquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color(0xFF1E222D).copy(alpha = 0.55f * a),
-            Color(0xFF12141C).copy(alpha = 0.70f * a)
+            Color(0xFF1C1C1E).copy(alpha = 0.68f * a),
+            Color(0xFF121214).copy(alpha = 0.82f * a)
         )
     )
 }
@@ -45,9 +45,9 @@ fun liquidGlassBorderBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.28f * a),
-            Color.White.copy(alpha = 0.12f * a),
-            Color.White.copy(alpha = 0.05f * a)
+            Color.White.copy(alpha = 0.14f * a), // Micro-borda de luz superior (rim light)
+            Color.White.copy(alpha = 0.05f * a),
+            Color.Transparent
         )
     )
 }
@@ -56,8 +56,8 @@ fun liquidGlassSheenBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.08f * a),
-            Color.White.copy(alpha = 0.02f * a),
+            Color.White.copy(alpha = 0.05f * a),
+            Color.White.copy(alpha = 0.01f * a),
             Color.Transparent
         )
     )
@@ -67,8 +67,8 @@ fun lightLiquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFFFFFF).copy(alpha = 0.85f * a),
-            Color(0xFFF1F3F7).copy(alpha = 0.72f * a)
+            Color(0xFFFFFFFF).copy(alpha = 0.82f * a),
+            Color(0xFFF2F2F7).copy(alpha = 0.72f * a)
         )
     )
 }
@@ -77,9 +77,9 @@ fun lightLiquidGlassBorderBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.65f * a),
-            Color.White.copy(alpha = 0.25f * a),
-            Color(0x15000000).copy(alpha = 0.15f * a)
+            Color.White.copy(alpha = 0.50f * a),
+            Color.White.copy(alpha = 0.18f * a),
+            Color(0x10000000).copy(alpha = 0.08f * a)
         )
     )
 }
@@ -88,55 +88,55 @@ fun lightLiquidGlassSheenBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.25f * a),
+            Color.White.copy(alpha = 0.20f * a),
             Color.Transparent
         )
     )
 }
 
-val LiquidGlassBackground = Color(0x75141720)
-val LiquidGlassBackgroundHover = Color(0x901C202B)
+val LiquidGlassBackground = Color(0x801C1C1E)
+val LiquidGlassBackgroundHover = Color(0x992C2C2E)
 val LiquidGlassSurfaceBrush = liquidGlassSurfaceBrush(1f)
 val LiquidGlassBorderBrush = liquidGlassBorderBrush(1f)
-val LiquidGlassBorder = Color(0x40FFFFFF)
+val LiquidGlassBorder = Color(0x22FFFFFF)
 val LiquidGlassSheenBrush = liquidGlassSheenBrush(1f)
 
 val LightLiquidGlassSurfaceBrush = lightLiquidGlassSurfaceBrush(1f)
 val LightLiquidGlassBorderBrush = lightLiquidGlassBorderBrush(1f)
 val LightLiquidGlassSheenBrush = lightLiquidGlassSheenBrush(1f)
 
-val TextPrimary = Color(0xFFEEEEEE)
-val TextSecondary = Color(0xFF727275)
-val TextTertiary = Color(0xFF48484A)
+// Tipografia Harmônica — Padrão San Francisco
+val TextPrimary = Color(0xFFF2F2F7) // Off-white padrão Apple
+val TextSecondary = Color(0xFF8E8E93) // Cinza secundário equilibrado
+val TextTertiary = Color(0xFF636366) // Cinza terciário discreto
 
 val AccentWhite = Color(0xFFFFFFFF)
-val SkeletonBase = Color(0xFF141416)
-val SkeletonHighlight = Color(0xFF222226)
+val SkeletonBase = Color(0xFF1C1C1E)
+val SkeletonHighlight = Color(0xFF2C2C2E)
 
-// Tokens de Cores & Efeitos estilo Google Gemini & Luz Branca de IA
-val GeminiCyan = Color(0xFF00E5FF)
-val GeminiBlue = Color(0xFF4285F4)
-val GeminiPurple = Color(0xFF9C27B0)
-val GeminiMagenta = Color(0xFFE040FB)
-val GeminiAmber = Color(0xFFFF9100)
+// Efeitos de Luz & Reflexo Especular Neutro (Substituição de Neons por Crystalline Sheen)
+val GeminiCyan = Color(0xFF5AC8FA)
+val GeminiBlue = Color(0xFF007AFF)
+val GeminiPurple = Color(0xFF5856D6)
+val GeminiMagenta = Color(0xFFAF52DE)
+val GeminiAmber = Color(0xFFFF9500)
 
-// Luz Branca Pura Especular estilo Ativação de IA de Smartphones (Pixel / Galaxy AI / Circle to Search)
 val PhoneAiWhiteGlowColors = listOf(
-    Color(0x22FFFFFF),
-    Color(0x88FFFFFF),
-    Color(0xFFFFFFFF),
-    Color(0xFFFFFFFF),
-    Color(0x88FFFFFF),
-    Color(0x22FFFFFF)
+    Color(0x10FFFFFF),
+    Color(0x40FFFFFF),
+    Color(0x80FFFFFF),
+    Color(0x80FFFFFF),
+    Color(0x40FFFFFF),
+    Color(0x10FFFFFF)
 )
 
 val PhoneAiLightGlowColors = listOf(
-    Color(0x2278909C),
-    Color(0x8890A4AE),
-    Color(0xFFFFFFFF),
-    Color(0xFFFFFFFF),
-    Color(0x8890A4AE),
-    Color(0x2278909C)
+    Color(0x0C1C1C1E),
+    Color(0x251C1C1E),
+    Color(0x401C1C1E),
+    Color(0x401C1C1E),
+    Color(0x251C1C1E),
+    Color(0x0C1C1C1E)
 )
 
 fun phoneAiWhiteBrush(alpha: Float = 1f): Brush {
@@ -146,13 +146,14 @@ fun phoneAiWhiteBrush(alpha: Float = 1f): Brush {
     )
 }
 
+// Luz Perimétrica Cristalina Subtil (sem anéis de circo multicoloridos)
 val GeminiGlowColors = listOf(
-    Color(0xFF4285F4),
-    Color(0xFF9C27B0),
-    Color(0xFFE040FB),
-    Color(0xFFFF9100),
-    Color(0xFF00E5FF),
-    Color(0xFF4285F4)
+    Color(0x18FFFFFF),
+    Color(0x35FFFFFF),
+    Color(0x60FFFFFF),
+    Color(0x35FFFFFF),
+    Color(0x18FFFFFF),
+    Color(0x35FFFFFF)
 )
 
 fun geminiSweepBrush(alpha: Float = 1f): Brush {

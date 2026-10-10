@@ -61,15 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.5.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.5.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.6.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.6.0)
 
-### 🆕 Novidades na v2.5.2
+### 🆕 Novidades na v2.6.0
+- 🍎 **Redesign de Interface Cupertino & Padrão Apple Vibrancy:** Fundo aveludado OLED profundo (`#0B0B0D`), eliminação de brilhos fluorescentes e introdução de micro-bordas especulares de luz física de 0.5dp em toda a interface.
+- 📐 **Escala Modular Tipográfica 8pt:** Tipografia recalibrada em padrão editorial Apple com proporções balanceadas, contrastes harmoniosos e legibilidade instantânea.
+- ⏳ **Latência de Teclado Sub-1ms (0ms Artificial Delay):** Foco e abertura imediata do teclado ao acessar a pesquisa e a gaveta, otimizado para telas de 120Hz.
+- 💊 **Doca Monolítica Flutuante de 48dp:** A barra inferior em repouso agora é uma cápsula unificada minimalista de 48dp de altura, com widgets e controles desacoplados para um acesso limpo.
+- 🌊 **Indexador Niagara Wave Recalibrado:** Deslocamento lateral de onda contido para 28dp e escala de 1.35x para evitar sobreposição nos nomes dos apps, com balão lupa fosco em 48dp.
+- 💫 **Física de Molas com Amortecimento Crítico:** Movimento fluido e natural com resposta orgânica (`damping = 0.82`, `stiffness = 380..450`), sem oscilações artificiais.
+- 🎨 **Menu de Contexto e Relógio Editorial:** Menu de contexto com cantos contínuos de 26dp e divisores de 0.5dp, além de 3 novos estilos curados de relógio (`CUPERTINO_MINIMAL`, `EDITORIAL_ELEGANCE`, `INLINE_GLANCE`).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.5.2</b></summary>
+
 - 🌐 **Suporte Completo a Progressive Web Apps (PWAs) & Atalhos Fixados:** Integração com a ação nativa do sistema `android.content.pm.action.CONFIRM_PIN_SHORTCUT` e suporte a transmissões legadas `com.android.launcher.action.INSTALL_SHORTCUT`. Navegadores como Google Chrome, Brave, Firefox, Edge e Samsung Internet agora ativam automaticamente as opções *"Instalar aplicativo"* e *"Adicionar à tela inicial"*.
 - 🖼️ **Diálogo Minimalista de Fixação:** Interface dedicada para confirmação de instalação de PWAs com renderização de ícone em alta definição, badge de identificação de aplicativo web e origem da instalação (ex: Chrome).
 - ⚡ **Cache Local de Ícones e Inicialização Direta:** Gerenciamento de atalhos e ícones com armazenamento interno dedicado para carregamento instantâneo sem lentidão, sincronização com `LauncherApps` do Android e disparo via `startShortcut`.
 - 📱 **PWAs Integrados na Gaveta e Dock Inteligente:** Aplicativos web aparecem em ordem alfabética na lista completa de apps com badge sutil `"PWA"`, com busca instantânea e menu de toque longo permitindo *"Remover atalho / PWA"*.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.5.1</b></summary>
 

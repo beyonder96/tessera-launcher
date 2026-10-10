@@ -1052,11 +1052,10 @@ fun HomeClockStyleBottomSheet(
     val containerBg = if (isAmoled) AmoledBlack else DarkSurface
 
     val clockOptions = listOf(
-        "NONE" to ("Nenhum" to "Área limpa e minimalista (Padrão)"),
-        "NOTHING_DOT" to ("Nothing Dot-Matrix" to "Grade de pontos retrô-futurista inspirada no Nothing OS"),
-        "STACKED_BOLD" to ("Stacked Bold" to "Horas e minutos geométricos em caixa alta empilhados"),
-        "OVERSIZED_THIN" to ("Oversized Thin" to "Numerais gigantes ultrafinos com data sutil"),
-        "CLEAN_MINIMAL" to ("Clean Minimal" to "Linha única moderna em fonte monospace")
+        "NONE" to ("Nenhum" to "Tela 100% zen, sem relógio fixo (hora na barra de status)"),
+        "CUPERTINO_MINIMAL" to ("Cupertino Minimal" to "Tipografia pura e serena de 46sp com data alinhada"),
+        "EDITORIAL_ELEGANCE" to ("Editorial Elegance" to "Proporção contemporânea balanceada com pílula de vidro"),
+        "INLINE_GLANCE" to ("Inline Glance" to "Uma linha discreta integrando hora, bullet e data")
     )
 
     ModalBottomSheet(

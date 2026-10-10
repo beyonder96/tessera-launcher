@@ -87,7 +87,7 @@ fun AppListItem(
     var dragOffsetX by remember { mutableFloatStateOf(0f) }
     val animatedOffsetX by animateFloatAsState(
         targetValue = dragOffsetX,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = 550f),
+        animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
         label = "item_swipe_offset"
     )
     val haptic = LocalHapticFeedback.current
@@ -130,7 +130,7 @@ fun AppListItem(
             "CIRCLE" -> CircleShape
             "CYLINDER" -> RoundedCornerShape(16.dp)
             "LOSANGO" -> RoundedCornerShape(6.dp)
-            "SQUIRCLE" -> RoundedCornerShape(14.dp)
+            "SQUIRCLE" -> RoundedCornerShape(12.dp)
             "SQUARE" -> RoundedCornerShape(4.dp)
             else -> IconShape
         }
@@ -147,10 +147,10 @@ fun AppListItem(
     val itemInteractionSource = remember { MutableInteractionSource() }
     val isItemPressed by itemInteractionSource.collectIsPressedAsState()
     val itemScale by animateFloatAsState(
-        targetValue = if (isItemPressed) 0.96f else 1f,
+        targetValue = if (isItemPressed) 0.97f else 1f,
         animationSpec = spring(
-            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+            dampingRatio = 0.82f,
+            stiffness = 450f
         ),
         label = "app_item_press_scale"
     )
@@ -238,8 +238,9 @@ fun AppListItem(
                 Text(
                     text = app.label,
                     style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 15.sp
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 16.sp,
+                        lineHeight = 22.sp
                     ),
                     color = TextPrimary,
                     maxLines = 1,

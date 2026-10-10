@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -230,13 +231,12 @@ fun HomeScreen(
         }
     }
 
-    // Abertura automática e confiável do teclado ao abrir busca ou drawer
+    // Abertura imediata e fluida do teclado ao abrir busca ou drawer (0ms artificial latency)
     LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen, uiState.searchQuery) {
         val isExplicitAiSearch = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
                 uiState.searchQuery.contains("@groq", ignoreCase = true) ||
                 uiState.searchQuery.contains("@gemini", ignoreCase = true)
         if ((uiState.isSearchExpanded || uiState.isDrawerOpen) && (uiState.isAutoOpenKeyboard || isExplicitAiSearch)) {
-            delay(90)
             try {
                 focusRequester.requestFocus()
                 keyboardController?.show()
@@ -652,15 +652,15 @@ fun HomeScreen(
         // Gaveta Vertical de Aplicativos & Resultados
         AnimatedVisibility(
             visible = uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-            enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)) +
+            enter = fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)) +
                     slideInVertically(
-                        initialOffsetY = { it / 6 },
-                        animationSpec = tween(180, easing = FastOutSlowInEasing)
+                        initialOffsetY = { it / 8 },
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
                     ),
-            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing)) +
+            exit = fadeOut(animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)) +
                     slideOutVertically(
-                        targetOffsetY = { it / 6 },
-                        animationSpec = tween(150, easing = FastOutSlowInEasing)
+                        targetOffsetY = { it / 8 },
+                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
                     ),
             modifier = Modifier.fillMaxSize()
         ) {

@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -266,6 +267,149 @@ fun EditorialClockWidget(
         contentAlignment = Alignment.Center
     ) {
         when (clockStyle) {
+            "CUPERTINO_MINIMAL", "CLEAN_MINIMAL" -> {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = formattedTime.ifBlank { "12:00" },
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 46.sp,
+                            fontWeight = FontWeight.Light,
+                            letterSpacing = (-1.2).sp,
+                            lineHeight = 48.sp
+                        ),
+                        color = primaryTextColor
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(4.dp)
+                                .clip(CircleShape)
+                                .background(if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor.copy(alpha = 0.6f))
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = dateFormatted.uppercase(Locale.getDefault()),
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = 1.2.sp
+                            ),
+                            color = secondaryTextColor
+                        )
+                    }
+                }
+            }
+
+            "EDITORIAL_ELEGANCE", "STACKED_BOLD" -> {
+                val parts = formattedTime.split(":")
+                val hour = parts.getOrNull(0) ?: "12"
+                val min = parts.getOrNull(1) ?: "00"
+
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = hour,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 52.sp,
+                                fontWeight = FontWeight.Normal,
+                                letterSpacing = (-2).sp,
+                                lineHeight = 54.sp
+                            ),
+                            color = primaryTextColor
+                        )
+                        Text(
+                            text = ":",
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 46.sp,
+                                fontWeight = FontWeight.Light
+                            ),
+                            color = if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor,
+                            modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
+                        )
+                        Text(
+                            text = min,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 52.sp,
+                                fontWeight = FontWeight.Normal,
+                                letterSpacing = (-2).sp,
+                                lineHeight = 54.sp
+                            ),
+                            color = primaryTextColor
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isLightMode) Color(0x10000000) else Color(0x14FFFFFF))
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = dateFormatted,
+                            style = androidx.compose.ui.text.TextStyle(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                letterSpacing = 0.4.sp
+                            ),
+                            color = secondaryTextColor
+                        )
+                    }
+                }
+            }
+
+            "INLINE_GLANCE", "OVERSIZED_THIN" -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isLightMode) Color(0x0C000000) else Color(0x12FFFFFF))
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = formattedTime,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = primaryTextColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "•",
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = dateFormatted,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Normal,
+                            letterSpacing = 0.sp
+                        ),
+                        color = secondaryTextColor
+                    )
+                }
+            }
+
             "NOTHING_DOT" -> {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -300,144 +444,6 @@ fun EditorialClockWidget(
                             color = secondaryTextColor
                         )
                     }
-                }
-            }
-
-            "STACKED_BOLD" -> {
-                val parts = formattedTime.split(":")
-                val hour = parts.getOrNull(0) ?: "12"
-                val min = parts.getOrNull(1) ?: "00"
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = hour,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 68.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-3).sp,
-                            lineHeight = 62.sp
-                        ),
-                        color = primaryTextColor
-                    )
-                    Text(
-                        text = min,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 68.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = (-3).sp,
-                            lineHeight = 62.sp
-                        ),
-                        color = if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = dateFormatted,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 1.sp
-                        ),
-                        color = secondaryTextColor
-                    )
-                }
-            }
-
-            "OVERSIZED_THIN" -> {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    val parts = formattedTime.split(":")
-                    val hour = parts.getOrNull(0) ?: "12"
-                    val min = parts.getOrNull(1) ?: "00"
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = hour,
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize = 64.sp,
-                                fontWeight = FontWeight.Light,
-                                letterSpacing = (-2).sp
-                            ),
-                            color = primaryTextColor
-                        )
-                        Text(
-                            text = ":",
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize = 56.sp,
-                                fontWeight = FontWeight.ExtraLight
-                            ),
-                            color = accentColor,
-                            modifier = Modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp)
-                        )
-                        Text(
-                            text = min,
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize = 64.sp,
-                                fontWeight = FontWeight.Light,
-                                letterSpacing = (-2).sp
-                            ),
-                            color = primaryTextColor
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(if (isLightMode) Color(0x12000000) else Color(0x18FFFFFF))
-                            .padding(horizontal = 14.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = dateFormatted,
-                            style = androidx.compose.ui.text.TextStyle(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 0.5.sp
-                            ),
-                            color = secondaryTextColor
-                        )
-                    }
-                }
-            }
-
-            "CLEAN_MINIMAL" -> {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = formattedTime,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 30.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-1).sp,
-                            fontFamily = FontFamily.Monospace
-                        ),
-                        color = primaryTextColor
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .width(2.dp)
-                            .height(20.dp)
-                            .background(accentColor)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = dateFormatted,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        color = secondaryTextColor
-                    )
                 }
             }
         }

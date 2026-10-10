@@ -63,8 +63,8 @@ fun AlphabetScroller(
 
     val haptic = LocalHapticFeedback.current
     val density = LocalDensity.current
-    val maxOffsetPx = with(density) { 46.dp.toPx() }
-    val bubbleSize = 52.dp
+    val maxOffsetPx = with(density) { 28.dp.toPx() }
+    val bubbleSize = 48.dp
     val bubbleSizePx = with(density) { bubbleSize.toPx() }
 
     Box(
@@ -116,7 +116,7 @@ fun AlphabetScroller(
         contentAlignment = Alignment.Center
     ) {
         val itemHeightPx = columnHeightPx.toFloat() / Alphabet.size
-        val waveRadiusPx = (itemHeightPx * 4.5f).coerceAtLeast(1f)
+        val waveRadiusPx = (itemHeightPx * 3.8f).coerceAtLeast(1f)
 
         Column(
             modifier = Modifier
@@ -139,16 +139,16 @@ fun AlphabetScroller(
                 }
 
                 val targetOffsetX = if (isDragging) -maxOffsetPx * curveFactor else 0f
-                val targetScale = 1.0f + 0.85f * curveFactor
+                val targetScale = 1.0f + 0.35f * curveFactor
 
                 val animatedOffsetX by animateFloatAsState(
                     targetValue = targetOffsetX,
-                    animationSpec = spring(dampingRatio = 0.75f, stiffness = 600f),
+                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
                     label = "wave_offset_${char}"
                 )
                 val animatedScale by animateFloatAsState(
                     targetValue = targetScale,
-                    animationSpec = spring(dampingRatio = 0.75f, stiffness = 600f),
+                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
                     label = "wave_scale_${char}"
                 )
 
@@ -156,7 +156,7 @@ fun AlphabetScroller(
                     text = char.toString(),
                     fontSize = 10.sp,
                     fontFamily = FontFamily.SansSerif,
-                    fontWeight = if (isCurrentChar || curveFactor > 0.6f) FontWeight.Bold else FontWeight.Normal,
+                    fontWeight = if (isCurrentChar || curveFactor > 0.6f) FontWeight.SemiBold else FontWeight.Normal,
                     color = when {
                         isCurrentChar -> accentColor
                         curveFactor > 0.3f -> TextPrimary
@@ -175,7 +175,7 @@ fun AlphabetScroller(
             }
         }
 
-        // Balão Flutuante (Magnifier Bubble) estilo Niagara ao arrastar
+        // Balão Flutuante (Magnifier Bubble) estilo Cupertino ao arrastar
         if (isDragging && selectedLetter != null && touchY >= 0f) {
             val clampedY = (touchY - bubbleSizePx / 2f).coerceIn(0f, (columnHeightPx - bubbleSizePx).coerceAtLeast(0f))
 
@@ -183,20 +183,26 @@ fun AlphabetScroller(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .graphicsLayer {
-                        translationX = with(density) { (-82).dp.toPx() }
+                        translationX = with(density) { (-64).dp.toPx() }
                         translationY = clampedY
                     }
                     .size(bubbleSize)
-                    .shadow(elevation = 14.dp, shape = CircleShape)
+                    .shadow(elevation = 12.dp, shape = CircleShape)
                     .clip(CircleShape)
-                    .background(Color(0xE614141A))
-                    .border(BorderStroke(1.5.dp, if (accentColor != Color.White) accentColor.copy(alpha = 0.8f) else Color(0x33FFFFFF)), CircleShape),
+                    .background(Color(0xF01C1C1E))
+                    .border(
+                        BorderStroke(
+                            0.5.dp,
+                            if (accentColor != Color.White) accentColor.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.20f)
+                        ),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = selectedLetter.toString(),
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (accentColor != Color.White) accentColor else Color.White
                 )
             }

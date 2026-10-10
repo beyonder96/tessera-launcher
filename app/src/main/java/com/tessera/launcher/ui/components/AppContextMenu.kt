@@ -106,10 +106,10 @@ fun AppContextMenu(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(22.dp),
-            color = Color(0xFF0F0F13),
-            border = BorderStroke(1.dp, Color(0xFF22222A)),
-            shadowElevation = 18.dp,
+            shape = RoundedCornerShape(26.dp),
+            color = Color(0xFF141416),
+            border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.14f)),
+            shadowElevation = 20.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -182,7 +182,7 @@ fun AppContextMenu(
                 // Seção de Atalhos de Apps do Android (LauncherApps Shortcuts)
                 if (shortcuts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color(0xFF1E1E26), thickness = 1.dp)
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 0.5.dp)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -255,7 +255,7 @@ fun AppContextMenu(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color(0xFF1E1E26), thickness = 1.dp)
+                HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Ação: Trocar Ícone Individual

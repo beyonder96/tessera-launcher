@@ -86,15 +86,14 @@ fun LiveCapsule(
         val capsuleShape = RoundedCornerShape(24.dp)
 
         val capsuleBackground = when {
-            isAmoledMode -> AmoledBlack.copy(alpha = 0.94f)
-            isLightMode -> Color(0xFFEFEFEF).copy(alpha = 0.92f)
-            isLiquidGlass -> Color(0xFF1E1E24).copy(alpha = 0.82f)
-            else -> Color(0xFF141418).copy(alpha = 0.90f)
+            isLightMode -> Color(0xFFFFFFFF).copy(alpha = 0.88f)
+            isAmoledMode -> AmoledBlack.copy(alpha = 0.92f)
+            isLiquidGlass -> Color(0xFF1C1C1E).copy(alpha = 0.82f)
+            else -> Color(0xFF16161A).copy(alpha = 0.88f)
         }
 
         val borderColor = when {
             isLightMode -> Color.Black.copy(alpha = 0.08f)
-            isLiquidGlass -> Color.White.copy(alpha = 0.18f)
             else -> Color.White.copy(alpha = 0.12f)
         }
 
@@ -105,7 +104,7 @@ fun LiveCapsule(
             modifier = Modifier
                 .clip(capsuleShape)
                 .background(capsuleBackground)
-                .border(width = 0.8.dp, color = borderColor, shape = capsuleShape)
+                .border(width = 0.5.dp, color = borderColor, shape = capsuleShape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,

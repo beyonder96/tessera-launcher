@@ -70,6 +70,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -142,19 +143,8 @@ fun SearchMorphingDock(
     }
 
     val hasTopContent = widgetContent != null
-    val dockShape = when (searchBarStyle) {
-        "pill", "split_pill" -> if (hasTopContent) RoundedCornerShape(28.dp) else RoundedCornerShape(32.dp)
-        "rounded", "split_rounded" -> RoundedCornerShape(22.dp)
-        "square", "split_square" -> RoundedCornerShape(12.dp)
-        else -> if (hasTopContent) RoundedCornerShape(28.dp) else RoundedCornerShape(32.dp)
-    }
-
-    val buttonShape = when (searchBarStyle) {
-        "split_pill" -> CircleShape
-        "split_rounded" -> RoundedCornerShape(20.dp)
-        "split_square" -> RoundedCornerShape(12.dp)
-        else -> CircleShape
-    }
+    val dockShape = RoundedCornerShape(24.dp)
+    val buttonShape = CircleShape
 
     // Animação Contínua da Luz Branca Pura Especular de IA (Estilo Ativação Nativa de Celular)
     val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
@@ -181,8 +171,8 @@ fun SearchMorphingDock(
     val geminiExpandProgress by animateFloatAsState(
         targetValue = if (isExpanded && isGeminiGlowEnabled) 1f else 0f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
+            dampingRatio = 0.82f,
+            stiffness = 380f
         ),
         label = "gemini_expand_progress"
     )
@@ -223,15 +213,15 @@ fun SearchMorphingDock(
     }
 
     val dockBorder = if (isGeminiGlowEnabled && isExpanded) {
-        BorderStroke(1.5.dp, aiBorderBrush)
+        BorderStroke(0.8.dp, aiBorderBrush)
     } else if (shouldUseLiquidGlass) {
         if (isLightMode) {
-            BorderStroke(1.dp, lightLiquidGlassBorderBrush(opacityFraction))
+            BorderStroke(0.5.dp, lightLiquidGlassBorderBrush(opacityFraction))
         } else {
-            BorderStroke(1.dp, liquidGlassBorderBrush(opacityFraction))
+            BorderStroke(0.5.dp, liquidGlassBorderBrush(opacityFraction))
         }
     } else {
-        BorderStroke(1.dp, modernSpecularBorder)
+        BorderStroke(0.5.dp, modernSpecularBorder)
     }
 
     val dockBgModifier = if (shouldUseLiquidGlass) {
@@ -320,12 +310,12 @@ fun SearchMorphingDock(
         else -> "Pesquisar..."
     }
 
-    val targetWidth = if (isExpanded) screenWidth - 32.dp else 56.dp
+    val targetWidth = if (isExpanded) screenWidth - 32.dp else 190.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMediumLow
+            dampingRatio = 0.82f,
+            stiffness = 380f
         ),
         label = "dock_width"
     )
@@ -333,10 +323,10 @@ fun SearchMorphingDock(
     val dockInteractionSource = remember { MutableInteractionSource() }
     val isDockPressed by dockInteractionSource.collectIsPressedAsState()
     val dockScale by animateFloatAsState(
-        targetValue = if (isDockPressed) 0.95f else 1f,
+        targetValue = if (isDockPressed) 0.96f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = 0.82f,
+            stiffness = 450f
         ),
         label = "dock_press_scale"
     )
@@ -348,11 +338,11 @@ fun SearchMorphingDock(
         contentAlignment = Alignment.Center
     ) {
         if (!isExpanded) {
-            // Estado Recolhido: Cápsula Flutuante Compacta com Feedback de Mola
+            // Estado Recolhido: Cápsula Monolítica Pura (48dp)
             Box(
                 modifier = Modifier
                     .width(animatedWidth)
-                    .height(54.dp)
+                    .height(48.dp)
                     .graphicsLayer {
                         scaleX = dockScale
                         scaleY = dockScale
@@ -381,19 +371,33 @@ fun SearchMorphingDock(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = if (isLightMode) 0.18f else 0.08f),
+                                    Color.White.copy(alpha = if (isLightMode) 0.14f else 0.05f),
                                     Color.Transparent
                                 )
                             )
                         )
                 )
 
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = "Expandir pesquisa",
-                    tint = dockTextPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = "Expandir pesquisa",
+                        tint = dockIconTint,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = placeholderText,
+                        color = dockPlaceholderColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = FontFamily.SansSerif
+                    )
+                }
             }
         } else {
             // Estado Expandido: Doca Moderna com Widgets e Barra de Pesquisa Refinada
@@ -504,7 +508,7 @@ fun SearchMorphingDock(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(50.dp)
+                                    .height(48.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Search,
@@ -669,10 +673,10 @@ fun SearchMorphingDock(
                     val settingsInteractionSource = remember { MutableInteractionSource() }
                     val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
                     val settingsScale by animateFloatAsState(
-                        targetValue = if (isSettingsPressed) 0.92f else 1f,
+                        targetValue = if (isSettingsPressed) 0.94f else 1f,
                         animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
+                            dampingRatio = 0.82f,
+                            stiffness = 380f
                         ),
                         label = "settings_press_scale"
                     )
@@ -680,7 +684,7 @@ fun SearchMorphingDock(
                     Box(
                         modifier = Modifier
                             .padding(bottom = 4.dp)
-                            .size(50.dp)
+                            .size(48.dp)
                             .graphicsLayer {
                                 scaleX = settingsScale
                                 scaleY = settingsScale

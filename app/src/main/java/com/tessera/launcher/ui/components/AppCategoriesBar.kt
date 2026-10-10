@@ -72,11 +72,11 @@ fun AppCategoriesBar(
 
             val bgColor by animateColorAsState(
                 targetValue = when {
-                    isSelected && hasCustomAccent -> accentColor.copy(alpha = if (isLightMode) 0.16f else 0.24f)
-                    isSelected && isLightMode -> Color(0xFF111827)
-                    isSelected -> Color(0xFFF2F2F5)
-                    isLightMode -> Color(0xFFFFFFFF).copy(alpha = 0.90f)
-                    else -> Color(0xFF1C1E26).copy(alpha = 0.85f)
+                    isSelected && hasCustomAccent -> accentColor.copy(alpha = if (isLightMode) 0.18f else 0.24f)
+                    isSelected && isLightMode -> Color(0xFF1C1C1E)
+                    isSelected -> Color(0xFF2C2C2E)
+                    isLightMode -> Color(0x0C000000)
+                    else -> Color(0x18FFFFFF)
                 },
                 animationSpec = tween(150),
                 label = "cat_bg"
@@ -85,10 +85,10 @@ fun AppCategoriesBar(
             val borderColor by animateColorAsState(
                 targetValue = when {
                     isSelected && hasCustomAccent -> accentColor
-                    isSelected && isLightMode -> Color(0xFF111827)
-                    isSelected -> Color.White
-                    isLightMode -> Color(0xFFD1D5DB)
-                    else -> Color.White.copy(alpha = 0.16f)
+                    isSelected && isLightMode -> Color(0x33000000)
+                    isSelected -> Color(0x40FFFFFF)
+                    isLightMode -> Color(0x15000000)
+                    else -> Color(0x18FFFFFF)
                 },
                 animationSpec = tween(150),
                 label = "cat_border"
@@ -98,9 +98,9 @@ fun AppCategoriesBar(
                 targetValue = when {
                     isSelected && hasCustomAccent -> if (isLightMode) accentColor else Color.White
                     isSelected && isLightMode -> Color.White
-                    isSelected -> Color(0xFF101014)
-                    isLightMode -> Color(0xFF374151)
-                    else -> Color(0xFFD4D4D8)
+                    isSelected -> Color(0xFFF2F2F7)
+                    isLightMode -> Color(0xFF6E6E73)
+                    else -> Color(0xFF8E8E93)
                 },
                 animationSpec = tween(150),
                 label = "cat_text"
@@ -109,7 +109,7 @@ fun AppCategoriesBar(
             Surface(
                 shape = PillShape,
                 color = bgColor,
-                border = BorderStroke(1.dp, borderColor),
+                border = BorderStroke(0.5.dp, borderColor),
                 modifier = Modifier
                     .height(32.dp)
                     .clickable(
