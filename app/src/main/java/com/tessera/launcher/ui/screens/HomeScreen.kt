@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.tessera.launcher.ui.theme.tokens.Tessera
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -283,12 +284,7 @@ fun HomeScreen(
     val baseBackgroundColor = if (uiState.isSystemWallpaperEnabled) {
         Color.Transparent
     } else {
-        when (uiState.themeMode) {
-            "amoled" -> AmoledBlack
-            "charcoal" -> CharcoalBackground
-            "light" -> LightBackground
-            else -> if (uiState.isAmoledMode) DarkBackground else DarkBackgroundTranslucent
-        }
+        Tessera.palette.background
     }
 
     Box(
@@ -562,7 +558,17 @@ fun HomeScreen(
                             }
                         },
                         onPlayPauseClick = {
-                            TesseraMediaService.togglePlayPause()
+                            viewModel.togglePlayPauseMedia()
+                        },
+                        onNextClick = {
+                            viewModel.skipNextMedia()
+                        },
+                        onPreviousClick = {
+                            viewModel.skipPreviousMedia()
+                        },
+                        liveActivity = uiState.activeLiveActivity,
+                        onLiveActivityClick = { pkg ->
+                            viewModel.launchApp(pkg)
                         },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
@@ -630,8 +636,8 @@ fun HomeScreen(
 
         AnimatedVisibility(
             visible = uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-            enter = fadeIn(animationSpec = tween(180, easing = FastOutSlowInEasing)),
-            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
+            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
         ) {
             Box(
                 modifier = Modifier
@@ -652,15 +658,15 @@ fun HomeScreen(
         // Gaveta Vertical de Aplicativos & Resultados
         AnimatedVisibility(
             visible = uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-            enter = fadeIn(animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)) +
+            enter = fadeIn(animationSpec = Tessera.motion.springSpatial) +
                     slideInVertically(
                         initialOffsetY = { it / 8 },
-                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
+                        animationSpec = Tessera.motion.springSpatialOffset
                     ),
-            exit = fadeOut(animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)) +
+            exit = fadeOut(animationSpec = Tessera.motion.springSpatial) +
                     slideOutVertically(
                         targetOffsetY = { it / 8 },
-                        animationSpec = spring(dampingRatio = 0.82f, stiffness = 380f)
+                        animationSpec = Tessera.motion.springSpatialOffset
                     ),
             modifier = Modifier.fillMaxSize()
         ) {
@@ -1193,8 +1199,8 @@ fun HomeScreen(
         // Painel de Configurações da Launcher
         AnimatedVisibility(
             visible = uiState.isSettingsOpen,
-            enter = fadeIn(animationSpec = tween(200, easing = FastOutSlowInEasing)),
-            exit = fadeOut(animationSpec = tween(150, easing = FastOutSlowInEasing))
+            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
+            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
         ) {
             SettingsScreen(
                 viewModel = viewModel,
@@ -1380,12 +1386,12 @@ fun HomeScreen(
             visible = uiState.isFeedOpen && uiState.leftScreenMode == "feed",
             enter = slideInHorizontally(
                 initialOffsetX = { -it },
-                animationSpec = tween(220, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(200)),
+                animationSpec = Tessera.motion.springSpatialOffset
+            ) + fadeIn(animationSpec = Tessera.motion.fadeStandard),
             exit = slideOutHorizontally(
                 targetOffsetX = { -it },
-                animationSpec = tween(190, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(180))
+                animationSpec = Tessera.motion.springSpatialOffset
+            ) + fadeOut(animationSpec = Tessera.motion.fadeQuick)
         ) {
             FeedScreen(
                 feedState = uiState.feedState,

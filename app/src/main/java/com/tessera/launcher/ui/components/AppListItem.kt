@@ -57,6 +57,7 @@ import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.IconShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.tokens.Tessera
 
 private fun drawableToBitmap(drawable: Drawable): Bitmap {
     if (drawable is BitmapDrawable && drawable.bitmap != null) {
@@ -148,10 +149,7 @@ fun AppListItem(
     val isItemPressed by itemInteractionSource.collectIsPressedAsState()
     val itemScale by animateFloatAsState(
         targetValue = if (isItemPressed) 0.97f else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = 450f
-        ),
+        animationSpec = Tessera.motion.springPress,
         label = "app_item_press_scale"
     )
 
@@ -170,7 +168,7 @@ fun AppListItem(
             }
             .combinedClickable(
                 interactionSource = itemInteractionSource,
-                indication = ripple(color = Color(0x22FFFFFF)),
+                indication = ripple(color = Tessera.palette.ripple),
                 onClick = onClick,
                 onLongClick = onLongClick
             )
@@ -217,13 +215,13 @@ fun AppListItem(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(shape)
-                        .background(DarkSurfaceVariant),
+                        .background(Tessera.palette.surfaceSubtle),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = app.firstLetter.toString(),
                         style = MaterialTheme.typography.titleSmall,
-                        color = TextSecondary
+                        color = Tessera.palette.textSecondary
                     )
                 }
             }
@@ -242,7 +240,7 @@ fun AppListItem(
                         fontSize = 16.sp,
                         lineHeight = 22.sp
                     ),
-                    color = TextPrimary,
+                    color = Tessera.palette.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = if (app.isShortcut) Modifier.weight(1f, fill = false) else Modifier
@@ -255,9 +253,9 @@ fun AppListItem(
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = Color(0xFF8E8EA0),
+                        color = Tessera.palette.textSecondary,
                         modifier = Modifier
-                            .background(Color(0xFF22222E), RoundedCornerShape(4.dp))
+                            .background(Tessera.palette.surfaceSubtle, Tessera.shapes.micro)
                             .padding(horizontal = 4.dp, vertical = 1.dp)
                     )
                 }

@@ -11,6 +11,7 @@ import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.data.model.AppCategory
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
+import com.tessera.launcher.data.model.LiveActivityInfo
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
 import com.tessera.launcher.data.helper.OmniResult
@@ -112,6 +113,7 @@ data class LauncherUiState(
     val formattedTime: String = "--:--",
     val formattedDate: String = "---",
     val mediaPlayback: MediaPlaybackInfo = MediaPlaybackInfo(),
+    val activeLiveActivity: LiveActivityInfo? = null,
     val hasNotificationAccess: Boolean = false,
     val hasCalendarPermission: Boolean = false,
     val nextCalendarEvent: CalendarEventInfo? = null,

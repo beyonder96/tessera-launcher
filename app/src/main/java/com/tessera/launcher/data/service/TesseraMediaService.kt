@@ -11,7 +11,10 @@ import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
 import android.service.notification.NotificationListenerService
+import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
+import com.tessera.launcher.data.helper.LiveActivityParser
+import com.tessera.launcher.data.model.LiveActivityInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,6 +53,10 @@ class TesseraMediaService : NotificationListenerService() {
         private val _mediaState = MutableStateFlow(MediaPlaybackInfo())
         val mediaState: StateFlow<MediaPlaybackInfo> = _mediaState.asStateFlow()
 
+        private val _liveActivities = MutableStateFlow<Map<String, LiveActivityInfo>>(emptyMap())
+        private val _topLiveActivity = MutableStateFlow<LiveActivityInfo?>(null)
+        val topLiveActivity: StateFlow<LiveActivityInfo?> = _topLiveActivity.asStateFlow()
+
         private var activeController: MediaController? = null
 
         fun isNotificationAccessGranted(context: Context): Boolean {
@@ -75,10 +82,38 @@ class TesseraMediaService : NotificationListenerService() {
         fun skipPrevious() {
             activeController?.transportControls?.skipToPrevious()
         }
+
+        private fun refreshTopLiveActivity() {
+            val top = _liveActivities.value.values.maxByOrNull { it.priorityScore }
+            _topLiveActivity.value = top
+        }
     }
 
     private var mediaSessionManager: MediaSessionManager? = null
     private val handler = Handler(Looper.getMainLooper())
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        super.onNotificationPosted(sbn)
+        if (sbn == null) return
+        val activity = LiveActivityParser.parse(sbn, this)
+        if (activity != null) {
+            val current = _liveActivities.value.toMutableMap()
+            current[sbn.key] = activity
+            _liveActivities.value = current
+            refreshTopLiveActivity()
+        }
+    }
+
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
+        super.onNotificationRemoved(sbn)
+        if (sbn == null) return
+        if (_liveActivities.value.containsKey(sbn.key)) {
+            val current = _liveActivities.value.toMutableMap()
+            current.remove(sbn.key)
+            _liveActivities.value = current
+            refreshTopLiveActivity()
+        }
+    }
 
     private val controllerCallback = object : MediaController.Callback() {
         override fun onPlaybackStateChanged(state: PlaybackState?) {
@@ -107,6 +142,17 @@ class TesseraMediaService : NotificationListenerService() {
             val controllers = mediaSessionManager?.getActiveSessions(component)
             updateActiveController(controllers)
         } catch (_: SecurityException) {}
+
+        try {
+            activeNotifications?.forEach { sbn ->
+                LiveActivityParser.parse(sbn, this)?.let { act ->
+                    val current = _liveActivities.value.toMutableMap()
+                    current[sbn.key] = act
+                    _liveActivities.value = current
+                }
+            }
+            refreshTopLiveActivity()
+        } catch (_: Exception) {}
     }
 
     override fun onListenerDisconnected() {

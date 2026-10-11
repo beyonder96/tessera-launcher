@@ -177,7 +177,10 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            TesseraTheme {
+            TesseraTheme(
+                themeMode = uiState.themeMode,
+                accentColor = uiState.activeAccentColor
+            ) {
                 HomeScreen(
                     viewModel = viewModel,
                     onPickPhoto = {

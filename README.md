@@ -61,9 +61,18 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.6.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.6.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.7.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.7.0)
 
-### 🆕 Novidades na v2.6.0
+### 🆕 Novidades na v2.7.0
+- 🏝️ **Live Capsule Pro & Live Activities do Android:** Mini HUD inteligente que rastreia notificações em andamento em tempo real (viagens da Uber/99, entregas do iFood/Rappi, cronômetros/timers, navegação Maps/Waze e chamadas).
+- 🔄 **Transição Fluida Pílula ↔ Card Expandido:** A cápsula compacta expande em mola física (`TesseraMotion`), exibindo dados de motorista/pedido, barra de progresso em tempo real, controles de mídia completos (com suporte a deslizar para avançar faixa) e atalho para abrir o app.
+- 🎨 **Design System com Tokens de Visagismo & Minimalismo:** Tokens semânticos unificados de espaçamento em grade de 4dp (`TesseraSpacing`), geometria semântica (`TesseraShapes`), paletas semânticas (`TesseraPalette`), física de molas expressivas (`TesseraMotion`) e 4 perfis de visagismo (`Sereno`, `Preciso`, `Vivo`, `Ousado`).
+- 🌐 **Simulador Web Interativo de Alta Fidelidade:** Preview web instantâneo em HTML5/Tailwind/Canvas para inspecionar e interagir com temas, perfis de design, animações e simulação de Live Activities sem necessitar de build de APK.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.6.0</b></summary>
+
 - 🍎 **Redesign de Interface Cupertino & Padrão Apple Vibrancy:** Fundo aveludado OLED profundo (`#0B0B0D`), eliminação de brilhos fluorescentes e introdução de micro-bordas especulares de luz física de 0.5dp em toda a interface.
 - 📐 **Escala Modular Tipográfica 8pt:** Tipografia recalibrada em padrão editorial Apple com proporções balanceadas, contrastes harmoniosos e legibilidade instantânea.
 - ⏳ **Latência de Teclado Sub-1ms (0ms Artificial Delay):** Foco e abertura imediata do teclado ao acessar a pesquisa e a gaveta, otimizado para telas de 120Hz.
@@ -71,8 +80,7 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🌊 **Indexador Niagara Wave Recalibrado:** Deslocamento lateral de onda contido para 28dp e escala de 1.35x para evitar sobreposição nos nomes dos apps, com balão lupa fosco em 48dp.
 - 💫 **Física de Molas com Amortecimento Crítico:** Movimento fluido e natural com resposta orgânica (`damping = 0.82`, `stiffness = 380..450`), sem oscilações artificiais.
 - 🎨 **Menu de Contexto e Relógio Editorial:** Menu de contexto com cantos contínuos de 26dp e divisores de 0.5dp, além de 3 novos estilos curados de relógio (`CUPERTINO_MINIMAL`, `EDITORIAL_ELEGANCE`, `INLINE_GLANCE`).
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.5.2</b></summary>
 

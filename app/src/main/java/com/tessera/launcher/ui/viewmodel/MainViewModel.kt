@@ -370,6 +370,11 @@ class MainViewModel(
                 _uiState.update { it.copy(mediaPlayback = mediaInfo) }
             }
         }
+        viewModelScope.launch {
+            TesseraMediaService.topLiveActivity.collect { liveActivity ->
+                _uiState.update { it.copy(activeLiveActivity = liveActivity) }
+            }
+        }
     }
 
     private fun observeQuickSettings() {

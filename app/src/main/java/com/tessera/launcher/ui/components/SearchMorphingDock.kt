@@ -93,6 +93,7 @@ import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import com.tessera.launcher.ui.theme.tokens.Tessera
 import java.util.Calendar
 
 @Composable
@@ -143,8 +144,8 @@ fun SearchMorphingDock(
     }
 
     val hasTopContent = widgetContent != null
-    val dockShape = RoundedCornerShape(24.dp)
-    val buttonShape = CircleShape
+    val dockShape = Tessera.shapes.pill
+    val buttonShape = Tessera.shapes.full
 
     // Animação Contínua da Luz Branca Pura Especular de IA (Estilo Ativação Nativa de Celular)
     val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
@@ -170,10 +171,7 @@ fun SearchMorphingDock(
 
     val geminiExpandProgress by animateFloatAsState(
         targetValue = if (isExpanded && isGeminiGlowEnabled) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = 380f
-        ),
+        animationSpec = Tessera.motion.springSpatial,
         label = "gemini_expand_progress"
     )
 
@@ -313,10 +311,7 @@ fun SearchMorphingDock(
     val targetWidth = if (isExpanded) screenWidth - 32.dp else 190.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
-        animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = 380f
-        ),
+        animationSpec = Tessera.motion.springSpatialDp,
         label = "dock_width"
     )
 
@@ -324,10 +319,7 @@ fun SearchMorphingDock(
     val isDockPressed by dockInteractionSource.collectIsPressedAsState()
     val dockScale by animateFloatAsState(
         targetValue = if (isDockPressed) 0.96f else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = 450f
-        ),
+        animationSpec = Tessera.motion.springPress,
         label = "dock_press_scale"
     )
 
