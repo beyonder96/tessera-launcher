@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.GraphicEq
@@ -56,6 +57,7 @@ import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,6 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.WeatherInfo
+import com.tessera.launcher.data.model.AppNotificationItem
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.state.WidgetConfigType
@@ -113,6 +116,7 @@ private enum class PanelCardType {
     MEDIA,
     VERSE_FOCUS,
     WEATHER,
+    NOTIFICATIONS,
     DINO,
     NOTES,
     SMART_GLANCE,
@@ -179,7 +183,11 @@ fun WidgetsPanel(
     accentColor: Color = Color.White,
     screenTimeInfo: ScreenTimeInfo? = null,
     isScreenTimeWidgetEnabled: Boolean = true,
-    isSmartStackRotateEnabled: Boolean = true
+    isSmartStackRotateEnabled: Boolean = true,
+    recentNotifications: List<AppNotificationItem> = emptyList(),
+    notificationCounts: Map<String, Int> = emptyMap(),
+    onDismissNotification: (String) -> Unit = {},
+    onOpenNotificationsHub: () -> Unit = {}
 ) {
     val activeCards = remember(
         isSmartGlanceEnabled,
@@ -187,7 +195,8 @@ fun WidgetsPanel(
         isNotesWidgetEnabled,
         isPredictedAppsWidgetEnabled,
         isScreenTimeWidgetEnabled,
-        predictedApps.size
+        predictedApps.size,
+        recentNotifications.size
     ) {
         buildList {
             add(PanelCardType.QUICK_ACTIONS)
@@ -196,6 +205,7 @@ fun WidgetsPanel(
             add(PanelCardType.MEDIA)
             add(PanelCardType.VERSE_FOCUS)
             add(PanelCardType.WEATHER)
+            add(PanelCardType.NOTIFICATIONS)
             if (isDinoWidgetEnabled) add(PanelCardType.DINO)
             if (isNotesWidgetEnabled) add(PanelCardType.NOTES)
             if (isSmartGlanceEnabled) add(PanelCardType.SMART_GLANCE)
@@ -212,11 +222,12 @@ fun WidgetsPanel(
         3 -> PanelCardType.MEDIA
         4 -> PanelCardType.VERSE_FOCUS
         5 -> PanelCardType.WEATHER
-        6 -> PanelCardType.DINO
-        7 -> PanelCardType.NOTES
-        8 -> PanelCardType.SMART_GLANCE
-        9 -> PanelCardType.PREDICTED_APPS
-        10 -> PanelCardType.SCREEN_TIME
+        6 -> PanelCardType.NOTIFICATIONS
+        7 -> PanelCardType.DINO
+        8 -> PanelCardType.NOTES
+        9 -> PanelCardType.SMART_GLANCE
+        10 -> PanelCardType.PREDICTED_APPS
+        11 -> PanelCardType.SCREEN_TIME
         else -> PanelCardType.QUICK_ACTIONS
     }
 
@@ -458,7 +469,9 @@ fun WidgetsPanel(
                         iconShape = iconShape,
                         isThemedIcons = isThemedIcons,
                         isLightMode = isLightMode,
-                        isAmoledMode = isAmoledMode
+                        isAmoledMode = isAmoledMode,
+                        notificationCounts = notificationCounts,
+                        accentColor = accentColor
                     )
                 }
                 PanelCardType.SCREEN_TIME -> {
@@ -470,6 +483,21 @@ fun WidgetsPanel(
                         isLiquidGlass = isLiquidGlass,
                         onCardClick = {},
                         onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
+                    )
+                }
+                PanelCardType.NOTIFICATIONS -> {
+                    NotificationsWidgetCard(
+                        recentNotifications = recentNotifications,
+                        onOpenHub = onOpenNotificationsHub,
+                        onDismissTop = {
+                            recentNotifications.firstOrNull()?.let { top ->
+                                onDismissNotification(top.key)
+                            }
+                        },
+                        accentColor = accentColor,
+                        isAmoledMode = isAmoledMode,
+                        isLightMode = isLightMode,
+                        isLiquidGlass = isLiquidGlass
                     )
                 }
                 null -> {}
@@ -1668,7 +1696,9 @@ private fun PredictedAppsWidgetCard(
     iconShape: String = "DEFAULT",
     isThemedIcons: Boolean = true,
     isLightMode: Boolean = false,
-    isAmoledMode: Boolean = false
+    isAmoledMode: Boolean = false,
+    notificationCounts: Map<String, Int> = emptyMap(),
+    accentColor: Color = Color.White
 ) {
     Box(
         modifier = Modifier
@@ -1684,9 +1714,149 @@ private fun PredictedAppsWidgetCard(
             isThemedIcons = isThemedIcons,
             isLightMode = isLightMode,
             isAmoledMode = isAmoledMode,
-            isEmbedded = true
+            isEmbedded = true,
+            notificationCounts = notificationCounts,
+            accentColor = accentColor
         )
     }
 }
+
+@Composable
+private fun NotificationsWidgetCard(
+    recentNotifications: List<AppNotificationItem>,
+    onOpenHub: () -> Unit,
+    onDismissTop: () -> Unit,
+    accentColor: Color,
+    isAmoledMode: Boolean = false,
+    isLightMode: Boolean = false,
+    isLiquidGlass: Boolean = false
+) {
+    val topItem = recentNotifications.firstOrNull()
+    val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
+    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onOpenHub
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Ícone com ponto indicador
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(badgeBg)
+                .border(1.dp, badgeBorder, RoundedCornerShape(13.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Notifications,
+                contentDescription = "Notificações",
+                tint = if (recentNotifications.isNotEmpty()) accentColor else primaryText,
+                modifier = Modifier.size(22.dp)
+            )
+            if (recentNotifications.isNotEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(accentColor)
+                        .align(Alignment.TopEnd)
+                        .padding(top = 4.dp, end = 4.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Conteúdo central
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            if (topItem != null) {
+                Text(
+                    text = "${topItem.appName} • ${topItem.title}",
+                    color = primaryText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = topItem.text.ifBlank { "Toque para abrir a central" },
+                    color = secondaryText,
+                    fontSize = 11.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text(
+                    text = "Notificações",
+                    color = primaryText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "Tudo limpo por aqui",
+                    color = secondaryText,
+                    fontSize = 11.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        // Ações à direita
+        if (topItem != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (recentNotifications.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(accentColor.copy(alpha = 0.18f))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "+${recentNotifications.size - 1}",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = accentColor
+                        )
+                    }
+                }
+
+                if (!topItem.isOngoing) {
+                    IconButton(
+                        onClick = onDismissTop,
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Dispensar",
+                            tint = secondaryText,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 

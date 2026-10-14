@@ -150,6 +150,44 @@ object LiveActivityParser {
             LiveActivityType.OTHER -> 30
         }
 
+        val rideDetails = if (type == LiveActivityType.RIDE) {
+            RideNotificationParser.parse(
+                sbn = sbn,
+                notification = notification,
+                context = context,
+                title = title,
+                text = text,
+                subText = subText
+            )
+        } else null
+
+        val deliveryDetails = if (type == LiveActivityType.DELIVERY) {
+            DeliveryNotificationParser.parse(
+                sbn = sbn,
+                notification = notification,
+                context = context,
+                title = title,
+                text = text,
+                subText = subText
+            )
+        } else null
+
+        val navigationDetails = if (type == LiveActivityType.NAVIGATION) {
+            NavigationNotificationParser.parse(
+                sbn = sbn,
+                notification = notification,
+                context = context,
+                title = title,
+                text = text,
+                subText = subText
+            )
+        } else null
+
+        val finalActions = rideDetails?.actions
+            ?: deliveryDetails?.actions
+            ?: navigationDetails?.actions
+            ?: emptyList()
+
         return LiveActivityInfo(
             id = sbn.key,
             packageName = pkg,
@@ -162,7 +200,11 @@ object LiveActivityParser {
             isChronometerCountDown = isCountDown,
             artwork = artworkBitmap,
             priorityScore = priorityScore,
-            timestamp = sbn.postTime
+            timestamp = sbn.postTime,
+            rideDetails = rideDetails,
+            deliveryDetails = deliveryDetails,
+            navigationDetails = navigationDetails,
+            actions = finalActions
         )
     }
 

@@ -84,7 +84,9 @@ fun SmartDockRow(
     isThemedIcons: Boolean = true,
     isLightMode: Boolean = false,
     isAmoledMode: Boolean = false,
-    isEmbedded: Boolean = false
+    isEmbedded: Boolean = false,
+    notificationCounts: Map<String, Int> = emptyMap(),
+    accentColor: Color = Color(0xFF3B82F6)
 ) {
     if (apps.isEmpty()) return
 
@@ -103,7 +105,9 @@ fun SmartDockRow(
                     onLongClick = onAppLongClick?.let { { it(app) } },
                     iconShape = iconShape,
                     isThemedIcons = isThemedIcons,
-                    isLightMode = isLightMode
+                    isLightMode = isLightMode,
+                    notificationCount = notificationCounts[app.packageName] ?: 0,
+                    accentColor = accentColor
                 )
             }
         }
@@ -138,7 +142,9 @@ fun SmartDockRow(
                         onLongClick = onAppLongClick?.let { { it(app) } },
                         iconShape = iconShape,
                         isThemedIcons = isThemedIcons,
-                        isLightMode = isLightMode
+                        isLightMode = isLightMode,
+                        notificationCount = notificationCounts[app.packageName] ?: 0,
+                        accentColor = accentColor
                     )
                 }
             }
@@ -155,7 +161,9 @@ private fun SmartDockItem(
     iconShape: String,
     isThemedIcons: Boolean,
     isLightMode: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    notificationCount: Int = 0,
+    accentColor: Color = Color(0xFF3B82F6)
 ) {
     val shape = remember(iconShape) {
         when (iconShape) {
@@ -211,23 +219,38 @@ private fun SmartDockItem(
                 .clip(shape)
         }
 
-        if (imageBitmap != null) {
-            Image(
-                bitmap = imageBitmap,
-                contentDescription = app.label,
-                modifier = iconModifier,
-                colorFilter = colorFilter
-            )
-        } else {
-            Box(
-                modifier = iconModifier.background(Color(0xFF222228)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = app.label.take(1).uppercase(),
-                    color = labelColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+        val iconContainerModifier = if (iconShape == "CYLINDER") Modifier.size(width = 30.dp, height = 38.dp) else Modifier.size(38.dp)
+        Box(
+            modifier = iconContainerModifier,
+            contentAlignment = Alignment.Center
+        ) {
+            if (imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap,
+                    contentDescription = app.label,
+                    modifier = iconModifier,
+                    colorFilter = colorFilter
+                )
+            } else {
+                Box(
+                    modifier = iconModifier.background(Color(0xFF222228)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = app.label.take(1).uppercase(),
+                        color = labelColor,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            if (notificationCount > 0) {
+                NotificationBadge(
+                    count = notificationCount,
+                    accentColor = accentColor,
+                    isLightMode = isLightMode,
+                    modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
         }

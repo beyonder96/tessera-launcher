@@ -72,6 +72,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.data.model.DeliveryStage
 import com.tessera.launcher.data.model.LiveActivityInfo
 import com.tessera.launcher.data.model.LiveActivityType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
@@ -129,62 +130,120 @@ fun LiveCapsule(
                 ),
         modifier = modifier
     ) {
-        val capsuleShape = if (isExpanded) Tessera.shapes.card else Tessera.shapes.pill
-
-        val capsuleBackground = if (isLiquidGlass && !isAmoledMode) {
-            Tessera.palette.surface.copy(alpha = 0.88f)
-        } else {
-            Tessera.palette.surface
-        }
-
-        val borderColor = Tessera.palette.surfaceBorder
-        val primaryTextColor = Tessera.palette.textPrimary
-        val secondaryTextColor = Tessera.palette.textSecondary
-
-        val gestureModifier = if (!isExpanded && liveActivity == null && isMediaActive) {
-            Modifier.pointerInput(Unit) {
-                detectHorizontalDragGestures(
-                    onDragEnd = {
-                        if (dragOffsetX > 45f && onNextClick != null) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onNextClick()
-                        } else if (dragOffsetX < -45f && onPreviousClick != null) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            onPreviousClick()
-                        }
-                        dragOffsetX = 0f
-                    },
-                    onDragCancel = { dragOffsetX = 0f },
-                    onHorizontalDrag = { change, dragAmount ->
-                        dragOffsetX = (dragOffsetX + dragAmount * 0.45f).coerceIn(-65f, 65f)
-                        change.consume()
-                    }
-                )
-            }
-        } else Modifier
-
-        Box(
-            modifier = Modifier
-                .graphicsLayer {
-                    translationX = animatedDragX
+        if (liveActivity?.rideDetails != null && isExpanded) {
+            RideLiveActivityCard(
+                rideDetails = liveActivity.rideDetails,
+                isLiquidGlass = isLiquidGlass,
+                isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
+                accentColor = accentColor,
+                onCardClick = {
+                    onLiveActivityClick?.invoke(liveActivity.packageName)
+                },
+                onActionClick = { intent ->
+                    try {
+                        intent?.send()
+                    } catch (_: Exception) {}
+                },
+                onCollapseClick = {
+                    isExpanded = false
                 }
-                .then(gestureModifier)
-                .clip(capsuleShape)
-                .background(capsuleBackground)
-                .border(width = 0.6.dp, color = borderColor, shape = capsuleShape)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        isExpanded = !isExpanded
+            )
+        } else if (liveActivity?.deliveryDetails != null && isExpanded) {
+            DeliveryLiveActivityCard(
+                deliveryDetails = liveActivity.deliveryDetails,
+                isLiquidGlass = isLiquidGlass,
+                isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
+                accentColor = accentColor,
+                onCardClick = {
+                    onLiveActivityClick?.invoke(liveActivity.packageName)
+                },
+                onActionClick = { intent ->
+                    try {
+                        intent?.send()
+                    } catch (_: Exception) {}
+                },
+                onCollapseClick = {
+                    isExpanded = false
+                }
+            )
+        } else if (liveActivity?.navigationDetails != null && isExpanded) {
+            NavigationLiveActivityCard(
+                navigationDetails = liveActivity.navigationDetails,
+                isLiquidGlass = isLiquidGlass,
+                isAmoledMode = isAmoledMode,
+                isLightMode = isLightMode,
+                accentColor = accentColor,
+                onCardClick = {
+                    onLiveActivityClick?.invoke(liveActivity.packageName)
+                },
+                onActionClick = { intent ->
+                    try {
+                        intent?.send()
+                    } catch (_: Exception) {}
+                },
+                onCollapseClick = {
+                    isExpanded = false
+                }
+            )
+        } else {
+            val capsuleShape = if (isExpanded) Tessera.shapes.card else Tessera.shapes.pill
+
+            val capsuleBackground = if (isLiquidGlass && !isAmoledMode) {
+                Tessera.palette.surface.copy(alpha = 0.88f)
+            } else {
+                Tessera.palette.surface
+            }
+
+            val borderColor = Tessera.palette.surfaceBorder
+            val primaryTextColor = Tessera.palette.textPrimary
+            val secondaryTextColor = Tessera.palette.textSecondary
+
+            val gestureModifier = if (!isExpanded && liveActivity == null && isMediaActive) {
+                Modifier.pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (dragOffsetX > 45f && onNextClick != null) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onNextClick()
+                            } else if (dragOffsetX < -45f && onPreviousClick != null) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onPreviousClick()
+                            }
+                            dragOffsetX = 0f
+                        },
+                        onDragCancel = { dragOffsetX = 0f },
+                        onHorizontalDrag = { change, dragAmount ->
+                            dragOffsetX = (dragOffsetX + dragAmount * 0.45f).coerceIn(-65f, 65f)
+                            change.consume()
+                        }
+                    )
+                }
+            } else Modifier
+
+            Box(
+                modifier = Modifier
+                    .graphicsLayer {
+                        translationX = animatedDragX
                     }
-                )
-                .padding(
-                    horizontal = if (isExpanded) 16.dp else 14.dp,
-                    vertical = if (isExpanded) 12.dp else 7.dp
-                )
-        ) {
-            if (liveActivity != null) {
+                    .then(gestureModifier)
+                    .clip(capsuleShape)
+                    .background(capsuleBackground)
+                    .border(width = 0.6.dp, color = borderColor, shape = capsuleShape)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            isExpanded = !isExpanded
+                        }
+                    )
+                    .padding(
+                        horizontal = if (isExpanded) 16.dp else 14.dp,
+                        vertical = if (isExpanded) 12.dp else 7.dp
+                    )
+            ) {
+                if (liveActivity != null) {
                 // ==========================================
                 // 1. LIVE ACTIVITY (Uber / iFood / Timer / etc)
                 // ==========================================
@@ -307,52 +366,225 @@ fun LiveCapsule(
                     }
                 } else {
                     // Modo Compacto da Live Activity
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.widthIn(min = 120.dp, max = 290.dp)
-                    ) {
-                        Icon(
-                            imageVector = activityIcon,
-                            contentDescription = null,
-                            tint = activityAccent,
-                            modifier = Modifier.size(15.dp)
-                        )
+                    val ride = liveActivity.rideDetails
+                    val delivery = liveActivity.deliveryDetails
+                    val nav = liveActivity.navigationDetails
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
+                    if (ride != null) {
+                        // Modo Compacto Especializado de Transporte (Uber / 99)
+                        val compactAccent = if (ride.appName.equals("99", ignoreCase = true)) Color(0xFFFFB300) else Color(0xFF2563EB)
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f, fill = false)
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.widthIn(min = 120.dp, max = 290.dp)
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(compactAccent.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DirectionsCar,
+                                    contentDescription = null,
+                                    tint = compactAccent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(7.dp))
+
                             Text(
-                                text = liveActivity.title,
+                                text = ride.appName,
                                 color = primaryTextColor,
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
                             )
 
-                            if (!liveActivity.subtitle.isNullOrBlank()) {
+                            val compactInfo = ride.etaMinutes?.let { "$it min" } ?: ride.etaText ?: ride.statusMessage
+                            if (!compactInfo.isNullOrBlank()) {
                                 Text(
-                                    text = " • ${liveActivity.subtitle}",
-                                    color = secondaryTextColor,
+                                    text = " • $compactInfo",
+                                    color = if (ride.etaMinutes != null && ride.etaMinutes <= 2) compactAccent else secondaryTextColor,
                                     fontSize = 11.sp,
+                                    fontWeight = if (ride.etaMinutes != null && ride.etaMinutes <= 2) FontWeight.SemiBold else FontWeight.Normal,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(compactAccent)
+                            )
                         }
+                    } else if (delivery != null) {
+                        // Modo Compacto Especializado de Delivery (iFood / Rappi)
+                        val deliveryAccent = when {
+                            delivery.appName.contains("ifood", ignoreCase = true) -> Color(0xFFEA1D2C)
+                            delivery.appName.contains("rappi", ignoreCase = true) -> Color(0xFFFF441F)
+                            delivery.appName.contains("ze", ignoreCase = true) -> Color(0xFFFFB300)
+                            else -> Color(0xFFEA1D2C)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.widthIn(min = 120.dp, max = 290.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(deliveryAccent.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.DeliveryDining,
+                                    contentDescription = null,
+                                    tint = deliveryAccent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
 
-                        Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(7.dp))
 
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(activityAccent)
-                        )
+                            Text(
+                                text = delivery.appName,
+                                color = primaryTextColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+
+                            val compactInfo = delivery.etaMinutes?.let { "$it min" } ?: delivery.etaText ?: delivery.statusMessage
+                            if (!compactInfo.isNullOrBlank()) {
+                                Text(
+                                    text = " • $compactInfo",
+                                    color = if (delivery.stage == DeliveryStage.ON_THE_WAY) deliveryAccent else secondaryTextColor,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (delivery.stage == DeliveryStage.ON_THE_WAY) FontWeight.SemiBold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(deliveryAccent)
+                            )
+                        }
+                    } else if (nav != null) {
+                        // Modo Compacto Especializado de Navegação (Google Maps / Waze)
+                        val navAccent = if (nav.appName.contains("waze", ignoreCase = true)) Color(0xFF33CCFF) else Color(0xFF10B981)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.widthIn(min = 120.dp, max = 290.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(navAccent.copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Navigation,
+                                    contentDescription = null,
+                                    tint = navAccent,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(7.dp))
+
+                            Text(
+                                text = nav.appName,
+                                color = primaryTextColor,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+
+                            val compactInfo = nav.distanceToManeuver ?: nav.etaRemaining ?: nav.nextStreetName
+                            if (!compactInfo.isNullOrBlank()) {
+                                Text(
+                                    text = " • $compactInfo",
+                                    color = navAccent,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(navAccent)
+                            )
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.widthIn(min = 120.dp, max = 290.dp)
+                        ) {
+                            Icon(
+                                imageVector = activityIcon,
+                                contentDescription = null,
+                                tint = activityAccent,
+                                modifier = Modifier.size(15.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f, fill = false)
+                            ) {
+                                Text(
+                                    text = liveActivity.title,
+                                    color = primaryTextColor,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+
+                                if (!liveActivity.subtitle.isNullOrBlank()) {
+                                    Text(
+                                        text = " • ${liveActivity.subtitle}",
+                                        color = secondaryTextColor,
+                                        fontSize = 11.sp,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(activityAccent)
+                            )
+                        }
                     }
                 }
             } else if (isMediaActive) {
@@ -587,6 +819,7 @@ fun LiveCapsule(
             }
         }
     }
+}
 }
 
 /**

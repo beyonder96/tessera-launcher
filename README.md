@@ -61,15 +61,25 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.7.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.7.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.8.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.8.0)
 
-### 🆕 Novidades na v2.7.0
+### 🆕 Novidades na v2.8.0
+- 🚗 **Live Activities para Transporte (Uber, 99, Lyft):** Rastreamento de corridas em tempo real com nome e avaliação do motorista, modelo e cor do carro, placa destacada e timeline de rota com mola física elástica.
+- 🛵 **Live Activities para Delivery (iFood, Rappi, Zé Delivery):** Acompanhamento do status de pedidos em 4 etapas (Confirmado, Preparando, Em rota, Entregue) com motinho animada, tempo de entrega, PIN de segurança em destaque e atalhos rápidos.
+- 🧭 **Live Activities para Navegação GPS (Google Maps, Waze):** Grande ícone direcional da próxima manobra curva a curva, distância imediata, nome da via, métricas consolidadas de chegada e botões de ação rápida.
+- 🔴 **Notification Dots & Badges nos Ícones:** Pontos sutis e contadores estilizados nos ícones do Smart Dock, do widget de apps previstos e da gaveta de aplicativos (App Drawer) para aplicativos com notificações ativas.
+- 📬 **Feed / Hub de Notificações Recentes:** Novo card de 54dp no carrossel de widgets da Home e central completa em Modal Bottom Sheet para visualizar, tocar (abrir via PendingIntent) e dispensar notificações individuais ou todas.
+- 🏝️ **LiveCapsule Contextual no Topo:** Pílula expansível fluida no topo com dados ao vivo da atividade em andamento mais prioritária e expansão com um toque para o card completo.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v2.7.0</b></summary>
+
 - 🏝️ **Live Capsule Pro & Live Activities do Android:** Mini HUD inteligente que rastreia notificações em andamento em tempo real (viagens da Uber/99, entregas do iFood/Rappi, cronômetros/timers, navegação Maps/Waze e chamadas).
 - 🔄 **Transição Fluida Pílula ↔ Card Expandido:** A cápsula compacta expande em mola física (`TesseraMotion`), exibindo dados de motorista/pedido, barra de progresso em tempo real, controles de mídia completos (com suporte a deslizar para avançar faixa) e atalho para abrir o app.
 - 🎨 **Design System com Tokens de Visagismo & Minimalismo:** Tokens semânticos unificados de espaçamento em grade de 4dp (`TesseraSpacing`), geometria semântica (`TesseraShapes`), paletas semânticas (`TesseraPalette`), física de molas expressivas (`TesseraMotion`) e 4 perfis de visagismo (`Sereno`, `Preciso`, `Vivo`, `Ousado`).
 - 🌐 **Simulador Web Interativo de Alta Fidelidade:** Preview web instantâneo em HTML5/Tailwind/Canvas para inspecionar e interagir com temas, perfis de design, animações e simulação de Live Activities sem necessitar de build de APK.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.6.0</b></summary>
 

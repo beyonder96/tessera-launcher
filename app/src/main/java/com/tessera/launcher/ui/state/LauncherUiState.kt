@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import com.tessera.launcher.data.helper.OmniResult
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.model.FocusProfile
+import com.tessera.launcher.data.model.AppNotificationItem
 import com.tessera.launcher.ui.theme.getAccentColor
 
 sealed interface AppsListState {
@@ -299,7 +300,12 @@ data class LauncherUiState(
     val focusProfile: FocusProfile = FocusProfile.OFF,
     val isFocusScheduleEnabled: Boolean = false,
     val isFocusProfilesFeatureEnabled: Boolean = true,
-    val isFocusModalOpen: Boolean = false
+    val isFocusModalOpen: Boolean = false,
+
+    // Notificações Comuns & Hub
+    val notificationCounts: Map<String, Int> = emptyMap(),
+    val recentNotifications: List<AppNotificationItem> = emptyList(),
+    val isNotificationsHubOpen: Boolean = false
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)

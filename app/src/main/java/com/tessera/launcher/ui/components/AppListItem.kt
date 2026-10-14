@@ -83,7 +83,10 @@ fun AppListItem(
     iconShape: String = "DEFAULT",
     isThemedIcons: Boolean = false,
     isHideAppLabels: Boolean = false,
-    isRightAligned: Boolean = false
+    isRightAligned: Boolean = false,
+    notificationCount: Int = 0,
+    accentColor: Color = Color(0xFF3B82F6),
+    isLightMode: Boolean = false
 ) {
     var dragOffsetX by remember { mutableFloatStateOf(0f) }
     val animatedOffsetX by animateFloatAsState(
@@ -198,30 +201,40 @@ fun AppListItem(
                     .clip(shape)
             }
 
-            if (imageBitmap != null) {
-                Box(
-                    modifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+            val iconContainerModifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp)
+            Box(
+                modifier = iconContainerModifier,
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageBitmap != null) {
                     androidx.compose.foundation.Image(
                         bitmap = imageBitmap,
                         contentDescription = app.label,
                         colorFilter = colorFilter,
                         modifier = iconModifier
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(shape)
+                            .background(Tessera.palette.surfaceSubtle),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = app.firstLetter.toString(),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Tessera.palette.textSecondary
+                        )
+                    }
                 }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(shape)
-                        .background(Tessera.palette.surfaceSubtle),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = app.firstLetter.toString(),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Tessera.palette.textSecondary
+
+                if (notificationCount > 0) {
+                    NotificationBadge(
+                        count = notificationCount,
+                        accentColor = accentColor,
+                        isLightMode = isLightMode,
+                        modifier = Modifier.align(Alignment.TopEnd)
                     )
                 }
             }

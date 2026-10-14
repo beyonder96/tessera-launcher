@@ -121,6 +121,7 @@ import com.tessera.launcher.ui.components.SearchMorphingDock
 import com.tessera.launcher.ui.components.CommandsChipsRow
 import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
+import com.tessera.launcher.ui.components.NotificationsHubBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
@@ -995,6 +996,8 @@ fun HomeScreen(
                                                   isLightMode = uiState.isLightMode,
                                                   isAmoledMode = uiState.isAmoledMode,
                                                   isEmbedded = true,
+                                                  notificationCounts = uiState.notificationCounts,
+                                                  accentColor = uiState.activeAccentColor,
                                                   modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                                               )
                                           }
@@ -1013,6 +1016,9 @@ fun HomeScreen(
                                          isThemedIcons = uiState.isThemedIconsEnabled,
                                          isHideAppLabels = uiState.isHideAppLabelsEnabled,
                                          isRightAligned = uiState.isDrawerRightAligned,
+                                         notificationCount = uiState.notificationCounts[app.packageName] ?: 0,
+                                         accentColor = uiState.activeAccentColor,
+                                         isLightMode = uiState.isLightMode,
                                          onClick = {
                                              viewModel.launchApp(app).onFailure { error ->
                                                  Toast.makeText(
@@ -1189,7 +1195,11 @@ fun HomeScreen(
                             accentColor = uiState.activeAccentColor,
                             screenTimeInfo = uiState.screenTimeInfo,
                             isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
-                            isSmartStackRotateEnabled = uiState.isSmartStackRotateEnabled
+                            isSmartStackRotateEnabled = uiState.isSmartStackRotateEnabled,
+                            recentNotifications = uiState.recentNotifications,
+                            notificationCounts = uiState.notificationCounts,
+                            onDismissNotification = { viewModel.dismissNotification(it) },
+                            onOpenNotificationsHub = { viewModel.openNotificationsHub() }
                         )
                     }
                 } else null
@@ -1378,6 +1388,35 @@ fun HomeScreen(
                 onAppLongClick = { app -> selectedAppForMenu = app },
                 onDismiss = { folderToView = null },
                 isAmoledMode = uiState.isAmoledMode
+            )
+        }
+
+        if (uiState.isNotificationsHubOpen) {
+            NotificationsHubBottomSheet(
+                notifications = uiState.recentNotifications,
+                onNotificationClick = { item ->
+                    item.contentIntent?.let { pi ->
+                        try {
+                            pi.send()
+                        } catch (_: Exception) {
+                            val launchIntent = context.packageManager.getLaunchIntentForPackage(item.packageName)
+                            launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            runCatching { context.startActivity(launchIntent) }
+                        }
+                    } ?: run {
+                        val launchIntent = context.packageManager.getLaunchIntentForPackage(item.packageName)
+                        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        runCatching { context.startActivity(launchIntent) }
+                    }
+                    viewModel.closeNotificationsHub()
+                },
+                onDismissNotification = { viewModel.dismissNotification(it) },
+                onDismissAll = { viewModel.dismissAllNotifications() },
+                onDismiss = { viewModel.closeNotificationsHub() },
+                isAmoled = uiState.isAmoledMode,
+                isLightMode = uiState.isLightMode,
+                isLiquidGlass = uiState.isLiquidGlassEnabled,
+                accentColor = uiState.activeAccentColor
             )
         }
 

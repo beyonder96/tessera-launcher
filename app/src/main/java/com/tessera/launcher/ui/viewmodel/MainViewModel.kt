@@ -375,6 +375,16 @@ class MainViewModel(
                 _uiState.update { it.copy(activeLiveActivity = liveActivity) }
             }
         }
+        viewModelScope.launch {
+            TesseraMediaService.notificationCounts.collect { counts ->
+                _uiState.update { it.copy(notificationCounts = counts) }
+            }
+        }
+        viewModelScope.launch {
+            TesseraMediaService.recentNotifications.collect { notifications ->
+                _uiState.update { it.copy(recentNotifications = notifications) }
+            }
+        }
     }
 
     private fun observeQuickSettings() {
@@ -1081,9 +1091,30 @@ class MainViewModel(
         calendarHelper.openCalendar(_uiState.value.defaultCalendarApp)
     }
 
+    // Notificações Comuns & Hub
+    fun dismissNotification(key: String) {
+        TesseraMediaService.dismissNotification(key)
+    }
+
+    fun dismissAllNotifications() {
+        TesseraMediaService.dismissAllNotifications()
+    }
+
+    fun openNotificationsHub() {
+        _uiState.update { it.copy(isNotificationsHubOpen = true) }
+    }
+
+    fun closeNotificationsHub() {
+        _uiState.update { it.copy(isNotificationsHubOpen = false) }
+    }
+
     fun handleBackPress(): Boolean {
         val state = _uiState.value
         return when {
+            state.isNotificationsHubOpen -> {
+                closeNotificationsHub()
+                true
+            }
             state.isSettingsOpen -> {
                 navigateBackSettings()
                 true
