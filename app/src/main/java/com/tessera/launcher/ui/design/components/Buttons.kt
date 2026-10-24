@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +36,7 @@ fun CapsuleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = LocalAppleColors.current.accent,
-    contentColor: Color = Color.White,
+    contentColor: Color = if (backgroundColor.luminance() > 0.55f) Color(0xFF000000) else Color.White,
     paddingValues: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
 ) {
     val context = LocalContext.current
@@ -53,7 +54,7 @@ fun CapsuleButton(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            Taptic.lightImpact(context)
+            runCatching { Taptic.lightImpact(context) }
         }
     }
 
@@ -68,7 +69,10 @@ fun CapsuleButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    runCatching { Taptic.lightImpact(context) }
+                    onClick()
+                }
             )
             .padding(paddingValues),
         contentAlignment = Alignment.Center
@@ -104,7 +108,7 @@ fun TintedButton(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            Taptic.lightImpact(context)
+            runCatching { Taptic.lightImpact(context) }
         }
     }
 
@@ -119,7 +123,10 @@ fun TintedButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    runCatching { Taptic.lightImpact(context) }
+                    onClick()
+                }
             )
             .padding(paddingValues),
         contentAlignment = Alignment.Center
@@ -155,7 +162,7 @@ fun GlassButton(
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
-            Taptic.lightImpact(context)
+            runCatching { Taptic.lightImpact(context) }
         }
     }
 
@@ -169,7 +176,10 @@ fun GlassButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    runCatching { Taptic.lightImpact(context) }
+                    onClick()
+                }
             )
             .padding(paddingValues),
         contentAlignment = Alignment.Center

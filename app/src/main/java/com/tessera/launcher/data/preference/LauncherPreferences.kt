@@ -787,7 +787,7 @@ class LauncherPreferences(context: Context) {
             editor.putBoolean(KEY_HERO_CLOCK_ENABLED, true)
         }
 
-        val isExistingUser = prefs.contains(KEY_THEME_MODE) || prefs.contains(KEY_ENABLED_WIDGETS)
+        val isExistingUser = prefs.all.isNotEmpty() || prefs.contains(KEY_THEME_MODE) || prefs.contains(KEY_ENABLED_WIDGETS)
         if (isExistingUser) {
             editor.putBoolean(KEY_ONBOARDING_COMPLETED, true)
         }
