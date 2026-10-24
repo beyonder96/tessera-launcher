@@ -1,4 +1,4 @@
-package com.tessera.launcher.data.repository
+﻿package com.tessera.launcher.data.repository
 
 import android.content.BroadcastReceiver
 import android.content.Context

@@ -1,4 +1,4 @@
-package com.tessera.launcher.ui.screens
+﻿package com.tessera.launcher.ui.screens
 
 import android.content.Intent
 import android.net.Uri

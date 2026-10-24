@@ -1,4 +1,4 @@
-package com.tessera.launcher.ui.viewmodel
+﻿package com.tessera.launcher.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
