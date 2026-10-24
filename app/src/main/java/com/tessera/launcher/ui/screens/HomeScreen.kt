@@ -121,6 +121,12 @@ import com.tessera.launcher.ui.components.SearchMorphingDock
 import com.tessera.launcher.ui.components.CommandsChipsRow
 import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
+import com.tessera.launcher.ui.components.DynamicIsland
+import com.tessera.launcher.ui.components.GlassDock
+import com.tessera.launcher.ui.components.HeroClock
+import com.tessera.launcher.ui.design.widgets.SmartStack
+import com.tessera.launcher.ui.screens.notifications.NotificationCenter
+import com.tessera.launcher.ui.design.components.CapsuleButton
 import com.tessera.launcher.ui.components.NotificationsHubBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.state.AppFolder
@@ -251,6 +257,7 @@ fun HomeScreen(
     }
 
     // Redefinição de scroll para o início da lista (letra A) ao abrir a gaveta ou limpar a busca
+    var isJiggleModeActive by remember { mutableStateOf(false) }
     val isAppsReady = uiState.appsState is AppsListState.Success
     LaunchedEffect(uiState.isDrawerOpen, uiState.searchQuery.isEmpty(), isAppsReady) {
         if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && isAppsReady) {
@@ -535,7 +542,7 @@ fun HomeScreen(
             )
         }
 
-        // Centro da Tela Inicial: Relógio Tipográfico de Autor & Moldura de Foto Minimalista
+        // Centro da Tela Inicial Oficial Apple — Dynamic Island, Hero Clock, Smart Stack e Glass Dock
         if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
@@ -543,63 +550,86 @@ fun HomeScreen(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                // Live Capsule (Mini HUD flutuante no topo para mídia e bateria)
+                // Dynamic Island oficial no topo da Home
                 if (uiState.isLiveCapsuleEnabled) {
-                    LiveCapsule(
+                    DynamicIsland(
                         mediaPlayback = uiState.mediaPlayback,
                         isCharging = uiState.isCharging,
                         batteryPercentage = uiState.batteryPercentage,
-                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                        isAmoledMode = uiState.isAmoledMode,
-                        isLightMode = uiState.isLightMode,
-                        accentColor = uiState.activeAccentColor,
-                        onMediaClick = {
-                            uiState.mediaPlayback.packageName?.let { pkg ->
-                                viewModel.launchApp(pkg)
-                            }
-                        },
-                        onPlayPauseClick = {
-                            viewModel.togglePlayPauseMedia()
-                        },
-                        onNextClick = {
-                            viewModel.skipNextMedia()
-                        },
-                        onPreviousClick = {
-                            viewModel.skipPreviousMedia()
-                        },
                         liveActivity = uiState.activeLiveActivity,
-                        onLiveActivityClick = { pkg ->
-                            viewModel.launchApp(pkg)
+                        onMediaClick = {
+                            uiState.mediaPlayback.packageName?.let { pkg -> viewModel.launchApp(pkg) }
                         },
+                        onPlayPauseClick = { viewModel.togglePlayPauseMedia() },
+                        onNextClick = { viewModel.skipNextMedia() },
+                        onPreviousClick = { viewModel.skipPreviousMedia() },
+                        onLiveActivityClick = { pkg -> viewModel.launchApp(pkg) },
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 40.dp)
+                            .padding(top = 10.dp)
                     )
                 }
 
-                // Relógio Tipográfico de Autor (Nothing Dot-Matrix, Stacked, Oversized, Minimal)
-                if (uiState.homeClockStyle != "NONE") {
-                    EditorialClockWidget(
-                        clockStyle = uiState.homeClockStyle,
+                // Conteúdo Central: Relógio Hero Monumental e Smart Stack
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center)
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 80.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    HeroClock(
                         formattedTime = uiState.formattedTime,
                         formattedDate = uiState.formattedDate,
-                        accentColor = uiState.activeAccentColor,
-                        isLightMode = uiState.isLightMode,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .padding(bottom = if (uiState.isPhotoWidgetEnabled) 170.dp else 70.dp)
+                        clockWeight = 400
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    SmartStack(
+                        enabledWidgets = uiState.enabledWidgets,
+                        batteryPercentage = uiState.batteryPercentage,
+                        isCharging = uiState.isCharging,
+                        weather = uiState.weatherInfo,
+                        calendarEvent = uiState.nextCalendarEvent,
+                        hasCalendarPermission = uiState.hasCalendarPermission,
+                        mediaPlayback = uiState.mediaPlayback,
+                        screenTime = uiState.screenTimeInfo,
+                        isSmartRotateEnabled = uiState.isSmartStackRotateEnabled,
+                        isJiggleMode = isJiggleModeActive,
+                        onEnterJiggleMode = { isJiggleModeActive = true },
+                        onRemoveWidget = { widgetType -> viewModel.toggleWidget(widgetType) },
+                        onCalendarClick = { viewModel.launchCalendarApp() },
+                        onMediaClick = {
+                            uiState.mediaPlayback.packageName?.let { pkg -> viewModel.launchApp(pkg) }
+                        },
+                        onPlayPauseClick = { viewModel.togglePlayPauseMedia() },
+                        onNextClick = { viewModel.skipNextMedia() },
+                        onPreviousClick = { viewModel.skipPreviousMedia() },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
-                if (uiState.isPhotoWidgetEnabled) {
-                    PhotoWidget(
-                        photoUriString = uiState.photoWidgetUri,
-                        onPickPhoto = { onPickPhoto() },
-                        onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
-                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                // Doca de Vidro Liquid Glass na base
+                GlassDock(
+                    predictedApps = uiState.predictedApps,
+                    onAppClick = { app -> viewModel.launchApp(app) },
+                    onAppLongClick = { app -> selectedAppForMenu = app },
+                    onSearchClick = { viewModel.expandSearch() },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 8.dp)
+                )
+
+                // Botão "OK" de saída do Modo Jiggle
+                if (isJiggleModeActive) {
+                    CapsuleButton(
+                        text = "OK",
+                        onClick = { isJiggleModeActive = false },
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 88.dp)
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
                     )
                 }
             }
@@ -1392,7 +1422,8 @@ fun HomeScreen(
         }
 
         if (uiState.isNotificationsHubOpen) {
-            NotificationsHubBottomSheet(
+            NotificationCenter(
+                visible = uiState.isNotificationsHubOpen,
                 notifications = uiState.recentNotifications,
                 onNotificationClick = { item ->
                     item.contentIntent?.let { pi ->
@@ -1410,13 +1441,8 @@ fun HomeScreen(
                     }
                     viewModel.closeNotificationsHub()
                 },
-                onDismissNotification = { viewModel.dismissNotification(it) },
-                onDismissAll = { viewModel.dismissAllNotifications() },
-                onDismiss = { viewModel.closeNotificationsHub() },
-                isAmoled = uiState.isAmoledMode,
-                isLightMode = uiState.isLightMode,
-                isLiquidGlass = uiState.isLiquidGlassEnabled,
-                accentColor = uiState.activeAccentColor
+                onClearAll = { viewModel.dismissAllNotifications() },
+                onClose = { viewModel.closeNotificationsHub() }
             )
         }
 
