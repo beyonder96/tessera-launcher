@@ -307,7 +307,8 @@ data class LauncherUiState(
     val recentNotifications: List<AppNotificationItem> = emptyList(),
     val isNotificationsHubOpen: Boolean = false,
     val isReduceTransparency: Boolean = false,
-    val isReduceMotion: Boolean = false
+    val isReduceMotion: Boolean = false,
+    val isOnboardingCompleted: Boolean = true
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)

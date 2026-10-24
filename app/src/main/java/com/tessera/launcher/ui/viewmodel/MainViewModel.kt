@@ -279,7 +279,8 @@ class MainViewModel(
             isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
             isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled(),
             isReduceTransparency = preferences.isReduceTransparency(),
-            isReduceMotion = preferences.isReduceMotion()
+            isReduceMotion = preferences.isReduceMotion(),
+            isOnboardingCompleted = preferences.isOnboardingCompleted()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -1055,6 +1056,11 @@ class MainViewModel(
     fun setSearchBarOpacity(percent: Int) {
         preferences.setSearchBarOpacity(percent)
         _uiState.update { it.copy(searchBarOpacity = percent) }
+    }
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        preferences.setOnboardingCompleted(completed)
+        _uiState.update { it.copy(isOnboardingCompleted = completed) }
     }
 
     fun setReduceTransparency(enabled: Boolean) {
@@ -2421,7 +2427,8 @@ class MainViewModel(
                 isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
                 isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled(),
             isReduceTransparency = preferences.isReduceTransparency(),
-            isReduceMotion = preferences.isReduceMotion()
+            isReduceMotion = preferences.isReduceMotion(),
+            isOnboardingCompleted = preferences.isOnboardingCompleted()
             )
         }
         reloadAppsWithIconPack(preferences.getSelectedIconPack())

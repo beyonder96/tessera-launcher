@@ -126,6 +126,10 @@ import com.tessera.launcher.ui.components.GlassDock
 import com.tessera.launcher.ui.components.HeroClock
 import com.tessera.launcher.ui.design.widgets.SmartStack
 import com.tessera.launcher.ui.screens.notifications.NotificationCenter
+import com.tessera.launcher.ui.screens.controlcenter.ControlCenter
+import com.tessera.launcher.ui.screens.standby.StandByScreen
+import com.tessera.launcher.ui.screens.onboarding.OnboardingScreen
+import com.tessera.launcher.ui.design.wallpaper.AuroraWallpaper
 import com.tessera.launcher.ui.design.components.CapsuleButton
 import com.tessera.launcher.ui.components.NotificationsHubBottomSheet
 import com.tessera.launcher.ui.components.WidgetsPanel
@@ -258,6 +262,7 @@ fun HomeScreen(
 
     // Redefinição de scroll para o início da lista (letra A) ao abrir a gaveta ou limpar a busca
     var isJiggleModeActive by remember { mutableStateOf(false) }
+    var isControlCenterOpen by remember { mutableStateOf(false) }
     val isAppsReady = uiState.appsState is AppsListState.Success
     LaunchedEffect(uiState.isDrawerOpen, uiState.searchQuery.isEmpty(), isAppsReady) {
         if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && isAppsReady) {
@@ -300,6 +305,11 @@ fun HomeScreen(
             .fillMaxSize()
             .background(baseBackgroundColor)
     ) {
+        // Camada 0: Aurora Wallpaper Dinâmico Apple / Papel de Parede com Borrão GPU
+        if (!uiState.isSystemWallpaperEnabled) {
+            AuroraWallpaper()
+        }
+
         // Camada 0: Papel de Parede da Tela Inicial com Borrão Dinâmico Acelerado por GPU
         if (uiState.isSystemWallpaperEnabled) {
             if (wallpaperBitmap != null) {
@@ -1443,6 +1453,34 @@ fun HomeScreen(
                 },
                 onClearAll = { viewModel.dismissAllNotifications() },
                 onClose = { viewModel.closeNotificationsHub() }
+            )
+        }
+
+        // Modo Em Espera (Apple StandBy Mode em Carregamento Paisagem)
+        StandByScreen(
+            isCharging = uiState.isCharging,
+            formattedTime = uiState.formattedTime,
+            formattedDate = uiState.formattedDate,
+            batteryPercentage = uiState.batteryPercentage,
+            weather = uiState.weatherInfo,
+            calendarEvent = uiState.nextCalendarEvent,
+            onDismiss = { }
+        )
+
+        // Central de Controle Oficial Apple
+        ControlCenter(
+            visible = isControlCenterOpen,
+            isTorchOn = uiState.isTorchOn,
+            onToggleTorch = { viewModel.toggleTorch() },
+            mediaPlayback = uiState.mediaPlayback,
+            onPlayPauseClick = { viewModel.togglePlayPauseMedia() },
+            onDismiss = { isControlCenterOpen = false }
+        )
+
+        // Onboarding "Olá" Apple
+        if (!uiState.isOnboardingCompleted) {
+            OnboardingScreen(
+                onFinish = { viewModel.setOnboardingCompleted(true) }
             )
         }
 
