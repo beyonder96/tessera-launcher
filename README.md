@@ -1,4 +1,4 @@
-# Tessera Launcher
+﻿# Tessera Launcher
 
 > Launcher Android moderna e ultra-minimalista desenvolvida em **Kotlin** e **Jetpack Compose**, combinando estética monocromática minimalista com a navegação vertical rápida e ergonômica inspirada no **Niagara Launcher**.
 
@@ -61,7 +61,7 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.0.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.0.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.0.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.0.1)
 
 ### 🆕 Novidades na v3.0.0
 - 🍏 **Redesign Completo "Designed in Cupertino" (iOS 26 Liquid Glass):** Redesign integral de todas as telas, widgets, gaveta e menus com a linguagem visual e de interação da Apple, preservando o foco minimalista de lista do Tessera Launcher.
