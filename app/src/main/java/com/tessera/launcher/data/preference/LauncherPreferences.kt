@@ -151,6 +151,20 @@ class LauncherPreferences(context: Context) {
         private const val KEY_FOCUS_PROFILE = "focus_profile"
         private const val KEY_FOCUS_SCHEDULE_ENABLED = "focus_schedule_enabled"
         private const val KEY_FOCUS_PROFILES_FEATURE_ENABLED = "focus_profiles_feature_enabled"
+
+        // Tessera 3.0 — Designed in Cupertino
+        private const val KEY_DESIGN_VERSION = "design_version"
+        private const val KEY_REDUCE_TRANSPARENCY = "reduce_transparency"
+        private const val KEY_REDUCE_MOTION = "reduce_motion"
+        private const val KEY_HERO_CLOCK_ENABLED = "hero_clock_enabled"
+        private const val KEY_HERO_CLOCK_WEIGHT = "hero_clock_weight"
+        private const val KEY_DYNAMIC_ISLAND_ENABLED = "dynamic_island_enabled"
+        private const val KEY_STANDBY_ENABLED = "standby_enabled"
+        private const val KEY_STANDBY_NIGHT_MODE = "standby_night_mode"
+        private const val KEY_CONTROL_CENTER_ENABLED = "control_center_enabled"
+        private const val KEY_WALLPAPER_TYPE = "wallpaper_type"
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+        private const val KEY_WHATS_NEW_SEEN_VERSION = "whats_new_seen_version"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -697,5 +711,88 @@ class LauncherPreferences(context: Context) {
 
     fun setFocusProfilesFeatureEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_FOCUS_PROFILES_FEATURE_ENABLED, enabled).apply()
+    }
+
+    // Tessera 3.0 — Designed in Cupertino
+    fun getDesignVersion(): Int = prefs.getInt(KEY_DESIGN_VERSION, 0)
+    fun setDesignVersion(version: Int) = prefs.edit().putInt(KEY_DESIGN_VERSION, version).apply()
+
+    fun isReduceTransparency(): Boolean = prefs.getBoolean(KEY_REDUCE_TRANSPARENCY, false)
+    fun setReduceTransparency(enabled: Boolean) = prefs.edit().putBoolean(KEY_REDUCE_TRANSPARENCY, enabled).apply()
+
+    fun isReduceMotion(): Boolean = prefs.getBoolean(KEY_REDUCE_MOTION, false)
+    fun setReduceMotion(enabled: Boolean) = prefs.edit().putBoolean(KEY_REDUCE_MOTION, enabled).apply()
+
+    fun isHeroClockEnabled(): Boolean = prefs.getBoolean(KEY_HERO_CLOCK_ENABLED, true)
+    fun setHeroClockEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_HERO_CLOCK_ENABLED, enabled).apply()
+
+    fun getHeroClockWeight(): Int = prefs.getInt(KEY_HERO_CLOCK_WEIGHT, 400)
+    fun setHeroClockWeight(weight: Int) = prefs.edit().putInt(KEY_HERO_CLOCK_WEIGHT, weight).apply()
+
+    fun isDynamicIslandEnabled(): Boolean = prefs.getBoolean(KEY_DYNAMIC_ISLAND_ENABLED, true)
+    fun setDynamicIslandEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_DYNAMIC_ISLAND_ENABLED, enabled).apply()
+
+    fun isStandByEnabled(): Boolean = prefs.getBoolean(KEY_STANDBY_ENABLED, true)
+    fun setStandByEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_STANDBY_ENABLED, enabled).apply()
+
+    fun isStandByNightModeEnabled(): Boolean = prefs.getBoolean(KEY_STANDBY_NIGHT_MODE, true)
+    fun setStandByNightModeEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_STANDBY_NIGHT_MODE, enabled).apply()
+
+    fun isControlCenterEnabled(): Boolean = prefs.getBoolean(KEY_CONTROL_CENTER_ENABLED, true)
+    fun setControlCenterEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_CONTROL_CENTER_ENABLED, enabled).apply()
+
+    fun getWallpaperType(): String = prefs.getString(KEY_WALLPAPER_TYPE, "SYSTEM") ?: "SYSTEM"
+    fun setWallpaperType(type: String) = prefs.edit().putString(KEY_WALLPAPER_TYPE, type).apply()
+
+    fun isOnboardingCompleted(): Boolean = prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+    fun setOnboardingCompleted(completed: Boolean) = prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).apply()
+
+    fun getWhatsNewSeenVersion(): Int = prefs.getInt(KEY_WHATS_NEW_SEEN_VERSION, 0)
+    fun setWhatsNewSeenVersion(version: Int) = prefs.edit().putInt(KEY_WHATS_NEW_SEEN_VERSION, version).apply()
+
+    fun migrateToDesignV3() {
+        val currentVersion = prefs.getInt(KEY_DESIGN_VERSION, 0)
+        if (currentVersion >= 3) return
+
+        val editor = prefs.edit()
+
+        // 1. Mapeamento de Theme Mode (AMOLED / CHARCOAL / DARK -> DARK, LIGHT -> LIGHT)
+        val oldTheme = prefs.getString(KEY_THEME_MODE, "AMOLED") ?: "AMOLED"
+        if (oldTheme.equals("LIGHT", ignoreCase = true)) {
+            editor.putString(KEY_THEME_MODE, "LIGHT")
+        } else {
+            editor.putString(KEY_THEME_MODE, "DARK")
+        }
+
+        // 2. Mapeamento de Accent Color
+        val oldAccent = prefs.getString(KEY_ACCENT_COLOR, "MONOCHROME") ?: "MONOCHROME"
+        val newAccent = when (oldAccent.uppercase()) {
+            "MONOCHROME" -> "GRAPHITE"
+            "NOTHING_RED" -> "RED"
+            "NEON_GREEN" -> "GREEN"
+            "ELECTRIC_AMBER" -> "ORANGE"
+            "CYAN_PULSE" -> "MINT"
+            "PURPLE_HAZE" -> "PURPLE"
+            else -> "BLUE"
+        }
+        editor.putString(KEY_ACCENT_COLOR, newAccent)
+
+        // 3. Liquid Glass -> Reduce Transparency
+        val wasLiquidGlass = prefs.getBoolean(KEY_LIQUID_GLASS_MODE, true)
+        editor.putBoolean(KEY_REDUCE_TRANSPARENCY, !wasLiquidGlass)
+
+        // 4. Relogio Hero
+        val oldClock = prefs.getString(KEY_HOME_CLOCK_STYLE, "NONE") ?: "NONE"
+        if (oldClock != "NONE" && oldClock.isNotBlank()) {
+            editor.putBoolean(KEY_HERO_CLOCK_ENABLED, true)
+        }
+
+        val isExistingUser = prefs.contains(KEY_THEME_MODE) || prefs.contains(KEY_ENABLED_WIDGETS)
+        if (isExistingUser) {
+            editor.putBoolean(KEY_ONBOARDING_COMPLETED, true)
+        }
+
+        editor.putInt(KEY_DESIGN_VERSION, 3)
+        editor.apply()
     }
 }
