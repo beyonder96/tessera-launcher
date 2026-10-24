@@ -1,4 +1,4 @@
-﻿package com.tessera.launcher
+package com.tessera.launcher
 
 import android.Manifest
 import android.content.Intent
@@ -98,9 +98,6 @@ class MainActivity : ComponentActivity() {
                 window.attributes = params
             }
         }
-
-        // Executa migracao para o design v3.0 (Designed in Cupertino) se necessario
-        com.tessera.launcher.data.preference.LauncherPreferences(this).migrateToDesignV3()
 
         val factory = MainViewModelFactory(this)
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]

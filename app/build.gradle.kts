@@ -11,8 +11,8 @@ android {
         applicationId = "com.tessera.launcher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 42
-        versionName = "3.0.1"
+        versionCode = 44
+        versionName = "2.8.1"
     }
 
     signingConfigs {
@@ -77,11 +77,6 @@ dependencies {
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material.icons.extended)
-
-  // Liquid Glass (Haze)
-  implementation(libs.haze)
-  implementation(libs.haze.blur)
-
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)
   // Instrumented tests
@@ -102,8 +97,4 @@ dependencies {
   implementation(libs.androidx.navigation3.ui)
   implementation(libs.androidx.navigation3.runtime)
   implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-}
-
-tasks.matching { it.name.contains("AarMetadata", ignoreCase = true) }.configureEach {
-    enabled = false
 }

@@ -1,80 +1,116 @@
 package com.tessera.launcher.ui.screens
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import com.tessera.launcher.data.helper.IconPackInfo
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.BrightnessAuto
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.ColorLens
-import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Feed
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Dashboard
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.Layers
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Palette
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.TouchApp
-import androidx.compose.material.icons.outlined.Translate
 import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.Widgets
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tessera.launcher.ui.components.HeroClockCustomizerSheet
-import com.tessera.launcher.ui.components.LanguageBottomSheet
-import com.tessera.launcher.ui.design.components.AppleProfileHeader
-import com.tessera.launcher.ui.design.components.AppleSearchBar
-import com.tessera.launcher.ui.design.components.AppleSwitch
-import com.tessera.launcher.ui.design.components.AppleTintPickerSheet
-import com.tessera.launcher.ui.design.components.CapsuleButton
-import com.tessera.launcher.ui.design.components.GroupedRow
-import com.tessera.launcher.ui.design.components.GroupedSection
-import com.tessera.launcher.ui.design.components.LargeTitleScaffold
-import com.tessera.launcher.ui.design.components.SegmentedControl
-import com.tessera.launcher.ui.design.components.SquircleIcon
-import com.tessera.launcher.ui.design.haptics.Taptic
+import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.preference.WidgetType
+import com.tessera.launcher.data.service.TesseraMediaService
+import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.R
 import com.tessera.launcher.ui.state.SettingsSubScreen
-import com.tessera.launcher.ui.theme.apple.AppleTint
-import com.tessera.launcher.ui.theme.apple.LocalAppleColors
-import com.tessera.launcher.ui.theme.apple.LocalAppleMotion
-import com.tessera.launcher.ui.theme.apple.LocalAppleTypography
-import com.tessera.launcher.ui.theme.apple.appleSpring
+import com.tessera.launcher.ui.theme.AmoledBlack
+import com.tessera.launcher.ui.theme.AmoledCardBorder
+import com.tessera.launcher.ui.theme.CharcoalBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBorder
+import com.tessera.launcher.ui.theme.DarkBackground
+import com.tessera.launcher.ui.theme.DarkSurface
+import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.DarkSurfaceVariant
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
+import com.tessera.launcher.ui.theme.PillShape
+import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.ColorFilter
 
-/**
- * Ajustes Oficiais do Tessera 3.0 — Padrão iOS Settings (Designed in Cupertino).
- * Estrutura com LargeTitle colapsável, pesquisa com filtro dinâmico, seções Inset Grouped,
- * ícones squircle em cores semânticas da Apple, toggles táteis e navegação push/pop horizontal.
- */
+private val SettingsCardShape = RoundedCornerShape(26.dp)
+private val SettingsCardBackground = Color(0xFF0C0C0F)
+private val SettingsCardBorder = Color(0xFF1C1C24)
+private val ItemDividerColor = Color(0xFF15151A)
+private val IconCircleBackground = Color(0xFF16161C)
+
 @Composable
 fun SettingsScreen(
     viewModel: MainViewModel,
@@ -86,50 +122,197 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val colors = LocalAppleColors.current
-    val typography = LocalAppleTypography.current
-    val motion = LocalAppleMotion.current
 
-    var searchQuery by remember { mutableStateOf("") }
-    var showTintPicker by remember { mutableStateOf(false) }
-    var showClockCustomizer by remember { mutableStateOf(false) }
-
-    // Intercepta botão voltar do Android: se sub-tela, volta para tela anterior; se raiz, fecha Ajustes
-    BackHandler(enabled = true) {
-        if (uiState.currentSettingsScreen != SettingsSubScreen.MAIN) {
-            viewModel.navigateBackSettings()
-        } else {
-            viewModel.closeSettings()
+    when (uiState.currentSettingsScreen) {
+        SettingsSubScreen.SEARCH -> {
+            SearchSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                onNavigateToWidgetsCenter = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
+                },
+                onRequestContactsPermission = onRequestContactsPermission,
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.WIDGETS_CENTER -> {
+            WidgetsCenterScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.EXTRAS -> {
+            ExtrasScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                onNavigateToFolders = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS)
+                },
+                onNavigateToCommands = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.COMMANDS)
+                },
+                onOpenHiddenApps = {
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS)
+                },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.FOLDERS -> {
+            FoldersScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.COMMANDS -> {
+            CommandsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.DEVELOPER -> {
+            DeveloperScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.TRANSPARENCY -> {
+            TransparencyScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.GESTURES -> {
+            GesturesScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.IN_APP_SEARCH -> {
+            InAppSearchSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.HIDDEN_APPS -> {
+            HiddenAppsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.CUSTOMIZATION -> {
+            CustomizationScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                onPickWallpaper = onPickWallpaper,
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.PERMISSIONS -> {
+            PermissionsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.FEED -> {
+            FeedSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
+        SettingsSubScreen.MAIN -> {
+            // Continua exibição principal
         }
     }
 
-    // Modal de Cores da Apple
-    if (showTintPicker) {
-        AppleTintPickerSheet(
-            visible = showTintPicker,
-            selectedTintId = uiState.accentColorName,
-            onSelectTint = { tint ->
-                viewModel.setAccentColor(tint.id)
+    var activeDialog by remember { mutableStateOf<String?>(null) }
+    var selectingAppForType by remember { mutableStateOf<String?>(null) }
+
+    when (activeDialog) {
+        "extras" -> ExtrasDialog(
+            viewModel = viewModel,
+            enabledWidgets = uiState.enabledWidgets,
+            isPhotoEnabled = uiState.isPhotoWidgetEnabled,
+            onTogglePhoto = { viewModel.setPhotoWidgetEnabled(it) },
+            onPickPhoto = onPickPhoto,
+            hasPhoto = uiState.photoWidgetUri != null,
+            onClearPhoto = { viewModel.setPhotoWidgetUri(null) },
+            onDismiss = { activeDialog = null }
+        )
+        "gestures" -> GesturesDialog(onDismiss = { activeDialog = null })
+        "customization" -> CustomizationDialog(
+            viewModel = viewModel,
+            uiState = uiState,
+            onPickPhoto = onPickPhoto,
+            onSelectMusicApp = { selectingAppForType = "music" },
+            onSelectCalendarApp = { selectingAppForType = "calendar" },
+            onDismiss = { activeDialog = null }
+        )
+        "language" -> LanguageDialog(onDismiss = { activeDialog = null })
+        "permissions" -> PermissionsDialog(
+            hasNotificationAccess = uiState.hasNotificationAccess,
+            hasCalendarPermission = uiState.hasCalendarPermission,
+            onRequestCalendarPermission = onRequestCalendarPermission,
+            onOpenNotificationSettings = {
+                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
             },
-            onDismissRequest = { showTintPicker = false }
+            onOpenAppSettings = {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(intent)
+            },
+            onDismiss = { activeDialog = null }
+        )
+        "transparency" -> TransparencyDialog(onDismiss = { activeDialog = null })
+        "developer" -> DeveloperDialog(
+            appsCount = uiState.filteredApps.size,
+            hasNotificationAccess = uiState.hasNotificationAccess,
+            isLiquidGlass = uiState.isLiquidGlassEnabled,
+            onDismiss = { activeDialog = null }
         )
     }
 
-    // Modal do Relógio Hero
-    if (showClockCustomizer) {
-        HeroClockCustomizerSheet(
-            visible = showClockCustomizer,
-            currentWeight = 400,
-            onWeightChange = { weight ->
-                viewModel.setHomeClockStyle("WEIGHT_$weight")
-            },
-            onDismissRequest = { showClockCustomizer = false }
-        )
-    }
-
-    // Modal de Idioma
     if (uiState.isLanguageModalOpen) {
-        LanguageBottomSheet(
+        com.tessera.launcher.ui.components.LanguageBottomSheet(
             selectedLanguage = uiState.selectedLanguage,
             onSelectLanguage = { viewModel.setSelectedLanguage(it) },
             onDismiss = { viewModel.setLanguageModalOpen(false) },
@@ -137,582 +320,1351 @@ fun SettingsScreen(
         )
     }
 
-    AnimatedContent(
-        targetState = uiState.currentSettingsScreen,
-        transitionSpec = {
-            if (targetState != SettingsSubScreen.MAIN) {
-                // Push forward suave estilo iOS Navigation Controller
-                (slideInHorizontally(initialOffsetX = { it }, animationSpec = appleSpring()) +
-                        fadeIn(animationSpec = motion.fadeStandard))
-                    .togetherWith(
-                        slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = appleSpring()) +
-                                fadeOut(animationSpec = motion.fadeQuick)
-                    )
-            } else {
-                // Pop back suave
-                (slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = appleSpring()) +
-                        fadeIn(animationSpec = motion.fadeStandard))
-                    .togetherWith(
-                        slideOutHorizontally(targetOffsetX = { it }, animationSpec = appleSpring()) +
-                                fadeOut(animationSpec = motion.fadeQuick)
-                    )
+    if (selectingAppForType != null) {
+        AppSelectionDialog(
+            apps = uiState.filteredApps,
+            filterType = selectingAppForType!!,
+            onDismiss = { selectingAppForType = null },
+            onSelect = { app ->
+                if (selectingAppForType == "music") {
+                    viewModel.setDefaultMusicApp(app.packageName)
+                } else if (selectingAppForType == "calendar") {
+                    viewModel.setDefaultCalendarApp(app.packageName)
+                }
+                selectingAppForType = null
             }
-        },
-        label = "settings_navigation"
-    ) { currentScreen ->
-        when (currentScreen) {
-            SettingsSubScreen.MAIN -> {
-                LargeTitleScaffold(
-                    title = "Ajustes",
-                    actions = {
-                        CapsuleButton(
-                            text = "OK",
-                            onClick = {
-                                Taptic.lightImpact(context)
-                                viewModel.closeSettings()
-                            }
-                        )
-                    },
-                    modifier = modifier
+        )
+    }
+
+    val isLight = uiState.themeMode == "LIGHT"
+    val isCharcoal = uiState.themeMode == "DARK"
+    val isAmoled = uiState.themeMode == "AMOLED" || uiState.isAmoledMode
+
+    val screenBg = when {
+        isLight -> LightBackground
+        isCharcoal -> CharcoalBackground
+        else -> AmoledBlack
+    }
+
+    val cardBg = when {
+        isLight -> LightCardBackground
+        isCharcoal -> CharcoalCardBackground
+        else -> AmoledBlack // 100% Preto Puro no modo AMOLED
+    }
+
+    val cardBorder = when {
+        isLight -> LightCardBorder
+        isCharcoal -> CharcoalCardBorder
+        else -> AmoledCardBorder
+    }
+
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+
+    val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 14.dp
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(screenBg)
+            .padding(top = safeTopPadding)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
+            // Barra superior com Voltar e Logo "Tessera." Caligráfica (Dobro do tamanho: 64dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 14.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { viewModel.closeSettings() }
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    item(key = "search_and_profile") {
-                        Column {
-                            // Barra de Pesquisa dos Ajustes
-                            AppleSearchBar(
-                                query = searchQuery,
-                                onQueryChange = { searchQuery = it },
-                                placeholder = "Buscar nos Ajustes"
-                            )
+                    Icon(
+                        imageVector = Icons.Outlined.ArrowBack,
+                        contentDescription = "Voltar",
+                        tint = primaryTextColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                Image(
+                    painter = painterResource(id = R.drawable.ic_tessera_header_logo),
+                    contentDescription = "Tessera",
+                    colorFilter = ColorFilter.tint(primaryTextColor),
+                    modifier = Modifier
+                        .height(64.dp)
+                        .align(Alignment.Center)
+                )
+            }
 
-                            // Cartão de Perfil Tessera 3.0
-                            if (searchQuery.isBlank()) {
-                                AppleProfileHeader(
-                                    onClick = {
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.DEVELOPER)
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(20.dp))
-                            }
-                        }
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // CARD 1: Configurações Principais (7 itens)
+            Surface(
+                shape = SettingsCardShape,
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 1. Busca
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Search,
+                        title = "Busca",
+                        subtitle = "Escolha o que aparece quando você busca.",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 2. Extras
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Extension,
+                        title = "Extras",
+                        subtitle = "Pastas, apps ocultos e Comandos",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 3. Gestos
+                    SettingsItemRow(
+                        icon = Icons.Outlined.TouchApp,
+                        title = "Gestos",
+                        subtitle = "Ações de deslizar e toque duplo.",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 4. Customization
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Palette,
+                        title = "Customization",
+                        subtitle = "Ícones, papel de parede e estilo",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 5. Idioma
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Language,
+                        title = "Idioma",
+                        subtitle = "Alterar o idioma do aplicativo.",
+                        onClick = { viewModel.setLanguageModalOpen(true) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 6. Tema com 4 botões circulares inline
+                    ThemeSettingsRow(
+                        themeMode = uiState.themeMode,
+                        onSelectMode = { viewModel.setThemeMode(it) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 7. Lançador padrão
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Home,
+                        title = "Lançador padrão",
+                        subtitle = "O Tessera é o seu launcher.",
+                        onClick = { openDefaultLauncherSettings(context) },
+                        isLight = isLight
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // CARD 2: Sistema e Privacidade (3 itens)
+            Surface(
+                shape = SettingsCardShape,
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // 8. Permissões
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Security,
+                        title = "Permissões",
+                        subtitle = "Escolha o que o Tessera pode acessar",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.PERMISSIONS) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 9. Transparência
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Visibility,
+                        title = "Transparência",
+                        subtitle = "Sem rastreio. Sem anúncios. Sem coleta de dados.",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.TRANSPARENCY) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 10. Desenvolvedor
+                    SettingsItemRow(
+                        icon = Icons.Outlined.Code,
+                        title = "Desenvolvedor",
+                        subtitle = "Opções avançadas e depuração.",
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.DEVELOPER) },
+                        isLight = isLight
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
+
+@Composable
+private fun SettingsItemRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    isLight: Boolean = false
+) {
+    val iconCircleBackground = if (isLight) Color(0xFFF1F3F5) else IconCircleBackground
+    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val titleColor = if (isLight) LightTextPrimary else TextPrimary
+    val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
+    val chevronTint = if (isLight) Color(0xFF9CA3AF) else TextSecondary.copy(alpha = 0.5f)
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 18.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(iconCircleBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = titleColor
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Normal,
+                color = subtitleColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Outlined.ChevronRight,
+            contentDescription = null,
+            tint = chevronTint,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@Composable
+private fun ThemeSettingsRow(
+    themeMode: String,
+    onSelectMode: (String) -> Unit,
+    isLight: Boolean = false
+) {
+    val iconCircleBackground = if (isLight) Color(0xFFF1F3F5) else IconCircleBackground
+    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val titleColor = if (isLight) LightTextPrimary else TextPrimary
+    val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(CircleShape)
+                .background(iconCircleBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Palette,
+                contentDescription = "Tema",
+                tint = iconTint,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Tema",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = titleColor
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Trocar de estilo",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Normal,
+                color = subtitleColor
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 1. Auto
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF1E1E24))
+                    .border(
+                        width = if (themeMode == "AUTO") 1.dp else 0.dp,
+                        color = if (themeMode == "AUTO") Color.White else Color.Transparent,
+                        shape = CircleShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onSelectMode("AUTO") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "AUTO") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Auto Ativo",
+                        tint = Color.White,
+                        modifier = Modifier.size(14.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Outlined.BrightnessAuto,
+                        contentDescription = "Automático",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+
+            // 2. AMOLED (Preto Puro)
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF000000))
+                    .border(
+                        width = 1.dp,
+                        color = if (themeMode == "AMOLED") Color.White else Color(0xFF33333D),
+                        shape = CircleShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onSelectMode("AMOLED") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "AMOLED") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "AMOLED Ativo",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+
+            // 3. Dark Charcoal
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF26262B))
+                    .border(
+                        width = if (themeMode == "DARK") 1.dp else 0.dp,
+                        color = if (themeMode == "DARK") Color.White else Color.Transparent,
+                        shape = CircleShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onSelectMode("DARK") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "DARK") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Dark Ativo",
+                        tint = Color.White,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+
+            // 4. Light
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE5E5EA))
+                    .border(
+                        width = if (themeMode == "LIGHT") 1.dp else 0.dp,
+                        color = if (themeMode == "LIGHT") Color.Black else Color.Transparent,
+                        shape = CircleShape
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onSelectMode("LIGHT") }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (themeMode == "LIGHT") {
+                    Icon(
+                        imageVector = Icons.Outlined.Check,
+                        contentDescription = "Light Ativo",
+                        tint = Color.Black,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ItemDivider(isLight: Boolean = false) {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 74.dp, end = 16.dp),
+        color = if (isLight) LightDivider else ItemDividerColor,
+        thickness = 1.dp
+    )
+}
+
+private fun openDefaultLauncherSettings(context: Context) {
+    try {
+        val intent = Intent(Settings.ACTION_HOME_SETTINGS).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (_: Exception) {
+        try {
+            val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+        }
+    }
+}
+
+private fun getInstalledIconPacks(context: Context): List<Pair<String, String>> {
+    val pm = context.packageManager
+    val iconPacks = mutableListOf<Pair<String, String>>()
+    val intentActions = listOf(
+        "com.novalauncher.THEME",
+        "org.adw.launcher.THEMES",
+        "com.gau.go.launcherex.theme"
+    )
+    for (action in intentActions) {
+        val intent = Intent(action)
+        val resolveInfos = pm.queryIntentActivities(intent, 0)
+        for (info in resolveInfos) {
+            val pkg = info.activityInfo.packageName
+            val label = info.loadLabel(pm).toString()
+            if (!iconPacks.any { it.first == pkg }) {
+                iconPacks.add(pkg to label)
+            }
+        }
+    }
+    return iconPacks
+}
+
+@Composable
+private fun PermissionsDialog(
+    hasNotificationAccess: Boolean,
+    hasCalendarPermission: Boolean,
+    onRequestCalendarPermission: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
+    onOpenAppSettings: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "Permissões do Sistema",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Acesso a Notificações (Mídia)", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = if (hasNotificationAccess) "Autorizado" else "Detecta o player e a capa da música",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (hasNotificationAccess) TextPrimary else TextSecondary
+                        )
                     }
-
-                    // Seções dos Ajustes Filtradas
-                    val q = searchQuery.trim().lowercase()
-
-                    // Seção 1: Aparência & Estilo
-                    if (q.isEmpty() || "aparência tema cores ícones vidro transparência".contains(q)) {
-                        item(key = "sec_appearance") {
-                            GroupedSection(header = "Aparência") {
-                                // Seletor de Tema Segmentado
-                                Column(modifier = Modifier.padding(14.dp)) {
-                                    Text(
-                                        text = "Aparência do Sistema",
-                                        style = typography.caption1,
-                                        color = colors.secondaryLabel
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    val currentModeIndex = when (uiState.themeMode) {
-                                        "LIGHT" -> 0
-                                        "DARK" -> 1
-                                        else -> 2
-                                    }
-                                    SegmentedControl(
-                                        items = listOf("Claro", "Escuro", "Auto"),
-                                        selectedIndex = currentModeIndex,
-                                        onItemSelected = { index ->
-                                            val mode = when (index) {
-                                                0 -> "LIGHT"
-                                                1 -> "DARK"
-                                                else -> "AMOLED"
-                                            }
-                                            viewModel.setThemeMode(mode)
-                                        }
-                                    )
-                                }
-
-                                // Cor de Destaque Oficial Apple
-                                val tint = AppleTint.fromId(uiState.accentColorName)
-                                GroupedRow(
-                                    title = "Cor de Destaque",
-                                    subtitle = tint.displayName,
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.ColorLens,
-                                            backgroundColor = colors.accent
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        showTintPicker = true
-                                    }
-                                )
-
-                                // Personalização de Ícones
-                                GroupedRow(
-                                    title = "Pacote de Ícones",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Dashboard,
-                                            backgroundColor = Color(0xFF5856D6)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION)
-                                    }
-                                )
-
-                                // Reduzir Transparência (Fallback Apple para Liquid Glass)
-                                GroupedRow(
-                                    title = "Reduzir Transparência",
-                                    subtitle = "Substitui o vidro por superfícies sólidas de alto contraste",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Visibility,
-                                            backgroundColor = Color(0xFF8E8E93)
-                                        )
-                                    },
-                                    trailingContent = {
-                                        AppleSwitch(
-                                            checked = uiState.isReduceTransparency,
-                                            onCheckedChange = { enabled ->
-                                                viewModel.setReduceTransparency(enabled)
-                                                viewModel.setLiquidGlassEnabled(!enabled)
-                                            }
-                                        )
-                                    }
-                                )
-
-                                // Reduzir Movimento
-                                GroupedRow(
-                                    title = "Reduzir Movimento",
-                                    subtitle = "Desativa efeitos de rolagem e molas elásticas",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.TouchApp,
-                                            backgroundColor = Color(0xFFFF9500)
-                                        )
-                                    },
-                                    trailingContent = {
-                                        AppleSwitch(
-                                            checked = uiState.isReduceMotion,
-                                            onCheckedChange = { enabled ->
-                                                viewModel.setReduceMotion(enabled)
-                                            }
-                                        )
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    // Seção 2: Tela Inicial & HUD
-                    if (q.isEmpty() || "tela inicial relógio dock dynamic island stack widgets".contains(q)) {
-                        item(key = "sec_home_and_hud") {
-                            GroupedSection(header = "Tela Inicial & HUD") {
-                                // Relógio Hero Monumental
-                                GroupedRow(
-                                    title = "Relógio Monumental",
-                                    subtitle = "Tipografia, estilo e números tabulares",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Schedule,
-                                            backgroundColor = Color(0xFFFF2D55)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        showClockCustomizer = true
-                                    }
-                                )
-
-                                // Dynamic Island
-                                GroupedRow(
-                                    title = "Dynamic Island",
-                                    subtitle = "Ilha interativa de mídia, bateria e live activities",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Notifications,
-                                            backgroundColor = Color(0xFF007AFF)
-                                        )
-                                    },
-                                    trailingContent = {
-                                        AppleSwitch(
-                                            checked = uiState.isLiveCapsuleEnabled,
-                                            onCheckedChange = { viewModel.setLiveCapsuleEnabled(it) }
-                                        )
-                                    }
-                                )
-
-                                // Doca de Vidro (Smart Dock)
-                                GroupedRow(
-                                    title = "Doca Inteligente",
-                                    subtitle = "Barra flutuante com previsão rápida de aplicativos",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Apps,
-                                            backgroundColor = Color(0xFF34C759)
-                                        )
-                                    },
-                                    trailingContent = {
-                                        AppleSwitch(
-                                            checked = uiState.isSmartDockEnabled,
-                                            onCheckedChange = { viewModel.setSmartDockEnabled(it) }
-                                        )
-                                    }
-                                )
-
-                                // Smart Stack
-                                GroupedRow(
-                                    title = "Smart Stack",
-                                    subtitle = "Empilhamento de widgets com rotação automática",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Layers,
-                                            backgroundColor = Color(0xFFAF52DE)
-                                        )
-                                    },
-                                    trailingContent = {
-                                        AppleSwitch(
-                                            checked = uiState.isSmartStackRotateEnabled,
-                                            onCheckedChange = { viewModel.setSmartStackRotateEnabled(it) }
-                                        )
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    // Seção 3: Busca & Spotlight
-                    if (q.isEmpty() || "busca spotlight pesquisa comandos atalhos".contains(q)) {
-                        item(key = "sec_search_spotlight") {
-                            GroupedSection(header = "Busca & Spotlight") {
-                                GroupedRow(
-                                    title = "Spotlight Search",
-                                    subtitle = "Resultados unificados, contatos e IA",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Search,
-                                            backgroundColor = Color(0xFF007AFF)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Comandos & Atalhos Rápidos",
-                                    subtitle = "@ai, @calc, @t, @msg e ações velozes",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Code,
-                                            backgroundColor = Color(0xFF30D158)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.COMMANDS)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Pesquisa no Conteúdo de Apps",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Language,
-                                            backgroundColor = Color(0xFF5E5CE6)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.IN_APP_SEARCH)
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    // Seção 4: Recursos & Produtividade
-                    if (q.isEmpty() || "widgets feed notícias extras módulos".contains(q)) {
-                        item(key = "sec_features") {
-                            GroupedSection(header = "Recursos & Módulos") {
-                                GroupedRow(
-                                    title = "Galeria de Widgets",
-                                    subtitle = "Gerencie widgets Small, Medium e Large",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Widgets,
-                                            backgroundColor = Color(0xFFFF9500)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Feed Tessera News",
-                                    subtitle = "Painel de notícias no padrão Apple News Today",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Feed,
-                                            backgroundColor = Color(0xFFFF2D55)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FEED)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Módulos Extras",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Extension,
-                                            backgroundColor = Color(0xFF00C7BE)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.EXTRAS)
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    // Seção 5: Organização & Gestos
-                    if (q.isEmpty() || "pastas ocultos gaveta gestos toque".contains(q)) {
-                        item(key = "sec_organization") {
-                            GroupedSection(header = "Organização & Gestos") {
-                                GroupedRow(
-                                    title = "Pastas de Aplicativos",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Folder,
-                                            backgroundColor = Color(0xFF007AFF)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Aplicativos Ocultos",
-                                    subtitle = "Protegidos por PIN e biometria",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Lock,
-                                            backgroundColor = Color(0xFF8E8E93)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Gestos de Toque",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.TouchApp,
-                                            backgroundColor = Color(0xFFFF9F0A)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES)
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    // Seção 6: Sistema & Privacidade
-                    if (q.isEmpty() || "sistema privacidade permissões idioma desenvolvedor sobre".contains(q)) {
-                        item(key = "sec_system") {
-                            GroupedSection(header = "Sistema & Privacidade") {
-                                GroupedRow(
-                                    title = "Idioma",
-                                    subtitle = if (uiState.selectedLanguage.isNotBlank()) uiState.selectedLanguage else "Padrão do Sistema",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Translate,
-                                            backgroundColor = Color(0xFF007AFF)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.setLanguageModalOpen(true)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Privacidade & Permissões",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Security,
-                                            backgroundColor = Color(0xFF34C759)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.PERMISSIONS)
-                                    }
-                                )
-
-                                GroupedRow(
-                                    title = "Sobre o Tessera & Desenvolvedor",
-                                    subtitle = "Versão 3.0 • Compilação 40",
-                                    leadingIcon = {
-                                        SquircleIcon(
-                                            imageVector = Icons.Outlined.Info,
-                                            backgroundColor = Color(0xFF8E8E93)
-                                        )
-                                    },
-                                    onClick = {
-                                        Taptic.lightImpact(context)
-                                        viewModel.navigateToSettingsSubScreen(SettingsSubScreen.DEVELOPER)
-                                    },
-                                    showDivider = false
-                                )
-                            }
-                        }
-                    }
-
-                    item(key = "footer_info") {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                    if (!hasNotificationAccess) {
+                        Surface(
+                            shape = PillShape,
+                            color = DarkSurfaceVariant,
+                            border = BorderStroke(1.dp, DarkSurfaceBorder),
+                            modifier = Modifier.clickable { onOpenNotificationSettings() }
                         ) {
                             Text(
-                                text = "Tessera Launcher 3.0",
-                                style = typography.footnote.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
-                                color = colors.secondaryLabel
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Designed in Cupertino • Made for Android",
-                                style = typography.caption2,
-                                color = colors.tertiaryLabel
+                                text = "Ativar",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                             )
                         }
                     }
                 }
+
+                if (!hasNotificationAccess) {
+                    Surface(
+                        shape = PillShape,
+                        color = Color(0xFF18181D),
+                        border = BorderStroke(1.dp, DarkSurfaceBorder),
+                        modifier = Modifier.clickable { onOpenAppSettings() }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Outlined.Security, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Desbloquear Restritas (3 Pontinhos)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextPrimary
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Acesso ao Calendário", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = if (hasCalendarPermission) "Autorizado" else "Sincroniza eventos da sua agenda",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (hasCalendarPermission) TextPrimary else TextSecondary
+                        )
+                    }
+                    if (!hasCalendarPermission) {
+                        Surface(
+                            shape = PillShape,
+                            color = DarkSurfaceVariant,
+                            border = BorderStroke(1.dp, DarkSurfaceBorder),
+                            modifier = Modifier.clickable { onRequestCalendarPermission() }
+                        ) {
+                            Text(
+                                text = "Permitir",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Concluído",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
             }
+        }
+    }
+}
 
-            SettingsSubScreen.SEARCH -> SearchSettingsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                onNavigateToWidgetsCenter = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
-                onRequestContactsPermission = onRequestContactsPermission,
-                modifier = modifier
-            )
+@Composable
+private fun ExtrasDialog(
+    viewModel: MainViewModel,
+    enabledWidgets: List<WidgetType>,
+    isPhotoEnabled: Boolean,
+    onTogglePhoto: (Boolean) -> Unit,
+    onPickPhoto: () -> Unit,
+    hasPhoto: Boolean,
+    onClearPhoto: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "Extras & Widgets",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
 
-            SettingsSubScreen.WIDGETS_CENTER -> WidgetsCenterScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Moldura de Foto na Home", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(text = if (hasPhoto) "Foto ativa" else "Sem foto", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                    }
+                    Switch(
+                        checked = isPhotoEnabled,
+                        onCheckedChange = onTogglePhoto,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = TextPrimary,
+                            checkedTrackColor = DarkSurfaceVariant,
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurface
+                        )
+                    )
+                }
 
-            SettingsSubScreen.EXTRAS -> ExtrasScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                onNavigateToFolders = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS) },
-                onNavigateToCommands = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.COMMANDS) },
-                onOpenHiddenApps = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS) },
-                modifier = modifier
-            )
+                if (isPhotoEnabled) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            shape = PillShape,
+                            color = DarkSurfaceVariant,
+                            border = BorderStroke(1.dp, DarkSurfaceBorder),
+                            modifier = Modifier.clickable { onPickPhoto() }
+                        ) {
+                            Text(
+                                text = if (!hasPhoto) "Escolher Foto" else "Trocar Foto",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = TextPrimary,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
+                        if (hasPhoto) {
+                            Surface(
+                                shape = PillShape,
+                                color = Color.Transparent,
+                                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                                modifier = Modifier.clickable { onClearPhoto() }
+                            ) {
+                                Text(
+                                    text = "Remover",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary,
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
-            SettingsSubScreen.FOLDERS -> FoldersScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
 
-            SettingsSubScreen.COMMANDS -> CommandsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Text(
+                    text = "Widgets da Barra de Pesquisa",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextSecondary
+                )
 
-            SettingsSubScreen.DEVELOPER -> DeveloperScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                val allTypes = listOf(WidgetType.CALENDAR, WidgetType.BATTERY, WidgetType.MEDIA)
+                allTypes.forEach { type ->
+                    val isEnabled = enabledWidgets.contains(type)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = type.displayName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (isEnabled) TextPrimary else TextSecondary
+                        )
 
-            SettingsSubScreen.TRANSPARENCY -> TransparencyScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (isEnabled) {
+                                Icon(
+                                    imageVector = Icons.Outlined.KeyboardArrowUp,
+                                    contentDescription = "Subir",
+                                    tint = TextSecondary,
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clickable { viewModel.moveWidgetUp(type) }
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    imageVector = Icons.Outlined.KeyboardArrowDown,
+                                    contentDescription = "Descer",
+                                    tint = TextSecondary,
+                                    modifier = Modifier
+                                        .size(22.dp)
+                                        .clickable { viewModel.moveWidgetDown(type) }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
 
-            SettingsSubScreen.GESTURES -> GesturesScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                            Switch(
+                                checked = isEnabled,
+                                onCheckedChange = { viewModel.toggleWidget(type) },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = TextPrimary,
+                                    checkedTrackColor = DarkSurfaceVariant,
+                                    uncheckedThumbColor = TextSecondary,
+                                    uncheckedTrackColor = DarkSurface
+                                )
+                            )
+                        }
+                    }
+                }
 
-            SettingsSubScreen.IN_APP_SEARCH -> InAppSearchSettingsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Spacer(modifier = Modifier.height(4.dp))
 
-            SettingsSubScreen.HIDDEN_APPS -> HiddenAppsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Fechar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 
-            SettingsSubScreen.CUSTOMIZATION -> CustomizationScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                onPickWallpaper = onPickWallpaper,
-                modifier = modifier
-            )
+@Composable
+private fun CustomizationDialog(
+    viewModel: MainViewModel,
+    uiState: LauncherUiState,
+    onPickPhoto: () -> Unit,
+    onSelectMusicApp: () -> Unit,
+    onSelectCalendarApp: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "Customization",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
 
-            SettingsSubScreen.PERMISSIONS -> PermissionsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectMusicApp() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "App de Música Padrão", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = uiState.defaultMusicApp ?: "Spotify (Padrão)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Text(text = "Alterar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                }
 
-            SettingsSubScreen.FEED -> FeedSettingsScreen(
-                viewModel = viewModel,
-                uiState = uiState,
-                onBack = { viewModel.navigateBackSettings() },
-                modifier = modifier
-            )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectCalendarApp() },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "App de Calendário Padrão", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = uiState.defaultCalendarApp ?: "Google Agenda / Padrão",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Text(text = "Alterar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Modo Liquid Glass (iOS 27 Style)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Modo Liquid Glass (iOS 27)",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (uiState.isLiquidGlassEnabled) "Ativo (vidro translúcido & reflexo de luz)" else "Desativado (estilo opaco sólido)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = uiState.isLiquidGlassEnabled,
+                        onCheckedChange = { viewModel.setLiquidGlassEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = TextPrimary,
+                            checkedTrackColor = DarkSurfaceVariant,
+                            uncheckedThumbColor = TextSecondary,
+                            uncheckedTrackColor = DarkSurface
+                        )
+                    )
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Estilo dos Ícones
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Estilo dos Ícones",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = TextPrimary
+                    )
+                    Text(
+                        text = "Formato e acabamento dos ícones da lista de apps",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val shapes = listOf(
+                            "DEFAULT" to "Padrão",
+                            "MONOCHROME" to "Mono",
+                            "CIRCLE" to "Círculo",
+                            "SQUIRCLE" to "Squircle"
+                        )
+                        shapes.forEach { (shapeKey, label) ->
+                            val isSelected = uiState.iconShape == shapeKey
+                            Surface(
+                                shape = PillShape,
+                                color = if (isSelected) Color.White else DarkSurfaceVariant,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable { viewModel.setIconShape(shapeKey) }
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = if (isSelected) Color.Black else TextSecondary,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        fontSize = 11.sp
+                                    ),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                // Pacote de Ícones
+                var showIconPackSelector by remember { mutableStateOf(false) }
+                val installedPacks = remember { viewModel.getInstalledIconPacks() }
+                val currentPackName = remember(uiState.selectedIconPack, installedPacks) {
+                    installedPacks.find { it.packageName == uiState.selectedIconPack }?.label
+                        ?: uiState.selectedIconPack
+                        ?: "Padrão do Sistema"
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showIconPackSelector = true },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Pacote de Ícones", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                        Text(
+                            text = currentPackName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                    }
+                    Text(text = "Alterar", style = MaterialTheme.typography.bodyMedium, color = TextPrimary)
+                }
+
+                if (showIconPackSelector) {
+                    IconPackSelectionDialog(
+                        installedPacks = installedPacks,
+                        selectedPackage = uiState.selectedIconPack,
+                        onSelectPack = { viewModel.setSelectedIconPack(it) },
+                        onDismiss = { showIconPackSelector = false }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Concluído",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GesturesDialog(onDismiss: () -> Unit) {
+    SimpleInfoDialog(
+        title = "Gestos",
+        message = "• Toque no meio da tela: recolhe a barra de pesquisa.\n• Toque longo no app: menu rápido com atalho para desinstalar.\n• Deslize lateral: barra alfabética para navegação rápida.",
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun LanguageDialog(onDismiss: () -> Unit) {
+    SimpleInfoDialog(
+        title = "Idioma",
+        message = "Idioma ativo: Português (Brasil).\nO Tessera Launcher segue a preferência regional definida nas configurações do seu sistema.",
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun TransparencyDialog(onDismiss: () -> Unit) {
+    SimpleInfoDialog(
+        title = "Transparência & Privacidade",
+        message = "Sem rastreio. Sem anúncios. Sem telemetria.\n\nO Tessera Launcher funciona 100% offline no seu dispositivo. Todas as suas permissões são utilizadas única e exclusivamente para as funções locais de widgets e navegação.",
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun DeveloperDialog(
+    appsCount: Int,
+    hasNotificationAccess: Boolean,
+    isLiquidGlass: Boolean,
+    onDismiss: () -> Unit
+) {
+    SimpleInfoDialog(
+        title = "Desenvolvedor",
+        message = "Tessera Launcher v1.5.0\nCompilação: Release/Debug Estável\nApps indexados: $appsCount\nServiço de Mídia: ${if (hasNotificationAccess) "Ativo" else "Inativo"}\nModo Liquid Glass: ${if (isLiquidGlass) "Ativo" else "Inativo"}\nArquitetura: Jetpack Compose + Kotlin Coroutines",
+        onDismiss = onDismiss
+    )
+}
+
+@Composable
+private fun SimpleInfoDialog(title: String, message: String, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextSecondary,
+                    lineHeight = 20.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Entendido",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppSelectionDialog(
+    apps: List<AppInfo>,
+    filterType: String,
+    onDismiss: () -> Unit,
+    onSelect: (AppInfo) -> Unit
+) {
+    val sortedApps = remember(apps, filterType) {
+        if (filterType == "music") {
+            apps.sortedByDescending { TesseraMediaService.KNOWN_MUSIC_PACKAGES.contains(it.packageName) }
+        } else {
+            apps
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(420.dp)
+        ) {
+            Column(modifier = Modifier.padding(18.dp)) {
+                Text(
+                    text = if (filterType == "music") "Selecione o App de Música" else "Selecione o App de Calendário",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    sortedApps.forEach { app ->
+                        val isPriority = filterType == "music" && TesseraMediaService.KNOWN_MUSIC_PACKAGES.contains(app.packageName)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(app) }
+                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = app.label,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isPriority) TextPrimary else TextSecondary
+                            )
+                            if (isPriority) {
+                                Text(
+                                    text = "Música",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IconPackSelectionDialog(
+    installedPacks: List<IconPackInfo>,
+    selectedPackage: String?,
+    onSelectPack: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = SettingsCardShape,
+            color = DarkSurface,
+            border = BorderStroke(1.dp, DarkSurfaceBorder),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(22.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Pacote de Ícones",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+
+                Text(
+                    text = "Escolha o pacote de ícones a ser aplicado a todos os aplicativos:",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary
+                )
+
+                // Opção 1: Padrão do Sistema
+                val isDefaultSelected = selectedPackage.isNullOrBlank()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isDefaultSelected) Color(0xFF1E202A) else Color.Transparent)
+                        .clickable {
+                            onSelectPack(null)
+                            onDismiss()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF282B36)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Palette,
+                            contentDescription = null,
+                            tint = TextPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Text(
+                        text = "Padrão do Sistema",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isDefaultSelected) FontWeight.Bold else FontWeight.Normal
+                        ),
+                        color = TextPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (isDefaultSelected) {
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = "Selecionado",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
+
+                if (installedPacks.isEmpty()) {
+                    Text(
+                        text = "Nenhum pacote de ícones adicional instalado no dispositivo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextTertiary,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                } else {
+                    installedPacks.forEach { pack ->
+                        val isPackSelected = selectedPackage == pack.packageName
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isPackSelected) Color(0xFF1E202A) else Color.Transparent)
+                                .clickable {
+                                    onSelectPack(pack.packageName)
+                                    onDismiss()
+                                }
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (pack.icon != null) {
+                                Image(
+                                    bitmap = pack.icon.toBitmap(64, 64).asImageBitmap(),
+                                    contentDescription = pack.label,
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF282B36)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Palette,
+                                        contentDescription = null,
+                                        tint = TextPrimary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Text(
+                                text = pack.label,
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = if (isPackSelected) FontWeight.Bold else FontWeight.Normal
+                                ),
+                                color = TextPrimary,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            if (isPackSelected) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Check,
+                                    contentDescription = "Selecionado",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Surface(
+                    shape = PillShape,
+                    color = DarkSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                ) {
+                    Text(
+                        text = "Fechar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 12.dp)
+                    )
+                }
+            }
         }
     }
 }

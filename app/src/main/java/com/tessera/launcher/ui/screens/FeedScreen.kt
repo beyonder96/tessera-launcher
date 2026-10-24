@@ -1,67 +1,40 @@
 package com.tessera.launcher.ui.screens
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
-import com.tessera.launcher.ui.components.FeedPostCard
-import com.tessera.launcher.ui.design.components.CapsuleButton
-import com.tessera.launcher.ui.design.glass.GlassStyle
-import com.tessera.launcher.ui.design.glass.liquidGlass
-import com.tessera.launcher.ui.design.haptics.Taptic
 import com.tessera.launcher.ui.state.FeedState
-import com.tessera.launcher.ui.theme.apple.ContinuousShape
-import com.tessera.launcher.ui.theme.apple.LocalAppleColors
-import com.tessera.launcher.ui.theme.apple.LocalAppleTypography
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.tessera.launcher.ui.components.FeedPostCard
+import com.tessera.launcher.ui.theme.*
 
-/**
- * Feed Editorial Oficial do Tessera 3.0 — Padrão Apple News Today.
- * Data do dia monumental, Large Title "Hoje", chips translúcidos de tópicos
- * e cartões com tipografia editorial refinada.
- */
 @Composable
 fun FeedScreen(
     feedState: FeedState,
@@ -74,121 +47,85 @@ fun FeedScreen(
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val colors = LocalAppleColors.current
-    val typography = LocalAppleTypography.current
-
+    val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
+    val backgroundColor = if (isLightMode) Color(0xF8F7F7F7) else Color(0xF20D0D11)
+    
     var localSelectedSource by remember { mutableStateOf<FeedSource?>(activeSource) }
-
-    val todayFormatted = remember {
-        val now = Date()
-        val format = SimpleDateFormat("EEEE, d 'DE' MMMM", Locale.forLanguageTag("pt-BR"))
-        format.format(now).uppercase()
-    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.groupedBackground)
-            .statusBarsPadding()
+            .background(backgroundColor)
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
             .navigationBarsPadding()
+            .padding(top = 6.dp)
     ) {
-        // Barra Superior com Navegação e Ações
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = {
-                    Taptic.lightImpact(context)
-                    onClose()
-                }
-            ) {
+            IconButton(onClick = onClose) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                    imageVector = Icons.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = colors.label
+                    tint = primaryTextColor
                 )
             }
-
+            Text(
+                text = "Feed",
+                color = primaryTextColor,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 8.dp)
+            )
             Spacer(modifier = Modifier.weight(1f))
-
-            IconButton(
-                onClick = {
-                    Taptic.lightImpact(context)
-                    onRefresh()
-                }
-            ) {
+            IconButton(onClick = onRefresh) {
                 Icon(
                     imageVector = Icons.Outlined.Refresh,
                     contentDescription = "Recarregar",
-                    tint = colors.label
+                    tint = primaryTextColor
                 )
             }
         }
 
-        // Cabeçalho Editorial Estilo Apple News Today
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 4.dp)
-        ) {
-            Text(
-                text = todayFormatted,
-                style = typography.caption1.copy(fontWeight = FontWeight.Bold),
-                color = colors.secondaryLabel
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Hoje",
-                style = typography.largeTitle.copy(fontWeight = FontWeight.Bold),
-                color = colors.label
-            )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Chips de Categorias e Fontes em Liquid Glass
         if (enabledSources.isNotEmpty()) {
             LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
-                    AppleSourceChip(
+                    SourceChip(
                         name = "Tudo",
                         isSelected = localSelectedSource == null,
-                        onClick = {
-                            Taptic.selection(context)
-                            localSelectedSource = null
-                        }
+                        isLightMode = isLightMode,
+                        onClick = { localSelectedSource = null }
                     )
                 }
                 items(enabledSources.toList()) { source ->
-                    AppleSourceChip(
+                    SourceChip(
                         name = source.chipName,
                         isSelected = localSelectedSource == source,
-                        onClick = {
-                            Taptic.selection(context)
+                        isLightMode = isLightMode,
+                        onClick = { 
                             localSelectedSource = source
                             onSourceSelected(source)
                         }
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(12.dp))
         }
 
-        // Conteúdo Principal do Feed
         Box(modifier = Modifier.weight(1f)) {
             when (feedState) {
-                is FeedState.Loading -> AppleFeedSkeleton()
-                is FeedState.Empty -> AppleFeedEmptyState()
-                is FeedState.Error -> AppleFeedErrorState(
+                is FeedState.Loading -> FeedSkeleton(isLightMode = isLightMode)
+                is FeedState.Empty -> FeedEmptyState(isLightMode = isLightMode)
+                is FeedState.Error -> FeedErrorState(
                     message = feedState.message,
+                    isLightMode = isLightMode,
                     onRetry = onRefresh
                 )
                 is FeedState.Success -> {
@@ -200,17 +137,17 @@ fun FeedScreen(
                     }
 
                     if (filteredPosts.isEmpty()) {
-                        AppleFeedEmptyState()
+                        FeedEmptyState(isLightMode = isLightMode)
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(filteredPosts, key = { it.id }) { post ->
                                 FeedPostCard(
                                     post = post,
-                                    isLightMode = !colors.isDark,
+                                    isLightMode = isLightMode,
                                     onPostClick = onPostClick
                                 )
                             }
@@ -223,116 +160,193 @@ fun FeedScreen(
 }
 
 @Composable
-private fun AppleSourceChip(
+private fun SourceChip(
     name: String,
     isSelected: Boolean,
+    isLightMode: Boolean,
     onClick: () -> Unit
 ) {
-    val colors = LocalAppleColors.current
-    val typography = LocalAppleTypography.current
+    val backgroundColor = if (isSelected) {
+        if (isLightMode) Color(0xFF1E2024) else Color(0xFFF2F2F5)
+    } else {
+        if (isLightMode) Color(0xFFE8E8EE).copy(alpha = 0.92f) else Color(0xFF1C1E26).copy(alpha = 0.85f)
+    }
+    
+    val textColor = if (isSelected) {
+        if (isLightMode) Color(0xFFFFFFFF) else Color(0xFF0F1014)
+    } else {
+        if (isLightMode) Color(0xFF2D3039) else Color(0xFFD4D4D8)
+    }
 
-    Box(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(if (isSelected) colors.label else colors.secondaryFill)
-            .liquidGlass(style = GlassStyle.Thin, shape = CircleShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center
+    val borderStroke = if (isSelected) {
+        null
+    } else {
+        BorderStroke(
+            width = 1.dp,
+            color = if (isLightMode) Color(0x30000000) else Color(0x40FFFFFF)
+        )
+    }
+
+    Surface(
+        modifier = Modifier.clickable(onClick = onClick),
+        shape = PillShape,
+        color = backgroundColor,
+        border = borderStroke
     ) {
         Text(
             text = name,
-            style = typography.subheadline.copy(
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
-            ),
-            color = if (isSelected) colors.systemBackground else colors.label
+            color = textColor,
+            fontSize = 13.sp,
+            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
         )
     }
 }
 
 @Composable
-private fun AppleFeedSkeleton() {
-    val colors = LocalAppleColors.current
+private fun FeedSkeleton(isLightMode: Boolean) {
+    val skeletonBase = if (isLightMode) Color(0xFFE0E0E0) else SkeletonBase
+    val skeletonHighlight = if (isLightMode) Color(0xFFF5F5F5) else SkeletonHighlight
+
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmer_anim"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = listOf(skeletonBase, skeletonHighlight, skeletonBase),
+        start = Offset.Zero,
+        end = Offset(x = translateAnim, y = translateAnim)
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        repeat(4) {
-            Box(
+        repeat(5) {
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
-                    .clip(ContinuousShape(18.dp))
-                    .background(colors.secondaryFill)
-            )
+                    .height(140.dp),
+                shape = CardShape,
+                color = if (isLightMode) LightCardBackground else DarkSurface,
+                border = BorderStroke(1.dp, if (isLightMode) LightCardBorder else DarkSurfaceBorder)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(modifier = Modifier.size(width = 80.dp, height = 14.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Box(modifier = Modifier.fillMaxWidth(0.8f).height(18.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Box(modifier = Modifier.fillMaxWidth().height(16.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Box(modifier = Modifier.fillMaxWidth(0.6f).height(16.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Spacer(modifier = Modifier.weight(1f))
+                    Row {
+                        Box(modifier = Modifier.size(width = 40.dp, height = 14.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Box(modifier = Modifier.size(width = 40.dp, height = 14.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun AppleFeedEmptyState() {
-    val colors = LocalAppleColors.current
-    val typography = LocalAppleTypography.current
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Outlined.RssFeed,
-                contentDescription = null,
-                tint = colors.tertiaryLabel,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Nenhuma notícia no momento",
-                style = typography.subheadline,
-                color = colors.secondaryLabel
-            )
-        }
-    }
-}
+private fun FeedEmptyState(isLightMode: Boolean) {
+    val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLightMode) LightTextSecondary else TextSecondary
 
-@Composable
-private fun AppleFeedErrorState(
-    message: String,
-    onRetry: () -> Unit
-) {
-    val colors = LocalAppleColors.current
-    val typography = LocalAppleTypography.current
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        contentAlignment = Alignment.Center
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector = Icons.Outlined.ErrorOutline,
-                contentDescription = null,
-                tint = Color(0xFFFF3B30),
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(12.dp))
+        Icon(
+            imageVector = Icons.Outlined.RssFeed,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = secondaryTextColor
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Nenhum post encontrado",
+            color = primaryTextColor,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Verifique sua conexão ou adicione subreddits nas configurações.",
+            color = secondaryTextColor,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun FeedErrorState(
+    message: String?,
+    isLightMode: Boolean,
+    onRetry: () -> Unit
+) {
+    val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLightMode) LightTextSecondary else TextSecondary
+    val borderColor = if (isLightMode) LightCardBorder else DarkSurfaceBorder
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.ErrorOutline,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = secondaryTextColor
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "Falha ao carregar o feed",
+            color = primaryTextColor,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = message ?: "Ocorreu um erro desconhecido.",
+            color = secondaryTextColor,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Surface(
+            modifier = Modifier.clickable(onClick = onRetry),
+            shape = PillShape,
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, borderColor)
+        ) {
             Text(
-                text = "Falha ao carregar notícias",
-                style = typography.headline,
-                color = colors.label
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = message,
-                style = typography.footnote,
-                color = colors.secondaryLabel,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            CapsuleButton(
-                text = "Tentar Novamente",
-                onClick = onRetry
+                text = "Recarregar",
+                color = primaryTextColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
             )
         }
     }

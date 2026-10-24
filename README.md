@@ -1,4 +1,4 @@
-﻿# Tessera Launcher
+# Tessera Launcher
 
 > Launcher Android moderna e ultra-minimalista desenvolvida em **Kotlin** e **Jetpack Compose**, combinando estética monocromática minimalista com a navegação vertical rápida e ergonômica inspirada no **Niagara Launcher**.
 
@@ -61,32 +61,22 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.0.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.0.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v2.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.8.1)
 
-### 🆕 Novidades na v3.0.0
-- 🍏 **Redesign Completo "Designed in Cupertino" (iOS 26 Liquid Glass):** Redesign integral de todas as telas, widgets, gaveta e menus com a linguagem visual e de interação da Apple, preservando o foco minimalista de lista do Tessera Launcher.
-- 🪟 **Liquid Glass Multi-camadas:** Vidro translúcido em 3 camadas com blur nativo Haze 2.0.1 (API 31+), saturação de vibrância física e lens shader AGSL (API 33+) com fallback gradiente suave.
-- 🏝️ **Dynamic Island no Topo:** Pílula HUD inteligente que alterna dinamicamente entre modos Compacto, Mínimo Duplo e Expandido para reprodução de mídia e Live Activities em andamento.
-- 🕰️ **Hero Clock Monumental:** Relógio de 112sp com tipografia Inter Variable integrada, números tabulares ("tnum") e alinhamento preciso.
-- 🔎 **Spotlight Search & Doca Flutuante de Vidro:** Barra de busca unificada na base com seções inteligentes e dock translúcida com reflexo especular de luz.
-- ⚙️ **Ajustes no Padrão iOS Settings:** Cabeçalho de perfil Apple ID, navegação push horizontal, listas Inset Grouped, seções categorizadas com ícones squircle coloridos, paleta oficial dos 10 tons Apple e busca instantânea integrada.
-- 🧩 **Widgets Nativos Apple & Smart Stack:** Widgets redesenhados de Bateria com anel circular de carga animado, Clima, Calendário, Mídia e Tempo de Uso. Carrossel vertical Smart Stack com **Jiggle Mode** (tremor de edição e remoção direta).
-- 🌙 **StandBy Mode:** Modo de cabeceira ativado ao carregar o aparelho em orientação horizontal (paisagem), com relógio gigante de mesa, cartões duplos e Modo Noite em luz monocromática vermelha anti burn-in.
-- 🎛️ **Central de Controle & Notificações:** Painel deslizante 4x4 do topo direito com sliders verticais fluidos de brilho e volume, botões de ação e Central de Notificações com empilhamento de cartões translúcidos e botão expansível "X" -> "Limpar".
-- 🌌 **Wallpaper Dinâmico Aurora:** Gradiente mesh reativo em tempo real que evolui através dos ciclos do dia (amanhecer dourado, dia celeste, pôr do sol magenta e noite índigo).
-- ✨ **Onboarding "Olá":** Apresentação imersiva com animação caligráfica Apple em múltiplos idiomas e assistente de boas-vindas.
+### 🆕 Novidades na v2.8.1
+- ↩️ **Restauração Completa da Interface Classic (v2.8.0):** Retorno integral à interface clássica minimalista monocromática original do Tessera Launcher com navegação vertical rápida no estilo Niagara, Live Activities para Corridas/Delivery/Navegação, gaveta A-Z fluida e dock clássico.
 
 ### 📋 Versões Anteriores
 <details>
 <summary><b>v2.8.0</b></summary>
-
 - 🚗 **Live Activities para Transporte (Uber, 99, Lyft):** Rastreamento de corridas em tempo real com nome e avaliação do motorista, modelo e cor do carro, placa destacada e timeline de rota com mola física elástica.
 - 🛵 **Live Activities para Delivery (iFood, Rappi, Zé Delivery):** Acompanhamento do status de pedidos em 4 etapas (Confirmado, Preparando, Em rota, Entregue) com motinho animada, tempo de entrega, PIN de segurança em destaque e atalhos rápidos.
 - 🧭 **Live Activities para Navegação GPS (Google Maps, Waze):** Grande ícone direcional da próxima manobra curva a curva, distância imediata, nome da via, métricas consolidadas de chegada e botões de ação rápida.
 - 🔴 **Notification Dots & Badges nos Ícones:** Pontos sutis e contadores estilizados nos ícones do Smart Dock, do widget de apps previstos e da gaveta de aplicativos (App Drawer) para aplicativos com notificações ativas.
 - 📬 **Feed / Hub de Notificações Recentes:** Novo card de 54dp no carrossel de widgets da Home e central completa em Modal Bottom Sheet para visualizar, tocar (abrir via PendingIntent) e dispensar notificações individuais ou todas.
 - 🏝️ **LiveCapsule Contextual no Topo:** Pílula expansível fluida no topo com dados ao vivo da atividade em andamento mais prioritária e expansão com um toque para o card completo.
-</details>
+
+### 📋 Versões Anteriores
 <details>
 <summary><b>v2.7.0</b></summary>
 
@@ -336,3 +326,5 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ## 📄 Licença
 
 Distribuído sob a licença MIT. Veja `LICENSE` para mais detalhes.
+
+</details>

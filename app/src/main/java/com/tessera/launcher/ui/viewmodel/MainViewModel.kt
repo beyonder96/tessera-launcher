@@ -1,4 +1,4 @@
-﻿package com.tessera.launcher.ui.viewmodel
+package com.tessera.launcher.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
@@ -277,10 +277,7 @@ class MainViewModel(
             // Fase 4: Perfis de Foco
             focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
             isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
-            isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled(),
-            isReduceTransparency = preferences.isReduceTransparency(),
-            isReduceMotion = preferences.isReduceMotion(),
-            isOnboardingCompleted = preferences.isOnboardingCompleted()
+            isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -1056,21 +1053,6 @@ class MainViewModel(
     fun setSearchBarOpacity(percent: Int) {
         preferences.setSearchBarOpacity(percent)
         _uiState.update { it.copy(searchBarOpacity = percent) }
-    }
-
-    fun setOnboardingCompleted(completed: Boolean) {
-        preferences.setOnboardingCompleted(completed)
-        _uiState.update { it.copy(isOnboardingCompleted = completed) }
-    }
-
-    fun setReduceTransparency(enabled: Boolean) {
-        preferences.setReduceTransparency(enabled)
-        _uiState.update { it.copy(isReduceTransparency = enabled) }
-    }
-
-    fun setReduceMotion(enabled: Boolean) {
-        preferences.setReduceMotion(enabled)
-        _uiState.update { it.copy(isReduceMotion = enabled) }
     }
 
     fun setLiquidGlassEnabled(enabled: Boolean) {
@@ -2425,10 +2407,7 @@ class MainViewModel(
                 hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
                 focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
                 isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
-                isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled(),
-            isReduceTransparency = preferences.isReduceTransparency(),
-            isReduceMotion = preferences.isReduceMotion(),
-            isOnboardingCompleted = preferences.isOnboardingCompleted()
+                isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
             )
         }
         reloadAppsWithIconPack(preferences.getSelectedIconPack())
