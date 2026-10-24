@@ -136,63 +136,88 @@ fun HeroClock(
 
     // Modal Sheet de Personalização do Relógio
     if (isEditorOpen) {
-        AppleSheet(
+        HeroClockCustomizerSheet(
             visible = isEditorOpen,
+            currentWeight = clockWeight,
+            onWeightChange = onWeightChange,
             onDismissRequest = { isEditorOpen = false }
+        )
+    }
+}
+
+/**
+ * Sheet oficial de personalização da tipografia do Relógio Hero (padrão tela de bloqueio Apple).
+ */
+@Composable
+fun HeroClockCustomizerSheet(
+    visible: Boolean,
+    currentWeight: Int,
+    onWeightChange: (Int) -> Unit,
+    onDismissRequest: () -> Unit
+) {
+    val context = LocalContext.current
+    val colors = LocalAppleColors.current
+    val typography = LocalAppleTypography.current
+
+    AppleSheet(
+        visible = visible,
+        onDismissRequest = onDismissRequest
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Personalizar Relógio",
-                    style = typography.title2,
-                    color = colors.label
-                )
+            Text(
+                text = "Personalizar Relógio",
+                style = typography.title2,
+                color = colors.label
+            )
 
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-                // Seletor de Espessura da Tipografia
-                Text(
-                    text = "ESPESSURA DA FONTE ($clockWeight)",
-                    style = typography.footnoteBold,
-                    color = colors.secondaryLabel
-                )
+            Text(
+                text = "ESPESSURA DA FONTE ($currentWeight)",
+                style = typography.footnoteBold,
+                color = colors.secondaryLabel
+            )
 
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-                val weightOptions = listOf("Leve", "Regular", "Médio", "Negrito")
-                val selectedIndex = when {
-                    clockWeight <= 250 -> 0
-                    clockWeight <= 400 -> 1
-                    clockWeight <= 600 -> 2
-                    else -> 3
-                }
-
-                SegmentedControl(
-                    items = weightOptions,
-                    selectedIndex = selectedIndex,
-                    onItemSelected = { index ->
-                        val targetWeight = when (index) {
-                            0 -> 200
-                            1 -> 400
-                            2 -> 600
-                            else -> 800
-                        }
-                        onWeightChange(targetWeight)
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(28.dp))
-
-                CapsuleButton(
-                    text = "Concluído",
-                    onClick = { isEditorOpen = false },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            val weightOptions = listOf("Leve", "Regular", "Médio", "Negrito")
+            val selectedIndex = when {
+                currentWeight <= 250 -> 0
+                currentWeight <= 400 -> 1
+                currentWeight <= 600 -> 2
+                else -> 3
             }
+
+            SegmentedControl(
+                items = weightOptions,
+                selectedIndex = selectedIndex,
+                onItemSelected = { index ->
+                    Taptic.selection(context)
+                    val targetWeight = when (index) {
+                        0 -> 200
+                        1 -> 400
+                        2 -> 600
+                        else -> 800
+                    }
+                    onWeightChange(targetWeight)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            CapsuleButton(
+                text = "Concluído",
+                onClick = {
+                    Taptic.lightImpact(context)
+                    onDismissRequest()
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

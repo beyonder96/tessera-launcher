@@ -1,4 +1,4 @@
-package com.tessera.launcher.ui.state
+﻿package com.tessera.launcher.ui.state
 
 import android.graphics.drawable.Drawable
 import com.tessera.launcher.data.helper.CalendarEventInfo
@@ -305,7 +305,9 @@ data class LauncherUiState(
     // Notificações Comuns & Hub
     val notificationCounts: Map<String, Int> = emptyMap(),
     val recentNotifications: List<AppNotificationItem> = emptyList(),
-    val isNotificationsHubOpen: Boolean = false
+    val isNotificationsHubOpen: Boolean = false,
+    val isReduceTransparency: Boolean = false,
+    val isReduceMotion: Boolean = false
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)
