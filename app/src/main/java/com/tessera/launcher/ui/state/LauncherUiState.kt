@@ -16,7 +16,6 @@ import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
 import com.tessera.launcher.data.helper.OmniResult
 import com.tessera.launcher.data.helper.ScreenTimeInfo
-import com.tessera.launcher.data.model.FocusProfile
 import com.tessera.launcher.data.model.AppNotificationItem
 import com.tessera.launcher.ui.theme.getAccentColor
 
@@ -123,6 +122,8 @@ data class LauncherUiState(
     val defaultCalendarApp: String? = null,
     val photoWidgetUri: String? = null,
     val isPhotoWidgetEnabled: Boolean = true,
+    val isPhotoStandByOpen: Boolean = false,
+    val isPhotoStandByOnChargeEnabled: Boolean = false,
     val isSettingsOpen: Boolean = false,
     val isAmoledMode: Boolean = true,
     val isLiquidGlassEnabled: Boolean = true,
@@ -296,11 +297,6 @@ data class LauncherUiState(
     val isScreenTimeWidgetEnabled: Boolean = true,
     val screenTimeInfo: ScreenTimeInfo? = null,
 
-    // Fase 4: Perfis de Foco
-    val focusProfile: FocusProfile = FocusProfile.OFF,
-    val isFocusScheduleEnabled: Boolean = false,
-    val isFocusProfilesFeatureEnabled: Boolean = true,
-    val isFocusModalOpen: Boolean = false,
 
     // Notificações Comuns & Hub
     val notificationCounts: Map<String, Int> = emptyMap(),

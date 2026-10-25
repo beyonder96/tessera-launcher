@@ -25,6 +25,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_AMOLED_MODE = "amoled_mode"
         private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
         private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
+        private const val KEY_PHOTO_STANDBY_ON_CHARGE = "photo_standby_on_charge"
         private const val KEY_LIQUID_GLASS_MODE = "liquid_glass_mode"
         private const val KEY_AUTO_OPEN_KEYBOARD = "auto_open_keyboard"
         private const val KEY_AUTO_LAUNCH_APP = "auto_launch_app"
@@ -147,10 +148,6 @@ class LauncherPreferences(context: Context) {
         private const val KEY_SMART_STACK_ROTATE_ENABLED = "smart_stack_rotate_enabled"
         private const val KEY_SCREEN_TIME_WIDGET_ENABLED = "screen_time_widget_enabled"
 
-        // Fase 4: Perfis de Foco
-        private const val KEY_FOCUS_PROFILE = "focus_profile"
-        private const val KEY_FOCUS_SCHEDULE_ENABLED = "focus_schedule_enabled"
-        private const val KEY_FOCUS_PROFILES_FEATURE_ENABLED = "focus_profiles_feature_enabled"
     }
 
     fun getPhotoWidgetUri(): String? {
@@ -167,6 +164,14 @@ class LauncherPreferences(context: Context) {
 
     fun setPhotoWidgetEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_PHOTO_WIDGET_ENABLED, enabled).apply()
+    }
+
+    fun isPhotoStandByOnChargeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_PHOTO_STANDBY_ON_CHARGE, false)
+    }
+
+    fun setPhotoStandByOnChargeEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_PHOTO_STANDBY_ON_CHARGE, enabled).apply()
     }
 
     fun getEnabledWidgets(): List<WidgetType> {
@@ -674,28 +679,4 @@ class LauncherPreferences(context: Context) {
         prefs.edit().putBoolean(KEY_SCREEN_TIME_WIDGET_ENABLED, enabled).apply()
     }
 
-    // Fase 4: Perfis de Foco
-    fun getFocusProfile(): String {
-        return prefs.getString(KEY_FOCUS_PROFILE, "off") ?: "off"
-    }
-
-    fun setFocusProfile(profileId: String) {
-        prefs.edit().putString(KEY_FOCUS_PROFILE, profileId).apply()
-    }
-
-    fun isFocusScheduleEnabled(): Boolean {
-        return prefs.getBoolean(KEY_FOCUS_SCHEDULE_ENABLED, false)
-    }
-
-    fun setFocusScheduleEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_FOCUS_SCHEDULE_ENABLED, enabled).apply()
-    }
-
-    fun isFocusProfilesFeatureEnabled(): Boolean {
-        return prefs.getBoolean(KEY_FOCUS_PROFILES_FEATURE_ENABLED, true)
-    }
-
-    fun setFocusProfilesFeatureEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_FOCUS_PROFILES_FEATURE_ENABLED, enabled).apply()
-    }
 }

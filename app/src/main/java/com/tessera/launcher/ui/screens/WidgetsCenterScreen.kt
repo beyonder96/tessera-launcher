@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -374,6 +375,24 @@ fun WidgetsCenterScreen(
                         subtitle = "Alterne widgets com deslize vertical e exiba cards contextuais conforme seu momento do dia",
                         checked = uiState.isSmartStackRotateEnabled,
                         onCheckedChange = { viewModel.setSmartStackRotateEnabled(it) },
+                        isLightMode = isLight,
+                        iconBgColor = iconBg,
+                        primaryTextColor = primaryTextColor,
+                        secondaryTextColor = secondaryTextColor
+                    )
+
+                    HorizontalDivider(
+                        color = dividerColor,
+                        thickness = 1.dp,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+
+                    WidgetCenterToggleRow(
+                        icon = Icons.Outlined.BatteryChargingFull,
+                        title = "Modo Repouso ao carregar",
+                        subtitle = "Abre o relógio de cabeceira com foto e rotação livre ao conectar o carregador",
+                        checked = uiState.isPhotoStandByOnChargeEnabled,
+                        onCheckedChange = { viewModel.setPhotoStandByOnChargeEnabled(it) },
                         isLightMode = isLight,
                         iconBgColor = iconBg,
                         primaryTextColor = primaryTextColor,

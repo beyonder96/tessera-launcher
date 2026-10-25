@@ -104,8 +104,6 @@ import com.tessera.launcher.ui.components.AppListItem
 import com.tessera.launcher.ui.components.AppListSkeleton
 import com.tessera.launcher.ui.components.CalculatorCard
 import com.tessera.launcher.ui.components.EditorialClockWidget
-import com.tessera.launcher.ui.components.FocusProfileChip
-import com.tessera.launcher.ui.components.FocusProfileModal
 import com.tessera.launcher.ui.components.FolderSearchCard
 import com.tessera.launcher.ui.components.LiveCapsule
 import com.tessera.launcher.ui.components.OmniResultCard
@@ -115,6 +113,7 @@ import com.tessera.launcher.ui.components.FolderViewBottomSheet
 import com.tessera.launcher.ui.components.MediaConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesConfigBottomSheet
 import com.tessera.launcher.ui.components.NotesTasksManagerBottomSheet
+import com.tessera.launcher.ui.components.PhotoStandByModal
 import com.tessera.launcher.ui.components.PhotoWidget
 import com.tessera.launcher.ui.components.SearchExternalActions
 import com.tessera.launcher.ui.components.SearchMorphingDock
@@ -596,6 +595,7 @@ fun HomeScreen(
                         photoUriString = uiState.photoWidgetUri,
                         onPickPhoto = { onPickPhoto() },
                         onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
+                        onPhotoClick = { viewModel.openPhotoStandBy() },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -679,23 +679,6 @@ fun HomeScreen(
             ) {
                 val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 8.dp else 32.dp
                 Spacer(modifier = Modifier.height(drawerTopPadding))
-
-                // Indicativo de Foco no topo da página
-                if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isFocusProfilesFeatureEnabled) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        FocusProfileChip(
-                            currentProfile = uiState.focusProfile,
-                            onClick = { viewModel.openFocusModal() },
-                            isLightMode = uiState.isLightMode,
-                            accentColor = uiState.activeAccentColor
-                        )
-                    }
-                }
 
                 Row(
                     modifier = Modifier
@@ -1367,19 +1350,6 @@ fun HomeScreen(
             )
         }
 
-        if (uiState.isFocusModalOpen) {
-            FocusProfileModal(
-                currentProfile = uiState.focusProfile,
-                isScheduleEnabled = uiState.isFocusScheduleEnabled,
-                onSelectProfile = { viewModel.setFocusProfile(it) },
-                onToggleSchedule = { viewModel.setFocusScheduleEnabled(it) },
-                onDismiss = { viewModel.closeFocusModal() },
-                isAmoledMode = uiState.isAmoledMode,
-                isLightMode = uiState.isLightMode,
-                accentColor = uiState.activeAccentColor
-            )
-        }
-
         folderToView?.let { folder ->
             FolderViewBottomSheet(
                 folder = folder,
@@ -1448,6 +1418,20 @@ fun HomeScreen(
                 onClose = { viewModel.closeFeed() }
             )
         }
+
+        // Modo Repouso com Foto e Relógio de Cabeceira (StandBy / Ambient Mode)
+        PhotoStandByModal(
+            isOpen = uiState.isPhotoStandByOpen,
+            onDismiss = { viewModel.closePhotoStandBy() },
+            photoUriString = uiState.photoWidgetUri,
+            formattedTime = uiState.formattedTime,
+            formattedDate = uiState.formattedDate,
+            batteryPercentage = uiState.batteryPercentage,
+            isCharging = uiState.isCharging,
+            weatherTemp = uiState.weatherInfo?.displayTemperature,
+            weatherCondition = uiState.weatherInfo?.condition,
+            accentColor = uiState.activeAccentColor
+        )
     }
     }
 }

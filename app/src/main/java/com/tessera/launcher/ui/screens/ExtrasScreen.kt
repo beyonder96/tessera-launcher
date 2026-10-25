@@ -197,15 +197,7 @@ fun ExtrasScreen(
                     onClick = onNavigateToCommands
                 )
 
-                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
 
-                // 4. Perfis de Foco
-                ExtrasRowItem(
-                    icon = Icons.Outlined.SelfImprovement,
-                    title = "Perfis de foco",
-                    subtitle = "Modos Trabalho, Desconexão e agendamento automático.",
-                    onClick = { viewModel.openFocusModal() }
-                )
 
                 HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
 

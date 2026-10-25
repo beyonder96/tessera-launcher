@@ -308,7 +308,7 @@ fun SearchMorphingDock(
         else -> "Pesquisar..."
     }
 
-    val targetWidth = if (isExpanded) screenWidth - 32.dp else 190.dp
+    val targetWidth = if (isExpanded) screenWidth - 32.dp else 56.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
         animationSpec = Tessera.motion.springSpatialDp,
@@ -330,11 +330,11 @@ fun SearchMorphingDock(
         contentAlignment = Alignment.Center
     ) {
         if (!isExpanded) {
-            // Estado Recolhido: Cápsula Monolítica Pura (48dp)
+            // Estado Recolhido: Cápsula Flutuante Compacta com Lupa
             Box(
                 modifier = Modifier
                     .width(animatedWidth)
-                    .height(48.dp)
+                    .height(54.dp)
                     .graphicsLayer {
                         scaleX = dockScale
                         scaleY = dockScale
@@ -370,26 +370,12 @@ fun SearchMorphingDock(
                         )
                 )
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 18.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Search,
-                        contentDescription = "Expandir pesquisa",
-                        tint = dockIconTint,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = placeholderText,
-                        color = dockPlaceholderColor,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = FontFamily.SansSerif
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "Expandir pesquisa",
+                    tint = dockTextPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
         } else {
             // Estado Expandido: Doca Moderna com Widgets e Barra de Pesquisa Refinada

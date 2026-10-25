@@ -133,6 +133,7 @@ class MainViewModel(
             defaultCalendarApp = preferences.getDefaultCalendarPackage(),
             photoWidgetUri = preferences.getPhotoWidgetUri(),
             isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
+            isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
             isAmoledMode = preferences.isAmoledMode(),
             isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
             isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
@@ -275,9 +276,7 @@ class MainViewModel(
             hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
 
             // Fase 4: Perfis de Foco
-            focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
-            isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
-            isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
+
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -297,7 +296,6 @@ class MainViewModel(
         refreshWeather()
         refreshSmartGlance()
         refreshScreenTime()
-        checkFocusSchedule()
         loadWallpaper()
     }
 
@@ -343,11 +341,21 @@ class MainViewModel(
     private fun observeSystemInfo() {
         viewModelScope.launch {
             systemInfoHelper.observeBattery().collect { battery ->
+                val wasCharging = _uiState.value.isCharging
+                val isNowCharging = battery.isCharging
                 _uiState.update {
                     it.copy(
                         batteryPercentage = battery.percentage,
-                        isCharging = battery.isCharging
+                        isCharging = isNowCharging
                     )
+                }
+                if (!wasCharging && isNowCharging) {
+                    val state = _uiState.value
+                    if (state.isPhotoStandByOnChargeEnabled &&
+                        state.isPhotoWidgetEnabled &&
+                        !state.photoWidgetUri.isNullOrBlank()) {
+                        _uiState.update { it.copy(isPhotoStandByOpen = true) }
+                    }
                 }
             }
         }
@@ -673,27 +681,6 @@ class MainViewModel(
         val hiddenPkgs = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
         var visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
 
-        // Fase 4: Filtragem pelo Perfil de Foco Ativo
-        val focus = _uiState.value.focusProfile
-        if (_uiState.value.isFocusProfilesFeatureEnabled && focus != com.tessera.launcher.data.model.FocusProfile.OFF) {
-            visibleApps = visibleApps.filter { app ->
-                val cat = categoryClassifier.classifyApp(app)
-                when (focus) {
-                    com.tessera.launcher.data.model.FocusProfile.WORK -> {
-                        // Modo Trabalho: oculta jogos e redes sociais recreativas
-                        cat != com.tessera.launcher.data.model.AppCategory.GAMES &&
-                                cat != com.tessera.launcher.data.model.AppCategory.SOCIAL
-                    }
-                    com.tessera.launcher.data.model.FocusProfile.MINDFUL -> {
-                        // Modo Desconexão: apenas utilitários e ferramentas de produtividade
-                        cat == com.tessera.launcher.data.model.AppCategory.UTILITIES ||
-                                cat == com.tessera.launcher.data.model.AppCategory.PRODUCTIVITY
-                    }
-                    com.tessera.launcher.data.model.FocusProfile.OFF -> true
-                }
-            }
-        }
-
         val filtered = if (trimmed.isEmpty()) {
             if (_uiState.value.isAppCategoriesEnabled && _uiState.value.selectedAppCategory != com.tessera.launcher.data.model.AppCategory.ALL) {
                 visibleApps.filter { categoryClassifier.classifyApp(it) == _uiState.value.selectedAppCategory }
@@ -883,7 +870,7 @@ class MainViewModel(
         }
     }
 
-    // Moldura de Foto
+    // Moldura de Foto & Modo Repouso
     fun setPhotoWidgetUri(uriString: String?) {
         preferences.setPhotoWidgetUri(uriString)
         _uiState.update { it.copy(photoWidgetUri = uriString) }
@@ -892,6 +879,19 @@ class MainViewModel(
     fun setPhotoWidgetEnabled(enabled: Boolean) {
         preferences.setPhotoWidgetEnabled(enabled)
         _uiState.update { it.copy(isPhotoWidgetEnabled = enabled) }
+    }
+
+    fun openPhotoStandBy() {
+        _uiState.update { it.copy(isPhotoStandByOpen = true) }
+    }
+
+    fun closePhotoStandBy() {
+        _uiState.update { it.copy(isPhotoStandByOpen = false) }
+    }
+
+    fun setPhotoStandByOnChargeEnabled(enabled: Boolean) {
+        preferences.setPhotoStandByOnChargeEnabled(enabled)
+        _uiState.update { it.copy(isPhotoStandByOnChargeEnabled = enabled) }
     }
 
     // Configurações da Launcher e Subtelas
@@ -1111,6 +1111,10 @@ class MainViewModel(
     fun handleBackPress(): Boolean {
         val state = _uiState.value
         return when {
+            state.isPhotoStandByOpen -> {
+                closePhotoStandBy()
+                true
+            }
             state.isNotificationsHubOpen -> {
                 closeNotificationsHub()
                 true
@@ -1621,54 +1625,6 @@ class MainViewModel(
         _uiState.update { it.copy(isScreenTimeWidgetEnabled = enabled) }
         if (enabled) {
             refreshScreenTime()
-        }
-    }
-
-    // Fase 4: Perfis de Foco Contextuais
-    fun setFocusProfile(profile: com.tessera.launcher.data.model.FocusProfile) {
-        preferences.setFocusProfile(profile.id)
-        _uiState.update { it.copy(focusProfile = profile) }
-        applyFilter(_uiState.value.searchQuery)
-    }
-
-    fun setFocusScheduleEnabled(enabled: Boolean) {
-        preferences.setFocusScheduleEnabled(enabled)
-        _uiState.update { it.copy(isFocusScheduleEnabled = enabled) }
-        if (enabled) {
-            checkFocusSchedule()
-        }
-    }
-
-    fun setFocusProfilesFeatureEnabled(enabled: Boolean) {
-        preferences.setFocusProfilesFeatureEnabled(enabled)
-        _uiState.update { it.copy(isFocusProfilesFeatureEnabled = enabled) }
-        applyFilter(_uiState.value.searchQuery)
-    }
-
-    fun openFocusModal() {
-        _uiState.update { it.copy(isFocusModalOpen = true) }
-    }
-
-    fun closeFocusModal() {
-        _uiState.update { it.copy(isFocusModalOpen = false) }
-    }
-
-    fun checkFocusSchedule() {
-        if (!_uiState.value.isFocusScheduleEnabled) return
-        val cal = java.util.Calendar.getInstance()
-        val dayOfWeek = cal.get(java.util.Calendar.DAY_OF_WEEK)
-        val hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
-        val isWorkday = dayOfWeek in java.util.Calendar.MONDAY..java.util.Calendar.FRIDAY
-        val isWorkHours = hour in 9..17 // 09:00 até 17:59 (18:00)
-
-        if (isWorkday && isWorkHours) {
-            if (_uiState.value.focusProfile != com.tessera.launcher.data.model.FocusProfile.WORK) {
-                setFocusProfile(com.tessera.launcher.data.model.FocusProfile.WORK)
-            }
-        } else {
-            if (_uiState.value.focusProfile == com.tessera.launcher.data.model.FocusProfile.WORK) {
-                setFocusProfile(com.tessera.launcher.data.model.FocusProfile.OFF)
-            }
         }
     }
 
@@ -2277,6 +2233,7 @@ class MainViewModel(
                 defaultCalendarApp = preferences.getDefaultCalendarPackage(),
                 photoWidgetUri = preferences.getPhotoWidgetUri(),
                 isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
+                isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
                 isAmoledMode = preferences.isAmoledMode(),
                 isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
                 isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
@@ -2405,9 +2362,7 @@ class MainViewModel(
                 isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
                 isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
                 hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
-                focusProfile = com.tessera.launcher.data.model.FocusProfile.fromId(preferences.getFocusProfile()),
-                isFocusScheduleEnabled = preferences.isFocusScheduleEnabled(),
-                isFocusProfilesFeatureEnabled = preferences.isFocusProfilesFeatureEnabled()
+
             )
         }
         reloadAppsWithIconPack(preferences.getSelectedIconPack())
@@ -2415,7 +2370,6 @@ class MainViewModel(
         refreshCalendarAndPermissions()
         refreshWeather()
         refreshScreenTime()
-        checkFocusSchedule()
         if (preferences.isSmartGlanceEnabled()) {
             refreshSmartGlance()
         }

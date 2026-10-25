@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Fullscreen
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -46,7 +47,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkSurface
@@ -65,10 +70,12 @@ fun PhotoWidget(
     photoUriString: String?,
     onPickPhoto: () -> Unit,
     onRemovePhoto: () -> Unit,
+    onPhotoClick: () -> Unit = {},
     isLiquidGlass: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     var showOptionsDialog by remember { mutableStateOf(false) }
 
     val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString) {
@@ -100,6 +107,21 @@ fun PhotoWidget(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                showOptionsDialog = false
+                                onPhotoClick()
+                            }
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Outlined.Fullscreen, contentDescription = null, tint = TextPrimary, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("Abrir Modo Repouso", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                    }
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -175,17 +197,23 @@ fun PhotoWidget(
             .border(frameBorder, frameShape)
             .clip(frameShape)
             .then(frameBackground)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    if (bitmap != null) {
-                        showOptionsDialog = true
-                    } else {
-                        onPickPhoto()
+            .pointerInput(bitmap) {
+                detectTapGestures(
+                    onTap = {
+                        if (bitmap != null) {
+                            onPhotoClick()
+                        } else {
+                            onPickPhoto()
+                        }
+                    },
+                    onLongPress = {
+                        if (bitmap != null) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            showOptionsDialog = true
+                        }
                     }
-                }
-            )
+                )
+            }
     ) {
         if (bitmap != null) {
             Box(modifier = Modifier.fillMaxSize()) {

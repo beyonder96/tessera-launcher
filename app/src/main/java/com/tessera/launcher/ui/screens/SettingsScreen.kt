@@ -269,6 +269,8 @@ fun SettingsScreen(
             enabledWidgets = uiState.enabledWidgets,
             isPhotoEnabled = uiState.isPhotoWidgetEnabled,
             onTogglePhoto = { viewModel.setPhotoWidgetEnabled(it) },
+            isPhotoStandByOnChargeEnabled = uiState.isPhotoStandByOnChargeEnabled,
+            onTogglePhotoStandByOnCharge = { viewModel.setPhotoStandByOnChargeEnabled(it) },
             onPickPhoto = onPickPhoto,
             hasPhoto = uiState.photoWidgetUri != null,
             onClearPhoto = { viewModel.setPhotoWidgetUri(null) },
@@ -981,6 +983,8 @@ private fun ExtrasDialog(
     enabledWidgets: List<WidgetType>,
     isPhotoEnabled: Boolean,
     onTogglePhoto: (Boolean) -> Unit,
+    isPhotoStandByOnChargeEnabled: Boolean,
+    onTogglePhotoStandByOnCharge: (Boolean) -> Unit,
     onPickPhoto: () -> Unit,
     hasPhoto: Boolean,
     onClearPhoto: () -> Unit,
@@ -1008,7 +1012,7 @@ private fun ExtrasDialog(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Moldura de Foto na Home", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
-                        Text(text = if (hasPhoto) "Foto ativa" else "Sem foto", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                        Text(text = if (hasPhoto) "Foto ativa • Toque na foto para abrir Modo Repouso" else "Sem foto", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                     }
                     Switch(
                         checked = isPhotoEnabled,
@@ -1052,6 +1056,27 @@ private fun ExtrasDialog(
                                 )
                             }
                         }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                            Text(text = "Modo Repouso ao carregar", style = MaterialTheme.typography.bodyLarge, color = TextPrimary)
+                            Text(text = "Abre o relógio de cabeceira com foto e rotação automática ao plugar o carregador.", style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                        }
+                        Switch(
+                            checked = isPhotoStandByOnChargeEnabled,
+                            onCheckedChange = onTogglePhotoStandByOnCharge,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = TextPrimary,
+                                checkedTrackColor = DarkSurfaceVariant,
+                                uncheckedThumbColor = TextSecondary,
+                                uncheckedTrackColor = DarkSurface
+                            )
+                        )
                     }
                 }
 

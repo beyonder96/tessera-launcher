@@ -219,7 +219,6 @@ class MainActivity : ComponentActivity() {
             viewModel.refreshWeather()
             viewModel.refreshPredictedApps()
             viewModel.refreshScreenTime()
-            viewModel.checkFocusSchedule()
             if (viewModel.uiState.value.customWallpaperPath == null && viewModel.uiState.value.isSystemWallpaperEnabled) {
                 viewModel.loadWallpaper()
             }
