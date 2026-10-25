@@ -762,15 +762,15 @@ private fun ThemeSettingsRow(
                 }
             }
 
-            // 4. Light
+            // 4. Light Journal
             Box(
                 modifier = Modifier
                     .size(26.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE5E5EA))
+                    .background(Color(0xFFF7F4EB))
                     .border(
-                        width = if (themeMode == "LIGHT") 1.dp else 0.dp,
-                        color = if (themeMode == "LIGHT") Color.Black else Color.Transparent,
+                        width = if (themeMode == "LIGHT") 1.5.dp else 1.dp,
+                        color = if (themeMode == "LIGHT") Color(0xFF1C1917) else Color(0xFFDDD8CB),
                         shape = CircleShape
                     )
                     .clickable(
@@ -1083,7 +1083,7 @@ private fun ExtrasDialog(
                 HorizontalDivider(color = ItemDividerColor, thickness = 1.dp)
 
                 Text(
-                    text = "Widgets da Barra de Pesquisa",
+                    text = "Widgets da Página Shelf",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = TextSecondary

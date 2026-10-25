@@ -131,17 +131,17 @@ fun PermissionsScreen(
 
     val isLight = uiState.isLightMode
     val bg = when {
-        isLight -> Color(0xFFF8FAFC)
+        isLight -> Color(0xFFF7F4EB)
         uiState.isAmoledMode -> AmoledBlack
         else -> DarkSurface
     }
-    val cardBg = if (isLight) Color(0xFFFFFFFF) else AmoledCardBackground
-    val cardBorder = if (isLight) Color(0xFFCBD5E1) else AmoledCardBorder
-    val iconBoxBg = if (isLight) Color(0xFFF1F5F9) else Color(0xFF191920)
-    val primaryTextColor = if (isLight) Color(0xFF0F172A) else TextPrimary
-    val secondaryTextColor = if (isLight) Color(0xFF64748B) else TextSecondary
-    val tertiaryTextColor = if (isLight) Color(0xFF94A3B8) else TextTertiary
-    val dividerColor = if (isLight) Color(0xFFF1F5F9) else Color(0xFF16161C)
+    val cardBg = if (isLight) Color(0xFFEFECE2) else AmoledCardBackground
+    val cardBorder = if (isLight) Color(0xFFDDD8CB) else AmoledCardBorder
+    val iconBoxBg = if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)
+    val primaryTextColor = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryTextColor = if (isLight) Color(0xFF57534E) else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
+    val dividerColor = if (isLight) Color(0x181C1917) else Color(0xFF16161C)
 
     Box(
         modifier = modifier
@@ -489,12 +489,12 @@ private fun PermissionRow(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = if (isLightMode) Color.White else Color.Black,
-                checkedTrackColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
-                checkedBorderColor = if (isLightMode) Color(0xFF0F172A) else Color.White,
-                uncheckedThumbColor = if (isLightMode) Color(0xFF94A3B8) else TextSecondary,
-                uncheckedTrackColor = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF222228),
-                uncheckedBorderColor = if (isLightMode) Color(0xFFCBD5E1) else Color.Transparent
+                checkedThumbColor = if (isLightMode) Color(0xFFF7F4EB) else Color.Black,
+                checkedTrackColor = if (isLightMode) Color(0xFF1C1917) else Color.White,
+                checkedBorderColor = if (isLightMode) Color(0xFF1C1917) else Color.White,
+                uncheckedThumbColor = if (isLightMode) Color(0xFF625B55) else TextSecondary,
+                uncheckedTrackColor = if (isLightMode) Color(0xFFE8E4D8) else Color(0xFF222228),
+                uncheckedBorderColor = if (isLightMode) Color(0xFFDDD8CB) else Color.Transparent
             )
         )
     }

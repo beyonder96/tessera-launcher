@@ -158,8 +158,8 @@ fun NothingDotMatrixClock(
     dotSize: Dp = 4.dp,
     dotSpacing: Dp = 2.dp
 ) {
-    val inactiveDotColor = if (isLightMode) Color(0x18000000) else Color(0x22FFFFFF)
-    val activeDotColor = if (isLightMode) Color(0xFF111827) else Color.White
+    val inactiveDotColor = if (isLightMode) Color(0x181C1917) else Color(0x22FFFFFF)
+    val activeDotColor = if (isLightMode) Color(0xFF1C1917) else Color.White
 
     Row(
         modifier = modifier,
@@ -252,8 +252,8 @@ fun EditorialClockWidget(
         }
     }
 
-    val primaryTextColor = if (isLightMode) Color(0xFF111827) else TextPrimary
-    val secondaryTextColor = if (isLightMode) Color(0xFF6B7280) else TextSecondary
+    val primaryTextColor = if (isLightMode) Color(0xFF1C1917) else TextPrimary
+    val secondaryTextColor = if (isLightMode) Color(0xFF57534E) else TextSecondary
 
     Box(
         modifier = modifier
@@ -291,7 +291,7 @@ fun EditorialClockWidget(
                             modifier = Modifier
                                 .size(4.dp)
                                 .clip(CircleShape)
-                                .background(if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor.copy(alpha = 0.6f))
+                                .background(if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor.copy(alpha = 0.6f))
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
@@ -336,7 +336,7 @@ fun EditorialClockWidget(
                                 fontSize = 46.sp,
                                 fontWeight = FontWeight.Light
                             ),
-                            color = if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor,
+                            color = if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor,
                             modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
                         )
                         Text(
@@ -395,7 +395,7 @@ fun EditorialClockWidget(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (accentColor != Color.White && accentColor != Color(0xFF111827)) accentColor else secondaryTextColor
+                        color = if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(

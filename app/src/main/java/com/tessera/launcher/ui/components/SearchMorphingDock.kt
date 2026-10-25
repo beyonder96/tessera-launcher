@@ -115,8 +115,7 @@ fun SearchMorphingDock(
     searchBarOpacity: Int = 100,
     isGeminiGlowEnabled: Boolean = true,
     onAiSearchClick: () -> Unit = {},
-    onSearchSubmit: (String) -> Unit = {},
-    widgetContent: (@Composable () -> Unit)? = null
+    onSearchSubmit: (String) -> Unit = {}
 ) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.dp
@@ -143,7 +142,6 @@ fun SearchMorphingDock(
         }
     }
 
-    val hasTopContent = widgetContent != null
     val dockShape = Tessera.shapes.pill
     val buttonShape = Tessera.shapes.full
 
@@ -443,8 +441,8 @@ fun SearchMorphingDock(
                             .padding(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = if (widgetContent != null) 12.dp else 4.dp,
-                                bottom = if (widgetContent != null) 6.dp else 4.dp
+                                top = 4.dp,
+                                bottom = 4.dp
                             )
                     ) {
                         // Reflexo especular superior do Liquid Design
@@ -464,23 +462,6 @@ fun SearchMorphingDock(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            if (widgetContent != null) {
-                                widgetContent()
-                                Spacer(modifier = Modifier.height(4.dp))
-                                HorizontalDivider(
-                                    color = if (isLightMode) {
-                                        Color(0xFFE2E8F0).copy(alpha = opacityFraction.coerceAtLeast(0.3f))
-                                    } else {
-                                        Color.White.copy(alpha = 0.08f * opacityFraction.coerceAtLeast(0.35f))
-                                    },
-                                    thickness = 1.dp,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                            }
-
                             // Linha de Busca Moderna
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,

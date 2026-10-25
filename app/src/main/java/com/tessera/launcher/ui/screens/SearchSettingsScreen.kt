@@ -84,7 +84,7 @@ fun SearchSettingsScreen(
     viewModel: MainViewModel,
     uiState: LauncherUiState,
     onBack: () -> Unit,
-    onNavigateToWidgetsCenter: () -> Unit,
+    onNavigateToWidgetsCenter: () -> Unit = {},
     onRequestContactsPermission: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -167,15 +167,6 @@ fun SearchSettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    SearchNavRow(
-                        icon = Icons.Outlined.GridView,
-                        title = "Centro de Widgets",
-                        subtitle = "Ative, personalize e reordene os cartões de widgets e as ações rápidas",
-                        onClick = onNavigateToWidgetsCenter
-                    )
-
-                    HorizontalDivider(color = SearchDividerColor, thickness = 1.dp)
-
                     SearchToggleRow(
                         icon = Icons.Outlined.Keyboard,
                         title = "Abrir Teclado",

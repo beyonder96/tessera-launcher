@@ -72,13 +72,13 @@ fun ScreenTimeWidgetCard(
         else -> Color(0xFF2C2C38)
     }
 
-    val contentColor = if (isLightMode) Color(0xFF0F172A) else Color.White
-    val secondaryColor = if (isLightMode) Color(0xFF64748B) else Color(0xFF94A3B8)
+    val contentColor = if (isLightMode) Color(0xFF1C1917) else Color.White
+    val secondaryColor = if (isLightMode) Color(0xFF57534E) else Color(0xFF94A3B8)
 
     val effectiveAccent = if (accentColor != Color.White) {
         accentColor
     } else {
-        if (isLightMode) Color(0xFF0F172A) else Color.White
+        if (isLightMode) Color(0xFF334155) else Color.White
     }
 
     Row(

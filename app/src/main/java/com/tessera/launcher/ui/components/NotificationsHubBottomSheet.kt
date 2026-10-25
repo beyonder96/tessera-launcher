@@ -97,10 +97,10 @@ fun NotificationsHubBottomSheet(
         else -> DarkSurface
     }
 
-    val primaryTextColor = if (isLightMode) Color(0xFF0F172A) else Color.White
-    val secondaryTextColor = if (isLightMode) Color(0xFF64748B) else Color(0xFF94A3B8)
+    val primaryTextColor = if (isLightMode) Color(0xFF1C1917) else Color.White
+    val secondaryTextColor = if (isLightMode) Color(0xFF57534E) else Color(0xFF94A3B8)
     val cardBg = when {
-        isLightMode -> Color(0xFFF8FAFC)
+        isLightMode -> Color(0xFFE8E4D8)
         isLiquidGlass -> Color.White.copy(alpha = 0.07f)
         isAmoled -> AmoledCardBackground
         else -> Color(0xFF1E1E26)

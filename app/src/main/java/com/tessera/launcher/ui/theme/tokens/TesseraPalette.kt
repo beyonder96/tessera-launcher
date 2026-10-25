@@ -77,19 +77,19 @@ data class TesseraPalette(
         )
 
         fun light(accent: Color): TesseraPalette = TesseraPalette(
-            background = Color(0xFFF2F2F7),
-            backgroundTranslucent = Color(0xD0F2F2F7),
-            surface = Color(0xFFFFFFFF),
-            surfaceSubtle = Color(0xFFE5E5EA),
-            surfaceBorder = Color(0x15000000),
-            surfaceBorderHighlight = Color(0x30000000),
-            textPrimary = Color(0xFF1C1C1E),
-            textSecondary = Color(0xFF8E8E93),
-            textTertiary = Color(0xFFAEAEB2),
-            accent = if (accent == Color(0xFFFFFFFF)) Color(0xFF1C1C1E) else accent,
-            accentMuted = (if (accent == Color(0xFFFFFFFF)) Color(0xFF1C1C1E) else accent).copy(alpha = 0.12f),
-            divider = Color(0x12000000),
-            ripple = Color(0x12000000),
+            background = Color(0xFFF7F4EB),
+            backgroundTranslucent = Color(0xD0F7F4EB),
+            surface = Color(0xFFEFECE2),
+            surfaceSubtle = Color(0xFFE8E4D8),
+            surfaceBorder = Color(0xFFDDD8CB),
+            surfaceBorderHighlight = Color(0x2E1C1917),
+            textPrimary = Color(0xFF1C1917),
+            textSecondary = Color(0xFF57534E),
+            textTertiary = Color(0xFF625B55),
+            accent = if (accent == Color(0xFFFFFFFF)) Color(0xFF334155) else accent,
+            accentMuted = (if (accent == Color(0xFFFFFFFF)) Color(0xFF334155) else accent).copy(alpha = 0.16f),
+            divider = Color(0x181C1917),
+            ripple = Color(0x141C1917),
             isLight = true
         )
     }

@@ -14,21 +14,21 @@ val DarkSurfaceVariant = Color(0xFF2C2C2E)
 val DarkSurfaceBorder = Color(0x1AFFFFFF) // Contorno vítreo sutil a 10%
 val DarkSurfaceBorderHover = Color(0x30FFFFFF)
 
-// Modos Charcoal (Dark Slate) e Light
+// Modos Charcoal (Dark Slate) e Light Journal (Papel de Livro Aquecido & Nanquim Profundo)
 val CharcoalBackground = Color(0xFF121215)
 val CharcoalCardBackground = Color(0xFF1A1A1F)
 val CharcoalCardBorder = Color(0x22FFFFFF)
-val LightBackground = Color(0xFFF2F2F7) // iOS System Grouped Background
-val LightCardBackground = Color(0xFFFFFFFF)
-val LightCardBorder = Color(0x15000000)
-val LightTextPrimary = Color(0xFF1C1C1E)
-val LightTextSecondary = Color(0xFF8E8E93)
-val LightTextTertiary = Color(0xFFAEAEB2)
-val LightIconBackground = Color(0xFFE5E5EA)
-val LightIconTint = Color(0xFF1C1C1E)
-val LightDivider = Color(0x1A000000)
-val LightSurface = Color(0xFFFFFFFF)
-val LightSurfaceVariant = Color(0xFFF2F2F7)
+val LightBackground = Color(0xFFF7F4EB) // Papel de jornal aquecido (Journal)
+val LightCardBackground = Color(0xFFEFECE2) // Cartão editorial prensado
+val LightCardBorder = Color(0xFFDDD8CB) // Borda sutil de encadernação
+val LightTextPrimary = Color(0xFF1C1917) // Nanquim profundo aquecido
+val LightTextSecondary = Color(0xFF57534E) // Ardósia quente editorial
+val LightTextTertiary = Color(0xFF625B55) // Texto terciário aquecido
+val LightIconBackground = Color(0xFFE8E4D8)
+val LightIconTint = Color(0xFF1C1917)
+val LightDivider = Color(0x181C1917)
+val LightSurface = Color(0xFFEFECE2)
+val LightSurfaceVariant = Color(0xFFE8E4D8)
 
 // Tokens de Vidro Translúcido Cupertino (Apple Vibrancy & Frosted Lens)
 fun liquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
@@ -67,8 +67,8 @@ fun lightLiquidGlassSurfaceBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color(0xFFFFFFFF).copy(alpha = 0.82f * a),
-            Color(0xFFF2F2F7).copy(alpha = 0.72f * a)
+            Color(0xF2EFECE2).copy(alpha = 0.88f * a),
+            Color(0xF8E8E4D8).copy(alpha = 0.94f * a)
         )
     )
 }
@@ -77,9 +77,9 @@ fun lightLiquidGlassBorderBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.50f * a),
-            Color.White.copy(alpha = 0.18f * a),
-            Color(0x10000000).copy(alpha = 0.08f * a)
+            Color(0x2E1C1917).copy(alpha = 0.40f * a),
+            Color(0xFFDDD8CB).copy(alpha = 0.50f * a),
+            Color(0x181C1917).copy(alpha = 0.15f * a)
         )
     )
 }
@@ -88,7 +88,7 @@ fun lightLiquidGlassSheenBrush(alphaFactor: Float = 1f): Brush {
     val a = alphaFactor.coerceIn(0f, 1f)
     return Brush.verticalGradient(
         colors = listOf(
-            Color.White.copy(alpha = 0.20f * a),
+            Color.White.copy(alpha = 0.35f * a),
             Color.Transparent
         )
     )
@@ -131,12 +131,12 @@ val PhoneAiWhiteGlowColors = listOf(
 )
 
 val PhoneAiLightGlowColors = listOf(
-    Color(0x0C1C1C1E),
-    Color(0x251C1C1E),
-    Color(0x401C1C1E),
-    Color(0x401C1C1E),
-    Color(0x251C1C1E),
-    Color(0x0C1C1C1E)
+    Color(0x0C1C1917),
+    Color(0x251C1917),
+    Color(0x401C1917),
+    Color(0x401C1917),
+    Color(0x251C1917),
+    Color(0x0C1C1917)
 )
 
 fun phoneAiWhiteBrush(alpha: Float = 1f): Brush {
@@ -196,6 +196,6 @@ val ACCENT_COLOR_OPTIONS = listOf(
 fun getAccentColor(name: String, isLightMode: Boolean = false): Color {
     val option = ACCENT_COLOR_OPTIONS.firstOrNull { it.id.equals(name, ignoreCase = true) }
     val base = option?.color ?: AccentMonochrome
-    return if (isLightMode && base == AccentMonochrome) Color(0xFF111827) else base
+    return if (isLightMode && base == AccentMonochrome) Color(0xFF334155) else base
 }
 

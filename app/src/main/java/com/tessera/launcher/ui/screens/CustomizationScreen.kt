@@ -78,6 +78,7 @@ import com.tessera.launcher.ui.components.TypographyBottomSheet
 import com.tessera.launcher.ui.theme.ACCENT_COLOR_OPTIONS
 import androidx.compose.material.icons.outlined.AccessTime
 import com.tessera.launcher.ui.state.LauncherUiState
+import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBackground
 import com.tessera.launcher.ui.theme.AmoledCardBorder
@@ -314,7 +315,7 @@ fun CustomizationScreen(
                             modifier = Modifier
                                 .size(38.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
+                                .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -378,7 +379,7 @@ fun CustomizationScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -483,7 +484,7 @@ fun CustomizationScreen(
                                 modifier = Modifier
                                     .size(38.dp)
                                     .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isLight) Color(0xFFE5E5EA) else Color(0xFF191920)),
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -571,7 +572,7 @@ fun CustomizationScreen(
 
                             // 3 Amostras de cores
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                val colors = listOf("#000000", "#1C1C24", "#E5E5EA")
+                                val colors = listOf("#000000", "#1C1C24", "#F7F4EB")
                                 colors.forEach { hex ->
                                     val isSelected = uiState.solidWallpaperColor.equals(hex, ignoreCase = true)
                                     val c = Color(android.graphics.Color.parseColor(hex))
@@ -1159,6 +1160,106 @@ fun CustomizationScreen(
                                 uncheckedTrackColor = Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // CARD TELA −1: Página de Widgets & Feed
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                    ) {
+                        Text(
+                            text = "Tela Lateral (−1)",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp
+                            ),
+                            color = textPrimary
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Acesso ao deslizar para a direita a partir da tela inicial",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = textSecondary
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Seletor Segmentado: [ WIDGETS | FEED | DESATIVADO ]
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF131318))
+                                .border(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF22222A), RoundedCornerShape(12.dp))
+                                .padding(3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val modes = listOf(
+                                "widgets" to "WIDGETS",
+                                "feed" to "FEED",
+                                "disabled" to "DESATIVADO"
+                            )
+                            modes.forEach { (modeKey, modeLabel) ->
+                                val isSelected = uiState.leftScreenMode == modeKey
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .clip(RoundedCornerShape(9.dp))
+                                        .background(
+                                            if (isSelected) {
+                                                if (isLight) Color(0xFFF7F4EB) else Color(0xFF282832)
+                                            } else {
+                                                Color.Transparent
+                                            }
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = {
+                                                viewModel.setLeftScreenMode(modeKey)
+                                            }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = modeLabel,
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            letterSpacing = 0.8.sp
+                                        ),
+                                        color = if (isSelected) textPrimary else textSecondary
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (uiState.leftScreenMode == "widgets") {
+                        CustomDivider(isLight = isLight)
+
+                        CustomSettingsRow(
+                            icon = Icons.Outlined.GridView,
+                            title = "Gerenciar Widgets da Shelf",
+                            subtitle = "Escolha e reordene os cartões da página",
+                            onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
+                            isLight = isLight
                         )
                     }
                 }

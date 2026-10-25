@@ -94,17 +94,17 @@ fun WidgetsCenterScreen(
 
     val isLight = uiState.isLightMode
     val screenBg = when {
-        isLight -> Color(0xFFF8FAFC)
+        isLight -> Color(0xFFF7F4EB)
         uiState.isAmoledMode -> AmoledBlack
         else -> DarkBackground
     }
-    val cardBg = if (isLight) Color(0xFFFFFFFF) else WidgetCenterCardBackground
-    val cardBorder = if (isLight) Color(0xFFCBD5E1) else WidgetCenterCardBorder
-    val dividerColor = if (isLight) Color(0xFFF1F5F9) else WidgetCenterDividerColor
-    val iconBg = if (isLight) Color(0xFFF1F5F9) else WidgetCenterIconBackground
-    val primaryTextColor = if (isLight) Color(0xFF0F172A) else TextPrimary
-    val secondaryTextColor = if (isLight) Color(0xFF64748B) else TextSecondary
-    val tertiaryTextColor = if (isLight) Color(0xFF94A3B8) else TextTertiary
+    val cardBg = if (isLight) Color(0xFFEFECE2) else WidgetCenterCardBackground
+    val cardBorder = if (isLight) Color(0xFFDDD8CB) else WidgetCenterCardBorder
+    val dividerColor = if (isLight) Color(0x181C1917) else WidgetCenterDividerColor
+    val iconBg = if (isLight) Color(0xFFE8E4D8) else WidgetCenterIconBackground
+    val primaryTextColor = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryTextColor = if (isLight) Color(0xFF57534E) else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
@@ -185,7 +185,7 @@ fun WidgetsCenterScreen(
                     WidgetCenterToggleRow(
                         icon = Icons.Outlined.AutoAwesome,
                         title = "Smart Glance (Now & Next)",
-                        subtitle = "Resumo contextual de agenda, clima e tarefas acima da barra de pesquisa",
+                        subtitle = "Resumo contextual de agenda, clima e tarefas na página de widgets (Shelf)",
                         checked = uiState.isSmartGlanceEnabled,
                         onCheckedChange = { viewModel.setSmartGlanceEnabled(it) },
                         isLightMode = isLight,

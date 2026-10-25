@@ -33,7 +33,7 @@ fun NotificationBadge(
 ) {
     if (count <= 0) return
 
-    val borderColor = if (isLightMode) Color(0xFFF1F5F9) else Color(0xFF0F172A)
+    val borderColor = if (isLightMode) Color(0xFFE8E4D8) else Color(0xFF0F172A)
     val badgeColor = accentColor
 
     Box(

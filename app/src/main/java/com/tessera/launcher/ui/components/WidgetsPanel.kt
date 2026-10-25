@@ -109,7 +109,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import kotlinx.coroutines.launch
 
-private enum class PanelCardType {
+enum class PanelCardType {
     QUICK_ACTIONS,
     BATTERY,
     CALENDAR,
@@ -540,7 +540,7 @@ fun WidgetsPanel(
  * Screenshot 1: Ações Rápidas (4 squircle buttons: Sol, Lanterna, Bluetooth, Wi-Fi com estado ativo branco)
  */
 @Composable
-private fun QuickActionsWidgetCard(
+fun QuickActionsWidgetCard(
     isTorchOn: Boolean,
     ringerMode: Int,
     onToggleTorch: () -> Unit,
@@ -632,20 +632,20 @@ private fun QuickActionButton(
 ) {
     val shape = RoundedCornerShape(14.dp)
     val bgColor = when {
-        isActive -> if (isLightMode) Color(0xFF0F172A) else Color.White.copy(alpha = 0.92f)
-        isLightMode -> Color(0x14000000)
+        isActive -> if (isLightMode) Color(0xFF1C1917) else Color.White.copy(alpha = 0.92f)
+        isLightMode -> Color(0xFFE8E4D8)
         isLiquidGlass -> Color.White.copy(alpha = 0.08f)
         isAmoledMode -> Color.White.copy(alpha = 0.05f)
         else -> Color(0xFF1E1E26)
     }
     val iconTint = when {
-        isActive -> if (isLightMode) Color.White else Color(0xFF0F172A)
-        isLightMode -> Color(0xFF0F172A)
+        isActive -> if (isLightMode) Color(0xFFF7F4EB) else Color(0xFF0F172A)
+        isLightMode -> Color(0xFF1C1917)
         else -> Color.White
     }
     val borderStroke = when {
-        isActive -> BorderStroke(1.dp, if (isLightMode) Color(0xFF0F172A) else Color.White.copy(alpha = 0.40f))
-        isLightMode -> BorderStroke(1.dp, Color(0x20000000))
+        isActive -> BorderStroke(1.dp, if (isLightMode) Color(0xFF1C1917) else Color.White.copy(alpha = 0.40f))
+        isLightMode -> BorderStroke(1.dp, Color(0xFFDDD8CB))
         isLiquidGlass -> BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
         isAmoledMode -> BorderStroke(1.dp, Color.White.copy(alpha = 0.10f))
         else -> BorderStroke(1.dp, Color(0xFF2C2C38))
@@ -679,7 +679,7 @@ private fun QuickActionButton(
  * Screenshot 2: Conectividade & Bateria (3 pílulas: Bateria %, Wi-Fi, Celular)
  */
 @Composable
-private fun BatteryWidgetCard(
+fun BatteryWidgetCard(
     batteryPercentage: Int,
     isCharging: Boolean,
     batteryWidgetStyle: String = "cards_3",
@@ -693,9 +693,9 @@ private fun BatteryWidgetCard(
 
     if (batteryWidgetStyle == "bar") {
         // Estilo Barra Padrão
-        val boxBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1E1E26)
-        val boxBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2C2C38)
-        val contentColor = if (isLightMode) Color(0xFF0F172A) else Color.White
+        val boxBg = if (isLightMode) Color(0xFFE8E4D8) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1E1E26)
+        val boxBorder = if (isLightMode) Color(0xFFDDD8CB) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2C2C38)
+        val contentColor = if (isLightMode) Color(0xFF1C1917) else Color.White
 
         Row(
             modifier = Modifier
@@ -748,7 +748,7 @@ private fun BatteryWidgetCard(
                         .height(4.dp)
                         .clip(CircleShape),
                     color = contentColor,
-                    trackColor = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF2C2C36)
+                    trackColor = if (isLightMode) Color(0xFFDDD8CB) else Color(0xFF2C2C36)
                 )
             }
         }
@@ -869,7 +869,7 @@ private fun StatusPill(
  * Screenshot 3: Calendário, Data & Horário
  */
 @Composable
-private fun CalendarWidgetCard(
+fun CalendarWidgetCard(
     currentTime: String,
     currentDate: String,
     nextCalendarEvent: CalendarEventInfo?,
@@ -1007,7 +1007,7 @@ private fun CalendarWidgetCard(
  * Screenshot 4: Player de Mídia
  */
 @Composable
-private fun MediaWidgetCard(
+fun MediaWidgetCard(
     mediaPlayback: MediaPlaybackInfo,
     hasNotificationAccess: Boolean,
     onRequestAccess: () -> Unit,
@@ -1185,7 +1185,7 @@ private fun MediaWidgetCard(
  * Screenshot 5: Versículo / Foco do Dia
  */
 @Composable
-private fun VerseFocusWidgetCard(
+fun VerseFocusWidgetCard(
     isAmoledMode: Boolean = false,
     isLightMode: Boolean = false,
     isLiquidGlass: Boolean = false,
@@ -1300,7 +1300,7 @@ private fun VerseFocusWidgetCard(
  * Novo Widget de Clima & Temperatura (Open-Meteo API)
  */
 @Composable
-private fun WeatherWidgetCard(
+fun WeatherWidgetCard(
     weatherInfo: WeatherInfo?,
     hasLocationPermission: Boolean,
     onRequestLocationPermission: () -> Unit,
@@ -1312,12 +1312,12 @@ private fun WeatherWidgetCard(
     isLiquidGlass: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
-    val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
-    val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
-    val iconTint = if (isLightMode) Color(0xFF0F172A) else Color.White
-    val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
-    val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
-    val subtleText = if (isLightMode) Color(0xFF334155) else Color(0xFFAAAAAA)
+    val badgeBg = if (isLightMode) Color(0xFFE8E4D8) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
+    val badgeBorder = if (isLightMode) Color(0xFFDDD8CB) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
+    val iconTint = if (isLightMode) Color(0xFF1C1917) else Color.White
+    val primaryText = if (isLightMode) Color(0xFF1C1917) else Color.White
+    val secondaryText = if (isLightMode) Color(0xFF57534E) else Color(0xFF8E8E98)
+    val subtleText = if (isLightMode) Color(0xFF625B55) else Color(0xFFAAAAAA)
 
     Row(
         modifier = Modifier
@@ -1515,7 +1515,7 @@ private fun WeatherWidgetCard(
  * Notes & Tasks Widget
  */
 @Composable
-private fun NotesWidgetCard(
+fun NotesWidgetCard(
     tasks: List<NoteTask>,
     notesWidgetFilter: String,
     onAddTask: (String) -> Unit,
@@ -1587,7 +1587,7 @@ private fun NotesWidgetCard(
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SmartGlanceWidgetCard(
+fun SmartGlanceWidgetCard(
     briefing: SmartGlanceBriefing?,
     formattedDate: String,
     onCalendarClick: () -> Unit,
@@ -1689,7 +1689,7 @@ private fun SmartGlanceWidgetCard(
 }
 
 @Composable
-private fun PredictedAppsWidgetCard(
+fun PredictedAppsWidgetCard(
     apps: List<AppInfo>,
     onAppClick: (AppInfo) -> Unit,
     onAppLongClick: ((AppInfo) -> Unit)?,
@@ -1722,7 +1722,7 @@ private fun PredictedAppsWidgetCard(
 }
 
 @Composable
-private fun NotificationsWidgetCard(
+fun NotificationsWidgetCard(
     recentNotifications: List<AppNotificationItem>,
     onOpenHub: () -> Unit,
     onDismissTop: () -> Unit,

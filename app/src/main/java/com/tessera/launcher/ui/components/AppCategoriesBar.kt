@@ -51,7 +51,7 @@ fun AppCategoriesBar(
     accentColor: Color = Color.White,
     leadingContent: (@Composable () -> Unit)? = null
 ) {
-    val hasCustomAccent = accentColor != Color.White && accentColor != Color(0xFF111827)
+    val hasCustomAccent = accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155)
 
     LazyRow(
         modifier = modifier
@@ -73,9 +73,9 @@ fun AppCategoriesBar(
             val bgColor by animateColorAsState(
                 targetValue = when {
                     isSelected && hasCustomAccent -> accentColor.copy(alpha = if (isLightMode) 0.18f else 0.24f)
-                    isSelected && isLightMode -> Color(0xFF1C1C1E)
+                    isSelected && isLightMode -> Color(0xFF1C1917)
                     isSelected -> Color(0xFF2C2C2E)
-                    isLightMode -> Color(0x0C000000)
+                    isLightMode -> Color(0xFFE8E4D8)
                     else -> Color(0x18FFFFFF)
                 },
                 animationSpec = tween(150),
@@ -85,9 +85,9 @@ fun AppCategoriesBar(
             val borderColor by animateColorAsState(
                 targetValue = when {
                     isSelected && hasCustomAccent -> accentColor
-                    isSelected && isLightMode -> Color(0x33000000)
+                    isSelected && isLightMode -> Color(0xFF1C1917)
                     isSelected -> Color(0x40FFFFFF)
-                    isLightMode -> Color(0x15000000)
+                    isLightMode -> Color(0xFFDDD8CB)
                     else -> Color(0x18FFFFFF)
                 },
                 animationSpec = tween(150),
@@ -97,9 +97,9 @@ fun AppCategoriesBar(
             val textColor by animateColorAsState(
                 targetValue = when {
                     isSelected && hasCustomAccent -> if (isLightMode) accentColor else Color.White
-                    isSelected && isLightMode -> Color.White
+                    isSelected && isLightMode -> Color(0xFFF7F4EB)
                     isSelected -> Color(0xFFF2F2F7)
-                    isLightMode -> Color(0xFF6E6E73)
+                    isLightMode -> Color(0xFF57534E)
                     else -> Color(0xFF8E8E93)
                 },
                 animationSpec = tween(150),

@@ -84,17 +84,17 @@ fun NavigationLiveActivityCard(
     }
 
     val primaryTextColor = when {
-        isLightMode -> Color(0xFF0F172A)
+        isLightMode -> Color(0xFF1C1917)
         else -> Color(0xFFF8FAFC)
     }
 
     val secondaryTextColor = when {
-        isLightMode -> Color(0xFF64748B)
+        isLightMode -> Color(0xFF57534E)
         else -> Color(0xFF94A3B8)
     }
 
     val trackColor = when {
-        isLightMode -> Color(0xFFCBD5E1)
+        isLightMode -> Color(0xFFDDD8CB)
         else -> Color(0xFF334155)
     }
 
@@ -172,7 +172,7 @@ fun NavigationLiveActivityCard(
                         modifier = Modifier
                             .size(26.dp)
                             .clip(CircleShape)
-                            .background(if (isLightMode) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                            .background(if (isLightMode) Color(0xFFE8E4D8) else Color(0xFF1E293B))
                             .tesseraPressFeedback()
                             .clickable { onCollapseClick() },
                         contentAlignment = Alignment.Center
@@ -294,7 +294,7 @@ fun NavigationLiveActivityCard(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(if (isLightMode) Color(0xFFF1F5F9) else Color(0xFF1E293B))
+                                .background(if (isLightMode) Color(0xFFE8E4D8) else Color(0xFF1E293B))
                                 .border(
                                     width = 0.6.dp,
                                     color = if (isLightMode) Color(0xFFE2E8F0) else Color(0xFF334155),
