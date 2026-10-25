@@ -25,7 +25,7 @@ class AiEngine {
         private const val TAG = "AiEngine"
         private const val GROQ_CHAT_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
         private const val GROQ_MODELS_ENDPOINT = "https://api.groq.com/openai/v1/models"
-        private const val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        private const val GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
         private const val SYSTEM_PROMPT = "Responda de forma extremamente concisa, direta e objetiva em no máximo 2 ou 3 frases em Português do Brasil. Sem introduções vazias ou saudações."
 
         // Modelos candidatos ordenados por prioridade (inteligência máxima + desempenho em tiers gratuitos)
