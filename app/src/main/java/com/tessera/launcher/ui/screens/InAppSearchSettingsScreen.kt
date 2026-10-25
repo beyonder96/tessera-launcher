@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,15 +44,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.DarkBackground
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightIconBackground
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val InAppCardShape = RoundedCornerShape(24.dp)
-private val InAppCardBackground = Color(0xFF0F0F12)
-private val InAppCardBorder = Color(0xFF1D1D22)
-private val InAppDividerColor = Color(0xFF18181D)
 
 @Composable
 fun InAppSearchSettingsScreen(
@@ -63,6 +66,16 @@ fun InAppSearchSettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val allApps = (uiState.appsState as? com.tessera.launcher.ui.state.AppsListState.Success)?.apps ?: emptyList()
+    val isLight = uiState.isLightMode
+
+    val screenBg = if (isLight) LightBackground else DarkBackground
+    val cardBg = if (isLight) LightCardBackground else Color(0xFF0F0F12)
+    val cardBorder = if (isLight) LightCardBorder else Color(0xFF1D1D22)
+    val dividerColor = if (isLight) LightDivider else Color(0xFF18181D)
+    val iconBg = if (isLight) LightIconBackground else Color(0xFF19191E)
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
 
     val statusBarPadding = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -73,7 +86,7 @@ fun InAppSearchSettingsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
@@ -100,7 +113,7 @@ fun InAppSearchSettingsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -112,7 +125,7 @@ fun InAppSearchSettingsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -126,14 +139,14 @@ fun InAppSearchSettingsScreen(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.2.sp
             ),
-            color = TextTertiary,
+            color = tertiaryTextColor,
             modifier = Modifier.padding(horizontal = 22.dp, vertical = 6.dp)
         )
 
         Surface(
             shape = InAppCardShape,
-            color = InAppCardBackground,
-            border = BorderStroke(1.dp, InAppCardBorder),
+            color = cardBg,
+            border = BorderStroke(1.dp, cardBorder),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -151,13 +164,13 @@ fun InAppSearchSettingsScreen(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF19191E)),
+                                .background(iconBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = app.firstLetter.toString(),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
+                                color = primaryTextColor
                             )
                         }
                         Spacer(modifier = Modifier.width(14.dp))
@@ -168,14 +181,14 @@ fun InAppSearchSettingsScreen(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium
                                 ),
-                                color = TextPrimary,
+                                color = primaryTextColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = app.packageName,
                                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                                color = TextSecondary,
+                                color = secondaryTextColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -184,14 +197,15 @@ fun InAppSearchSettingsScreen(
                             checked = isChecked,
                             onCheckedChange = { viewModel.toggleInAppSearchPackage(app.packageName) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = Color(0xFF636366),
-                                uncheckedTrackColor = Color(0xFF2C2C2E)
+                                checkedThumbColor = if (isLight) LightBackground else Color.Black,
+                                checkedTrackColor = if (isLight) LightTextPrimary else Color.White,
+                                checkedBorderColor = if (isLight) LightTextPrimary else Color.White,
+                                uncheckedThumbColor = if (isLight) Color(0xFF8E8E93) else Color(0xFF636366),
+                                uncheckedTrackColor = if (isLight) Color(0xFFE5E0D0) else Color(0xFF2C2C2E)
                             )
                         )
                     }
-                    HorizontalDivider(color = InAppDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
                 }
             }
         }

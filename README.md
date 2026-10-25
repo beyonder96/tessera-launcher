@@ -61,12 +61,21 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v2.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v2.8.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.1.0)
 
-### 🆕 Novidades na v2.8.1
-- ↩️ **Restauração Completa da Interface Classic (v2.8.0):** Retorno integral à interface clássica minimalista monocromática original do Tessera Launcher com navegação vertical rápida no estilo Niagara, Live Activities para Corridas/Delivery/Navegação, gaveta A-Z fluida e dock clássico.
+### 🆕 Novidades na v3.1.0
+- 📰 **Modo Jornal Universal (Light Editorial):** Experiência clara em tons quentes de papel de livro (#F7F4EB, #EFECE2, #DDD8CB e #1C1917) estendida a 100% das telas, subpáginas de configurações e todos os modais inferiores.
+- 📱 **Central de Widgets & Feed Social Unificados:** Nova página dedicada unindo a Central de Widgets e o Feed com seletor segmentado estilo iOS (TesseraSegmentedControl).
+- ↔️ **Tela Lateral (−1) Híbrida na Home:** Deslize para a direita com opção AMBOS para alternar fluidamente entre widgets shelf e feed de notícias/social.
+- ⚙️ **Configurações Reorganizadas e Ergonômicas:** Estruturação em 4 categorias semânticas (Tela & Experiência, Organização & Privacidade, Preferências & Sistema, Transparência & Sobre) e acesso direto a Pastas, Comandos e Apps Ocultos.
+- 🤖 **IA Atualizada para Gemini 3.8 Flash:** Integração atualizada com a nova geração Gemini 3.8 Flash para respostas inteligentes ultrarrápidas na barra de pesquisa.
+- 🧹 **Otimização Interna:** Remoção de ~850 linhas de código legado e compatibilidade total com o modo de tema automático diurno.
 
 ### 📋 Versões Anteriores
+<details>
+<summary><b>v2.8.1</b></summary>
+- ↩️ **Restauração Completa da Interface Classic (v2.8.0):** Retorno integral à interface clássica minimalista monocromática original do Tessera Launcher com navegação vertical rápida no estilo Niagara, Live Activities para Corridas/Delivery/Navegação, gaveta A-Z fluida e dock clássico.
+</details>
 <details>
 <summary><b>v2.8.0</b></summary>
 - 🚗 **Live Activities para Transporte (Uber, 99, Lyft):** Rastreamento de corridas em tempo real com nome e avaliação do motorista, modelo e cor do carro, placa destacada e timeline de rota com mola física elástica.

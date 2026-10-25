@@ -121,7 +121,8 @@ fun CustomizationScreen(
                 currentStyle = uiState.searchBarStyle,
                 onSelectStyle = { viewModel.setSearchBarStyle(it) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "text" -> {
@@ -131,7 +132,8 @@ fun CustomizationScreen(
                 onSelectTextType = { viewModel.setSearchBarTextType(it) },
                 onSaveCustomText = { viewModel.setSearchBarCustomText(it) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "typography" -> {
@@ -141,7 +143,8 @@ fun CustomizationScreen(
                 onSelectFontType = { viewModel.setFontFamilyType(it) },
                 onImportFont = { uri -> viewModel.importCustomFont(uri, context) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "shape" -> {
@@ -149,7 +152,8 @@ fun CustomizationScreen(
                 currentShape = uiState.iconShape,
                 onSelectShape = { viewModel.setIconShape(it) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "pack" -> {
@@ -160,7 +164,8 @@ fun CustomizationScreen(
                     viewModel.setSelectedIconPack(pack)
                 },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "clock_style" -> {
@@ -168,7 +173,8 @@ fun CustomizationScreen(
                 currentStyle = uiState.homeClockStyle,
                 onSelectStyle = { viewModel.setHomeClockStyle(it) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
         "accent_color" -> {
@@ -176,7 +182,8 @@ fun CustomizationScreen(
                 currentColorName = uiState.accentColorName,
                 onSelectColor = { viewModel.setAccentColor(it) },
                 onDismiss = { openModal = null },
-                isAmoled = uiState.isAmoledMode
+                isAmoled = uiState.isAmoledMode,
+                isLight = isLight
             )
         }
     }
@@ -273,10 +280,10 @@ fun CustomizationScreen(
                             checked = uiState.isSystemWallpaperEnabled,
                             onCheckedChange = { viewModel.setSystemWallpaperEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -693,10 +700,10 @@ fun CustomizationScreen(
                             checked = uiState.isDrawerGlassEnabled,
                             onCheckedChange = { viewModel.setDrawerGlassEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -755,10 +762,10 @@ fun CustomizationScreen(
                             checked = uiState.isSmartDockEnabled,
                             onCheckedChange = { viewModel.setSmartDockEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -862,10 +869,10 @@ fun CustomizationScreen(
                             checked = uiState.isAppCategoriesEnabled,
                             onCheckedChange = { viewModel.setAppCategoriesEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -901,10 +908,10 @@ fun CustomizationScreen(
                             checked = uiState.isDrawerRightAligned,
                             onCheckedChange = { viewModel.setDrawerRightAligned(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -978,10 +985,10 @@ fun CustomizationScreen(
                             checked = uiState.isLiveCapsuleEnabled,
                             onCheckedChange = { viewModel.setLiveCapsuleEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -1115,10 +1122,10 @@ fun CustomizationScreen(
                             checked = uiState.isThemedIconsEnabled,
                             onCheckedChange = { viewModel.setThemedIconsEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -1154,10 +1161,10 @@ fun CustomizationScreen(
                             checked = uiState.isHideAppLabelsEnabled,
                             onCheckedChange = { viewModel.setHideAppLabelsEnabled(it) },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.Black,
-                                checkedTrackColor = Color.White,
-                                uncheckedThumbColor = textSecondary,
-                                uncheckedTrackColor = Color(0xFF222228),
+                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                checkedTrackColor = uiState.activeAccentColor,
+                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
+                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
                                 uncheckedBorderColor = Color.Transparent
                             )
                         )
@@ -1197,7 +1204,7 @@ fun CustomizationScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Seletor Segmentado: [ WIDGETS | FEED | DESATIVADO ]
+                        // Seletor Segmentado: [ WIDGETS | FEED | AMBOS | DESATIVADO ]
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1210,9 +1217,10 @@ fun CustomizationScreen(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val modes = listOf(
+                                "both" to "AMBOS",
                                 "widgets" to "WIDGETS",
                                 "feed" to "FEED",
-                                "disabled" to "DESATIVADO"
+                                "disabled" to "OFF"
                             )
                             modes.forEach { (modeKey, modeLabel) ->
                                 val isSelected = uiState.leftScreenMode == modeKey
@@ -1251,13 +1259,13 @@ fun CustomizationScreen(
                         }
                     }
 
-                    if (uiState.leftScreenMode == "widgets") {
+                    if (uiState.leftScreenMode != "disabled") {
                         CustomDivider(isLight = isLight)
 
                         CustomSettingsRow(
                             icon = Icons.Outlined.GridView,
-                            title = "Gerenciar Widgets da Shelf",
-                            subtitle = "Escolha e reordene os cartões da página",
+                            title = "Central de Widgets & Feed Social",
+                            subtitle = "Configure widgets, fontes de feed e opções da tela lateral",
                             onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
                             isLight = isLight
                         )
@@ -1278,11 +1286,11 @@ private fun CustomSettingsRow(
     onClick: () -> Unit,
     isLight: Boolean = false
 ) {
-    val iconBg = if (isLight) Color(0xFFF1F3F5) else Color(0xFF191920)
-    val iconTint = if (isLight) Color(0xFF111827) else TextPrimary
+    val iconBg = if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)
+    val iconTint = if (isLight) Color(0xFF1C1917) else TextPrimary
     val titleColor = if (isLight) LightTextPrimary else TextPrimary
     val subtitleColor = if (isLight) LightTextSecondary else TextSecondary
-    val chevronTint = if (isLight) Color(0xFF9CA3AF) else TextTertiary
+    val chevronTint = if (isLight) Color(0xFF78716C) else TextTertiary
 
     Row(
         modifier = Modifier

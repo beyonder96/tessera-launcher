@@ -89,9 +89,6 @@ import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val HiddenCardShape = RoundedCornerShape(24.dp)
-private val HiddenCardBackground = Color(0xFF0F0F12)
-private val HiddenCardBorder = Color(0xFF1D1D22)
-private val HiddenDividerColor = Color(0xFF18181D)
 
 private fun drawableToBitmap(drawable: Drawable?): Bitmap? {
     if (drawable == null) return null
@@ -168,6 +165,60 @@ fun HiddenAppsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isLight = uiState.isLightMode
+    val isAmoled = uiState.isAmoledMode
+
+    val backgroundColor = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> Color.Black
+        else -> DarkBackground
+    }
+    val cardBackground = when {
+        isLight -> Color(0xFFEFECE2)
+        isAmoled -> Color(0xFF0A0A0A)
+        else -> Color(0xFF0F0F12)
+    }
+    val cardBorder = when {
+        isLight -> Color(0xFFDDD8CB)
+        isAmoled -> Color(0xFF1A1A1A)
+        else -> Color(0xFF1D1D22)
+    }
+    val inputBackground = when {
+        isLight -> Color(0xFFE6E2D6)
+        isAmoled -> Color(0xFF121212)
+        else -> Color(0xFF19191E)
+    }
+    val primaryTextColor = when {
+        isLight -> Color(0xFF1C1917)
+        else -> TextPrimary
+    }
+    val secondaryTextColor = when {
+        isLight -> Color(0xFF78716C)
+        else -> TextSecondary
+    }
+    val tertiaryTextColor = when {
+        isLight -> Color(0xFFA8A29E)
+        else -> TextTertiary
+    }
+    val dividerColor = when {
+        isLight -> Color(0xFFE5E0D3)
+        isAmoled -> Color(0xFF121212)
+        else -> Color(0xFF18181D)
+    }
+    val actionButtonBackground = when {
+        isLight -> Color(0xFFDDD8CB)
+        isAmoled -> Color(0xFF1A1A1A)
+        else -> Color(0xFF1E1E26)
+    }
+    val saveButtonBackground = when {
+        isLight -> Color(0xFF1C1917)
+        else -> Color.White
+    }
+    val saveButtonTextColor = when {
+        isLight -> Color(0xFFF7F4EB)
+        else -> Color.Black
+    }
+
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     var isUnlocked by remember { mutableStateOf(uiState.hiddenAppsPin.isEmpty() || uiState.isPinUnlocked) }
@@ -232,7 +283,7 @@ fun HiddenAppsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(backgroundColor)
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
@@ -259,7 +310,7 @@ fun HiddenAppsScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -271,7 +322,7 @@ fun HiddenAppsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -289,7 +340,7 @@ fun HiddenAppsScreen(
                 Icon(
                     imageVector = Icons.Outlined.Lock,
                     contentDescription = null,
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -297,12 +348,12 @@ fun HiddenAppsScreen(
                     text = "Digite seu PIN",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = primaryTextColor
                 )
                 Text(
                     text = "Acesso protegido a aplicativos ocultos",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
+                    color = secondaryTextColor
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 BasicTextField(
@@ -328,11 +379,11 @@ fun HiddenAppsScreen(
                             }
                         }
                     ),
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 24.sp, textAlign = TextAlign.Center, letterSpacing = 8.sp),
-                    cursorBrush = SolidColor(TextPrimary),
+                    textStyle = TextStyle(color = primaryTextColor, fontSize = 24.sp, textAlign = TextAlign.Center, letterSpacing = 8.sp),
+                    cursorBrush = SolidColor(primaryTextColor),
                     modifier = Modifier
                         .width(180.dp)
-                        .background(Color(0xFF19191E), RoundedCornerShape(12.dp))
+                        .background(inputBackground, RoundedCornerShape(12.dp))
                         .padding(vertical = 12.dp, horizontal = 16.dp)
                 )
 
@@ -341,7 +392,7 @@ fun HiddenAppsScreen(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFF1E1E26))
+                            .background(actionButtonBackground)
                             .clickable {
                                 triggerBiometricPrompt(
                                     context = context,
@@ -365,7 +416,7 @@ fun HiddenAppsScreen(
                         Text(
                             text = "Usar Biometria",
                             style = MaterialTheme.typography.labelLarge.copy(fontSize = 13.sp),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                     }
                 }
@@ -385,14 +436,14 @@ fun HiddenAppsScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
                         ),
-                        color = TextTertiary,
+                        color = tertiaryTextColor,
                         modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
                     )
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = HiddenCardBackground,
-                        border = BorderStroke(1.dp, HiddenCardBorder),
+                        color = cardBackground,
+                        border = BorderStroke(1.dp, cardBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         LazyRow(
@@ -426,13 +477,13 @@ fun HiddenAppsScreen(
                                                 modifier = Modifier
                                                     .size(44.dp)
                                                     .clip(RoundedCornerShape(12.dp))
-                                                    .background(Color(0xFF19191E)),
+                                                    .background(inputBackground),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
                                                     text = app.firstLetter.toString(),
                                                     style = MaterialTheme.typography.titleMedium,
-                                                    color = TextPrimary
+                                                    color = primaryTextColor
                                                 )
                                             }
                                         }
@@ -456,7 +507,7 @@ fun HiddenAppsScreen(
                                     Text(
                                         text = app.label,
                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                                        color = TextPrimary,
+                                        color = primaryTextColor,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         textAlign = TextAlign.Center
@@ -473,7 +524,7 @@ fun HiddenAppsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp)
-                    .background(Color(0xFF121216), RoundedCornerShape(14.dp))
+                    .background(cardBackground, RoundedCornerShape(14.dp))
                     .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
                 Row(
@@ -483,7 +534,7 @@ fun HiddenAppsScreen(
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = "Buscar",
-                        tint = TextTertiary,
+                        tint = tertiaryTextColor,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -491,11 +542,11 @@ fun HiddenAppsScreen(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
                         textStyle = TextStyle(
-                            color = TextPrimary,
+                            color = primaryTextColor,
                             fontSize = 14.sp,
                             fontFamily = FontFamily.SansSerif
                         ),
-                        cursorBrush = SolidColor(Color.White),
+                        cursorBrush = SolidColor(if (isLight) Color(0xFF1C1917) else Color.White),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
@@ -503,7 +554,7 @@ fun HiddenAppsScreen(
                             if (searchQuery.isEmpty()) {
                                 Text(
                                     text = "Buscar aplicativo para ocultar...",
-                                    color = TextTertiary,
+                                    color = tertiaryTextColor,
                                     fontSize = 14.sp
                                 )
                             }
@@ -515,7 +566,7 @@ fun HiddenAppsScreen(
                         Icon(
                             imageVector = Icons.Outlined.Close,
                             contentDescription = "Limpar busca",
-                            tint = TextSecondary,
+                            tint = secondaryTextColor,
                             modifier = Modifier
                                 .size(18.dp)
                                 .clickable { searchQuery = "" }
@@ -539,12 +590,12 @@ fun HiddenAppsScreen(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.2.sp
                     ),
-                    color = TextTertiary
+                    color = tertiaryTextColor
                 )
                 Text(
                     text = if (uiState.hiddenAppsPin.isEmpty()) "Definir PIN" else "Alterar PIN",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = if (isLight) uiState.activeAccentColor else Color.White,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .clickable { showSetPinDialog = true }
@@ -572,17 +623,17 @@ fun HiddenAppsScreen(
                         Text(
                             text = "Desbloquear com Biometria",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
                     Switch(
                         checked = uiState.isBiometricUnlockEnabled,
                         onCheckedChange = { viewModel.setBiometricUnlockEnabled(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Black,
+                            checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                             checkedTrackColor = uiState.activeAccentColor,
-                            uncheckedThumbColor = Color(0xFF636366),
-                            uncheckedTrackColor = Color(0xFF2C2C2E)
+                            uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else Color(0xFF636366),
+                            uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF2C2C2E)
                         )
                     )
                 }
@@ -591,8 +642,8 @@ fun HiddenAppsScreen(
             // Lista de Aplicativos
             Surface(
                 shape = HiddenCardShape,
-                color = HiddenCardBackground,
-                border = BorderStroke(1.dp, HiddenCardBorder),
+                color = cardBackground,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -623,13 +674,13 @@ fun HiddenAppsScreen(
                                     modifier = Modifier
                                         .size(38.dp)
                                         .clip(RoundedCornerShape(10.dp))
-                                        .background(Color(0xFF19191E)),
+                                        .background(inputBackground),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = app.firstLetter.toString(),
                                         style = MaterialTheme.typography.titleMedium,
-                                        color = TextPrimary
+                                        color = primaryTextColor
                                     )
                                 }
                             }
@@ -643,14 +694,14 @@ fun HiddenAppsScreen(
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
-                                    color = TextPrimary,
+                                    color = primaryTextColor,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = if (isHidden) "Oculto (visível apenas com PIN)" else app.packageName,
                                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = 11.sp),
-                                    color = if (isHidden) Color(0xFFEF5350) else TextSecondary,
+                                    color = if (isHidden) Color(0xFFEF5350) else secondaryTextColor,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -660,14 +711,14 @@ fun HiddenAppsScreen(
                                 checked = isHidden,
                                 onCheckedChange = { viewModel.toggleHiddenApp(app.packageName) },
                                 colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Color.Black,
-                                    checkedTrackColor = Color.White,
-                                    uncheckedThumbColor = Color(0xFF636366),
-                                    uncheckedTrackColor = Color(0xFF2C2C2E)
+                                    checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                                    checkedTrackColor = uiState.activeAccentColor,
+                                    uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else Color(0xFF636366),
+                                    uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF2C2C2E)
                                 )
                             )
                         }
-                        HorizontalDivider(color = HiddenDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                     }
                 }
             }
@@ -678,8 +729,8 @@ fun HiddenAppsScreen(
         androidx.compose.ui.window.Dialog(onDismissRequest = { showSetPinDialog = false }) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                color = cardBackground,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth().padding(16.dp)
             ) {
                 Column(
@@ -690,13 +741,13 @@ fun HiddenAppsScreen(
                         text = "Configurar PIN de Acesso",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = primaryTextColor
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Digite um PIN numérico (4 a 6 dígitos). Digitar esse PIN na barra de busca revelará os apps ocultos.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
+                        color = secondaryTextColor,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(16.dp))
@@ -706,11 +757,11 @@ fun HiddenAppsScreen(
                         onValueChange = { if (it.length <= 6) newPinInput = it },
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-                        textStyle = TextStyle(color = TextPrimary, fontSize = 22.sp, textAlign = TextAlign.Center, letterSpacing = 6.sp),
-                        cursorBrush = SolidColor(TextPrimary),
+                        textStyle = TextStyle(color = primaryTextColor, fontSize = 22.sp, textAlign = TextAlign.Center, letterSpacing = 6.sp),
+                        cursorBrush = SolidColor(primaryTextColor),
                         modifier = Modifier
                             .width(160.dp)
-                            .background(Color(0xFF19191E), RoundedCornerShape(10.dp))
+                            .background(inputBackground, RoundedCornerShape(10.dp))
                             .padding(vertical = 10.dp, horizontal = 14.dp)
                     )
 
@@ -722,7 +773,7 @@ fun HiddenAppsScreen(
                     ) {
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFF1C1C22),
+                            color = actionButtonBackground,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(44.dp)
@@ -732,13 +783,13 @@ fun HiddenAppsScreen(
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("Cancelar", color = TextSecondary, fontSize = 13.sp)
+                                Text("Cancelar", color = secondaryTextColor, fontSize = 13.sp)
                             }
                         }
 
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.White,
+                            color = saveButtonBackground,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(44.dp)
@@ -753,7 +804,7 @@ fun HiddenAppsScreen(
                                 }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text("Salvar", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("Salvar", color = saveButtonTextColor, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                             }
                         }
                     }

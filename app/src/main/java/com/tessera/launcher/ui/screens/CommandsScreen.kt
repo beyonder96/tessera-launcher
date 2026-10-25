@@ -71,6 +71,13 @@ import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkBackground
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightIconBackground
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
@@ -78,12 +85,6 @@ import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val CommandCardShape = RoundedCornerShape(24.dp)
-private val CommandCardBackground = Color(0xFF0F0F12)
-private val CommandCardBorder = Color(0xFF1D1D22)
-private val CommandDividerColor = Color(0xFF18181D)
-private val CommandIconBackground = Color(0xFF19191E)
-private val CommandChipBackground = Color(0xFF1B1C22)
-private val CommandChipBorder = Color(0xFF2C2D35)
 private val DeleteRedColor = Color(0xFFCF6679)
 
 @Composable
@@ -96,6 +97,18 @@ fun CommandsScreen(
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var showSymbolDialog by remember { mutableStateOf(false) }
+    val isLight = uiState.isLightMode
+
+    val screenBg = if (isLight) LightBackground else DarkBackground
+    val cardBg = if (isLight) LightCardBackground else Color(0xFF0F0F12)
+    val cardBorder = if (isLight) LightCardBorder else Color(0xFF1D1D22)
+    val dividerColor = if (isLight) LightDivider else Color(0xFF18181D)
+    val iconBg = if (isLight) LightIconBackground else Color(0xFF19191E)
+    val chipBg = if (isLight) Color(0xFFE8E4D8) else Color(0xFF1B1C22)
+    val chipBorder = if (isLight) Color(0xFFDDD8CB) else Color(0xFF2C2D35)
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
 
     val statusBarPadding = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -106,7 +119,7 @@ fun CommandsScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
@@ -133,7 +146,7 @@ fun CommandsScreen(
                 Icon(
                     imageVector = Icons.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -145,7 +158,7 @@ fun CommandsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -164,14 +177,14 @@ fun CommandsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = CommandCardShape,
-                color = CommandCardBackground,
-                border = BorderStroke(1.dp, CommandCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -189,13 +202,13 @@ fun CommandsScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(CommandIconBackground),
+                            .background(iconBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Tag,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -209,20 +222,20 @@ fun CommandsScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Símbolo atual: \"${uiState.commandActivationSymbol}\"",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
-                        tint = Color(0xFF48484A),
+                        tint = tertiaryTextColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -238,23 +251,29 @@ fun CommandsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = CommandCardShape,
-                color = CommandCardBackground,
-                border = BorderStroke(1.dp, CommandCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column {
                     uiState.commandsList.forEachIndexed { index, item ->
                         CommandRowItem(
                             item = item,
-                            onDelete = { viewModel.removeCommand(item.id) }
+                            onDelete = { viewModel.removeCommand(item.id) },
+                            isLight = isLight,
+                            iconBg = iconBg,
+                            chipBg = chipBg,
+                            chipBorder = chipBorder,
+                            primaryTextColor = primaryTextColor,
+                            secondaryTextColor = secondaryTextColor
                         )
-                        HorizontalDivider(color = CommandDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                     }
 
                     // Item: + Adicionar Comando
@@ -273,13 +292,13 @@ fun CommandsScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(CommandIconBackground),
+                                .background(iconBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Outlined.Add,
                                 contentDescription = null,
-                                tint = TextPrimary,
+                                tint = primaryTextColor,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -293,20 +312,20 @@ fun CommandsScreen(
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold
                                 ),
-                                color = TextPrimary
+                                color = primaryTextColor
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Atalhos rápidos para a barra de busca.",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = TextSecondary
+                                color = secondaryTextColor
                             )
                         }
 
                         Icon(
                             imageVector = Icons.Outlined.ChevronRight,
                             contentDescription = null,
-                            tint = Color(0xFF48484A),
+                            tint = tertiaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -323,14 +342,14 @@ fun CommandsScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = CommandCardShape,
-                color = CommandCardBackground,
-                border = BorderStroke(1.dp, CommandCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -350,13 +369,13 @@ fun CommandsScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(CommandIconBackground),
+                            .background(iconBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Tune,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -370,20 +389,20 @@ fun CommandsScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Use @s para acessar lanterna, volume e atalhos rápidos.",
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
 
                     Icon(
                         imageVector = Icons.Outlined.ChevronRight,
                         contentDescription = null,
-                        tint = Color(0xFF48484A),
+                        tint = tertiaryTextColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -398,8 +417,8 @@ fun CommandsScreen(
         Dialog(onDismissRequest = { showSymbolDialog = false }) {
             Surface(
                 shape = CardShape,
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -410,7 +429,7 @@ fun CommandsScreen(
                         text = "Símbolo de Ativação",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = primaryTextColor
                     )
 
                     Row(
@@ -418,17 +437,18 @@ fun CommandsScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         listOf("@", "/", "#", "!").forEach { sym ->
+                            val isSelected = newSymbol == sym
                             Surface(
                                 shape = PillShape,
-                                color = if (newSymbol == sym) Color.White else CommandIconBackground,
-                                border = BorderStroke(1.dp, if (newSymbol == sym) Color.White else CommandChipBorder),
+                                color = if (isSelected) (if (isLight) LightTextPrimary else Color.White) else iconBg,
+                                border = BorderStroke(1.dp, if (isSelected) (if (isLight) LightTextPrimary else Color.White) else chipBorder),
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { newSymbol = sym }
                             ) {
                                 Text(
                                     text = sym,
-                                    color = if (newSymbol == sym) Color.Black else TextPrimary,
+                                    color = if (isSelected) (if (isLight) LightBackground else Color.Black) else primaryTextColor,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center,
                                     modifier = Modifier.padding(vertical = 10.dp)
@@ -443,7 +463,7 @@ fun CommandsScreen(
                     ) {
                         Text(
                             text = "Cancelar",
-                            color = TextSecondary,
+                            color = secondaryTextColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .clickable { showSymbolDialog = false }
@@ -452,7 +472,7 @@ fun CommandsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Salvar",
-                            color = Color.White,
+                            color = primaryTextColor,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
@@ -474,8 +494,8 @@ fun CommandsScreen(
         Dialog(onDismissRequest = { showAddDialog = false }) {
             Surface(
                 shape = CardShape,
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkSurfaceBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -486,26 +506,26 @@ fun CommandsScreen(
                         text = "Novo Comando",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = primaryTextColor
                     )
 
                     BasicTextField(
                         value = title,
                         onValueChange = { title = it },
-                        textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
-                        cursorBrush = SolidColor(TextPrimary),
+                        textStyle = TextStyle(color = primaryTextColor, fontSize = 14.sp),
+                        cursorBrush = SolidColor(primaryTextColor),
                         singleLine = true,
                         decorationBox = { inner ->
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color(0xFF161820), RoundedCornerShape(10.dp))
-                                    .border(BorderStroke(1.dp, Color(0xFF282B36)), RoundedCornerShape(10.dp))
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF161820), RoundedCornerShape(10.dp))
+                                    .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF282B36)), RoundedCornerShape(10.dp))
                                     .padding(horizontal = 12.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
-                                if (title.isEmpty()) Text("Nome (ex: YouTube)", color = TextTertiary, fontSize = 14.sp)
+                                if (title.isEmpty()) Text("Nome (ex: YouTube)", color = tertiaryTextColor, fontSize = 14.sp)
                                 inner()
                             }
                         }
@@ -514,20 +534,20 @@ fun CommandsScreen(
                     BasicTextField(
                         value = prefix,
                         onValueChange = { prefix = it },
-                        textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
-                        cursorBrush = SolidColor(TextPrimary),
+                        textStyle = TextStyle(color = primaryTextColor, fontSize = 14.sp),
+                        cursorBrush = SolidColor(primaryTextColor),
                         singleLine = true,
                         decorationBox = { inner ->
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(44.dp)
-                                    .background(Color(0xFF161820), RoundedCornerShape(10.dp))
-                                    .border(BorderStroke(1.dp, Color(0xFF282B36)), RoundedCornerShape(10.dp))
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF161820), RoundedCornerShape(10.dp))
+                                    .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF282B36)), RoundedCornerShape(10.dp))
                                     .padding(horizontal = 12.dp),
                                 contentAlignment = Alignment.CenterStart
                             ) {
-                                if (prefix.isEmpty()) Text("Prefixo (ex: @yt)", color = TextTertiary, fontSize = 14.sp)
+                                if (prefix.isEmpty()) Text("Prefixo (ex: @yt)", color = tertiaryTextColor, fontSize = 14.sp)
                                 inner()
                             }
                         }
@@ -539,7 +559,7 @@ fun CommandsScreen(
                     ) {
                         Text(
                             text = "Cancelar",
-                            color = TextSecondary,
+                            color = secondaryTextColor,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .clickable { showAddDialog = false }
@@ -548,7 +568,7 @@ fun CommandsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Adicionar",
-                            color = Color.White,
+                            color = primaryTextColor,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
@@ -570,7 +590,13 @@ fun CommandsScreen(
 @Composable
 private fun CommandRowItem(
     item: CommandItem,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isLight: Boolean,
+    iconBg: Color,
+    chipBg: Color,
+    chipBorder: Color,
+    primaryTextColor: Color,
+    secondaryTextColor: Color
 ) {
     val icon = when (item.iconType) {
         "tasks" -> Icons.Outlined.CheckBox
@@ -598,13 +624,13 @@ private fun CommandRowItem(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(CommandIconBackground),
+                .background(iconBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryTextColor,
                 modifier = Modifier.size(19.dp)
             )
         }
@@ -618,25 +644,25 @@ private fun CommandRowItem(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = TextPrimary
+                color = primaryTextColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Prefixo \"${item.prefix}\"",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                color = TextSecondary
+                color = secondaryTextColor
             )
         }
 
         Surface(
             shape = PillShape,
-            color = CommandChipBackground,
-            border = BorderStroke(1.dp, CommandChipBorder),
+            color = chipBg,
+            border = BorderStroke(1.dp, chipBorder),
             modifier = Modifier.padding(end = 12.dp)
         ) {
             Text(
                 text = item.prefix,
-                color = TextPrimary,
+                color = primaryTextColor,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 fontFamily = FontFamily.Monospace,
@@ -647,7 +673,7 @@ private fun CommandRowItem(
         Icon(
             imageVector = Icons.Outlined.Delete,
             contentDescription = "Remover",
-            tint = DeleteRedColor,
+            tint = if (isLight) Color(0xFFB91C1C) else DeleteRedColor,
             modifier = Modifier
                 .size(20.dp)
                 .clip(CircleShape)

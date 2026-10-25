@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -74,6 +75,13 @@ import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.DarkBackground
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightIconBackground
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
@@ -102,8 +110,18 @@ fun FoldersScreen(
 ) {
     var folderToEdit by remember { mutableStateOf<AppFolder?>(null) }
     var isCreatingFolder by remember { mutableStateOf(false) }
+    val isLight = uiState.isLightMode
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
+
+    val screenBg = if (isLight) LightBackground else DarkBackground
+    val cardBg = if (isLight) LightCardBackground else Color(0xFF0F0F12)
+    val cardBorder = if (isLight) LightCardBorder else Color(0xFF1D1D22)
+    val dividerColor = if (isLight) LightDivider else Color(0xFF18181D)
+    val iconBg = if (isLight) LightIconBackground else Color(0xFF19191E)
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
 
     val statusBarTop = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -116,7 +134,7 @@ fun FoldersScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(top = safeTopPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
@@ -143,7 +161,7 @@ fun FoldersScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -155,7 +173,7 @@ fun FoldersScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -170,7 +188,7 @@ fun FoldersScreen(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.2.sp
             ),
-            color = TextTertiary,
+            color = tertiaryTextColor,
             modifier = Modifier.padding(start = 24.dp, bottom = 12.dp)
         )
 
@@ -186,7 +204,7 @@ fun FoldersScreen(
                     text = "Nenhuma pasta ainda.",
                     style = MaterialTheme.typography.bodyLarge.copy(
                         fontSize = 15.sp,
-                        color = TextSecondary
+                        color = secondaryTextColor
                     ),
                     textAlign = TextAlign.Center
                 )
@@ -195,7 +213,7 @@ fun FoldersScreen(
                     text = "Uma pasta agrupa apps sob uma mesma palavra.",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 13.sp,
-                        color = TextTertiary
+                        color = tertiaryTextColor
                     ),
                     textAlign = TextAlign.Center
                 )
@@ -204,19 +222,20 @@ fun FoldersScreen(
 
                 Row(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E24))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = { isCreatingFolder = true }
                         )
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = primaryTextColor,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -227,7 +246,7 @@ fun FoldersScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
                         ),
-                        color = Color.White
+                        color = primaryTextColor
                     )
                 }
             }
@@ -241,8 +260,8 @@ fun FoldersScreen(
             ) {
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFF0F0F12),
-                    border = BorderStroke(1.dp, Color(0xFF1D1D22)),
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column {
@@ -258,13 +277,13 @@ fun FoldersScreen(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF19191E)),
+                                        .background(iconBg),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Folder,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = primaryTextColor,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -273,22 +292,25 @@ fun FoldersScreen(
                                     Text(
                                         text = folder.name,
                                         style = MaterialTheme.typography.titleSmall,
-                                        color = TextPrimary
+                                        color = primaryTextColor
                                     )
                                     Text(
                                         text = "${folder.packageNames.size} apps selecionados",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = secondaryTextColor
                                     )
                                 }
                                 Icon(
                                     imageVector = Icons.Outlined.DeleteOutline,
                                     contentDescription = "Remover",
-                                    tint = Color(0xFF8E8E93),
+                                    tint = if (isLight) Color(0xFFB91C1C) else Color(0xFFCF6679),
                                     modifier = Modifier
                                         .size(20.dp)
                                         .clickable { viewModel.removeFolder(folder.id) }
                                 )
+                            }
+                            if (index < uiState.appFolders.size - 1) {
+                                HorizontalDivider(color = dividerColor, thickness = 1.dp)
                             }
                         }
                     }
@@ -299,19 +321,20 @@ fun FoldersScreen(
                 Row(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E24))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = { isCreatingFolder = true }
                         )
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Add,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = primaryTextColor,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -322,7 +345,7 @@ fun FoldersScreen(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.2.sp
                         ),
-                        color = Color.White
+                        color = primaryTextColor
                     )
                 }
             }
@@ -351,14 +374,14 @@ fun FoldersScreen(
                 folderToEdit = null
             },
             sheetState = sheetState,
-            containerColor = Color(0xFF0F0F13),
+            containerColor = if (isLight) LightBackground else Color(0xFF0F0F13),
             dragHandle = {
                 Box(
                     modifier = Modifier
                         .padding(vertical = 12.dp)
                         .size(width = 40.dp, height = 4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF333338))
+                        .background(if (isLight) Color(0xFFDDD8CB) else Color(0xFF333338))
                 )
             }
         ) {
@@ -379,14 +402,14 @@ fun FoldersScreen(
                         modifier = Modifier
                             .size(56.dp)
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF18181F))
-                            .border(BorderStroke(1.dp, Color(0xFF2A2A34)), RoundedCornerShape(16.dp)),
+                            .background(iconBg)
+                            .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(16.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Folder,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(26.dp)
                         )
                     }
@@ -398,18 +421,18 @@ fun FoldersScreen(
                             value = folderName,
                             onValueChange = { folderName = it },
                             textStyle = TextStyle(
-                                color = TextPrimary,
+                                color = primaryTextColor,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.SansSerif
                             ),
-                            cursorBrush = SolidColor(TextPrimary),
+                            cursorBrush = SolidColor(primaryTextColor),
                             singleLine = true,
                             decorationBox = { innerTextField ->
                                 if (folderName.isEmpty()) {
                                     Text(
                                         text = "Nome da pasta...",
-                                        color = TextTertiary,
+                                        color = tertiaryTextColor,
                                         fontSize = 20.sp,
                                         fontWeight = FontWeight.Bold,
                                         fontFamily = FontFamily.SansSerif
@@ -421,7 +444,7 @@ fun FoldersScreen(
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "${selectedPackages.size} apps selecionados",
-                            color = TextSecondary,
+                            color = secondaryTextColor,
                             fontSize = 12.sp,
                             fontFamily = FontFamily.SansSerif
                         )
@@ -431,9 +454,9 @@ fun FoldersScreen(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (folderName.isNotBlank()) Color(0xFF23232C) else Color(0xFF18181E))
+                            .background(if (folderName.isNotBlank()) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF23232C)) else (if (isLight) Color(0xFFEFECE2) else Color(0xFF18181E)))
                             .border(
-                                BorderStroke(1.dp, if (folderName.isNotBlank()) Color(0xFF383846) else Color(0xFF22222A)),
+                                BorderStroke(1.dp, if (folderName.isNotBlank()) (if (isLight) Color(0xFFDDD8CB) else Color(0xFF383846)) else cardBorder),
                                 RoundedCornerShape(12.dp)
                             )
                             .clickable(enabled = folderName.isNotBlank()) {
@@ -452,7 +475,7 @@ fun FoldersScreen(
                     ) {
                         Text(
                             text = "SALVAR",
-                            color = if (folderName.isNotBlank()) TextPrimary else TextTertiary,
+                            color = if (folderName.isNotBlank()) primaryTextColor else tertiaryTextColor,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
@@ -468,8 +491,8 @@ fun FoldersScreen(
                         .fillMaxWidth()
                         .height(46.dp)
                         .clip(RoundedCornerShape(23.dp))
-                        .background(Color(0xFF14141A))
-                        .border(BorderStroke(1.dp, Color(0xFF24242F)), RoundedCornerShape(23.dp))
+                        .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF14141A))
+                        .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF24242F)), RoundedCornerShape(23.dp))
                         .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
@@ -480,7 +503,7 @@ fun FoldersScreen(
                         Icon(
                             imageVector = Icons.Outlined.Search,
                             contentDescription = null,
-                            tint = TextTertiary,
+                            tint = secondaryTextColor,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))
@@ -488,17 +511,17 @@ fun FoldersScreen(
                             value = appSearchQuery,
                             onValueChange = { appSearchQuery = it },
                             textStyle = TextStyle(
-                                color = TextPrimary,
+                                color = primaryTextColor,
                                 fontSize = 14.sp,
                                 fontFamily = FontFamily.SansSerif
                             ),
-                            cursorBrush = SolidColor(TextPrimary),
+                            cursorBrush = SolidColor(primaryTextColor),
                             singleLine = true,
                             decorationBox = { innerTextField ->
                                 if (appSearchQuery.isEmpty()) {
                                     Text(
                                         text = "Buscar apps...",
-                                        color = TextTertiary,
+                                        color = tertiaryTextColor,
                                         fontSize = 14.sp,
                                         fontFamily = FontFamily.SansSerif
                                     )
@@ -546,11 +569,11 @@ fun FoldersScreen(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(if (isSelected) Color(0xFF282834) else Color(0xFF181820))
+                                    .background(if (isSelected) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF282834)) else (if (isLight) Color(0xFFEFECE2) else Color(0xFF181820)))
                                     .border(
                                         BorderStroke(
                                             if (isSelected) 1.5.dp else 1.dp,
-                                            if (isSelected) TextPrimary else Color(0xFF282832)
+                                            if (isSelected) primaryTextColor else (if (isLight) Color(0xFFDDD8CB) else Color(0xFF282832))
                                         ),
                                         RoundedCornerShape(16.dp)
                                     ),
@@ -566,7 +589,7 @@ fun FoldersScreen(
                                 } else {
                                     Text(
                                         text = app.firstLetter.toString(),
-                                        color = TextPrimary,
+                                        color = primaryTextColor,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 16.sp
                                     )
@@ -579,13 +602,13 @@ fun FoldersScreen(
                                             .padding(3.dp)
                                             .size(14.dp)
                                             .clip(CircleShape)
-                                            .background(TextPrimary),
+                                            .background(primaryTextColor),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(
                                             imageVector = Icons.Outlined.Check,
                                             contentDescription = null,
-                                            tint = Color.Black,
+                                            tint = if (isLight) LightBackground else Color.Black,
                                             modifier = Modifier.size(10.dp)
                                         )
                                     }
@@ -600,7 +623,7 @@ fun FoldersScreen(
                                     fontSize = 11.sp,
                                     fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
                                 ),
-                                color = if (isSelected) TextPrimary else TextSecondary,
+                                color = if (isSelected) primaryTextColor else secondaryTextColor,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 textAlign = TextAlign.Center

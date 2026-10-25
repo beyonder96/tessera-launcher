@@ -97,7 +97,7 @@ fun DeveloperScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val isLight = uiState.themeMode == "LIGHT"
+    val isLight = uiState.isLightMode
 
     val bg = if (isLight) LightBackground else AmoledBlack
     val cardBg = if (isLight) LightCardBackground else Color(0xFF0D0D11)

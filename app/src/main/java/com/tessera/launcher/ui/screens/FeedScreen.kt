@@ -48,7 +48,7 @@ fun FeedScreen(
     modifier: Modifier = Modifier
 ) {
     val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
-    val backgroundColor = if (isLightMode) Color(0xF8F7F7F7) else Color(0xF20D0D11)
+    val backgroundColor = if (isLightMode) LightBackground else Color(0xF20D0D11)
     
     var localSelectedSource by remember { mutableStateOf<FeedSource?>(activeSource) }
 
@@ -167,15 +167,15 @@ private fun SourceChip(
     onClick: () -> Unit
 ) {
     val backgroundColor = if (isSelected) {
-        if (isLightMode) Color(0xFF1E2024) else Color(0xFFF2F2F5)
+        if (isLightMode) Color(0xFF1C1917) else Color(0xFFF2F2F5)
     } else {
-        if (isLightMode) Color(0xFFE8E8EE).copy(alpha = 0.92f) else Color(0xFF1C1E26).copy(alpha = 0.85f)
+        if (isLightMode) LightCardBackground else Color(0xFF1C1E26).copy(alpha = 0.85f)
     }
     
     val textColor = if (isSelected) {
-        if (isLightMode) Color(0xFFFFFFFF) else Color(0xFF0F1014)
+        if (isLightMode) Color(0xFFF7F4EB) else Color(0xFF0F1014)
     } else {
-        if (isLightMode) Color(0xFF2D3039) else Color(0xFFD4D4D8)
+        if (isLightMode) LightTextPrimary else Color(0xFFD4D4D8)
     }
 
     val borderStroke = if (isSelected) {
@@ -183,7 +183,7 @@ private fun SourceChip(
     } else {
         BorderStroke(
             width = 1.dp,
-            color = if (isLightMode) Color(0x30000000) else Color(0x40FFFFFF)
+            color = if (isLightMode) LightCardBorder else Color(0x40FFFFFF)
         )
     }
 
@@ -205,8 +205,8 @@ private fun SourceChip(
 
 @Composable
 private fun FeedSkeleton(isLightMode: Boolean) {
-    val skeletonBase = if (isLightMode) Color(0xFFE0E0E0) else SkeletonBase
-    val skeletonHighlight = if (isLightMode) Color(0xFFF5F5F5) else SkeletonHighlight
+    val skeletonBase = if (isLightMode) LightCardBackground else SkeletonBase
+    val skeletonHighlight = if (isLightMode) LightBackground else SkeletonHighlight
 
     val transition = rememberInfiniteTransition(label = "shimmer")
     val translateAnim by transition.animateFloat(

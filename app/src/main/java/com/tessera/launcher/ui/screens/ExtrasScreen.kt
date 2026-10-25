@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -61,10 +60,6 @@ import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val ExtrasCardShape = RoundedCornerShape(24.dp)
-private val ExtrasCardBackground = Color(0xFF0F0F12)
-private val ExtrasCardBorder = Color(0xFF1D1D22)
-private val ExtrasDividerColor = Color(0xFF18181D)
-private val ExtrasIconBackground = Color(0xFF19191E)
 
 @Composable
 fun ExtrasScreen(
@@ -76,6 +71,43 @@ fun ExtrasScreen(
     onOpenHiddenApps: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isLight = uiState.isLightMode
+    val isAmoled = uiState.isAmoledMode
+
+    val backgroundColor = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> Color.Black
+        else -> DarkBackground
+    }
+    val cardBackground = when {
+        isLight -> Color(0xFFEFECE2)
+        isAmoled -> Color(0xFF0A0A0A)
+        else -> Color(0xFF0F0F12)
+    }
+    val cardBorder = when {
+        isLight -> Color(0xFFDDD8CB)
+        isAmoled -> Color(0xFF1A1A1A)
+        else -> Color(0xFF1D1D22)
+    }
+    val iconBackground = when {
+        isLight -> Color(0xFFE6E2D6)
+        isAmoled -> Color(0xFF121212)
+        else -> Color(0xFF19191E)
+    }
+    val primaryTextColor = when {
+        isLight -> Color(0xFF1C1917)
+        else -> TextPrimary
+    }
+    val secondaryTextColor = when {
+        isLight -> Color(0xFF78716C)
+        else -> TextSecondary
+    }
+    val dividerColor = when {
+        isLight -> Color(0xFFE5E0D3)
+        isAmoled -> Color(0xFF121212)
+        else -> Color(0xFF18181D)
+    }
+
     val statusBarPadding = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     } else {
@@ -112,7 +144,7 @@ fun ExtrasScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(backgroundColor)
             .padding(top = statusBarPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
             .verticalScroll(rememberScrollState())
@@ -140,7 +172,7 @@ fun ExtrasScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -152,18 +184,18 @@ fun ExtrasScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Card Único de Extras (Conforme Imagem 5)
+        // Card Único de Extras
         Surface(
             shape = ExtrasCardShape,
-            color = ExtrasCardBackground,
-            border = BorderStroke(1.dp, ExtrasCardBorder),
+            color = cardBackground,
+            border = BorderStroke(1.dp, cardBorder),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -174,32 +206,39 @@ fun ExtrasScreen(
                     icon = Icons.Outlined.Folder,
                     title = "Pastas",
                     subtitle = "Agrupe apps sob uma mesma palavra.",
+                    primaryTextColor = primaryTextColor,
+                    secondaryTextColor = secondaryTextColor,
+                    iconBackground = iconBackground,
                     onClick = onNavigateToFolders
                 )
 
-                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                 // 2. Apps ocultos
                 ExtrasRowItem(
                     icon = Icons.Outlined.Visibility,
                     title = "Apps ocultos",
                     subtitle = "Oculte apps e proteja com um PIN.",
+                    primaryTextColor = primaryTextColor,
+                    secondaryTextColor = secondaryTextColor,
+                    iconBackground = iconBackground,
                     onClick = onOpenHiddenApps
                 )
 
-                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                 // 3. Comandos
                 ExtrasRowItem(
                     icon = Icons.Outlined.Code,
                     title = "Comandos",
                     subtitle = "Prefixos rápidos de ação — como @con para contatos.",
+                    primaryTextColor = primaryTextColor,
+                    secondaryTextColor = secondaryTextColor,
+                    iconBackground = iconBackground,
                     onClick = onNavigateToCommands
                 )
 
-
-
-                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                 // 4. Mostrar barra de status (Toggle com Switch)
                 Row(
@@ -219,13 +258,13 @@ fun ExtrasScreen(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(ExtrasIconBackground),
+                            .background(iconBackground),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.PhoneAndroid,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -239,7 +278,7 @@ fun ExtrasScreen(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -248,7 +287,7 @@ fun ExtrasScreen(
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
                             ),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
 
@@ -258,12 +297,12 @@ fun ExtrasScreen(
                         checked = uiState.isShowStatusBarEnabled,
                         onCheckedChange = { viewModel.setShowStatusBarEnabled(it) },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.Black,
-                            checkedTrackColor = Color.White,
-                            checkedBorderColor = Color.White,
-                            uncheckedThumbColor = Color(0xFF8E8E93),
-                            uncheckedTrackColor = Color(0xFF1E1E24),
-                            uncheckedBorderColor = Color(0xFF2C2C34)
+                            checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                            checkedTrackColor = uiState.activeAccentColor,
+                            checkedBorderColor = Color.Transparent,
+                            uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else Color(0xFF8E8E93),
+                            uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF1E1E24),
+                            uncheckedBorderColor = Color.Transparent
                         )
                     )
                 }
@@ -279,15 +318,15 @@ fun ExtrasScreen(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp
             ),
-            color = TextSecondary,
+            color = secondaryTextColor,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
         )
 
         // Card de Backup & Restauração
         Surface(
             shape = ExtrasCardShape,
-            color = ExtrasCardBackground,
-            border = BorderStroke(1.dp, ExtrasCardBorder),
+            color = cardBackground,
+            border = BorderStroke(1.dp, cardBorder),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
@@ -298,19 +337,25 @@ fun ExtrasScreen(
                     icon = Icons.Outlined.FileDownload,
                     title = "Exportar backup",
                     subtitle = "Salva suas preferências, pastas e atalhos em um arquivo JSON.",
+                    primaryTextColor = primaryTextColor,
+                    secondaryTextColor = secondaryTextColor,
+                    iconBackground = iconBackground,
                     onClick = {
                         val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
                         exportLauncher.launch("tessera_backup_$timestamp.json")
                     }
                 )
 
-                HorizontalDivider(color = ExtrasDividerColor, thickness = 1.dp)
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                 // 2. Restaurar backup
                 ExtrasRowItem(
                     icon = Icons.Outlined.FileUpload,
                     title = "Restaurar backup",
                     subtitle = "Restaura todas as configurações a partir de um backup JSON salvo.",
+                    primaryTextColor = primaryTextColor,
+                    secondaryTextColor = secondaryTextColor,
+                    iconBackground = iconBackground,
                     onClick = {
                         importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
                     }
@@ -327,6 +372,9 @@ private fun ExtrasRowItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
+    primaryTextColor: Color,
+    secondaryTextColor: Color,
+    iconBackground: Color,
     onClick: () -> Unit
 ) {
     Row(
@@ -344,13 +392,13 @@ private fun ExtrasRowItem(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(ExtrasIconBackground),
+                .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryTextColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -364,7 +412,7 @@ private fun ExtrasRowItem(
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                color = TextPrimary
+                color = primaryTextColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
@@ -373,14 +421,14 @@ private fun ExtrasRowItem(
                     fontSize = 12.sp,
                     lineHeight = 16.sp
                 ),
-                color = TextSecondary
+                color = secondaryTextColor
             )
         }
 
         Icon(
             imageVector = Icons.Outlined.ChevronRight,
             contentDescription = null,
-            tint = Color(0xFF48484A),
+            tint = secondaryTextColor.copy(alpha = 0.6f),
             modifier = Modifier.size(20.dp)
         )
     }

@@ -82,16 +82,23 @@ fun SearchBarStyleBottomSheet(
     currentStyle: String,
     onSelectStyle: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -106,7 +113,7 @@ fun SearchBarStyleBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -141,8 +148,7 @@ fun SearchBarStyleBottomSheet(
                         .padding(vertical = 12.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Ilustração geométrica
-                    SearchBarStyleGlyph(styleKey = styleKey)
+                    SearchBarStyleGlyph(styleKey = styleKey, isLight = isLight)
 
                     Spacer(modifier = Modifier.width(20.dp))
 
@@ -152,7 +158,7 @@ fun SearchBarStyleBottomSheet(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             fontSize = 16.sp
                         ),
-                        color = TextPrimary,
+                        color = primaryText,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -160,7 +166,7 @@ fun SearchBarStyleBottomSheet(
                         Icon(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = "Selecionado",
-                            tint = TextPrimary,
+                            tint = primaryText,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -172,8 +178,8 @@ fun SearchBarStyleBottomSheet(
 }
 
 @Composable
-private fun SearchBarStyleGlyph(styleKey: String) {
-    val glyphColor = Color(0xFF282830)
+private fun SearchBarStyleGlyph(styleKey: String, isLight: Boolean = false) {
+    val glyphColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF282830)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -264,10 +270,23 @@ fun SearchBarTextBottomSheet(
     onSelectTextType: (String) -> Unit,
     onSaveCustomText: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
+    val tertiaryText = if (isLight) Color(0xFFA8A29E) else TextTertiary
+
+    val previewBg = if (isLight) Color(0xFFEFECE2) else Color(0xFF131317)
+    val previewBorder = if (isLight) Color(0xFFDDD8CB) else Color(0xFF22222A)
+    val iconBadgeBg = if (isLight) Color(0xFFE6E2D6) else Color(0xFF1C1C24)
+
     var editingCustomText by remember { mutableStateOf(customText) }
 
     val previewText = when (currentTextType) {
@@ -282,7 +301,7 @@ fun SearchBarTextBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -297,7 +316,7 @@ fun SearchBarTextBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -313,7 +332,7 @@ fun SearchBarTextBottomSheet(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 0.8.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
@@ -323,8 +342,8 @@ fun SearchBarTextBottomSheet(
                     .fillMaxWidth()
                     .height(52.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFF131317))
-                    .border(1.dp, Color(0xFF22222A), RoundedCornerShape(20.dp))
+                    .background(previewBg)
+                    .border(1.dp, previewBorder, RoundedCornerShape(20.dp))
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.CenterStart
             ) {
@@ -332,14 +351,14 @@ fun SearchBarTextBottomSheet(
                     Icon(
                         imageVector = Icons.Outlined.Search,
                         contentDescription = null,
-                        tint = TextSecondary,
+                        tint = secondaryText,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
                         text = previewText,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp),
-                        color = TextPrimary
+                        color = primaryText
                     )
                 }
             }
@@ -355,8 +374,18 @@ fun SearchBarTextBottomSheet(
 
             options.forEach { (typeKey, typeLabel, icon) ->
                 val isSelected = currentTextType == typeKey
-                val cardBorder = if (isSelected) BorderStroke(1.5.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder)
-                val cardBg = if (isSelected) Color(0xFF111116) else AmoledCardBackground
+                val cardBorder = when {
+                    isSelected && isLight -> BorderStroke(1.5.dp, Color(0xFF1C1917))
+                    isSelected -> BorderStroke(1.5.dp, Color.White)
+                    isLight -> BorderStroke(1.dp, Color(0xFFDDD8CB))
+                    else -> BorderStroke(1.dp, AmoledCardBorder)
+                }
+                val cardBg = when {
+                    isSelected && isLight -> Color(0xFFE8E4D8)
+                    isSelected -> Color(0xFF111116)
+                    isLight -> Color(0xFFEFECE2)
+                    else -> AmoledCardBackground
+                }
 
                 Box(
                     modifier = Modifier
@@ -380,13 +409,13 @@ fun SearchBarTextBottomSheet(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF1C1C24)),
+                                .background(iconBadgeBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = TextPrimary,
+                                tint = primaryText,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -399,7 +428,7 @@ fun SearchBarTextBottomSheet(
                                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
                                 fontSize = 15.sp
                             ),
-                            color = TextPrimary,
+                            color = primaryText,
                             modifier = Modifier.weight(1f)
                         )
 
@@ -407,7 +436,7 @@ fun SearchBarTextBottomSheet(
                             Icon(
                                 imageVector = Icons.Outlined.Check,
                                 contentDescription = "Selecionado",
-                                tint = TextPrimary,
+                                tint = primaryText,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -424,11 +453,11 @@ fun SearchBarTextBottomSheet(
                         onSaveCustomText(it)
                     },
                     textStyle = TextStyle(
-                        color = TextPrimary,
+                        color = primaryText,
                         fontSize = 15.sp,
                         fontFamily = FontFamily.SansSerif
                     ),
-                    cursorBrush = SolidColor(TextPrimary),
+                    cursorBrush = SolidColor(primaryText),
                     singleLine = true,
                     decorationBox = { innerTextField ->
                         Box(
@@ -436,13 +465,13 @@ fun SearchBarTextBottomSheet(
                                 .fillMaxWidth()
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color(0xFF131318))
-                                .border(1.dp, Color(0xFF2E2E38), RoundedCornerShape(12.dp))
+                                .background(if (isLight) Color(0xFFEFECE2) else Color(0xFF131318))
+                                .border(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF2E2E38), RoundedCornerShape(12.dp))
                                 .padding(horizontal = 16.dp),
                             contentAlignment = Alignment.CenterStart
                         ) {
                             if (editingCustomText.isEmpty()) {
-                                Text("Digite seu texto próprio...", color = TextTertiary, fontSize = 14.sp)
+                                Text("Digite seu texto próprio...", color = tertiaryText, fontSize = 14.sp)
                             }
                             innerTextField()
                         }
@@ -464,10 +493,18 @@ fun TypographyBottomSheet(
     onSelectFontType: (String) -> Unit,
     onImportFont: (Uri) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
+    val tertiaryText = if (isLight) Color(0xFFA8A29E) else TextTertiary
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -481,7 +518,7 @@ fun TypographyBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -496,7 +533,7 @@ fun TypographyBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -512,7 +549,7 @@ fun TypographyBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
@@ -523,6 +560,7 @@ fun TypographyBottomSheet(
                 subtitle = "Space Grotesk — the built-in face",
                 fontFamily = FontFamily.Monospace,
                 isSelected = currentFontType == "tessera",
+                isLight = isLight,
                 onClick = { onSelectFontType("tessera") }
             )
 
@@ -535,6 +573,7 @@ fun TypographyBottomSheet(
                 subtitle = "Whatever your phone uses",
                 fontFamily = FontFamily.SansSerif,
                 isSelected = currentFontType == "system",
+                isLight = isLight,
                 onClick = { onSelectFontType("system") }
             )
 
@@ -547,7 +586,7 @@ fun TypographyBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.8.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
@@ -558,6 +597,7 @@ fun TypographyBottomSheet(
                     subtitle = customFontPath.substringAfterLast("/"),
                     fontFamily = FontFamily.Default,
                     isSelected = true,
+                    isLight = isLight,
                     onClick = { onSelectFontType("custom") }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -566,15 +606,15 @@ fun TypographyBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(AmoledCardBackground)
-                        .border(1.dp, AmoledCardBorder, RoundedCornerShape(16.dp))
+                        .background(if (isLight) Color(0xFFEFECE2) else AmoledCardBackground)
+                        .border(1.dp, if (isLight) Color(0xFFDDD8CB) else AmoledCardBorder, RoundedCornerShape(16.dp))
                         .padding(vertical = 20.dp, horizontal = 18.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "No fonts added yet. Bring your own .ttf or .otf and Tessera will use it everywhere.",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp, lineHeight = 18.sp),
-                        color = TextSecondary,
+                        color = secondaryText,
                         textAlign = TextAlign.Center
                     )
                 }
@@ -587,8 +627,8 @@ fun TypographyBottomSheet(
                     .fillMaxWidth()
                     .height(48.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(Color(0xFF16161D))
-                    .border(1.dp, Color(0xFF262632), RoundedCornerShape(14.dp))
+                    .background(if (isLight) Color(0xFFE6E2D6) else Color(0xFF16161D))
+                    .border(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF262632), RoundedCornerShape(14.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -600,7 +640,7 @@ fun TypographyBottomSheet(
                     Icon(
                         imageVector = Icons.Outlined.PostAdd,
                         contentDescription = null,
-                        tint = TextPrimary,
+                        tint = primaryText,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -611,7 +651,7 @@ fun TypographyBottomSheet(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = TextPrimary
+                        color = primaryText
                     )
                 }
             }
@@ -621,7 +661,7 @@ fun TypographyBottomSheet(
             Text(
                 text = "Fonts are copied into Tessera and stay on your device. Only .ttf and .otf files work.",
                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 15.sp),
-                color = TextTertiary,
+                color = tertiaryText,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -636,10 +676,23 @@ private fun FontCard(
     subtitle: String,
     fontFamily: FontFamily,
     isSelected: Boolean,
+    isLight: Boolean = false,
     onClick: () -> Unit
 ) {
-    val cardBorder = if (isSelected) BorderStroke(1.dp, Color.White.copy(alpha = 0.5f)) else BorderStroke(1.dp, AmoledCardBorder)
-    val cardBg = if (isSelected) Color(0xFF121217) else AmoledCardBackground
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
+    val cardBorder = when {
+        isSelected && isLight -> BorderStroke(1.dp, Color(0xFF1C1917))
+        isSelected -> BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+        isLight -> BorderStroke(1.dp, Color(0xFFDDD8CB))
+        else -> BorderStroke(1.dp, AmoledCardBorder)
+    }
+    val cardBg = when {
+        isSelected && isLight -> Color(0xFFE8E4D8)
+        isSelected -> Color(0xFF121217)
+        isLight -> Color(0xFFEFECE2)
+        else -> AmoledCardBackground
+    }
 
     Box(
         modifier = Modifier
@@ -662,7 +715,7 @@ private fun FontCard(
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 14.sp),
-                    color = TextPrimary
+                    color = primaryText
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -672,13 +725,13 @@ private fun FontCard(
                         fontFamily = fontFamily,
                         fontWeight = FontWeight.Medium
                     ),
-                    color = TextPrimary
+                    color = primaryText
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                    color = TextSecondary
+                    color = secondaryText
                 )
             }
 
@@ -686,7 +739,7 @@ private fun FontCard(
                 Icon(
                     imageVector = Icons.Outlined.Check,
                     contentDescription = "Selecionado",
-                    tint = TextPrimary,
+                    tint = primaryText,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -703,10 +756,17 @@ fun IconShapeBottomSheet(
     currentShape: String,
     onSelectShape: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
 
     val shapes = listOf(
         "CIRCLE" to "Círculo",
@@ -721,7 +781,7 @@ fun IconShapeBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -735,7 +795,7 @@ fun IconShapeBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -754,6 +814,19 @@ fun IconShapeBottomSheet(
             ) {
                 shapes.forEach { (shapeKey, shapeLabel) ->
                     val isSelected = currentShape.equals(shapeKey, ignoreCase = true)
+                    val shapeBorder = when {
+                        isSelected && isLight -> BorderStroke(2.dp, Color(0xFF1C1917))
+                        isSelected -> BorderStroke(2.dp, Color.White)
+                        isLight -> BorderStroke(1.dp, Color(0xFFDDD8CB))
+                        else -> BorderStroke(1.dp, AmoledCardBorder)
+                    }
+                    val shapeBg = when {
+                        isSelected && isLight -> Color(0xFFDDD8CB)
+                        isSelected -> Color(0xFF26262E)
+                        isLight -> Color(0xFFEFECE2)
+                        else -> Color(0xFF16161B)
+                    }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
@@ -779,7 +852,7 @@ fun IconShapeBottomSheet(
                                     }
                                 )
                                 .border(
-                                    border = if (isSelected) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder),
+                                    border = shapeBorder,
                                     shape = when (shapeKey) {
                                         "CIRCLE" -> CircleShape
                                         "CYLINDER" -> RoundedCornerShape(28.dp)
@@ -788,11 +861,10 @@ fun IconShapeBottomSheet(
                                         else -> RoundedCornerShape(20.dp)
                                     }
                                 )
-                                .background(if (isSelected) Color(0xFF26262E) else Color(0xFF16161B)),
+                                .background(shapeBg),
                             contentAlignment = Alignment.Center
                         ) {
-                            // Glifo representativo
-                            ShapeGlyphVisual(shapeKey = shapeKey)
+                            ShapeGlyphVisual(shapeKey = shapeKey, isLight = isLight)
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -803,7 +875,7 @@ fun IconShapeBottomSheet(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 13.sp
                             ),
-                            color = if (isSelected) TextPrimary else TextSecondary
+                            color = if (isSelected) primaryText else secondaryText
                         )
                     }
                 }
@@ -813,14 +885,15 @@ fun IconShapeBottomSheet(
 }
 
 @Composable
-private fun ShapeGlyphVisual(shapeKey: String) {
+private fun ShapeGlyphVisual(shapeKey: String, isLight: Boolean = false) {
+    val glyphStroke = if (isLight) Color(0xFF1C1917).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.8f)
     when (shapeKey) {
         "CIRCLE" -> {
             Box(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), CircleShape)
+                    .border(1.5.dp, glyphStroke, CircleShape)
             )
         }
         "CYLINDER" -> {
@@ -829,7 +902,7 @@ private fun ShapeGlyphVisual(shapeKey: String) {
                     .width(26.dp)
                     .height(38.dp)
                     .clip(RoundedCornerShape(13.dp))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(13.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(13.dp))
             )
         }
         "LOSANGO" -> {
@@ -838,7 +911,7 @@ private fun ShapeGlyphVisual(shapeKey: String) {
                     .size(28.dp)
                     .rotate(45f)
                     .clip(RoundedCornerShape(4.dp))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(4.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(4.dp))
             )
         }
         "SQUIRCLE" -> {
@@ -846,14 +919,14 @@ private fun ShapeGlyphVisual(shapeKey: String) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(10.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(10.dp))
             )
         }
         "SQUARE" -> {
             Box(
                 modifier = Modifier
                     .size(30.dp)
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(2.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(2.dp))
             )
         }
         else -> {
@@ -861,7 +934,7 @@ private fun ShapeGlyphVisual(shapeKey: String) {
                 modifier = Modifier
                     .size(32.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.5.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(8.dp))
             )
         }
     }
@@ -877,16 +950,23 @@ fun IconPackBottomSheet(
     installedPacks: List<IconPackInfo>,
     onSelectPack: (String?) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -900,7 +980,7 @@ fun IconPackBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -919,6 +999,19 @@ fun IconPackBottomSheet(
             ) {
                 // Opção Padrão (Sem pacote)
                 val isDefaultSelected = selectedPack == null
+                val defaultBorder = when {
+                    isDefaultSelected && isLight -> BorderStroke(2.dp, Color(0xFF1C1917))
+                    isDefaultSelected -> BorderStroke(2.dp, Color.White)
+                    isLight -> BorderStroke(1.dp, Color(0xFFDDD8CB))
+                    else -> BorderStroke(1.dp, AmoledCardBorder)
+                }
+                val defaultBg = when {
+                    isDefaultSelected && isLight -> Color(0xFFDDD8CB)
+                    isDefaultSelected -> Color(0xFF26262E)
+                    isLight -> Color(0xFFEFECE2)
+                    else -> Color(0xFF141418)
+                }
+
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.clickable(
@@ -934,17 +1027,14 @@ fun IconPackBottomSheet(
                         modifier = Modifier
                             .size(76.dp)
                             .clip(RoundedCornerShape(22.dp))
-                            .border(
-                                border = if (isDefaultSelected) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder),
-                                shape = RoundedCornerShape(22.dp)
-                            )
-                            .background(if (isDefaultSelected) Color(0xFF26262E) else Color(0xFF141418)),
+                            .border(defaultBorder, RoundedCornerShape(22.dp))
+                            .background(defaultBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.AutoAwesome,
                             contentDescription = "Padrão",
-                            tint = TextPrimary,
+                            tint = primaryText,
                             modifier = Modifier.size(32.dp)
                         )
                     }
@@ -957,13 +1047,26 @@ fun IconPackBottomSheet(
                             fontWeight = if (isDefaultSelected) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 13.sp
                         ),
-                        color = if (isDefaultSelected) TextPrimary else TextSecondary
+                        color = if (isDefaultSelected) primaryText else secondaryText
                     )
                 }
 
                 // Pacotes Instalados
                 installedPacks.forEach { pack ->
                     val isSelected = selectedPack == pack.packageName
+                    val packBorder = when {
+                        isSelected && isLight -> BorderStroke(2.dp, Color(0xFF1C1917))
+                        isSelected -> BorderStroke(2.dp, Color.White)
+                        isLight -> BorderStroke(1.dp, Color(0xFFDDD8CB))
+                        else -> BorderStroke(1.dp, AmoledCardBorder)
+                    }
+                    val packBg = when {
+                        isSelected && isLight -> Color(0xFFDDD8CB)
+                        isSelected -> Color(0xFF26262E)
+                        isLight -> Color(0xFFEFECE2)
+                        else -> Color(0xFF141418)
+                    }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
@@ -981,11 +1084,8 @@ fun IconPackBottomSheet(
                             modifier = Modifier
                                 .size(76.dp)
                                 .clip(RoundedCornerShape(22.dp))
-                                .border(
-                                    border = if (isSelected) BorderStroke(2.dp, Color.White) else BorderStroke(1.dp, AmoledCardBorder),
-                                    shape = RoundedCornerShape(22.dp)
-                                )
-                                .background(if (isSelected) Color(0xFF26262E) else Color(0xFF141418)),
+                                .border(packBorder, RoundedCornerShape(22.dp))
+                                .background(packBg),
                             contentAlignment = Alignment.Center
                         ) {
                             if (pack.icon != null) {
@@ -1007,7 +1107,7 @@ fun IconPackBottomSheet(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 12.sp
                             ),
-                            color = if (isSelected) TextPrimary else TextSecondary,
+                            color = if (isSelected) primaryText else secondaryText,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
@@ -1020,7 +1120,7 @@ fun IconPackBottomSheet(
 }
 
 @Composable
-private fun DragHandleIndicator() {
+private fun DragHandleIndicator(isLight: Boolean = false) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1032,7 +1132,7 @@ private fun DragHandleIndicator() {
                 .width(42.dp)
                 .height(4.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF383842))
+                .background(if (isLight) Color(0xFFDDD8CB) else Color(0xFF383842))
         )
     }
 }
@@ -1046,10 +1146,18 @@ fun HomeClockStyleBottomSheet(
     currentStyle: String,
     onSelectStyle: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
+    val tertiaryText = if (isLight) Color(0xFFA8A29E) else TextTertiary
 
     val clockOptions = listOf(
         "NONE" to ("Nenhum" to "Tela 100% zen, sem relógio fixo (hora na barra de status)"),
@@ -1062,7 +1170,7 @@ fun HomeClockStyleBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -1077,7 +1185,7 @@ fun HomeClockStyleBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -1089,13 +1197,18 @@ fun HomeClockStyleBottomSheet(
             clockOptions.forEach { (styleKey, info) ->
                 val (title, description) = info
                 val isSelected = currentStyle.equals(styleKey, ignoreCase = true)
+                val selectedBg = when {
+                    isSelected && isLight -> Color(0xFFEFECE2)
+                    isSelected -> Color(0xFF1E1E26)
+                    else -> Color.Transparent
+                }
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) Color(0xFF1E1E26) else Color.Transparent)
+                        .background(selectedBg)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -1113,13 +1226,13 @@ fun HomeClockStyleBottomSheet(
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             ),
-                            color = if (isSelected) TextPrimary else TextSecondary
+                            color = if (isSelected) primaryText else secondaryText
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = description,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            color = TextTertiary
+                            color = tertiaryText
                         )
                     }
 
@@ -1127,7 +1240,7 @@ fun HomeClockStyleBottomSheet(
                         Icon(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = "Selecionado",
-                            tint = Color.White,
+                            tint = primaryText,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -1146,16 +1259,23 @@ fun AccentColorBottomSheet(
     currentColorName: String,
     onSelectColor: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val primaryText = if (isLight) Color(0xFF1C1917) else TextPrimary
+    val secondaryText = if (isLight) Color(0xFF78716C) else TextSecondary
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = containerBg,
-        dragHandle = { DragHandleIndicator() }
+        dragHandle = { DragHandleIndicator(isLight = isLight) }
     ) {
         Column(
             modifier = Modifier
@@ -1170,7 +1290,7 @@ fun AccentColorBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryText,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -1181,13 +1301,18 @@ fun AccentColorBottomSheet(
 
             com.tessera.launcher.ui.theme.ACCENT_COLOR_OPTIONS.forEach { option ->
                 val isSelected = currentColorName.equals(option.id, ignoreCase = true)
+                val selectedBg = when {
+                    isSelected && isLight -> Color(0xFFEFECE2)
+                    isSelected -> Color(0xFF1E1E26)
+                    else -> Color.Transparent
+                }
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (isSelected) Color(0xFF1E1E26) else Color.Transparent)
+                        .background(selectedBg)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -1204,7 +1329,7 @@ fun AccentColorBottomSheet(
                             .size(24.dp)
                             .clip(CircleShape)
                             .background(option.color)
-                            .border(BorderStroke(1.dp, Color(0x33FFFFFF)), CircleShape)
+                            .border(BorderStroke(1.dp, if (isLight) Color(0x33000000) else Color(0x33FFFFFF)), CircleShape)
                     )
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -1214,7 +1339,7 @@ fun AccentColorBottomSheet(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                         ),
-                        color = if (isSelected) TextPrimary else TextSecondary,
+                        color = if (isSelected) primaryText else secondaryText,
                         modifier = Modifier.weight(1f)
                     )
 

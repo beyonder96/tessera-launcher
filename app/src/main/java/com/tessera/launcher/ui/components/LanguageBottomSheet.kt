@@ -49,10 +49,42 @@ fun LanguageBottomSheet(
     selectedLanguage: String,
     onSelectLanguage: (String) -> Unit,
     onDismiss: () -> Unit,
-    isAmoled: Boolean = true
+    isAmoled: Boolean = true,
+    isLight: Boolean = false
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val containerBg = if (isAmoled) AmoledBlack else DarkSurface
+    val containerBg = when {
+        isLight -> Color(0xFFF7F4EB)
+        isAmoled -> AmoledBlack
+        else -> DarkSurface
+    }
+    val selectedItemBg = when {
+        isLight -> Color(0xFFEFECE2)
+        isAmoled -> Color(0xFF141416)
+        else -> Color(0xFF16161B)
+    }
+    val selectedItemBorder = when {
+        isLight -> Color(0xFFDDD8CB)
+        isAmoled -> Color(0xFF242428)
+        else -> Color(0xFF262632)
+    }
+    val badgeBg = when {
+        isLight -> Color(0xFFE6E2D6)
+        isAmoled -> Color(0xFF1A1A1E)
+        else -> Color(0xFF1B1B22)
+    }
+    val primaryTextColor = when {
+        isLight -> Color(0xFF1C1917)
+        else -> TextPrimary
+    }
+    val secondaryTextColor = when {
+        isLight -> Color(0xFF78716C)
+        else -> TextSecondary
+    }
+    val dragHandleColor = when {
+        isLight -> Color(0xFFDDD8CB)
+        else -> Color(0xFF383842)
+    }
 
     val languages = listOf(
         "SYS" to "Padrão do Sistema",
@@ -82,7 +114,7 @@ fun LanguageBottomSheet(
                         .width(42.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF383842))
+                        .background(dragHandleColor)
                 )
             }
         }
@@ -101,7 +133,7 @@ fun LanguageBottomSheet(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.4.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 12.dp),
@@ -118,8 +150,8 @@ fun LanguageBottomSheet(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Color(0xFF16161B))
-                        .border(1.dp, Color(0xFF262632), RoundedCornerShape(16.dp))
+                        .background(selectedItemBg)
+                        .border(1.dp, selectedItemBorder, RoundedCornerShape(16.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -154,7 +186,7 @@ fun LanguageBottomSheet(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF1B1B22)),
+                            .background(badgeBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -164,7 +196,7 @@ fun LanguageBottomSheet(
                                 fontSize = 11.sp,
                                 letterSpacing = 0.5.sp
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                     }
 
@@ -176,7 +208,7 @@ fun LanguageBottomSheet(
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                             fontSize = 15.sp
                         ),
-                        color = TextPrimary,
+                        color = primaryTextColor,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -184,7 +216,7 @@ fun LanguageBottomSheet(
                         Icon(
                             imageVector = Icons.Outlined.Check,
                             contentDescription = "Selecionado",
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }

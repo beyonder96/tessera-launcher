@@ -920,9 +920,9 @@ class MainViewModel(
     fun navigateBackSettings() {
         _uiState.update {
             when (it.currentSettingsScreen) {
-                SettingsSubScreen.FOLDERS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
-                SettingsSubScreen.COMMANDS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
-                SettingsSubScreen.HIDDEN_APPS -> it.copy(currentSettingsScreen = SettingsSubScreen.EXTRAS)
+                SettingsSubScreen.FOLDERS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.COMMANDS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.HIDDEN_APPS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.DEVELOPER -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.TRANSPARENCY -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.EXTRAS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
@@ -930,7 +930,7 @@ class MainViewModel(
                 SettingsSubScreen.CUSTOMIZATION -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.PERMISSIONS -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.IN_APP_SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
-                SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.SEARCH)
+                SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.FEED -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)

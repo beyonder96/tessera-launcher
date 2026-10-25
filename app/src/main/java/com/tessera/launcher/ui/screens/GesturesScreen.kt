@@ -2,6 +2,7 @@ package com.tessera.launcher.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -11,13 +12,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Dashboard
 import androidx.compose.material.icons.outlined.Fingerprint
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Keyboard
@@ -44,11 +46,10 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SettingsApplications
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Vibration
-import androidx.compose.material.icons.outlined.Dashboard
-import androidx.compose.material.icons.outlined.SettingsApplications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -81,16 +82,19 @@ import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.ui.state.AppShortcutItem
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.DarkBackground
+import com.tessera.launcher.ui.theme.LightBackground
+import com.tessera.launcher.ui.theme.LightCardBackground
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightDivider
+import com.tessera.launcher.ui.theme.LightIconBackground
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val GesturesCardShape = RoundedCornerShape(24.dp)
-private val GesturesCardBackground = Color(0xFF0F0F12)
-private val GesturesCardBorder = Color(0xFF1D1D22)
-private val GesturesDividerColor = Color(0xFF18181D)
-private val GesturesIconBackground = Color(0xFF19191E)
 
 fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
     return when {
@@ -138,8 +142,18 @@ fun GesturesScreen(
 ) {
     var activeGesturePicker by remember { mutableStateOf<GestureTarget?>(null) }
     var isBrowsingApps by remember { mutableStateOf(false) }
+    val isLight = uiState.isLightMode
 
     val allApps = (uiState.appsState as? com.tessera.launcher.ui.state.AppsListState.Success)?.apps ?: emptyList()
+
+    val screenBg = if (isLight) LightBackground else DarkBackground
+    val cardBg = if (isLight) LightCardBackground else Color(0xFF0F0F12)
+    val cardBorder = if (isLight) LightCardBorder else Color(0xFF1D1D22)
+    val dividerColor = if (isLight) LightDivider else Color(0xFF18181D)
+    val iconBg = if (isLight) LightIconBackground else Color(0xFF19191E)
+    val primaryTextColor = if (isLight) LightTextPrimary else TextPrimary
+    val secondaryTextColor = if (isLight) LightTextSecondary else TextSecondary
+    val tertiaryTextColor = if (isLight) Color(0xFF625B55) else TextTertiary
 
     val statusBarTop = if (uiState.isShowStatusBarEnabled) {
         WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -152,7 +166,7 @@ fun GesturesScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .background(screenBg)
             .padding(top = safeTopPadding)
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
     ) {
@@ -179,7 +193,7 @@ fun GesturesScreen(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryTextColor,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -191,7 +205,7 @@ fun GesturesScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp
                 ),
-                color = TextSecondary,
+                color = secondaryTextColor,
                 textAlign = TextAlign.Center
             )
         }
@@ -212,14 +226,14 @@ fun GesturesScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = GesturesCardShape,
-                color = GesturesCardBackground,
-                border = BorderStroke(1.dp, GesturesCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -232,13 +246,13 @@ fun GesturesScreen(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(CircleShape)
-                            .background(GesturesIconBackground),
+                            .background(iconBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Vibration,
                             contentDescription = null,
-                            tint = TextPrimary,
+                            tint = primaryTextColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -250,18 +264,18 @@ fun GesturesScreen(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextPrimary
+                            color = primaryTextColor
                         )
                         Text(
                             text = "Gire, balance ou incline para realizar ações.",
                             style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                            color = TextSecondary
+                            color = secondaryTextColor
                         )
                     }
                     Icon(
                         imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = TextTertiary,
+                        tint = tertiaryTextColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -277,14 +291,14 @@ fun GesturesScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = GesturesCardShape,
-                color = GesturesCardBackground,
-                border = BorderStroke(1.dp, GesturesCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -294,21 +308,29 @@ fun GesturesScreen(
                         title = "Gesto de toque duplo",
                         subtitle = "Toque duas vezes na tela inicial.",
                         checked = uiState.isDoubleTapEnabled,
-                        onCheckedChange = { viewModel.setDoubleTapEnabled(it) }
+                        onCheckedChange = { viewModel.setDoubleTapEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isDoubleTapEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação de toque duplo",
                             subtitle = getActionDisplayName(uiState.doubleTapAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.DOUBLE_TAP
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 2. Gesto de Segurar
                     GestureToggleRow(
@@ -316,105 +338,145 @@ fun GesturesScreen(
                         title = "Gesto de Segurar",
                         subtitle = "Segure na tela inicial.",
                         checked = uiState.isHoldEnabled,
-                        onCheckedChange = { viewModel.setHoldEnabled(it) }
+                        onCheckedChange = { viewModel.setHoldEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isHoldEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao segurar",
                             subtitle = getActionDisplayName(uiState.holdAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.HOLD
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 3. Deslizar para baixo
                     GestureToggleRow(
                         icon = Icons.Outlined.ArrowDownward,
-                        title = "Gesto de deslizar para b...",
+                        title = "Gesto de deslizar para baixo",
                         subtitle = "Deslize para baixo na tela inicial.",
                         checked = uiState.isSwipeDownEnabled,
-                        onCheckedChange = { viewModel.setSwipeDownEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeDownEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeDownEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação de deslizar para baixo",
                             subtitle = getActionDisplayName(uiState.swipeDownAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_DOWN
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 4. Deslizar para cima
                     GestureToggleRow(
                         icon = Icons.Outlined.ArrowUpward,
-                        title = "Gesto de deslizar para ci...",
+                        title = "Gesto de deslizar para cima",
                         subtitle = "Deslize de baixo para cima.",
                         checked = uiState.isSwipeUpEnabled,
-                        onCheckedChange = { viewModel.setSwipeUpEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeUpEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeUpEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para cima",
                             subtitle = getActionDisplayName(uiState.swipeUpAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_UP
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 5. Deslizar para a esquerda
                     GestureToggleRow(
                         icon = Icons.AutoMirrored.Outlined.ArrowBack,
-                        title = "Gesto de deslizar para a ...",
+                        title = "Gesto de deslizar para a esquerda",
                         subtitle = "Deslize para a esquerda na tela inicial.",
                         checked = uiState.isSwipeLeftEnabled,
-                        onCheckedChange = { viewModel.setSwipeLeftEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeLeftEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeLeftEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para a esquerda",
                             subtitle = getActionDisplayName(uiState.swipeLeftAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_LEFT
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 6. Deslizar para a direita
                     GestureToggleRow(
                         icon = Icons.AutoMirrored.Outlined.ArrowForward,
-                        title = "Gesto de deslizar para a ...",
+                        title = "Gesto de deslizar para a direita",
                         subtitle = "Deslize para a direita na tela inicial.",
                         checked = uiState.isSwipeRightEnabled,
-                        onCheckedChange = { viewModel.setSwipeRightEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeRightEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeRightEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para a direita",
                             subtitle = getActionDisplayName(uiState.swipeRightAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_RIGHT
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
                 }
@@ -430,14 +492,14 @@ fun GesturesScreen(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp
                 ),
-                color = TextTertiary,
+                color = tertiaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
             )
 
             Surface(
                 shape = GesturesCardShape,
-                color = GesturesCardBackground,
-                border = BorderStroke(1.dp, GesturesCardBorder),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
@@ -447,21 +509,29 @@ fun GesturesScreen(
                         title = "Deslizar 2 dedos para baixo",
                         subtitle = "Deslize dois dedos para baixo na tela inicial.",
                         checked = uiState.isSwipeDownTwoFingersEnabled,
-                        onCheckedChange = { viewModel.setSwipeDownTwoFingersEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeDownTwoFingersEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeDownTwoFingersEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
-                            title = "Ação de deslizar 2 dedos para baixo",
+                            title = "Ação deslizar 2 dedos para baixo",
                             subtitle = getActionDisplayName(uiState.swipeDownTwoFingersAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_DOWN_TWO_FINGERS
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     // 2. Deslizar 2 dedos para cima
                     GestureToggleRow(
@@ -469,83 +539,115 @@ fun GesturesScreen(
                         title = "Deslizar 2 dedos para cima",
                         subtitle = "Deslize dois dedos para cima na tela inicial.",
                         checked = uiState.isSwipeUpTwoFingersEnabled,
-                        onCheckedChange = { viewModel.setSwipeUpTwoFingersEnabled(it) }
+                        onCheckedChange = { viewModel.setSwipeUpTwoFingersEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isSwipeUpTwoFingersEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
-                            title = "Ação de deslizar 2 dedos para cima",
+                            title = "Ação deslizar 2 dedos para cima",
                             subtitle = getActionDisplayName(uiState.swipeUpTwoFingersAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.SWIPE_UP_TWO_FINGERS
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
-                    // 3. Pinçar para dentro (Pinch in)
+                    // 3. Pinça para dentro
                     GestureToggleRow(
                         icon = Icons.Outlined.TouchApp,
-                        title = "Pinçar para dentro (Pinch in)",
-                        subtitle = "Aproxime dois dedos na tela inicial.",
+                        title = "Pinça para dentro",
+                        subtitle = "Gesto de pinça fechando com dois dedos.",
                         checked = uiState.isPinchInEnabled,
-                        onCheckedChange = { viewModel.setPinchInEnabled(it) }
+                        onCheckedChange = { viewModel.setPinchInEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isPinchInEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
-                            title = "Ação ao pinçar para dentro",
+                            title = "Ação pinça para dentro",
                             subtitle = getActionDisplayName(uiState.pinchInAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.PINCH_IN
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
-                    // 4. Pinçar para fora (Pinch out)
+                    // 4. Pinça para fora
                     GestureToggleRow(
                         icon = Icons.Outlined.TouchApp,
-                        title = "Pinçar para fora (Pinch out)",
-                        subtitle = "Afaste dois dedos na tela inicial.",
+                        title = "Pinça para fora",
+                        subtitle = "Gesto de pinça abrindo com dois dedos.",
                         checked = uiState.isPinchOutEnabled,
-                        onCheckedChange = { viewModel.setPinchOutEnabled(it) }
+                        onCheckedChange = { viewModel.setPinchOutEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isPinchOutEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
-                            title = "Ação ao pinçar para fora",
+                            title = "Ação pinça para fora",
                             subtitle = getActionDisplayName(uiState.pinchOutAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.PINCH_OUT
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
 
-                    HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
-                    // 5. Toque com 2 dedos
+                    // 5. Toque duplo com dois dedos
                     GestureToggleRow(
                         icon = Icons.Outlined.TouchApp,
-                        title = "Toque com dois dedos",
-                        subtitle = "Toque simultaneamente com dois dedos na tela.",
+                        title = "Toque duplo com dois dedos",
+                        subtitle = "Toque duplo simultâneo na tela inicial.",
                         checked = uiState.isDoubleFingerTapEnabled,
-                        onCheckedChange = { viewModel.setDoubleFingerTapEnabled(it) }
+                        onCheckedChange = { viewModel.setDoubleFingerTapEnabled(it) },
+                        isLight = isLight,
+                        iconBg = iconBg,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor
                     )
                     if (uiState.isDoubleFingerTapEnabled) {
-                        HorizontalDivider(color = GesturesDividerColor, thickness = 1.dp)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
-                            title = "Ação do toque com dois dedos",
+                            title = "Ação toque duplo com dois dedos",
                             subtitle = getActionDisplayName(uiState.doubleFingerTapAction, allApps),
                             onClick = {
                                 isBrowsingApps = false
                                 activeGesturePicker = GestureTarget.DOUBLE_FINGER_TAP
-                            }
+                            },
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor,
+                            tertiaryColor = tertiaryTextColor
                         )
                     }
                 }
@@ -553,207 +655,223 @@ fun GesturesScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
-    }
 
-    // BottomSheet: ESCOLHER AÇÃO / NAVEGAR APPS
-    if (activeGesturePicker != null) {
-        val currentTarget = activeGesturePicker!!
-        val currentAction = when (currentTarget) {
-            GestureTarget.DOUBLE_TAP -> uiState.doubleTapAction
-            GestureTarget.HOLD -> uiState.holdAction
-            GestureTarget.SWIPE_DOWN -> uiState.swipeDownAction
-            GestureTarget.SWIPE_UP -> uiState.swipeUpAction
-            GestureTarget.SWIPE_LEFT -> uiState.swipeLeftAction
-            GestureTarget.SWIPE_RIGHT -> uiState.swipeRightAction
-            GestureTarget.SWIPE_DOWN_TWO_FINGERS -> uiState.swipeDownTwoFingersAction
-            GestureTarget.SWIPE_UP_TWO_FINGERS -> uiState.swipeUpTwoFingersAction
-            GestureTarget.PINCH_IN -> uiState.pinchInAction
-            GestureTarget.PINCH_OUT -> uiState.pinchOutAction
-            GestureTarget.DOUBLE_FINGER_TAP -> uiState.doubleFingerTapAction
-        }
-
-        val onSelectAction: (String) -> Unit = { newAction ->
-            when (currentTarget) {
-                GestureTarget.DOUBLE_TAP -> viewModel.setDoubleTapAction(newAction)
-                GestureTarget.HOLD -> viewModel.setHoldAction(newAction)
-                GestureTarget.SWIPE_DOWN -> viewModel.setSwipeDownAction(newAction)
-                GestureTarget.SWIPE_UP -> viewModel.setSwipeUpAction(newAction)
-                GestureTarget.SWIPE_LEFT -> viewModel.setSwipeLeftAction(newAction)
-                GestureTarget.SWIPE_RIGHT -> viewModel.setSwipeRightAction(newAction)
-                GestureTarget.SWIPE_DOWN_TWO_FINGERS -> viewModel.setSwipeDownTwoFingersAction(newAction)
-                GestureTarget.SWIPE_UP_TWO_FINGERS -> viewModel.setSwipeUpTwoFingersAction(newAction)
-                GestureTarget.PINCH_IN -> viewModel.setPinchInAction(newAction)
-                GestureTarget.PINCH_OUT -> viewModel.setPinchOutAction(newAction)
-                GestureTarget.DOUBLE_FINGER_TAP -> viewModel.setDoubleFingerTapAction(newAction)
+        // Bottom Sheet de Seleção de Ação para o Gesto
+        activeGesturePicker?.let { target ->
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val currentAction = when (target) {
+                GestureTarget.DOUBLE_TAP -> uiState.doubleTapAction
+                GestureTarget.HOLD -> uiState.holdAction
+                GestureTarget.SWIPE_DOWN -> uiState.swipeDownAction
+                GestureTarget.SWIPE_UP -> uiState.swipeUpAction
+                GestureTarget.SWIPE_LEFT -> uiState.swipeLeftAction
+                GestureTarget.SWIPE_RIGHT -> uiState.swipeRightAction
+                GestureTarget.SWIPE_DOWN_TWO_FINGERS -> uiState.swipeDownTwoFingersAction
+                GestureTarget.SWIPE_UP_TWO_FINGERS -> uiState.swipeUpTwoFingersAction
+                GestureTarget.PINCH_IN -> uiState.pinchInAction
+                GestureTarget.PINCH_OUT -> uiState.pinchOutAction
+                GestureTarget.DOUBLE_FINGER_TAP -> uiState.doubleFingerTapAction
             }
-            activeGesturePicker = null
-            isBrowsingApps = false
-        }
 
-        ModalBottomSheet(
-            onDismissRequest = {
+            fun onSelectAction(actionKey: String) {
+                when (target) {
+                    GestureTarget.DOUBLE_TAP -> viewModel.setDoubleTapAction(actionKey)
+                    GestureTarget.HOLD -> viewModel.setHoldAction(actionKey)
+                    GestureTarget.SWIPE_DOWN -> viewModel.setSwipeDownAction(actionKey)
+                    GestureTarget.SWIPE_UP -> viewModel.setSwipeUpAction(actionKey)
+                    GestureTarget.SWIPE_LEFT -> viewModel.setSwipeLeftAction(actionKey)
+                    GestureTarget.SWIPE_RIGHT -> viewModel.setSwipeRightAction(actionKey)
+                    GestureTarget.SWIPE_DOWN_TWO_FINGERS -> viewModel.setSwipeDownTwoFingersAction(actionKey)
+                    GestureTarget.SWIPE_UP_TWO_FINGERS -> viewModel.setSwipeUpTwoFingersAction(actionKey)
+                    GestureTarget.PINCH_IN -> viewModel.setPinchInAction(actionKey)
+                    GestureTarget.PINCH_OUT -> viewModel.setPinchOutAction(actionKey)
+                    GestureTarget.DOUBLE_FINGER_TAP -> viewModel.setDoubleFingerTapAction(actionKey)
+                }
                 activeGesturePicker = null
-                isBrowsingApps = false
-            },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = Color(0xFF0F0F12),
-            dragHandle = {
-                Box(
-                    modifier = Modifier
-                        .padding(vertical = 10.dp)
-                        .width(36.dp)
-                        .height(4.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFF333338))
-                )
             }
-        ) {
-            if (!isBrowsingApps) {
-                // Vista 1: ESCOLHER AÇÃO (Imagem 2)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp)
-                        .padding(bottom = 32.dp)
-                ) {
-                    Text(
-                        text = "ESCOLHER AÇÃO",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.sp
-                        ),
-                        color = Color.White,
-                        textAlign = TextAlign.Center,
+
+            ModalBottomSheet(
+                onDismissRequest = { activeGesturePicker = null },
+                sheetState = sheetState,
+                containerColor = if (isLight) LightBackground else Color(0xFF0F0F12),
+                dragHandle = {
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 10.dp)
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(if (isLight) Color(0xFFDDD8CB) else Color(0xFF333338))
+                    )
+                }
+            ) {
+                if (!isBrowsingApps) {
+                    // Vista 1: ESCOLHER AÇÃO
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 20.dp)
-                    )
-
-                    // Seção: CONFIGURAÇÕES TESSERA
-                    Text(
-                        text = "CONFIGURAÇÕES TESSERA",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        ),
-                        color = TextTertiary,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Tune,
-                        title = "Configurações do launcher",
-                        isSelected = currentAction == "launcher_settings",
-                        onClick = { onSelectAction("launcher_settings") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Settings,
-                        title = "Configurações do sistema",
-                        isSelected = currentAction == "system_settings",
-                        onClick = { onSelectAction("system_settings") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Notifications,
-                        title = "Notificações",
-                        isSelected = currentAction == "notifications",
-                        onClick = { onSelectAction("notifications") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Lock,
-                        title = "Bloquear Tela",
-                        isSelected = currentAction == "lock_screen",
-                        onClick = { onSelectAction("lock_screen") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Keyboard,
-                        title = "Abrir teclado",
-                        isSelected = currentAction == "open_keyboard",
-                        onClick = { onSelectAction("open_keyboard") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.Dashboard,
-                        title = "Abrir Feed Social",
-                        isSelected = currentAction == "open_feed",
-                        onClick = { onSelectAction("open_feed") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.SettingsApplications,
-                        title = "Configurações rápidas",
-                        isSelected = currentAction == "quick_settings",
-                        onClick = { onSelectAction("quick_settings") }
-                    )
-                    ActionOptionItem(
-                        icon = Icons.Outlined.AutoAwesome,
-                        title = "Pesquisa com IA (Groq / Gemini)",
-                        isSelected = currentAction == "ai_search",
-                        onClick = { onSelectAction("ai_search") }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Seção: APLICAÇÕES
-                    Text(
-                        text = "APLICAÇÕES",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        ),
-                        color = TextTertiary,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { isBrowsingApps = true }
-                            .padding(vertical = 12.dp, horizontal = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 32.dp)
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        Box(
+                        Text(
+                            text = "ESCOLHER AÇÃO",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp
+                            ),
+                            color = primaryTextColor,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF19191E)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(bottom = 20.dp)
+                        )
+
+                        Text(
+                            text = "CONFIGURAÇÕES TESSERA",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp
+                            ),
+                            color = tertiaryTextColor,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Tune,
+                            title = "Configurações do launcher",
+                            isSelected = currentAction == "launcher_settings",
+                            onClick = { onSelectAction("launcher_settings") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Settings,
+                            title = "Configurações do sistema",
+                            isSelected = currentAction == "system_settings",
+                            onClick = { onSelectAction("system_settings") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Notifications,
+                            title = "Notificações",
+                            isSelected = currentAction == "notifications",
+                            onClick = { onSelectAction("notifications") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Lock,
+                            title = "Bloquear Tela",
+                            isSelected = currentAction == "lock_screen",
+                            onClick = { onSelectAction("lock_screen") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Keyboard,
+                            title = "Abrir teclado",
+                            isSelected = currentAction == "open_keyboard",
+                            onClick = { onSelectAction("open_keyboard") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.Dashboard,
+                            title = "Abrir Feed Social",
+                            isSelected = currentAction == "open_feed",
+                            onClick = { onSelectAction("open_feed") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.SettingsApplications,
+                            title = "Configurações rápidas",
+                            isSelected = currentAction == "quick_settings",
+                            onClick = { onSelectAction("quick_settings") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.AutoAwesome,
+                            title = "Pesquisa com IA (Groq / Gemini)",
+                            isSelected = currentAction == "ai_search",
+                            onClick = { onSelectAction("ai_search") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "APLICAÇÕES",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.2.sp
+                            ),
+                            color = tertiaryTextColor,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { isBrowsingApps = true }
+                                .padding(vertical = 12.dp, horizontal = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(iconBg),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.GridView,
+                                    contentDescription = null,
+                                    tint = primaryTextColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Text(
+                                text = "Navegar Apps",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                color = primaryTextColor,
+                                modifier = Modifier.weight(1f)
+                            )
                             Icon(
-                                imageVector = Icons.Outlined.GridView,
+                                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                                 contentDescription = null,
-                                tint = TextPrimary,
-                                modifier = Modifier.size(18.dp)
+                                tint = tertiaryTextColor,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Text(
-                            text = "Navegar Apps",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            ),
-                            color = TextPrimary,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = TextTertiary,
-                            modifier = Modifier.size(20.dp)
-                        )
                     }
+                } else {
+                    // Vista 2: NAVEGAR APPS
+                    BrowseAppsSheetContent(
+                        viewModel = viewModel,
+                        allApps = allApps,
+                        currentAction = currentAction,
+                        onBack = { isBrowsingApps = false },
+                        onSelectAction = { onSelectAction(it) },
+                        isLight = isLight,
+                        primaryColor = primaryTextColor,
+                        secondaryColor = secondaryTextColor,
+                        tertiaryColor = tertiaryTextColor,
+                        iconBg = iconBg
+                    )
                 }
-            } else {
-                // Vista 2: NAVEGAR APPS (Imagem 1)
-                BrowseAppsSheetContent(
-                    viewModel = viewModel,
-                    allApps = allApps,
-                    currentAction = currentAction,
-                    onBack = { isBrowsingApps = false },
-                    onSelectAction = onSelectAction
-                )
             }
         }
     }
@@ -765,7 +883,12 @@ private fun BrowseAppsSheetContent(
     allApps: List<AppInfo>,
     currentAction: String,
     onBack: () -> Unit,
-    onSelectAction: (String) -> Unit
+    onSelectAction: (String) -> Unit,
+    isLight: Boolean,
+    primaryColor: Color,
+    secondaryColor: Color,
+    tertiaryColor: Color,
+    iconBg: Color
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var expandedPackage by remember { mutableStateOf<String?>(null) }
@@ -782,7 +905,6 @@ private fun BrowseAppsSheetContent(
             .height(520.dp)
             .padding(horizontal = 20.dp)
     ) {
-        // Header com seta voltar e "NAVEGAR APPS"
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -799,7 +921,7 @@ private fun BrowseAppsSheetContent(
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                     contentDescription = "Voltar",
-                    tint = TextPrimary,
+                    tint = primaryColor,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -811,16 +933,18 @@ private fun BrowseAppsSheetContent(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.5.sp
                 ),
-                color = TextTertiary
+                color = tertiaryColor
             )
         }
 
-        // Barra de Busca "Tessera..."
+        // Barra de Busca
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp)
-                .background(Color(0xFF16161A), RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(22.dp))
+                .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF16161A))
+                .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color.Transparent), RoundedCornerShape(22.dp))
                 .padding(horizontal = 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -828,7 +952,7 @@ private fun BrowseAppsSheetContent(
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = null,
-                    tint = TextSecondary,
+                    tint = secondaryColor,
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -836,15 +960,15 @@ private fun BrowseAppsSheetContent(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     textStyle = TextStyle(
-                        color = TextPrimary,
+                        color = primaryColor,
                         fontSize = 14.sp,
                         fontFamily = FontFamily.SansSerif
                     ),
-                    cursorBrush = SolidColor(TextPrimary),
+                    cursorBrush = SolidColor(primaryColor),
                     singleLine = true,
                     decorationBox = { inner ->
                         if (searchQuery.isEmpty()) {
-                            Text("Tessera...", color = TextTertiary, fontSize = 14.sp)
+                            Text("Tessera...", color = tertiaryColor, fontSize = 14.sp)
                         }
                         inner()
                     },
@@ -855,7 +979,7 @@ private fun BrowseAppsSheetContent(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Lista de Apps com expansão e atalhos
+        // Lista de Apps
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -870,7 +994,6 @@ private fun BrowseAppsSheetContent(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                 ) {
-                    // Linha do Aplicativo
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -893,13 +1016,13 @@ private fun BrowseAppsSheetContent(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color(0xFF19191E)),
+                                .background(iconBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = app.firstLetter.toString(),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextPrimary
+                                color = primaryColor
                             )
                         }
                         Spacer(modifier = Modifier.width(14.dp))
@@ -909,7 +1032,7 @@ private fun BrowseAppsSheetContent(
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             ),
-                            color = TextPrimary,
+                            color = primaryColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)
@@ -917,19 +1040,17 @@ private fun BrowseAppsSheetContent(
                         Icon(
                             imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                             contentDescription = null,
-                            tint = TextTertiary,
+                            tint = tertiaryColor,
                             modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    // Se expandido: mostra "Abrir <App>" e os atalhos dinâmicos
                     if (isExpanded) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 50.dp, bottom = 8.dp)
                         ) {
-                            // Ação principal: Abrir App
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -944,18 +1065,17 @@ private fun BrowseAppsSheetContent(
                                         fontSize = 13.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
-                                    color = TextPrimary,
+                                    color = primaryColor,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                                     contentDescription = null,
-                                    tint = TextTertiary,
+                                    tint = tertiaryColor,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
 
-                            // Atalhos do aplicativo (Shortcuts)
                             shortcuts.forEach { shortcut ->
                                 Row(
                                     modifier = Modifier
@@ -973,13 +1093,13 @@ private fun BrowseAppsSheetContent(
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Normal
                                         ),
-                                        color = TextSecondary,
+                                        color = secondaryColor,
                                         modifier = Modifier.weight(1f)
                                     )
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                                         contentDescription = null,
-                                        tint = TextTertiary,
+                                        tint = tertiaryColor,
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }
@@ -997,13 +1117,18 @@ private fun ActionOptionItem(
     icon: ImageVector,
     title: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isLight: Boolean,
+    primaryColor: Color
 ) {
+    val selectedBg = if (isLight) Color(0xFFE8E4D8) else Color(0xFF1B1C22)
+    val iconBoxBg = if (isLight) Color(0xFFEFECE2) else Color(0xFF19191E)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) Color(0xFF1B1C22) else Color.Transparent)
+            .background(if (isSelected) selectedBg else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1012,13 +1137,13 @@ private fun ActionOptionItem(
             modifier = Modifier
                 .size(36.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(Color(0xFF19191E)),
+                .background(iconBoxBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryColor,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -1029,14 +1154,14 @@ private fun ActionOptionItem(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             ),
-            color = TextPrimary,
+            color = primaryColor,
             modifier = Modifier.weight(1f)
         )
         if (isSelected) {
             Icon(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
-                tint = Color.White,
+                tint = if (isLight) primaryColor else Color.White,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -1049,7 +1174,11 @@ private fun GestureToggleRow(
     title: String,
     subtitle: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    isLight: Boolean,
+    iconBg: Color,
+    primaryColor: Color,
+    secondaryColor: Color
 ) {
     Row(
         modifier = Modifier
@@ -1061,13 +1190,13 @@ private fun GestureToggleRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(GesturesIconBackground),
+                .background(iconBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -1079,14 +1208,14 @@ private fun GestureToggleRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp
                 ),
-                color = TextPrimary,
+                color = primaryColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = TextSecondary,
+                color = secondaryColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1095,10 +1224,11 @@ private fun GestureToggleRow(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.Black,
-                checkedTrackColor = Color.White,
-                uncheckedThumbColor = Color(0xFF636366),
-                uncheckedTrackColor = Color(0xFF2C2C2E)
+                checkedThumbColor = if (isLight) LightBackground else Color.Black,
+                checkedTrackColor = if (isLight) LightTextPrimary else Color.White,
+                checkedBorderColor = if (isLight) LightTextPrimary else Color.White,
+                uncheckedThumbColor = if (isLight) Color(0xFF8E8E93) else Color(0xFF636366),
+                uncheckedTrackColor = if (isLight) Color(0xFFE5E0D0) else Color(0xFF2C2C2E)
             )
         )
     }
@@ -1108,7 +1238,11 @@ private fun GestureToggleRow(
 private fun GestureActionRow(
     title: String,
     subtitle: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    iconBg: Color,
+    primaryColor: Color,
+    secondaryColor: Color,
+    tertiaryColor: Color
 ) {
     Row(
         modifier = Modifier
@@ -1121,13 +1255,13 @@ private fun GestureActionRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(GesturesIconBackground),
+                .background(iconBg),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.Tune,
                 contentDescription = null,
-                tint = TextPrimary,
+                tint = primaryColor,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -1139,18 +1273,18 @@ private fun GestureActionRow(
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp
                 ),
-                color = TextPrimary
+                color = primaryColor
             )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
-                color = TextSecondary
+                color = secondaryColor
             )
         }
         Icon(
             imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
-            tint = TextTertiary,
+            tint = tertiaryColor,
             modifier = Modifier.size(20.dp)
         )
     }
