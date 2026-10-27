@@ -195,7 +195,6 @@ fun HomeScreen(
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
     var isNotesTasksOpen by remember { mutableStateOf(false) }
     var folderToView by remember { mutableStateOf<AppFolder?>(null) }
-    var lateralPanelTab by remember { mutableStateOf(0) }
     val haptic = LocalHapticFeedback.current
 
     val isRestingHomeScreen = !uiState.isDrawerOpen &&
@@ -1339,7 +1338,7 @@ fun HomeScreen(
             val currentTab = when (uiState.leftScreenMode) {
                 "feed" -> 1
                 "widgets" -> 0
-                else -> lateralPanelTab
+                else -> uiState.lateralPanelTab
             }
 
             Column(
@@ -1361,8 +1360,13 @@ fun HomeScreen(
                     ) {
                         TesseraSegmentedControl(
                             options = listOf("Central", "Feed"),
-                            selectedIndex = lateralPanelTab,
-                            onOptionSelected = { lateralPanelTab = it },
+                            selectedIndex = uiState.lateralPanelTab,
+                            onOptionSelected = {
+                                viewModel.setLateralPanelTab(it)
+                                if (it == 1 && uiState.feedState !is FeedState.Success) {
+                                    viewModel.loadFeed()
+                                }
+                            },
                             isLightMode = uiState.isLightMode
                         )
                     }
@@ -1371,6 +1375,7 @@ fun HomeScreen(
                 Box(modifier = Modifier.weight(1f)) {
                     if (currentTab == 0) {
                         WidgetsShelfScreen(
+                            hasTopSegmentedControl = showSegmentedSelector,
                             enabledWidgets = uiState.enabledWidgets,
                             batteryPercentage = uiState.batteryPercentage,
                             isCharging = uiState.isCharging,
@@ -1440,6 +1445,7 @@ fun HomeScreen(
                         )
                     } else {
                         FeedScreen(
+                            hasTopSegmentedControl = showSegmentedSelector,
                             feedState = uiState.feedState,
                             activeSource = null,
                             enabledSources = uiState.feedEnabledSources,

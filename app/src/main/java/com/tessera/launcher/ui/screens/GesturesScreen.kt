@@ -104,6 +104,7 @@ fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
         actionKey == "quick_settings" -> "Configurações rápidas"
         actionKey == "lock_screen" -> "Bloquear Tela"
         actionKey == "open_keyboard" -> "Abrir teclado"
+        actionKey == "open_widgets" -> "Central de Widgets"
         actionKey == "open_feed" -> "Abrir Feed Social"
         actionKey == "ai_search" -> "Pesquisa com IA (Groq / Gemini)"
         actionKey.startsWith("app:") -> {
@@ -776,6 +777,14 @@ fun GesturesScreen(
                             title = "Abrir teclado",
                             isSelected = currentAction == "open_keyboard",
                             onClick = { onSelectAction("open_keyboard") },
+                            isLight = isLight,
+                            primaryColor = primaryTextColor
+                        )
+                        ActionOptionItem(
+                            icon = Icons.Outlined.GridView,
+                            title = "Central de Widgets",
+                            isSelected = currentAction == "open_widgets",
+                            onClick = { onSelectAction("open_widgets") },
                             isLight = isLight,
                             primaryColor = primaryTextColor
                         )

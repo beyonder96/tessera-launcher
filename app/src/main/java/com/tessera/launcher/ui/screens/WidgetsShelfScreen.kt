@@ -125,7 +125,8 @@ fun WidgetsShelfScreen(
     onDismissNotification: (String) -> Unit,
     onOpenNotificationsHub: () -> Unit,
     onClose: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    hasTopSegmentedControl: Boolean = false
 ) {
     val context = LocalContext.current
     BackHandler(onBack = onClose)
@@ -146,7 +147,7 @@ fun WidgetsShelfScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(shelfBg)
-            .statusBarsPadding()
+            .then(if (!hasTopSegmentedControl) Modifier.statusBarsPadding() else Modifier)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Editorial da Shelf

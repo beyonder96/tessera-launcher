@@ -1037,7 +1037,16 @@ class MainViewModel(
 
     fun setLeftScreenMode(mode: String) {
         preferences.setLeftScreenMode(mode)
-        _uiState.update { it.copy(leftScreenMode = mode) }
+        if (mode == "feed" && !_uiState.value.isFeedEnabled) {
+            preferences.setFeedEnabled(true)
+            _uiState.update { it.copy(leftScreenMode = mode, isFeedEnabled = true) }
+        } else {
+            _uiState.update { it.copy(leftScreenMode = mode) }
+        }
+    }
+
+    fun setLateralPanelTab(tab: Int) {
+        _uiState.update { it.copy(lateralPanelTab = tab.coerceIn(0, 1)) }
     }
 
     fun setDrawerGlassEnabled(enabled: Boolean) {
@@ -1363,7 +1372,18 @@ class MainViewModel(
                     }
                 }
             }
-            actionKey == "open_feed" -> openFeed()
+            actionKey == "open_feed" -> {
+                if (_uiState.value.leftScreenMode == "disabled") {
+                    setLeftScreenMode("feed")
+                }
+                openFeed(initialTab = 1)
+            }
+            actionKey == "open_widgets" -> {
+                if (_uiState.value.leftScreenMode == "disabled") {
+                    setLeftScreenMode("widgets")
+                }
+                openFeed(initialTab = 0)
+            }
             actionKey == "ai_search" -> {
                 expandSearch()
                 openDrawer()
@@ -2015,11 +2035,28 @@ class MainViewModel(
             .lowercase()
     }
 
-    // Tela Lateral (-1): Feed Social
-    fun openFeed() {
-        if (_uiState.value.leftScreenMode != "feed" || !_uiState.value.isFeedEnabled) return
-        _uiState.update { it.copy(isFeedOpen = true) }
-        loadFeed()
+    // Tela Lateral (-1): Central de Widgets e/ou Feed Social
+    fun openFeed(initialTab: Int? = null) {
+        if (_uiState.value.leftScreenMode == "disabled") return
+        _uiState.update { state ->
+            state.copy(
+                isFeedOpen = true,
+                lateralPanelTab = initialTab ?: state.lateralPanelTab
+            )
+        }
+
+        // Se o modo incluir o Feed Social e estiver ativado, carrega o feed
+        if ((_uiState.value.leftScreenMode == "feed" || _uiState.value.leftScreenMode == "both") && _uiState.value.isFeedEnabled) {
+            loadFeed()
+        }
+
+        // Se o modo incluir a Central de Widgets, atualiza os dados em tempo real dos widgets
+        if (_uiState.value.leftScreenMode == "widgets" || _uiState.value.leftScreenMode == "both") {
+            refreshPredictedApps()
+            refreshWeather()
+            refreshScreenTime()
+            refreshCalendarAndPermissions()
+        }
     }
 
     fun closeFeed() {

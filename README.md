@@ -61,17 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.1.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.1.1)
 
-### 🆕 Novidades na v3.1.0
+### 🆕 Novidades na v3.1.1
+- 🐛 **Correção na Tela Lateral (−1):** Corrigido o problema onde a Central de Widgets não abria ao fazer o gesto na tela inicial quando selecionada individualmente ou em conjunto com o feed.
+- 🔄 **Suporte Robusto aos Modos da Tela −1:** Deslizar para a direita na Home agora ativa perfeitamente a Central de Widgets, o Feed Social ou o painel híbrido com seletor estilo iOS.
+- 📐 **Harmonização Visual do Painel Duplo:** Ajuste fino dos insets da barra de status na Central de Widgets e no Feed Social para eliminar espaçamentos duplicados no modo "Ambos".
+- 🎯 **Novo Atalho de Gesto:** Adicionada a ação "Central de Widgets" na lista de ações configuráveis para gestos (toque duplo, deslizar, pinça, etc.).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v3.1.0</b></summary>
 - 📰 **Modo Jornal Universal (Light Editorial):** Experiência clara em tons quentes de papel de livro (#F7F4EB, #EFECE2, #DDD8CB e #1C1917) estendida a 100% das telas, subpáginas de configurações e todos os modais inferiores.
 - 📱 **Central de Widgets & Feed Social Unificados:** Nova página dedicada unindo a Central de Widgets e o Feed com seletor segmentado estilo iOS (TesseraSegmentedControl).
 - ↔️ **Tela Lateral (−1) Híbrida na Home:** Deslize para a direita com opção AMBOS para alternar fluidamente entre widgets shelf e feed de notícias/social.
 - ⚙️ **Configurações Reorganizadas e Ergonômicas:** Estruturação em 4 categorias semânticas (Tela & Experiência, Organização & Privacidade, Preferências & Sistema, Transparência & Sobre) e acesso direto a Pastas, Comandos e Apps Ocultos.
 - 🤖 **IA Atualizada para Gemini 3.8 Flash:** Integração atualizada com a nova geração Gemini 3.8 Flash para respostas inteligentes ultrarrápidas na barra de pesquisa.
 - 🧹 **Otimização Interna:** Remoção de ~850 linhas de código legado e compatibilidade total com o modo de tema automático diurno.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v2.8.1</b></summary>
 - ↩️ **Restauração Completa da Interface Classic (v2.8.0):** Retorno integral à interface clássica minimalista monocromática original do Tessera Launcher com navegação vertical rápida no estilo Niagara, Live Activities para Corridas/Delivery/Navegação, gaveta A-Z fluida e dock clássico.

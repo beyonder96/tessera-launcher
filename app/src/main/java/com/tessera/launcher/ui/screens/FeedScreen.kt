@@ -45,6 +45,7 @@ fun FeedScreen(
     onPostClick: (String) -> Unit,
     onRefresh: () -> Unit,
     onClose: () -> Unit,
+    hasTopSegmentedControl: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
@@ -56,9 +57,15 @@ fun FeedScreen(
         modifier = modifier
             .fillMaxSize()
             .background(backgroundColor)
-            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .windowInsetsPadding(
+                if (hasTopSegmentedControl) {
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)
+                } else {
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+                }
+            )
             .navigationBarsPadding()
-            .padding(top = 6.dp)
+            .padding(top = if (hasTopSegmentedControl) 0.dp else 6.dp)
     ) {
         Row(
             modifier = Modifier
