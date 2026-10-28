@@ -61,13 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.1.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.2.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.2.0)
 
-### 🆕 Novidades na v3.1.1
+### 🆕 Novidades na v3.2.0
+- 🎵 **Player de Música Estilo Apple Music:** Scrubber tátil interativo com busca de faixa real (`seekTo`), capa de álbum dinâmica que expande e retrai com física de mola (`68.dp`), equalizador de 3 barras e contagem de tempo transcorrido/restante.
+- 🏛️ **Central de Widgets Bento Editorial:** Reformulação completa da Tela −1 no padrão editorial Journal com papel quente `#F7F4EB`, medalhões lapidados de borda dupla (`44.dp`), Quick Controls 2x2 e anéis de telemetria zero-allocation (Bateria, Clima e Foco).
+- ⚡ **Física Tátil & Micro-Sheen Global (`tesseraPressable`):** Compressão tátil responsiva com feedback háptico e onda de reflexo especular zenital em todos os cartões e chips da Central e do Feed, acompanhada por animação de entrada em cascata (`JournalCascadeItem`).
+- 💎 **Doca de Pesquisa Lapidada (Morphing Dock):** No modo lupa inativo opera como uma joia facetada redonda de `56.dp` e expande de forma contínua por mola espacial até a barra completa sem salto visual.
+- ☀️ **Saudação Dinâmica & Edição Rápida:** Cabeçalho com data abreviada e ponto coral (`"QUA •"`), saudação personalizada por turno, chips interativos (clima, compromissos reais, notas e foco), botão voltar ergonômico apontando para a direita (`→`) e botão de ajuste com `WidgetsQuickEditBottomSheet` para ligar/desligar e reorganizar widgets ao vivo.
+- 📐 **Correções Visuais e Margens Seguras:** Insets zenitais generosos respeitando cutouts de tela, e correção de contraste para o Dino Widget e modais de notas em modo claro.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v3.1.1</b></summary>
 - 🐛 **Correção na Tela Lateral (−1):** Corrigido o problema onde a Central de Widgets não abria ao fazer o gesto na tela inicial quando selecionada individualmente ou em conjunto com o feed.
 - 🔄 **Suporte Robusto aos Modos da Tela −1:** Deslizar para a direita na Home agora ativa perfeitamente a Central de Widgets, o Feed Social ou o painel híbrido com seletor estilo iOS.
 - 📐 **Harmonização Visual do Painel Duplo:** Ajuste fino dos insets da barra de status na Central de Widgets e no Feed Social para eliminar espaçamentos duplicados no modo "Ambos".
 - 🎯 **Novo Atalho de Gesto:** Adicionada a ação "Central de Widgets" na lista de ações configuráveis para gestos (toque duplo, deslizar, pinça, etc.).
+</details>
 
 ### 📋 Versões Anteriores
 <details>

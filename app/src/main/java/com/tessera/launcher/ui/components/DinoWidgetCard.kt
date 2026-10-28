@@ -51,7 +51,8 @@ import kotlinx.coroutines.isActive
 fun DinoWidgetCard(
     modifier: Modifier = Modifier,
     isDockMode: Boolean = true,
-    isLiquidGlass: Boolean = false
+    isLiquidGlass: Boolean = false,
+    isLightMode: Boolean = false
 ) {
     var isPlaying by remember { mutableStateOf(false) }
     var isGameOver by remember { mutableStateOf(false) }
@@ -180,13 +181,16 @@ fun DinoWidgetCard(
             )
         }
 
+        val inkColor = if (isLightMode) Color(0xFF1C1917) else Color.White
+        val groundColor = if (isLightMode) Color(0xFFC5BFB0) else Color(0x55FFFFFF)
+
         // Canvas com Dino, Cacto e Linha do Chão
         Canvas(modifier = Modifier.fillMaxSize()) {
             val groundY = size.height - 6f
 
             // Linha do Chão
             drawLine(
-                color = Color(0x55FFFFFF),
+                color = groundColor,
                 start = Offset(0f, groundY),
                 end = Offset(size.width, groundY),
                 strokeWidth = 1.5f
@@ -198,19 +202,19 @@ fun DinoWidgetCard(
 
             // Corpo
             drawRect(
-                color = Color.White,
+                color = inkColor,
                 topLeft = Offset(dinoBaseX, currentDinoY),
                 size = Size(14f, 16f)
             )
             // Cabeça
             drawRect(
-                color = Color.White,
+                color = inkColor,
                 topLeft = Offset(dinoBaseX + 7f, currentDinoY - 6f),
                 size = Size(10f, 8f)
             )
             // Olho
             drawRect(
-                color = Color.Black,
+                color = if (isLightMode) Color.White else Color.Black,
                 topLeft = Offset(dinoBaseX + 13f, currentDinoY - 4f),
                 size = Size(2.5f, 2.5f)
             )
@@ -218,18 +222,18 @@ fun DinoWidgetCard(
             // Cacto Retrô
             if (obstacleX < size.width + 40f) {
                 drawRect(
-                    color = Color.White,
+                    color = inkColor,
                     topLeft = Offset(obstacleX, groundY - 18f),
                     size = Size(10f, 18f)
                 )
                 // Braços do Cacto
                 drawRect(
-                    color = Color.White,
+                    color = inkColor,
                     topLeft = Offset(obstacleX - 3f, groundY - 13f),
                     size = Size(3.5f, 7f)
                 )
                 drawRect(
-                    color = Color.White,
+                    color = inkColor,
                     topLeft = Offset(obstacleX + 9.5f, groundY - 10f),
                     size = Size(3.5f, 7f)
                 )
@@ -244,7 +248,7 @@ fun DinoWidgetCard(
             ) {
                 Text(
                     text = "Toque para Jogar",
-                    color = Color.White,
+                    color = inkColor,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.SemiBold
@@ -258,14 +262,14 @@ fun DinoWidgetCard(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "GAME OVER",
-                        color = Color.White,
+                        color = inkColor,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "Toque para reiniciar",
-                        color = TextSecondary,
+                        color = if (isLightMode) Color(0xFF78716C) else TextSecondary,
                         fontSize = 9.sp,
                         fontFamily = FontFamily.Monospace
                     )

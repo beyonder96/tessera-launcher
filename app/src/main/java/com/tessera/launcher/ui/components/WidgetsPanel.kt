@@ -1220,9 +1220,8 @@ fun VerseFocusWidgetCard(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+            .tesseraPressable(
+                pressedScale = 0.97f,
                 onClick = { currentVerseIndex = (currentVerseIndex + 1) % verses.size },
                 onLongClick = onLongClick
             ),

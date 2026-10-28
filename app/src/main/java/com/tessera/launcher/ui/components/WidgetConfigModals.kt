@@ -1282,15 +1282,22 @@ fun NotesTasksManagerBottomSheet(
     onAddTask: (String) -> Unit,
     onToggleTask: (Long) -> Unit,
     onRemoveTask: (Long) -> Unit,
+    isLightMode: Boolean = false,
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var newTaskText by remember { mutableStateOf("") }
 
+    val bgColor = if (isLightMode) Color(0xFFF7F4EB) else AmoledBlack
+    val inputBg = if (isLightMode) Color(0xFFEFECE2) else Color(0xFF161820)
+    val inputBorder = if (isLightMode) Color(0xFFDDD8CB) else Color(0xFF2A2A36)
+    val textPrimaryColor = if (isLightMode) Color(0xFF1C1917) else TextPrimary
+    val textTertiaryColor = if (isLightMode) Color(0xFF78716C) else TextTertiary
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = AmoledBlack,
+        containerColor = bgColor,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -1298,7 +1305,7 @@ fun NotesTasksManagerBottomSheet(
                     .width(44.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF44444E))
+                    .background(if (isLightMode) Color(0xFFCCC6B6) else Color(0xFF44444E))
             )
         }
     ) {
@@ -1321,14 +1328,14 @@ fun NotesTasksManagerBottomSheet(
                         fontSize = 14.sp,
                         letterSpacing = 1.sp
                     ),
-                    color = TextPrimary
+                    color = textPrimaryColor
                 )
 
                 val completedCount = tasks.count { it.isDone }
                 Text(
                     text = if (tasks.isNotEmpty()) "$completedCount/${tasks.size} concluídas" else "",
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 12.sp),
-                    color = TextTertiary
+                    color = textTertiaryColor
                 )
             }
 
@@ -1339,16 +1346,16 @@ fun NotesTasksManagerBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .background(Color(0xFF161820), RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, Color(0xFF2A2A36)), RoundedCornerShape(12.dp))
+                    .background(inputBg, RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.dp, inputBorder), RoundedCornerShape(12.dp))
                     .padding(horizontal = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 BasicTextField(
                     value = newTaskText,
                     onValueChange = { newTaskText = it },
-                    textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
-                    cursorBrush = SolidColor(TextPrimary),
+                    textStyle = TextStyle(color = textPrimaryColor, fontSize = 14.sp),
+                    cursorBrush = SolidColor(textPrimaryColor),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
@@ -1361,7 +1368,7 @@ fun NotesTasksManagerBottomSheet(
                     ),
                     decorationBox = { innerTextField ->
                         if (newTaskText.isEmpty()) {
-                            Text("Nova anotação ou tarefa...", color = TextTertiary, fontSize = 14.sp)
+                            Text("Nova anotação ou tarefa...", color = textTertiaryColor, fontSize = 14.sp)
                         }
                         innerTextField()
                     },

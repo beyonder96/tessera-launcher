@@ -10,7 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RssFeed
@@ -33,6 +33,8 @@ import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.ui.state.FeedState
 import com.tessera.launcher.ui.components.FeedPostCard
+import com.tessera.launcher.ui.components.JournalMedallion
+import com.tessera.launcher.ui.components.tesseraPressable
 import com.tessera.launcher.ui.theme.*
 
 @Composable
@@ -70,29 +72,38 @@ fun FeedScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = onClose) {
-                Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
-                    contentDescription = "Voltar",
-                    tint = primaryTextColor
-                )
-            }
             Text(
-                text = "Feed",
+                text = "FEED",
                 color = primaryTextColor,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 8.dp)
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.5).sp
             )
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onRefresh) {
-                Icon(
-                    imageVector = Icons.Outlined.Refresh,
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                JournalMedallion(
+                    icon = Icons.Outlined.Refresh,
                     contentDescription = "Recarregar",
-                    tint = primaryTextColor
+                    size = 38.dp,
+                    iconSize = 18.dp,
+                    isLightMode = isLightMode,
+                    onClick = onRefresh
+                )
+
+                JournalMedallion(
+                    icon = Icons.AutoMirrored.Outlined.ArrowForward,
+                    contentDescription = "Voltar para Início",
+                    size = 38.dp,
+                    iconSize = 18.dp,
+                    isLightMode = isLightMode,
+                    onClick = onClose
                 )
             }
         }
@@ -195,7 +206,7 @@ private fun SourceChip(
     }
 
     Surface(
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier.tesseraPressable(pressedScale = 0.92f, onClick = onClick),
         shape = PillShape,
         color = backgroundColor,
         border = borderStroke

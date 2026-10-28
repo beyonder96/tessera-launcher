@@ -111,6 +111,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_DRAWER_GLASS_OPACITY = "drawer_glass_opacity"
         private const val KEY_SEARCH_BAR_OPACITY = "search_bar_opacity"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_GREETING_USER_NAME = "greeting_user_name"
 
         // Tela Lateral (-1): Feed Social ou Desativado
         private const val KEY_LEFT_SCREEN_MODE = "left_screen_mode"
@@ -677,6 +678,14 @@ class LauncherPreferences(context: Context) {
 
     fun setScreenTimeWidgetEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_SCREEN_TIME_WIDGET_ENABLED, enabled).apply()
+    }
+
+    fun getGreetingUserName(): String {
+        return prefs.getString(KEY_GREETING_USER_NAME, "Kenned") ?: "Kenned"
+    }
+
+    fun setGreetingUserName(name: String) {
+        prefs.edit().putString(KEY_GREETING_USER_NAME, name.trim()).apply()
     }
 
 }

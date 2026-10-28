@@ -5,7 +5,9 @@ import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -1121,20 +1123,6 @@ fun HomeScreen(
             )
         }
 
-        // Painel de Configurações da Launcher
-        AnimatedVisibility(
-            visible = uiState.isSettingsOpen,
-            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
-            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
-        ) {
-            SettingsScreen(
-                viewModel = viewModel,
-                onPickPhoto = onPickPhoto,
-                onPickWallpaper = onPickWallpaper,
-                onRequestCalendarPermission = onRequestCalendarPermission,
-                onRequestContactsPermission = onRequestContactsPermission
-            )
-        }
 
         // Menu de Contexto do Aplicativo com Atalhos & Troca de Ícones
         selectedAppForMenu?.let { app ->
@@ -1278,6 +1266,7 @@ fun HomeScreen(
                 onAddTask = { viewModel.addNoteTask(it) },
                 onToggleTask = { viewModel.toggleNoteTask(it) },
                 onRemoveTask = { viewModel.removeNoteTask(it) },
+                isLightMode = uiState.isLightMode,
                 onDismiss = { isNotesTasksOpen = false }
             )
         }
@@ -1340,6 +1329,7 @@ fun HomeScreen(
                 "widgets" -> 0
                 else -> uiState.lateralPanelTab
             }
+            val safeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().coerceAtLeast(36.dp) + 12.dp
 
             Column(
                 modifier = Modifier
@@ -1349,13 +1339,13 @@ fun HomeScreen(
                         else if (uiState.isAmoledMode) Color.Black
                         else Color(0xFF0B0B0D)
                     )
+                    .padding(top = safeTopPadding)
             ) {
                 if (showSegmentedSelector) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.statusBars)
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                            .padding(horizontal = 20.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         TesseraSegmentedControl(
@@ -1373,96 +1363,130 @@ fun HomeScreen(
                 }
 
                 Box(modifier = Modifier.weight(1f)) {
-                    if (currentTab == 0) {
-                        WidgetsShelfScreen(
-                            hasTopSegmentedControl = showSegmentedSelector,
-                            enabledWidgets = uiState.enabledWidgets,
-                            batteryPercentage = uiState.batteryPercentage,
-                            isCharging = uiState.isCharging,
-                            currentTime = uiState.formattedTime,
-                            formattedDate = uiState.formattedDate,
-                            nextCalendarEvent = uiState.nextCalendarEvent,
-                            hasCalendarPermission = uiState.hasCalendarPermission,
-                            onRequestCalendarPermission = onRequestCalendarPermission,
-                            onCalendarClick = { viewModel.launchCalendarApp() },
-                            mediaPlayback = uiState.mediaPlayback,
-                            hasNotificationAccess = uiState.hasNotificationAccess,
-                            onRequestNotificationAccess = {
-                                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                })
-                            },
-                            onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
-                            onSkipNext = { viewModel.skipNextMedia() },
-                            onSkipPrevious = { viewModel.skipPreviousMedia() },
-                            onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
-                            isDinoWidgetEnabled = uiState.isDinoWidgetEnabled,
-                            isNotesWidgetEnabled = uiState.isNotesWidgetEnabled,
-                            isTorchOn = uiState.isTorchOn,
-                            ringerMode = uiState.ringerMode,
-                            onToggleTorch = { viewModel.toggleTorch() },
-                            onOpenWifi = { viewModel.openWifiSettings() },
-                            onOpenBluetooth = { viewModel.openBluetoothSettings() },
-                            onCycleRingerMode = { viewModel.cycleRingerMode() },
-                            notesTasks = uiState.notesTasks,
-                            onAddNoteTask = { viewModel.addNoteTask(it) },
-                            onToggleNoteTask = { viewModel.toggleNoteTask(it) },
-                            onRemoveNoteTask = { viewModel.removeNoteTask(it) },
-                            onNotesClick = { isNotesTasksOpen = true },
-                            weatherInfo = uiState.weatherInfo,
-                            hasLocationPermission = uiState.hasLocationPermission,
-                            onRequestLocationPermission = onRequestLocationPermission,
-                            onRefreshWeather = { viewModel.refreshWeather() },
-                            isWeatherLoading = uiState.isWeatherLoading,
-                            weatherError = uiState.weatherError,
-                            batteryWidgetStyle = uiState.batteryWidgetStyle,
-                            mediaWidgetStyle = uiState.mediaWidgetStyle,
-                            notesWidgetFilter = uiState.notesWidgetFilter,
-                            onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
-                            isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
-                            isAmoledMode = uiState.isAmoledMode,
-                            isLightMode = uiState.isLightMode,
-                            smartGlanceBriefing = uiState.smartGlanceBriefing,
-                            isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
-                            predictedApps = uiState.predictedApps,
-                            isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
-                            onAppClick = { app -> viewModel.launchApp(app) },
-                            onAppLongClick = { app -> selectedAppForMenu = app },
-                            iconShape = uiState.iconShape,
-                            isThemedIcons = uiState.isThemedIconsEnabled,
-                            accentColor = uiState.activeAccentColor,
-                            screenTimeInfo = uiState.screenTimeInfo,
-                            isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
-                            recentNotifications = uiState.recentNotifications,
-                            notificationCounts = uiState.notificationCounts,
-                            onDismissNotification = { viewModel.dismissNotification(it) },
-                            onOpenNotificationsHub = { viewModel.openNotificationsHub() },
-                            onClose = { viewModel.closeFeed() },
-                            onOpenSettings = {
-                                viewModel.openSettings()
-                                viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
-                            }
-                        )
-                    } else {
-                        FeedScreen(
-                            hasTopSegmentedControl = showSegmentedSelector,
-                            feedState = uiState.feedState,
-                            activeSource = null,
-                            enabledSources = uiState.feedEnabledSources,
-                            isLightMode = uiState.isLightMode,
-                            onSourceSelected = { },
-                            onPostClick = { url ->
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    AnimatedContent(
+                        targetState = currentTab,
+                        transitionSpec = {
+                            fadeIn(tween(220)) togetherWith fadeOut(tween(180))
+                        },
+                        label = "lateralPanelTabs"
+                    ) { targetTab ->
+                        if (targetTab == 0) {
+                            WidgetsShelfScreen(
+                                userName = uiState.greetingUserName,
+                                onSaveUserName = { viewModel.setGreetingUserName(it) },
+                                hasTopSegmentedControl = showSegmentedSelector,
+                                enabledWidgets = uiState.enabledWidgets,
+                                batteryPercentage = uiState.batteryPercentage,
+                                isCharging = uiState.isCharging,
+                                currentTime = uiState.formattedTime,
+                                formattedDate = uiState.formattedDate,
+                                nextCalendarEvent = uiState.nextCalendarEvent,
+                                hasCalendarPermission = uiState.hasCalendarPermission,
+                                onRequestCalendarPermission = onRequestCalendarPermission,
+                                onCalendarClick = { viewModel.launchCalendarApp() },
+                                mediaPlayback = uiState.mediaPlayback,
+                                hasNotificationAccess = uiState.hasNotificationAccess,
+                                onRequestNotificationAccess = {
+                                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    })
+                                },
+                                onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
+                                onSkipNext = { viewModel.skipNextMedia() },
+                                onSkipPrevious = { viewModel.skipPreviousMedia() },
+                                onSeekTo = { viewModel.seekToMedia(it) },
+                                onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
+                                isDinoWidgetEnabled = uiState.isDinoWidgetEnabled,
+                                onToggleDino = { viewModel.setDinoWidgetEnabled(it) },
+                                isNotesWidgetEnabled = uiState.isNotesWidgetEnabled,
+                                isTorchOn = uiState.isTorchOn,
+                                isWifiActive = uiState.isWifiActive,
+                                isBluetoothActive = uiState.isBluetoothActive,
+                                ringerMode = uiState.ringerMode,
+                                onToggleTorch = { viewModel.toggleTorch() },
+                                onOpenWifi = { viewModel.openWifiSettings() },
+                                onOpenBluetooth = { viewModel.openBluetoothSettings() },
+                                onCycleRingerMode = { viewModel.cycleRingerMode() },
+                                notesTasks = uiState.notesTasks,
+                                onAddNoteTask = { viewModel.addNoteTask(it) },
+                                onToggleNoteTask = { viewModel.toggleNoteTask(it) },
+                                onRemoveNoteTask = { viewModel.removeNoteTask(it) },
+                                onNotesClick = { isNotesTasksOpen = true },
+                                weatherInfo = uiState.weatherInfo,
+                                hasLocationPermission = uiState.hasLocationPermission,
+                                onRequestLocationPermission = onRequestLocationPermission,
+                                onRefreshWeather = { viewModel.refreshWeather() },
+                                isWeatherLoading = uiState.isWeatherLoading,
+                                weatherError = uiState.weatherError,
+                                batteryWidgetStyle = uiState.batteryWidgetStyle,
+                                mediaWidgetStyle = uiState.mediaWidgetStyle,
+                                notesWidgetFilter = uiState.notesWidgetFilter,
+                                onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
+                                onToggleWidget = { viewModel.toggleWidget(it) },
+                                onMoveWidgetUp = { viewModel.moveWidgetUp(it) },
+                                onMoveWidgetDown = { viewModel.moveWidgetDown(it) },
+                                isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
+                                isAmoledMode = uiState.isAmoledMode,
+                                isLightMode = uiState.isLightMode,
+                                smartGlanceBriefing = uiState.smartGlanceBriefing,
+                                isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
+                                predictedApps = uiState.predictedApps,
+                                isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
+                                onTogglePredictedApps = { viewModel.setSmartDockEnabled(it) },
+                                onAppClick = { app -> viewModel.launchApp(app) },
+                                onAppLongClick = { app -> selectedAppForMenu = app },
+                                iconShape = uiState.iconShape,
+                                isThemedIcons = uiState.isThemedIconsEnabled,
+                                accentColor = uiState.activeAccentColor,
+                                screenTimeInfo = uiState.screenTimeInfo,
+                                isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
+                                onToggleScreenTime = { viewModel.setScreenTimeWidgetEnabled(it) },
+                                recentNotifications = uiState.recentNotifications,
+                                notificationCounts = uiState.notificationCounts,
+                                onDismissNotification = { viewModel.dismissNotification(it) },
+                                onOpenNotificationsHub = { viewModel.openNotificationsHub() },
+                                onClose = { viewModel.closeFeed() },
+                                onOpenSettings = {
+                                    viewModel.openSettings()
+                                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
                                 }
-                                runCatching { context.startActivity(intent) }
-                            },
-                            onRefresh = { viewModel.refreshFeed() },
-                            onClose = { viewModel.closeFeed() }
-                        )
+                            )
+                        } else {
+                            FeedScreen(
+                                hasTopSegmentedControl = showSegmentedSelector,
+                                feedState = uiState.feedState,
+                                activeSource = null,
+                                enabledSources = uiState.feedEnabledSources,
+                                isLightMode = uiState.isLightMode,
+                                onSourceSelected = { },
+                                onPostClick = { url ->
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    runCatching { context.startActivity(intent) }
+                                },
+                                onRefresh = { viewModel.refreshFeed() },
+                                onClose = { viewModel.closeFeed() }
+                            )
+                        }
                     }
                 }
             }
+        }
+
+        // Painel de Configurações da Launcher (com Z-index superior para abrir acima da Central)
+        AnimatedVisibility(
+            visible = uiState.isSettingsOpen,
+            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
+            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
+        ) {
+            SettingsScreen(
+                viewModel = viewModel,
+                onPickPhoto = onPickPhoto,
+                onPickWallpaper = onPickWallpaper,
+                onRequestCalendarPermission = onRequestCalendarPermission,
+                onRequestContactsPermission = onRequestContactsPermission
+            )
         }
 
         // Modo Repouso com Foto e Relógio de Cabeceira (StandBy / Ambient Mode)

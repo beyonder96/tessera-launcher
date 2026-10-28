@@ -26,11 +26,26 @@ import kotlinx.coroutines.flow.asStateFlow
 data class MediaPlaybackInfo(
     val title: String = "Spotify",
     val artist: String = "Toque para abrir e reproduzir",
+    val album: String = "",
+    val appDisplayName: String = "Player",
     val isPlaying: Boolean = false,
     val packageName: String? = "com.spotify.music",
     val hasActiveSession: Boolean = false,
+    val durationMs: Long = 0L,
+    val positionMs: Long = 0L,
+    val playbackSpeed: Float = 1f,
+    val lastPositionUpdateTime: Long = 0L,
     val artwork: Bitmap? = null
-)
+) {
+    fun getCalculatedPositionMs(): Long {
+        if (!isPlaying || playbackSpeed <= 0f || lastPositionUpdateTime <= 0L) {
+            return positionMs
+        }
+        val elapsed = (System.currentTimeMillis() - lastPositionUpdateTime)
+        val estimated = positionMs + (elapsed * playbackSpeed).toLong()
+        return if (durationMs > 0L) estimated.coerceIn(0L, durationMs) else estimated.coerceAtLeast(0L)
+    }
+}
 
 class TesseraMediaService : NotificationListenerService() {
 
@@ -94,6 +109,12 @@ class TesseraMediaService : NotificationListenerService() {
 
         fun skipPrevious() {
             activeController?.transportControls?.skipToPrevious()
+        }
+
+        fun seekTo(positionMs: Long) {
+            runCatching {
+                activeController?.transportControls?.seekTo(positionMs)
+            }
         }
 
         private fun refreshTopLiveActivity() {
@@ -361,6 +382,29 @@ class TesseraMediaService : NotificationListenerService() {
             ?: metadata?.getString(MediaMetadata.METADATA_KEY_AUTHOR)
             ?: "Spotify"
 
+        val album = metadata?.getString(MediaMetadata.METADATA_KEY_ALBUM) ?: ""
+
+        val rawDuration = metadata?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L
+        val durationMs = if (rawDuration > 0L) rawDuration else 0L
+
+        val positionMs = playbackState?.position?.coerceAtLeast(0L) ?: 0L
+        val playbackSpeed = playbackState?.playbackSpeed ?: 1f
+        val lastPositionUpdateTime = playbackState?.lastPositionUpdateTime ?: System.currentTimeMillis()
+
+        val appDisplayName = when (controller.packageName) {
+            "com.apple.android.music" -> "Apple Music"
+            "com.spotify.music" -> "Spotify"
+            "com.google.android.apps.youtube.music" -> "YouTube Music"
+            "com.deezer.android.app" -> "Deezer"
+            "com.amazon.mp3" -> "Amazon Music"
+            "com.soundcloud.android" -> "SoundCloud"
+            else -> runCatching {
+                val pm = packageManager
+                val info = pm.getApplicationInfo(controller.packageName, 0)
+                pm.getApplicationLabel(info).toString()
+            }.getOrDefault("Player")
+        }
+
         val artwork: Bitmap? = metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
             ?: metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART)
             ?: metadata?.description?.iconBitmap
@@ -375,9 +419,15 @@ class TesseraMediaService : NotificationListenerService() {
         _mediaState.value = MediaPlaybackInfo(
             title = title,
             artist = artist,
+            album = album,
+            appDisplayName = appDisplayName,
             isPlaying = isPlaying,
             packageName = controller.packageName,
             hasActiveSession = true,
+            durationMs = durationMs,
+            positionMs = positionMs,
+            playbackSpeed = playbackSpeed,
+            lastPositionUpdateTime = lastPositionUpdateTime,
             artwork = artwork
         )
     }

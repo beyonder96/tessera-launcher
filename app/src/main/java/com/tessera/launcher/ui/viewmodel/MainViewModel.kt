@@ -275,6 +275,10 @@ class MainViewModel(
             isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
             hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
 
+            greetingUserName = preferences.getGreetingUserName(),
+            isWifiActive = quickSettingsHelper.isWifiEnabled(),
+            isBluetoothActive = quickSettingsHelper.isBluetoothEnabled()
+
             // Fase 4: Perfis de Foco
 
         )
@@ -393,6 +397,12 @@ class MainViewModel(
                 _uiState.update { it.copy(recentNotifications = notifications) }
             }
         }
+    }
+
+    fun refreshQuickSettingsStates() {
+        val wifi = quickSettingsHelper.isWifiEnabled()
+        val bt = quickSettingsHelper.isBluetoothEnabled()
+        _uiState.update { it.copy(isWifiActive = wifi, isBluetoothActive = bt) }
     }
 
     private fun observeQuickSettings() {
@@ -1080,6 +1090,15 @@ class MainViewModel(
 
     fun skipPreviousMedia() {
         TesseraMediaService.skipPrevious()
+    }
+
+    fun seekToMedia(positionMs: Long) {
+        TesseraMediaService.seekTo(positionMs)
+    }
+
+    fun setGreetingUserName(name: String) {
+        preferences.setGreetingUserName(name)
+        _uiState.update { it.copy(greetingUserName = name) }
     }
 
     fun launchDefaultMusicApp() {
@@ -2056,6 +2075,7 @@ class MainViewModel(
             refreshWeather()
             refreshScreenTime()
             refreshCalendarAndPermissions()
+            refreshQuickSettingsStates()
         }
     }
 

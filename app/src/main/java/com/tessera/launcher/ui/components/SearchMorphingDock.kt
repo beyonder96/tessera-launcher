@@ -239,8 +239,8 @@ fun SearchMorphingDock(
         Modifier.background(
             Brush.verticalGradient(
                 listOf(
-                    Color(0xFFFFFFFF),
-                    Color(0xFFF6F7FA)
+                    Color(0xFFFAF8F2),
+                    Color(0xFFEFECE2)
                 )
             )
         )
@@ -306,17 +306,23 @@ fun SearchMorphingDock(
         else -> "Pesquisar..."
     }
 
-    val targetWidth = if (isExpanded) screenWidth - 32.dp else 56.dp
+    val maxExpandedWidth = if (isSplit) screenWidth - 94.dp else screenWidth - 32.dp
+    val targetWidth = if (isExpanded) maxExpandedWidth else 56.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
         animationSpec = Tessera.motion.springSpatialDp,
         label = "dock_width"
     )
+    val expandProgress by animateFloatAsState(
+        targetValue = if (isExpanded) 1f else 0f,
+        animationSpec = Tessera.motion.springSpatial,
+        label = "expand_progress"
+    )
 
     val dockInteractionSource = remember { MutableInteractionSource() }
     val isDockPressed by dockInteractionSource.collectIsPressedAsState()
     val dockScale by animateFloatAsState(
-        targetValue = if (isDockPressed) 0.96f else 1f,
+        targetValue = if (isDockPressed) 0.94f else 1f,
         animationSpec = Tessera.motion.springPress,
         label = "dock_press_scale"
     )
@@ -327,8 +333,11 @@ fun SearchMorphingDock(
             .padding(bottom = 12.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (!isExpanded) {
-            // Estado Recolhido: Cápsula Flutuante Compacta com Lupa
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            // Container Central da Doca com Morphing Contínuo
             Box(
                 modifier = Modifier
                     .width(animatedWidth)
@@ -346,10 +355,14 @@ fun SearchMorphingDock(
                     .clip(dockShape)
                     .then(dockBgModifier)
                     .border(dockBorder, dockShape)
-                    .clickable(
-                        interactionSource = dockInteractionSource,
-                        indication = null,
-                        onClick = onExpandClick
+                    .then(
+                        if (!isExpanded) {
+                            Modifier.clickable(
+                                interactionSource = dockInteractionSource,
+                                indication = null,
+                                onClick = onExpandClick
+                            )
+                        } else Modifier
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -361,331 +374,250 @@ fun SearchMorphingDock(
                         .background(
                             Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = if (isLightMode) 0.14f else 0.05f),
+                                    Color.White.copy(alpha = if (isLightMode) 0.22f else 0.08f),
                                     Color.Transparent
                                 )
                             )
                         )
                 )
 
-                Icon(
-                    imageVector = Icons.Outlined.Search,
-                    contentDescription = "Expandir pesquisa",
-                    tint = dockTextPrimary,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        } else {
-            // Estado Expandido: Doca Moderna com Widgets e Barra de Pesquisa Refinada
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                // Card Principal Integrado com Aura Luminosa
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Halo Luminoso Difuso com Física Suave
-                    if (isGeminiGlowEnabled && geminiExpandProgress > 0.01f) {
-                        Box(
-                            modifier = Modifier
-                                .matchParentSize()
-                                .graphicsLayer {
-                                    alpha = (if (isLightMode) 0.30f else 0.45f) * geminiExpandProgress * aiPulse
-                                    scaleX = 1.02f
-                                    scaleY = 1.06f
-                                }
-                                .background(
-                                    Brush.radialGradient(
-                                        colors = if (isLightMode) {
-                                            listOf(
-                                                Color(0x3090CAF9),
-                                                Color(0x15BBDEFB),
-                                                Color(0x05E3F2FD),
-                                                Color.Transparent
-                                            )
-                                        } else {
-                                            listOf(
-                                                Color(0x40FFFFFF),
-                                                Color(0x18FFFFFF),
-                                                Color(0x06FFFFFF),
-                                                Color.Transparent
-                                            )
-                                        }
-                                    ),
-                                    shape = dockShape
-                                )
-                        )
-                    }
-
+                // 1. Modo Lupa Inativa: Medalhão Lapidado com Aro Óptico Interno Rebaixado
+                if (expandProgress < 0.25f) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .graphicsLayer {
-                                scaleX = dockScale
-                                scaleY = dockScale
-                            }
-                            .shadow(
-                                elevation = shadowElevation,
-                                shape = dockShape,
-                                ambientColor = shadowAmbientColor,
-                                spotColor = shadowSpotColor
-                            )
-                            .clip(dockShape)
-                            .then(dockBgModifier)
-                            .border(dockBorder, dockShape)
-                            .padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 4.dp,
-                                bottom = 4.dp
-                            )
+                            .size(38.dp)
+                            .graphicsLayer { alpha = 1f - (expandProgress * 4f).coerceIn(0f, 1f) }
+                            .clip(CircleShape)
+                            .border(
+                                0.5.dp,
+                                if (isLightMode) Color(0x60FFFFFF) else Color(0x25FFFFFF),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Reflexo especular superior do Liquid Design
-                        if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clip(dockShape)
-                                    .background(
-                                        if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
-                                        else liquidGlassSheenBrush(opacityFraction)
-                                    )
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = "Expandir pesquisa",
+                            tint = dockTextPrimary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
 
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Linha de Busca Moderna
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Search,
-                                    contentDescription = "Buscar",
-                                    tint = dockIconTint,
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clickable(
-                                            interactionSource = dockInteractionSource,
-                                            indication = null,
-                                            onClick = {
-                                                focusRequester.requestFocus()
-                                                onExpandClick()
-                                            }
-                                        )
-                                )
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                BasicTextField(
-                                    value = textFieldValue,
-                                    onValueChange = { newTfv ->
-                                        textFieldValue = newTfv
-                                        if (newTfv.text != searchQuery) {
-                                            onQueryChange(newTfv.text)
-                                        }
-                                    },
-                                    textStyle = TextStyle(
-                                        color = dockTextPrimary,
-                                        fontSize = 16.sp,
-                                        fontFamily = FontFamily.SansSerif
-                                    ),
-                                    cursorBrush = dockCursorBrush,
-                                    singleLine = true,
-                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                    keyboardActions = KeyboardActions(
-                                        onSearch = {
-                                            focusManager.clearFocus()
-                                            keyboardController?.hide()
-                                            onSearchSubmit(textFieldValue.text)
-                                        }
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        Box(
-                                            modifier = Modifier.fillMaxHeight(),
-                                            contentAlignment = Alignment.CenterStart
-                                        ) {
-                                            if (searchQuery.isEmpty()) {
-                                                Text(
-                                                    text = placeholderText,
-                                                    color = dockPlaceholderColor,
-                                                    fontSize = 15.sp,
-                                                    fontFamily = FontFamily.SansSerif
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .fillMaxHeight()
-                                        .focusRequester(focusRequester)
-                                )
-
-                                // Ações Dinâmicas da Barra com Animações Fluidas
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    AnimatedVisibility(
-                                        visible = searchQuery.isNotEmpty(),
-                                        enter = fadeIn(animationSpec = tween(150)) + scaleIn(
-                                            animationSpec = spring(
-                                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                                stiffness = Spring.StiffnessMedium
-                                            )
-                                        ),
-                                        exit = fadeOut(animationSpec = tween(120)) + scaleOut()
-                                    ) {
-                                        // Botão de Limpar Busca
-                                        Box(
-                                            modifier = Modifier
-                                                .size(30.dp)
-                                                .clip(CircleShape)
-                                                .background(
-                                                    if (isLightMode) Color(0x12000000)
-                                                    else Color(0x1FFFFFFF)
-                                                )
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    onClick = { onQueryChange("") }
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Close,
-                                                contentDescription = "Limpar busca",
-                                                tint = dockTextPrimary,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                        }
+                // 2. Modo Expandido: Linha de Busca Completa
+                if (expandProgress > 0.1f) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp)
+                            .graphicsLayer {
+                                alpha = ((expandProgress - 0.1f) / 0.9f).coerceIn(0f, 1f)
+                            }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = "Buscar",
+                            tint = dockIconTint,
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clickable(
+                                    interactionSource = dockInteractionSource,
+                                    indication = null,
+                                    onClick = {
+                                        focusRequester.requestFocus()
+                                        onExpandClick()
                                     }
+                                )
+                        )
 
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        BasicTextField(
+                            value = textFieldValue,
+                            onValueChange = { newTfv ->
+                                textFieldValue = newTfv
+                                if (newTfv.text != searchQuery) {
+                                    onQueryChange(newTfv.text)
+                                }
+                            },
+                            textStyle = TextStyle(
+                                color = dockTextPrimary,
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily.SansSerif
+                            ),
+                            cursorBrush = dockCursorBrush,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(
+                                onSearch = {
+                                    focusManager.clearFocus()
+                                    keyboardController?.hide()
+                                    onSearchSubmit(textFieldValue.text)
+                                }
+                            ),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
                                     if (searchQuery.isEmpty()) {
-                                        // Ícone de IA para atalho direto quando vazio
-                                        Box(
-                                            modifier = Modifier
-                                                .size(32.dp)
-                                                .clip(CircleShape)
-                                                .clickable(
-                                                    interactionSource = remember { MutableInteractionSource() },
-                                                    indication = null,
-                                                    onClick = onAiSearchClick
-                                                ),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.AutoAwesome,
-                                                contentDescription = "IA Assistente",
-                                                tint = dockIconTint.copy(alpha = 0.75f),
-                                                modifier = Modifier.size(19.dp)
-                                            )
-                                        }
+                                        Text(
+                                            text = placeholderText,
+                                            color = dockPlaceholderColor,
+                                            fontSize = 15.sp,
+                                            fontFamily = FontFamily.SansSerif
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .focusRequester(focusRequester)
+                        )
 
-                                        if (!isSplit) {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(32.dp)
-                                                    .clip(CircleShape)
-                                                    .clickable(
-                                                        interactionSource = remember { MutableInteractionSource() },
-                                                        indication = null,
-                                                        onClick = {
-                                                            keyboardController?.hide()
-                                                            focusManager.clearFocus()
-                                                            onOpenSettings()
-                                                        }
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Outlined.Settings,
-                                                    contentDescription = "Configurações",
-                                                    tint = dockGearTint,
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-                                        }
+                        // Ações Dinâmicas da Barra
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            AnimatedVisibility(
+                                visible = searchQuery.isNotEmpty(),
+                                enter = fadeIn(animationSpec = tween(150)) + scaleIn(),
+                                exit = fadeOut(animationSpec = tween(120)) + scaleOut()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .clip(CircleShape)
+                                        .background(
+                                            if (isLightMode) Color(0x12000000)
+                                            else Color(0x1FFFFFFF)
+                                        )
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = { onQueryChange("") }
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Limpar busca",
+                                        tint = dockTextPrimary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+
+                            if (searchQuery.isEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = onAiSearchClick
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.AutoAwesome,
+                                        contentDescription = "IA Assistente",
+                                        tint = dockIconTint.copy(alpha = 0.75f),
+                                        modifier = Modifier.size(19.dp)
+                                    )
+                                }
+
+                                if (!isSplit) {
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                onClick = {
+                                                    keyboardController?.hide()
+                                                    focusManager.clearFocus()
+                                                    onOpenSettings()
+                                                }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Settings,
+                                            contentDescription = "Configurações",
+                                            tint = dockGearTint,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // Botão de Engrenagem Separado (Nos modos Split, alinhado à base)
-                if (isSplit) {
-                    Spacer(modifier = Modifier.width(10.dp))
+            // Botão de Engrenagem Separado nos modos Split
+            if (isSplit) {
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(tween(180)) + scaleIn(),
+                    exit = fadeOut(tween(120)) + scaleOut()
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                    val settingsInteractionSource = remember { MutableInteractionSource() }
-                    val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
-                    val settingsScale by animateFloatAsState(
-                        targetValue = if (isSettingsPressed) 0.94f else 1f,
-                        animationSpec = spring(
-                            dampingRatio = 0.82f,
-                            stiffness = 380f
-                        ),
-                        label = "settings_press_scale"
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = 4.dp)
-                            .size(48.dp)
-                            .graphicsLayer {
-                                scaleX = settingsScale
-                                scaleY = settingsScale
-                            }
-                            .shadow(
-                                elevation = shadowElevation,
-                                shape = buttonShape,
-                                ambientColor = shadowAmbientColor,
-                                spotColor = shadowSpotColor
-                            )
-                            .clip(buttonShape)
-                            .then(dockBgModifier)
-                            .border(dockBorder, buttonShape)
-                            .clickable(
-                                interactionSource = settingsInteractionSource,
-                                indication = null,
-                                onClick = {
-                                    keyboardController?.hide()
-                                    focusManager.clearFocus()
-                                    onOpenSettings()
-                                }
+                        val settingsInteractionSource = remember { MutableInteractionSource() }
+                        val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
+                        val settingsScale by animateFloatAsState(
+                            targetValue = if (isSettingsPressed) 0.94f else 1f,
+                            animationSpec = spring(
+                                dampingRatio = 0.82f,
+                                stiffness = 380f
                             ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (shouldUseLiquidGlass && opacityFraction > 0.05f) {
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .clip(buttonShape)
-                                    .background(
-                                        if (isLightMode) lightLiquidGlassSheenBrush(opacityFraction)
-                                        else liquidGlassSheenBrush(opacityFraction)
-                                    )
+                            label = "settings_press_scale"
+                        )
+
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .graphicsLayer {
+                                    scaleX = settingsScale
+                                    scaleY = settingsScale
+                                }
+                                .shadow(
+                                    elevation = shadowElevation,
+                                    shape = buttonShape,
+                                    ambientColor = shadowAmbientColor,
+                                    spotColor = shadowSpotColor
+                                )
+                                .clip(buttonShape)
+                                .then(dockBgModifier)
+                                .border(dockBorder, buttonShape)
+                                .clickable(
+                                    interactionSource = settingsInteractionSource,
+                                    indication = null,
+                                    onClick = {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        onOpenSettings()
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Settings,
+                                contentDescription = "Configurações",
+                                tint = dockGearTint,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
-
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Configurações",
-                            tint = dockGearTint,
-                            modifier = Modifier.size(22.dp)
-                        )
                     }
                 }
             }

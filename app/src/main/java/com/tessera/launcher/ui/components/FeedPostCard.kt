@@ -38,7 +38,10 @@ fun FeedPostCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onPostClick(post.url) },
+            .tesseraPressable(
+                pressedScale = 0.97f,
+                onClick = { onPostClick(post.url) }
+            ),
         shape = CardShape,
         color = backgroundColor,
         border = BorderStroke(1.dp, borderColor)
