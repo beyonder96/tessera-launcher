@@ -74,9 +74,10 @@ class SmartGlanceEngine {
                     weatherInfo.condition.contains("Tempestade", ignoreCase = true)
 
             if (isRainy) {
+                val timeClause = formatEventTimeClause(calendarEvent)
                 return SmartGlanceBriefing(
                     primaryText = "${weatherInfo.displayTemperature} • Chuva prevista hoje",
-                    secondaryText = if (calendarEvent != null) "${calendarEvent.title} às ${calendarEvent.timeFormatted}" else null,
+                    secondaryText = if (calendarEvent != null) "${calendarEvent.title}$timeClause" else null,
                     iconType = "RAIN",
                     actionType = SmartGlanceActionType.WEATHER,
                     isUrgent = false
@@ -100,8 +101,9 @@ class SmartGlanceEngine {
         // 5. Próximo evento mais tarde hoje
         if (calendarEvent != null) {
             val weatherPrefix = if (weatherInfo != null) "${weatherInfo.displayTemperature} • " else ""
+            val timeClause = formatEventTimeClause(calendarEvent)
             return SmartGlanceBriefing(
-                primaryText = "$weatherPrefix${calendarEvent.title} às ${calendarEvent.timeFormatted}",
+                primaryText = "$weatherPrefix${calendarEvent.title}$timeClause",
                 secondaryText = if (pendingCount > 0) "$pendingCount tarefas pendentes" else null,
                 iconType = "CALENDAR",
                 actionType = SmartGlanceActionType.CALENDAR,
@@ -128,5 +130,15 @@ class SmartGlanceEngine {
             actionType = SmartGlanceActionType.NONE,
             isUrgent = false
         )
+    }
+
+    private fun formatEventTimeClause(event: CalendarEventInfo?): String {
+        if (event == null) return ""
+        val formatted = event.timeFormatted.trim()
+        return when {
+            formatted.isEmpty() -> ""
+            formatted.equals("O dia todo", ignoreCase = true) -> " • O dia todo"
+            else -> " às $formatted"
+        }
     }
 }

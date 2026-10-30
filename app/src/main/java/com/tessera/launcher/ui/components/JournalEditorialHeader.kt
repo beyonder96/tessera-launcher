@@ -145,7 +145,7 @@ fun JournalEditorialHeader(
             }
         }
 
-        // 2. Narrativa Editorial em FlowRow com micro-chips clicáveis
+        // 2. Narrativa Editorial em FlowRow com micro-chips exclusivos (Agenda & Tarefas)
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -170,18 +170,6 @@ fun JournalEditorialHeader(
                 )
             )
 
-            // Chip Clima
-            val tempStr = weatherInfo?.temperature?.let { "$it°" } ?: "Clima"
-            val condStr = weatherInfo?.condition?.takeIf { it.isNotBlank() }
-            val weatherLabel = if (condStr != null) "$tempStr · $condStr" else tempStr
-            EditorialChip(
-                icon = Icons.Outlined.WbSunny,
-                text = weatherLabel,
-                accentColor = Color(0xFFF59E0B),
-                isLightMode = isLightMode,
-                onClick = onWeatherClick
-            )
-
             // Chip Agenda
             if (nextCalendarEvent != null) {
                 val title = nextCalendarEvent.title.take(18)
@@ -203,7 +191,7 @@ fun JournalEditorialHeader(
                 )
             }
 
-            // Chip Notas
+            // Chip Notas & Tarefas
             if (pendingNotesCount > 0) {
                 EditorialChip(
                     icon = Icons.Outlined.Edit,
@@ -219,20 +207,6 @@ fun JournalEditorialHeader(
                     accentColor = Color(0xFF10B981),
                     isLightMode = isLightMode,
                     onClick = onNotesClick
-                )
-            }
-
-            // Chip Tempo de Tela / Foco
-            if (screenTimeInfo != null && screenTimeInfo.hasPermission && screenTimeInfo.totalTimeMillis > 0) {
-                val hours = screenTimeInfo.totalTimeMillis / (1000 * 60 * 60)
-                val mins = (screenTimeInfo.totalTimeMillis / (1000 * 60)) % 60
-                val timeLabel = if (hours > 0) "${hours}h ${mins}m de tela" else "${mins}m de tela"
-                EditorialChip(
-                    icon = Icons.Outlined.HourglassEmpty,
-                    text = timeLabel,
-                    accentColor = Color(0xFF6366F1),
-                    isLightMode = isLightMode,
-                    onClick = onScreenTimeClick
                 )
             }
         }

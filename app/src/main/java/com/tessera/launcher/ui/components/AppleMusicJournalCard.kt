@@ -68,12 +68,17 @@ import com.tessera.launcher.data.service.MediaPlaybackInfo
 import kotlinx.coroutines.delay
 import java.util.Locale
 
-private fun formatMediaDuration(timeMs: Long): String {
-    if (timeMs <= 0) return "00:00"
-    val totalSeconds = timeMs / 1000
-    val minutes = totalSeconds / 60
+fun formatMediaDuration(timeMs: Long): String {
+    if (timeMs <= 0L) return "00:00"
+    val totalSeconds = (timeMs + 500L) / 1000L
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
     val seconds = totalSeconds % 60
-    return String.format(Locale.US, "%02d:%02d", minutes, seconds)
+    return if (hours > 0) {
+        String.format(Locale.US, "%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format(Locale.US, "%02d:%02d", minutes, seconds)
+    }
 }
 
 /**

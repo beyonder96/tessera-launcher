@@ -115,7 +115,7 @@ fun DinoWidgetCard(
     val boxModifier = if (isDockMode) {
         modifier
             .fillMaxWidth()
-            .fillMaxHeight()
+            .height(96.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -128,7 +128,7 @@ fun DinoWidgetCard(
                     }
                 }
             )
-            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp)
     } else {
         val border = if (isLiquidGlass) {
             BorderStroke(1.dp, LiquidGlassBorderBrush)
@@ -167,14 +167,14 @@ fun DinoWidgetCard(
         ) {
             Text(
                 text = "DINO RUN",
-                color = TextSecondary,
+                color = if (isLightMode) Color(0xFF78716C) else TextSecondary,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold
             )
             Text(
                 text = "HI ${highScore.toString().padStart(4, '0')}  ${score.toString().padStart(4, '0')}",
-                color = TextPrimary,
+                color = if (isLightMode) Color(0xFF1C1917) else TextPrimary,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Bold

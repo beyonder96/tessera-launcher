@@ -61,5 +61,53 @@ data class TesseraMotion(
         easing = FastOutSlowInEasing
     ),
     // Easing de desaceleração enfatizada (material curve para entradas suaves)
-    val emphasizedEasing: Easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f)
+    val emphasizedEasing: Easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f),
+    // Transição Espacial Cinematográfica para a Tela Lateral (-1): ~650ms de desaceleração aveludada sem quique
+    val springSpatialCinematic: SpringSpec<Float> = LateralSpatialMath.springSpatialCinematic,
+    // Curva espacial para troca entre abas da Tela Lateral (Central <-> Feed)
+    val spatialTabEasing: Easing = LateralSpatialMath.spatialTabEasing,
+    val spatialTabDurationMillis: Int = LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS
 )
+
+/**
+ * Funções matemáticas puras e constantes de física espacial da Tela Lateral (-1).
+ * Totalmente desacopladas de ciclo de vida para testes unitários precisos e sem alocação por frame.
+ */
+object LateralSpatialMath {
+    const val MAX_NORMALIZED_VELOCITY = 1.55f
+    const val OPEN_PROGRESS_THRESHOLD = 0.30f
+    const val CLOSE_PROGRESS_THRESHOLD = 0.70f
+    const val FLING_VELOCITY_THRESHOLD_PX = 420f
+    const val SPATIAL_TAB_DURATION_MILLIS = 520
+
+    val springSpatialCinematic: SpringSpec<Float> = spring(
+        stiffness = 115f,
+        dampingRatio = 0.94f,
+        visibilityThreshold = 0.001f
+    )
+
+    val spatialTabEasing: Easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f)
+
+    fun clampNormalizedVelocity(velocityPxPerSec: Float, widthPx: Float): Float {
+        if (widthPx <= 0f) return 0f
+        return (velocityPxPerSec / widthPx).coerceIn(-MAX_NORMALIZED_VELOCITY, MAX_NORMALIZED_VELOCITY)
+    }
+
+    fun homeScale(progress: Float): Float = 1f - 0.085f * progress.coerceIn(0f, 1f)
+    fun homeParallaxX(progress: Float, widthPx: Float): Float = widthPx * 0.24f * progress.coerceIn(0f, 1f)
+    fun homeAlpha(progress: Float): Float = (1f - 0.82f * progress.coerceIn(0f, 1f)).coerceIn(0f, 1f)
+
+    fun panelScale(progress: Float): Float = 0.945f + 0.055f * progress.coerceIn(0f, 1f)
+    fun panelAlpha(progress: Float): Float = (0.38f + 0.62f * progress.coerceIn(0f, 1f)).coerceIn(0f, 1f)
+    fun panelCornerFraction(progress: Float): Float =
+        ((1f - progress.coerceIn(0f, 1f)) / 0.22f).coerceIn(0f, 1f)
+
+    fun cascadeItemProgress(panelProgress: Float, index: Int): Float {
+        val clampedIdx = index.coerceIn(0, 8)
+        val start = 0.05f + clampedIdx * 0.045f // 0.05 .. 0.41
+        val span = 0.56f
+        val t = ((panelProgress.coerceIn(0f, 1f) - start) / span).coerceIn(0f, 1f)
+        val inv = 1f - t
+        return 1f - inv * inv * inv // Cubic ease-out simétrico para entrada e saída
+    }
+}

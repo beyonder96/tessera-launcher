@@ -1,16 +1,18 @@
 package com.tessera.launcher.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,6 +24,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.unit.dp
+import com.tessera.launcher.ui.theme.tokens.LateralSpatialMath
+import kotlinx.coroutines.delay
+
+/**
+ * CompositionLocal que expõe uma lambda estável `() -> Float` com o progresso contínuo (0f..1f)
+ * da Tela Lateral (-1). Por ser uma lambda lida exclusivamente dentro do `Modifier.graphicsLayer`,
+ * a animação e o arraste ocorrem 100% na GPU sem disparar nenhuma recomposição de Compose!
+ */
+val LocalLateralPanelProgress = compositionLocalOf<() -> Float> { { 1f } }
 
 /**
  * Modificador universal de física tátil elástica com micro-reflexo luminoso e háptica.
@@ -91,7 +103,9 @@ fun Modifier.tesseraPressable(
 }
 
 /**
- * Componente que orquestra a entrada escalonada e suave (stagger cascade) dos blocos da página.
+ * Componente que orquestra a entrada e saída escalonadas (stagger cascade) dos blocos da página.
+ * Executado inteiramente via GPU (`Modifier.graphicsLayer`) sem disparar recomposições de Compose,
+ * sincronizado em tempo real tanto no arraste 1:1 com o dedo quanto na animação lenta de ~650ms.
  */
 @Composable
 fun JournalCascadeItem(
@@ -100,15 +114,34 @@ fun JournalCascadeItem(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    val delayMs = (index * 35).coerceAtMost(280)
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(animationSpec = tween(durationMillis = 320, delayMillis = delayMs)) +
-                slideInVertically(
-                    initialOffsetY = { 24 },
-                    animationSpec = spring(dampingRatio = 0.78f, stiffness = 380f)
-                ),
-        modifier = modifier
+    if (!visible) return
+    val progressProvider = LocalLateralPanelProgress.current
+    // Se o item for composto quando o painel já está aberto (ex: posts carregados via rede no Feed),
+    // executa um fade suave local; caso contrário, é 100% governado pelo progresso espacial bidirecional.
+    val mountedAfterOpen = remember { progressProvider() > 0.96f }
+    val mountAnim = remember { Animatable(if (mountedAfterOpen) 0f else 1f) }
+
+    LaunchedEffect(mountedAfterOpen) {
+        if (mountedAfterOpen) {
+            delay((index.coerceAtMost(8) * 36L))
+            mountAnim.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 380, easing = CubicBezierEasing(0.22f, 1f, 0.36f, 1f))
+            )
+        }
+    }
+
+    Box(
+        modifier = modifier.graphicsLayer {
+            val spatialProgress = LateralSpatialMath.cascadeItemProgress(progressProvider(), index)
+            val effective = spatialProgress * mountAnim.value
+            alpha = effective
+            translationY = (1f - effective) * 24.dp.toPx()
+            translationX = -(1f - effective) * 16.dp.toPx()
+            val s = 0.955f + (0.045f * effective)
+            scaleX = s
+            scaleY = s
+        }
     ) {
         content()
     }

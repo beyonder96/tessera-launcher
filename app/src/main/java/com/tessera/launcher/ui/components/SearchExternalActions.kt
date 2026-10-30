@@ -4,13 +4,17 @@ import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +23,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -28,10 +34,12 @@ import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -39,13 +47,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tessera.launcher.ui.theme.DarkSurface
-import com.tessera.launcher.ui.theme.DarkSurfaceBorder
-import com.tessera.launcher.ui.theme.LiquidGlassBackground
-import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
-import com.tessera.launcher.ui.theme.PillShape
-import com.tessera.launcher.ui.theme.TextPrimary
-import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.GeminiCyan
+import com.tessera.launcher.ui.theme.GeminiPurple
+import java.util.Locale
 
 @Composable
 fun SearchExternalActions(
@@ -53,131 +57,277 @@ fun SearchExternalActions(
     inAppSearchPackages: Set<String> = emptySet(),
     modifier: Modifier = Modifier,
     isLiquidGlass: Boolean = true,
+    isLightMode: Boolean = false,
+    isAmoledMode: Boolean = false,
+    provider: String = "GROQ",
     onAskAi: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val border = if (isLiquidGlass) {
-        BorderStroke(1.dp, LiquidGlassBorderBrush)
-    } else {
-        BorderStroke(1.dp, DarkSurfaceBorder)
-    }
-    val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurface
+    if (query.isBlank()) return
 
-    // Pílula unificada conforme Screenshot media_1788774600763.png
-    Box(
+    val cardBg = when {
+        isLightMode -> Color(0xFFEFECE2)
+        isAmoledMode -> Color(0xFF10121A)
+        else -> Color(0xFF161822)
+    }
+    val borderColor = when {
+        isLightMode -> Color(0xFFDDD8CB)
+        else -> Color(0x25FFFFFF)
+    }
+    val textPrimary = if (isLightMode) Color(0xFF1C1917) else Color(0xFFF7F4EB)
+    val textSecondary = if (isLightMode) Color(0xFF78716C) else Color(0xFFA8A29E)
+
+    // Animação contínua da aura de IA para o Hero Card
+    val infiniteTransition = rememberInfiniteTransition(label = "ai_hero_glow")
+    val glowAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3800, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ai_glow_angle"
+    )
+
+    val rad = Math.toRadians(glowAngle.toDouble())
+    val cosVal = Math.cos(rad).toFloat()
+    val sinVal = Math.sin(rad).toFloat()
+
+    val aiBorderBrush = remember(glowAngle, isLightMode) {
+        Brush.linearGradient(
+            colors = if (isLightMode) {
+                listOf(
+                    Color(0xFF3B82F6).copy(alpha = 0.55f),
+                    Color(0xFF8B5CF6).copy(alpha = 0.55f),
+                    Color(0xFF06B6D4).copy(alpha = 0.65f),
+                    Color(0xFF3B82F6).copy(alpha = 0.55f)
+                )
+            } else {
+                listOf(
+                    Color(0xFF60A5FA).copy(alpha = 0.65f),
+                    Color(0xFFA78BFA).copy(alpha = 0.65f),
+                    Color(0xFF22D3EE).copy(alpha = 0.75f),
+                    Color(0xFF60A5FA).copy(alpha = 0.65f)
+                )
+            },
+            start = androidx.compose.ui.geometry.Offset(100f * (1f - cosVal), 100f * (1f - sinVal)),
+            end = androidx.compose.ui.geometry.Offset(600f * (1f + cosVal), 600f * (1f + sinVal))
+        )
+    }
+
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .height(52.dp)
-            .border(border, PillShape)
-            .clip(PillShape)
-            .background(background)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.CenterStart
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // 1. Hero Card de IA com Glow Especular
+        if (onAskAi != null) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(cardBg)
+                    .border(1.2.dp, aiBorderBrush, RoundedCornerShape(20.dp))
+                    .tesseraPressable(pressedScale = 0.98f, onClick = { onAskAi(query) })
+                    .padding(14.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(7.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        Brush.linearGradient(
+                                            listOf(
+                                                GeminiCyan.copy(alpha = if (isLightMode) 0.25f else 0.35f),
+                                                GeminiPurple.copy(alpha = if (isLightMode) 0.25f else 0.35f)
+                                            )
+                                        )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = if (isLightMode) Color(0xFF4338CA) else GeminiCyan,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            Text(
+                                text = if (provider.equals("GEMINI", true)) "RESPOSTA RÁPIDA • GEMINI FLASH" else "RESPOSTA RÁPIDA • GROQ IA",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = if (isLightMode) Color(0xFF4338CA) else GeminiCyan
+                            )
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isLightMode) Color(0x181C1917) else Color(0x20FFFFFF))
+                                .padding(horizontal = 9.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "Perguntar ➔",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = textPrimary
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "Consultar IA sobre \"$query\"",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = "Respostas instantâneas, sínteses e ideias sem sair da launcher.",
+                        fontSize = 12.sp,
+                        color = textSecondary
+                    )
+                }
+            }
+        }
+
+        // 2. Barra de Ações Rápidas em Chips Bento Refinados
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Lado Esquerdo: Pesquisar "$query" no Google
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { launchGoogleSearch(context, query) }
-                    )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Language,
-                    contentDescription = "Google",
-                    tint = TextPrimary,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Pesquisar \"$query\"",
-                    color = TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+            // Chip Google Busca Web
+            SearchBentoChip(
+                icon = Icons.Outlined.Language,
+                iconTint = if (isLightMode) Color(0xFF2563EB) else Color(0xFF60A5FA),
+                title = "Google",
+                subtitle = "Web",
+                cardBg = cardBg,
+                borderColor = borderColor,
+                textPrimary = textPrimary,
+                textSecondary = textSecondary,
+                modifier = Modifier.weight(1f),
+                onClick = { launchGoogleSearch(context, query) }
+            )
+
+            // Chip YouTube
+            if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.youtube")) {
+                SearchBentoChip(
+                    icon = Icons.Outlined.PlayArrow,
+                    iconTint = Color(0xFFFF3333),
+                    title = "YouTube",
+                    subtitle = "Vídeo",
+                    cardBg = cardBg,
+                    borderColor = borderColor,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    modifier = Modifier.weight(1f),
+                    onClick = { launchYouTubeSearch(context, query) }
                 )
             }
 
-            // Lado Direito: Ações rápidas de Apps (IA, YouTube, Play Store, etc.)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Chip Play Store
+            if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.android.vending")) {
+                SearchBentoChip(
+                    icon = Icons.Outlined.ShoppingBag,
+                    iconTint = if (isLightMode) Color(0xFF059669) else Color(0xFF34D399),
+                    title = "Play Store",
+                    subtitle = "Apps",
+                    cardBg = cardBg,
+                    borderColor = borderColor,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    modifier = Modifier.weight(1f),
+                    onClick = { launchPlayStoreSearch(context, query) }
+                )
+            }
 
-                // Maps (se habilitado ou padrão)
-                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.apps.maps")) {
-                    AppSearchQuickIcon(
-                        icon = Icons.Outlined.Place,
-                        description = "Maps",
-                        onClick = { launchMapsSearch(context, query) }
-                    )
-                }
-
-                // YouTube (se habilitado ou padrão)
-                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.google.android.youtube")) {
-                    AppSearchQuickIcon(
-                        icon = Icons.Outlined.PlayArrow,
-                        description = "YouTube",
-                        onClick = { launchYouTubeSearch(context, query) }
-                    )
-                }
-
-                // Play Store
-                if (inAppSearchPackages.isEmpty() || inAppSearchPackages.contains("com.android.vending")) {
-                    AppSearchQuickIcon(
-                        icon = Icons.Outlined.ShoppingBag,
-                        description = "Play Store",
-                        onClick = { launchPlayStoreSearch(context, query) }
-                    )
-                }
-
-                // WhatsApp
-                if (inAppSearchPackages.contains("com.whatsapp")) {
-                    AppSearchQuickIcon(
-                        icon = Icons.Outlined.Send,
-                        description = "WhatsApp",
-                        onClick = { launchWhatsAppSearch(context, query) }
-                    )
-                }
+            // Chip Maps (se ativo)
+            if (inAppSearchPackages.contains("com.google.android.apps.maps")) {
+                SearchBentoChip(
+                    icon = Icons.Outlined.Place,
+                    iconTint = Color(0xFFEA4335),
+                    title = "Maps",
+                    subtitle = "Locais",
+                    cardBg = cardBg,
+                    borderColor = borderColor,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    modifier = Modifier.weight(1f),
+                    onClick = { launchMapsSearch(context, query) }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun AppSearchQuickIcon(
+private fun SearchBentoChip(
     icon: ImageVector,
-    description: String,
+    iconTint: Color,
+    title: String,
+    subtitle: String,
+    cardBg: Color,
+    borderColor: Color,
+    textPrimary: Color,
+    textSecondary: Color,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(CircleShape)
-            .background(Color(0xFF1E1E26))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            ),
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(cardBg)
+            .border(0.5.dp, borderColor, RoundedCornerShape(14.dp))
+            .tesseraPressable(pressedScale = 0.93f, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = description,
-            tint = TextSecondary,
-            modifier = Modifier.size(17.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconTint,
+                modifier = Modifier.size(17.dp)
+            )
+
+            Column {
+                Text(
+                    text = title,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    fontSize = 9.5.sp,
+                    color = textSecondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
@@ -33,6 +34,7 @@ import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.ui.state.FeedState
 import com.tessera.launcher.ui.components.FeedPostCard
+import com.tessera.launcher.ui.components.JournalCascadeItem
 import com.tessera.launcher.ui.components.JournalMedallion
 import com.tessera.launcher.ui.components.tesseraPressable
 import com.tessera.launcher.ui.theme.*
@@ -69,70 +71,74 @@ fun FeedScreen(
             .navigationBarsPadding()
             .padding(top = if (hasTopSegmentedControl) 0.dp else 6.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "FEED",
-                color = primaryTextColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = (-0.5).sp
-            )
-
+        JournalCascadeItem(index = 0) {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                JournalMedallion(
-                    icon = Icons.Outlined.Refresh,
-                    contentDescription = "Recarregar",
-                    size = 38.dp,
-                    iconSize = 18.dp,
-                    isLightMode = isLightMode,
-                    onClick = onRefresh
+                Text(
+                    text = "FEED",
+                    color = primaryTextColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.5).sp
                 )
 
-                JournalMedallion(
-                    icon = Icons.AutoMirrored.Outlined.ArrowForward,
-                    contentDescription = "Voltar para Início",
-                    size = 38.dp,
-                    iconSize = 18.dp,
-                    isLightMode = isLightMode,
-                    onClick = onClose
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    JournalMedallion(
+                        icon = Icons.Outlined.Refresh,
+                        contentDescription = "Recarregar",
+                        size = 38.dp,
+                        iconSize = 18.dp,
+                        isLightMode = isLightMode,
+                        onClick = onRefresh
+                    )
+
+                    JournalMedallion(
+                        icon = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = "Voltar para Início",
+                        size = 38.dp,
+                        iconSize = 18.dp,
+                        isLightMode = isLightMode,
+                        onClick = onClose
+                    )
+                }
             }
         }
 
         if (enabledSources.isNotEmpty()) {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    SourceChip(
-                        name = "Tudo",
-                        isSelected = localSelectedSource == null,
-                        isLightMode = isLightMode,
-                        onClick = { localSelectedSource = null }
-                    )
-                }
-                items(enabledSources.toList()) { source ->
-                    SourceChip(
-                        name = source.chipName,
-                        isSelected = localSelectedSource == source,
-                        isLightMode = isLightMode,
-                        onClick = { 
-                            localSelectedSource = source
-                            onSourceSelected(source)
-                        }
-                    )
+            JournalCascadeItem(index = 1) {
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        SourceChip(
+                            name = "Tudo",
+                            isSelected = localSelectedSource == null,
+                            isLightMode = isLightMode,
+                            onClick = { localSelectedSource = null }
+                        )
+                    }
+                    items(enabledSources.toList()) { source ->
+                        SourceChip(
+                            name = source.chipName,
+                            isSelected = localSelectedSource == source,
+                            isLightMode = isLightMode,
+                            onClick = { 
+                                localSelectedSource = source
+                                onSourceSelected(source)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -162,12 +168,14 @@ fun FeedScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(filteredPosts, key = { it.id }) { post ->
-                                FeedPostCard(
-                                    post = post,
-                                    isLightMode = isLightMode,
-                                    onPostClick = onPostClick
-                                )
+                            itemsIndexed(filteredPosts, key = { _, post -> post.id }) { index, post ->
+                                JournalCascadeItem(index = (2 + index).coerceAtMost(8)) {
+                                    FeedPostCard(
+                                        post = post,
+                                        isLightMode = isLightMode,
+                                        onPostClick = onPostClick
+                                    )
+                                }
                             }
                         }
                     }

@@ -13,6 +13,7 @@ import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
@@ -37,11 +38,11 @@ data class MediaPlaybackInfo(
     val lastPositionUpdateTime: Long = 0L,
     val artwork: Bitmap? = null
 ) {
-    fun getCalculatedPositionMs(): Long {
+    fun getCalculatedPositionMs(currentTimeRealtimeMs: Long = SystemClock.elapsedRealtime()): Long {
         if (!isPlaying || playbackSpeed <= 0f || lastPositionUpdateTime <= 0L) {
             return positionMs
         }
-        val elapsed = (System.currentTimeMillis() - lastPositionUpdateTime)
+        val elapsed = (currentTimeRealtimeMs - lastPositionUpdateTime).coerceAtLeast(0L)
         val estimated = positionMs + (elapsed * playbackSpeed).toLong()
         return if (durationMs > 0L) estimated.coerceIn(0L, durationMs) else estimated.coerceAtLeast(0L)
     }
@@ -389,7 +390,8 @@ class TesseraMediaService : NotificationListenerService() {
 
         val positionMs = playbackState?.position?.coerceAtLeast(0L) ?: 0L
         val playbackSpeed = playbackState?.playbackSpeed ?: 1f
-        val lastPositionUpdateTime = playbackState?.lastPositionUpdateTime ?: System.currentTimeMillis()
+        val lastPositionUpdateTime = playbackState?.lastPositionUpdateTime?.takeIf { it > 0L }
+            ?: SystemClock.elapsedRealtime()
 
         val appDisplayName = when (controller.packageName) {
             "com.apple.android.music" -> "Apple Music"

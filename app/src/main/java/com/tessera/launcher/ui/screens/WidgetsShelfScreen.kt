@@ -5,6 +5,7 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,15 +16,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
@@ -33,19 +40,17 @@ import com.tessera.launcher.data.model.AppNotificationItem
 import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.components.AppleMusicJournalCard
-import com.tessera.launcher.ui.components.CalendarWidgetCard
 import com.tessera.launcher.ui.components.DinoWidgetCard
 import com.tessera.launcher.ui.components.JournalCascadeItem
 import com.tessera.launcher.ui.components.JournalEditorialHeader
 import com.tessera.launcher.ui.components.JournalTelemetryRingsRow
 import com.tessera.launcher.ui.components.NoteTask
-import com.tessera.launcher.ui.components.NotesWidgetCard
 import com.tessera.launcher.ui.components.NotificationsWidgetCard
 import com.tessera.launcher.ui.components.QuickControlBentoGrid
-import com.tessera.launcher.ui.components.ScreenTimeWidgetCard
-import com.tessera.launcher.ui.components.SmartGlanceWidgetCard
+import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.VerseFocusWidgetCard
 import com.tessera.launcher.ui.components.WidgetsQuickEditBottomSheet
+import com.tessera.launcher.ui.components.openOrRequestDigitalWellbeing
 import com.tessera.launcher.ui.state.WidgetConfigType
 
 /**
@@ -125,9 +130,15 @@ fun WidgetsShelfScreen(
     onOpenNotificationsHub: () -> Unit,
     onClose: () -> Unit,
     onOpenSettings: () -> Unit,
-    hasTopSegmentedControl: Boolean = false
+    hasTopSegmentedControl: Boolean = false,
+    onQuickEditVisibilityChange: (Boolean) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var isQuickEditOpen by remember { mutableStateOf(false) }
+
+    LaunchedEffect(isQuickEditOpen) {
+        onQuickEditVisibilityChange(isQuickEditOpen)
+    }
 
     // Gating no BackHandler: não fecha a central se o Bottom Sheet estiver aberto
     BackHandler(enabled = !isQuickEditOpen, onBack = onClose)
@@ -151,7 +162,7 @@ fun WidgetsShelfScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             contentPadding = PaddingValues(top = 10.dp, bottom = 48.dp)
         ) {
-            // Zona 1: Cabeçalho Editorial com Saudação Dinâmica e Botões do Topo
+            // Zona 1: Cabeçalho Editorial com Saudação Dinâmica e Botões do Topo (Chips exclusivos de Agenda e Tarefas)
             item(key = "zone_editorial_header") {
                 JournalCascadeItem(index = 0) {
                     JournalEditorialHeader(
@@ -167,12 +178,14 @@ fun WidgetsShelfScreen(
                         onWeatherClick = onRefreshWeather,
                         onCalendarClick = onCalendarClick,
                         onNotesClick = onNotesClick,
-                        onScreenTimeClick = {}
+                        onScreenTimeClick = {
+                            openOrRequestDigitalWellbeing(context, screenTimeInfo?.hasPermission == true)
+                        }
                     )
                 }
             }
 
-            // Zona 1: Palco Apple Music Hero Card
+            // Zona 1.5: Palco Apple Music Hero Card
             if (enabledWidgets.contains(WidgetType.MEDIA)) {
                 item(key = "zone_apple_music_hero") {
                     JournalCascadeItem(index = 1) {
@@ -208,7 +221,7 @@ fun WidgetsShelfScreen(
                 }
             }
 
-            // Zona 2: Trio de Anéis de Telemetria (Bateria, Clima, Tempo de Tela)
+            // Zona 2.5: Trio de Anéis de Telemetria (Bateria, Clima, Foco/Tempo de Tela Clicável)
             item(key = "zone_telemetry_rings") {
                 JournalCascadeItem(index = 3) {
                     JournalTelemetryRingsRow(
@@ -218,52 +231,15 @@ fun WidgetsShelfScreen(
                         screenTimeInfo = screenTimeInfo,
                         isLightMode = isLightMode,
                         onWeatherRefresh = onRefreshWeather,
-                        onScreenTimeClick = {}
+                        onScreenTimeClick = {
+                            openOrRequestDigitalWellbeing(context, screenTimeInfo?.hasPermission == true)
+                        }
                     )
                 }
             }
 
-            // Zona 3: Capítulos Journal Abertos na sequência configurada
-            // 1. Now & Next (Smart Glance)
-            if (isSmartGlanceEnabled && smartGlanceBriefing != null) {
-                item(key = "shelf_smart_glance") {
-                    JournalCascadeItem(index = 4) {
-                        SmartGlanceWidgetCard(
-                            briefing = smartGlanceBriefing,
-                            formattedDate = formattedDate,
-                            onCalendarClick = onCalendarClick,
-                            onWeatherClick = onRefreshWeather,
-                            onNotesClick = onNotesClick,
-                            isAmoledMode = isAmoledMode,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
-                        )
-                    }
-                }
-            }
-
-            // 2. Agenda & Calendário
-            if (enabledWidgets.contains(WidgetType.CALENDAR)) {
-                item(key = "shelf_calendar") {
-                    JournalCascadeItem(index = 5) {
-                        CalendarWidgetCard(
-                            currentTime = currentTime,
-                            currentDate = formattedDate,
-                            nextCalendarEvent = nextCalendarEvent,
-                            hasPermission = hasCalendarPermission,
-                            onRequestPermission = onRequestCalendarPermission,
-                            onCalendarClick = onCalendarClick,
-                            isAmoledMode = isAmoledMode,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
-                        )
-                    }
-                }
-            }
-
-            // 3. Central de Alertas e Notificações (Deduplica mídia ativa)
+            // Zona 3: Módulos Exclusivos em Molduras Bento Journal Alinhadas (Zero Redundância)
+            // 1. Central de Alertas e Notificações (Deduplica música ativa)
             if (hasNotificationAccess && recentNotifications.isNotEmpty()) {
                 val activeMusicPkg = mediaPlayback?.packageName
                 val filteredNotifications = recentNotifications.filterNot { item ->
@@ -272,83 +248,83 @@ fun WidgetsShelfScreen(
 
                 if (filteredNotifications.isNotEmpty()) {
                     item(key = "shelf_notifications") {
-                        JournalCascadeItem(index = 6) {
-                            NotificationsWidgetCard(
-                                recentNotifications = filteredNotifications,
-                                onOpenHub = onOpenNotificationsHub,
-                                onDismissTop = {
-                                    filteredNotifications.firstOrNull()?.let { top ->
-                                        onDismissNotification(top.key)
-                                    }
-                                },
-                                accentColor = accentColor,
-                                isAmoledMode = isAmoledMode,
-                                isLightMode = isLightMode,
-                                isLiquidGlass = isLiquidGlass
-                            )
+                        JournalCascadeItem(index = 4) {
+                            JournalBentoCard(isLightMode = isLightMode) {
+                                NotificationsWidgetCard(
+                                    recentNotifications = filteredNotifications,
+                                    onOpenHub = onOpenNotificationsHub,
+                                    onDismissTop = {
+                                        filteredNotifications.firstOrNull()?.let { top ->
+                                            onDismissNotification(top.key)
+                                        }
+                                    },
+                                    accentColor = accentColor,
+                                    isAmoledMode = isAmoledMode,
+                                    isLightMode = isLightMode,
+                                    isLiquidGlass = isLiquidGlass
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            // 4. Anotações & Tarefas Rápidas
-            if (isNotesWidgetEnabled) {
-                item(key = "shelf_notes") {
-                    JournalCascadeItem(index = 7) {
-                        NotesWidgetCard(
-                            tasks = notesTasks,
-                            notesWidgetFilter = notesWidgetFilter,
-                            onAddTask = onAddNoteTask,
-                            onToggleTask = onToggleNoteTask,
-                            onRemoveTask = onRemoveNoteTask,
-                            onNotesClick = onNotesClick,
-                            isAmoledMode = isAmoledMode,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.NOTES) }
-                        )
+            // 2. Apps Sugeridos pela IA (Bandeja Contextual em Card Bento)
+            if (isPredictedAppsWidgetEnabled && predictedApps.isNotEmpty()) {
+                item(key = "shelf_predicted_apps") {
+                    JournalCascadeItem(index = 5) {
+                        JournalBentoCard(isLightMode = isLightMode) {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "SUGESTÕES DA IA",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.8.sp,
+                                    color = if (isLightMode) Color(0xFF78716C) else Color(0xFFA8A29E)
+                                )
+                                SmartDockRow(
+                                    apps = predictedApps,
+                                    onAppClick = onAppClick,
+                                    onAppLongClick = onAppLongClick,
+                                    iconShape = iconShape,
+                                    isThemedIcons = isThemedIcons,
+                                    isLightMode = isLightMode,
+                                    isAmoledMode = isAmoledMode,
+                                    isEmbedded = true,
+                                    notificationCounts = notificationCounts,
+                                    accentColor = accentColor
+                                )
+                            }
+                        }
                     }
                 }
             }
 
-            // 5. Tempo de Tela & Bem-Estar Detalhado
-            if (isScreenTimeWidgetEnabled || enabledWidgets.contains(WidgetType.SCREEN_TIME)) {
-                item(key = "shelf_screen_time") {
-                    JournalCascadeItem(index = 8) {
-                        ScreenTimeWidgetCard(
-                            screenTimeInfo = screenTimeInfo,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass,
-                            isAmoledMode = isAmoledMode,
-                            accentColor = accentColor,
-                            onCardClick = {},
-                            onLongClick = { onWidgetLongClick(WidgetConfigType.CALENDAR) }
-                        )
-                    }
-                }
-            }
-
-            // 6. Versículo / Foco Espiritual
+            // 3. Versículo / Foco Espiritual (Configurável e moldado em Bento)
             item(key = "shelf_verse") {
-                JournalCascadeItem(index = 9) {
-                    VerseFocusWidgetCard(
-                        isAmoledMode = isAmoledMode,
-                        isLightMode = isLightMode,
-                        isLiquidGlass = isLiquidGlass,
-                        onLongClick = { onWidgetLongClick(WidgetConfigType.VERSE_FOCUS) }
-                    )
+                JournalCascadeItem(index = 6) {
+                    JournalBentoCard(isLightMode = isLightMode) {
+                        VerseFocusWidgetCard(
+                            isAmoledMode = isAmoledMode,
+                            isLightMode = isLightMode,
+                            isLiquidGlass = isLiquidGlass,
+                            onLongClick = { onWidgetLongClick(WidgetConfigType.VERSE_FOCUS) }
+                        )
+                    }
                 }
             }
 
-            // 7. Dino Game Widget (se ativo)
+            // 4. Dino Game Widget (Card Bento dedicado com altura e contraste corrigidos)
             if (isDinoWidgetEnabled) {
                 item(key = "shelf_dino") {
-                    JournalCascadeItem(index = 10) {
-                        DinoWidgetCard(
-                            isDockMode = true,
-                            isLightMode = isLightMode,
-                            isLiquidGlass = isLiquidGlass
-                        )
+                    JournalCascadeItem(index = 7) {
+                        JournalBentoCard(isLightMode = isLightMode) {
+                            DinoWidgetCard(
+                                isDockMode = true,
+                                isLightMode = isLightMode,
+                                isLiquidGlass = isLiquidGlass
+                            )
+                        }
                     }
                 }
             }
@@ -377,5 +353,30 @@ fun WidgetsShelfScreen(
                 onDismiss = { isQuickEditOpen = false }
             )
         }
+    }
+}
+
+/**
+ * Moldura Bento Journal consistente com as outras seções da página.
+ * Aplica acabamento lapidado, borda sutil e fundo adaptativo (#EFECE2 no claro / #161820 no escuro).
+ */
+@Composable
+private fun JournalBentoCard(
+    isLightMode: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val cardBg = if (isLightMode) Color(0xFFEFECE2) else Color(0xFF161820)
+    val cardBorder = if (isLightMode) Color(0xFFDDD8CB) else Color(0x25FFFFFF)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(cardBg)
+            .border(0.5.dp, cardBorder, RoundedCornerShape(20.dp))
+            .padding(14.dp)
+    ) {
+        content()
     }
 }

@@ -6,13 +6,22 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,9 +52,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -54,16 +66,20 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import java.util.Calendar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -189,33 +205,33 @@ fun PhotoStandByModal(
 
             if (isLandscape) {
                 // Layout Paisagem (Bedside / Nightstand Dock)
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 48.dp, vertical = 24.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Foto ampliada
-                    Box(
+                if (bitmap != null) {
+                    Row(
                         modifier = Modifier
-                            .fillMaxHeight(0.85f)
-                            .aspectRatio(1f)
-                            .shadow(28.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
-                            .clip(RoundedCornerShape(32.dp))
-                            .border(
-                                BorderStroke(
-                                    1.dp,
-                                    Brush.verticalGradient(
-                                        listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
-                                    )
-                                ),
-                                RoundedCornerShape(32.dp)
-                            )
-                            .background(Color(0xFF141419)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxSize()
+                            .padding(horizontal = 48.dp, vertical = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        if (bitmap != null) {
+                        // Foto ampliada
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight(0.85f)
+                                .aspectRatio(1f)
+                                .shadow(28.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                                .clip(RoundedCornerShape(32.dp))
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        Brush.verticalGradient(
+                                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
+                                        )
+                                    ),
+                                    RoundedCornerShape(32.dp)
+                                )
+                                .background(Color(0xFF141419)),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Image(
                                 bitmap = bitmap!!.asImageBitmap(),
                                 contentDescription = "Foto em modo repouso",
@@ -223,40 +239,100 @@ fun PhotoStandByModal(
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
+
+                        Spacer(modifier = Modifier.width(48.dp))
+
+                        // Relógio e Informações de Cabeceira
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            StandByAnimatedTimeClock(
+                                formattedTime = formattedTime,
+                                fontSize = 76.sp,
+                                color = TextPrimary,
+                                accentColor = accentColor,
+                                showSecondsBar = true
+                            )
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = formattedDate,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = TextSecondary
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Status de Bateria / Carregamento
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(Color.White.copy(alpha = 0.08f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
+                                    contentDescription = null,
+                                    tint = if (isCharging) accentColor else TextSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isCharging) "Carregando • $batteryPercentage%" else "Bateria • $batteryPercentage%",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isCharging) accentColor else TextPrimary
+                                )
+                            }
+
+                            if (!weatherTemp.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "$weatherTemp${if (!weatherCondition.isNullOrBlank()) " • $weatherCondition" else ""}",
+                                    fontSize = 14.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
                     }
-
-                    Spacer(modifier = Modifier.width(48.dp))
-
-                    // Relógio e Informações de Cabeceira
+                } else {
+                    // Sem foto: relógio puro centralizado estilo cabeceira horizontal
                     Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 48.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = formattedTime,
-                            fontSize = 80.sp,
-                            fontWeight = FontWeight.Light,
-                            fontFamily = FontFamily.SansSerif,
+                        StandByAnimatedTimeClock(
+                            formattedTime = formattedTime,
+                            fontSize = 96.sp,
                             color = TextPrimary,
-                            letterSpacing = (-2).sp
+                            accentColor = accentColor,
+                            showSecondsBar = true
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
                             text = formattedDate,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Normal,
                             color = TextSecondary
                         )
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                        // Status de Bateria / Carregamento
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(Color.White.copy(alpha = 0.08f))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .padding(horizontal = 14.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
@@ -292,19 +368,20 @@ fun PhotoStandByModal(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Relógio Superior
-                    Text(
-                        text = formattedTime,
-                        fontSize = 68.sp,
-                        fontWeight = FontWeight.Light,
-                        fontFamily = FontFamily.SansSerif,
+                    // Relógio Superior com Animação Digital Suave
+                    StandByAnimatedTimeClock(
+                        formattedTime = formattedTime,
+                        fontSize = if (bitmap != null) 68.sp else 86.sp,
                         color = TextPrimary,
-                        letterSpacing = (-1.5).sp
+                        accentColor = accentColor,
+                        showSecondsBar = true
                     )
+
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
                         text = formattedDate,
-                        fontSize = 16.sp,
+                        fontSize = if (bitmap != null) 16.sp else 18.sp,
                         fontWeight = FontWeight.Normal,
                         color = TextSecondary
                     )
@@ -334,29 +411,38 @@ fun PhotoStandByModal(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    if (!weatherTemp.isNullOrBlank() && bitmap == null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = "$weatherTemp${if (!weatherCondition.isNullOrBlank()) " • $weatherCondition" else ""}",
+                            fontSize = 14.sp,
+                            color = TextSecondary
+                        )
+                    }
 
-                    // Foto Central Ampliada
-                    Box(
-                        modifier = Modifier
-                            .sizeIn(maxWidth = 320.dp, maxHeight = 320.dp)
-                            .fillMaxWidth(0.82f)
-                            .aspectRatio(1f)
-                            .shadow(24.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
-                            .clip(RoundedCornerShape(32.dp))
-                            .border(
-                                BorderStroke(
-                                    1.dp,
-                                    Brush.verticalGradient(
-                                        listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
-                                    )
-                                ),
-                                RoundedCornerShape(32.dp)
-                            )
-                            .background(Color(0xFF141419)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (bitmap != null) {
+                    if (bitmap != null) {
+                        Spacer(modifier = Modifier.height(28.dp))
+
+                        // Foto Central Ampliada
+                        Box(
+                            modifier = Modifier
+                                .sizeIn(maxWidth = 320.dp, maxHeight = 320.dp)
+                                .fillMaxWidth(0.82f)
+                                .aspectRatio(1f)
+                                .shadow(24.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
+                                .clip(RoundedCornerShape(32.dp))
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        Brush.verticalGradient(
+                                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
+                                        )
+                                    ),
+                                    RoundedCornerShape(32.dp)
+                                )
+                                .background(Color(0xFF141419)),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Image(
                                 bitmap = bitmap!!.asImageBitmap(),
                                 contentDescription = "Foto em modo repouso",
@@ -374,6 +460,147 @@ fun PhotoStandByModal(
                         color = TextTertiary
                     )
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Relógio Digital Animado no Formato Tradicional (ex: 16:44).
+ * Apresenta odômetro vertical elástico por dígito ao virar o minuto,
+ * pulso contínuo nos dois pontos ':' a cada segundo e micro-barra luminosa de 60s.
+ */
+@Composable
+fun StandByAnimatedTimeClock(
+    formattedTime: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = 76.sp,
+    color: Color = TextPrimary,
+    accentColor: Color = Color(0xFF34C759),
+    showSecondsBar: Boolean = true
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "StandbyClockTransition")
+    val colonAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ColonAlpha"
+    )
+
+    var secondFraction by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val cal = Calendar.getInstance()
+            val sec = cal.get(Calendar.SECOND)
+            val ms = cal.get(Calendar.MILLISECOND)
+            secondFraction = (sec * 1000f + ms) / 60000f
+            delay(60)
+        }
+    }
+
+    // Separa formattedTime nas partes de Horas e Minutos (ex: "16:44" -> "16", "44")
+    val parts = formattedTime.split(":")
+    val hoursPart = parts.getOrNull(0) ?: formattedTime
+    val minutesPart = parts.getOrNull(1)
+
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            // Dígitos da Hora
+            hoursPart.forEachIndexed { index, char ->
+                AnimatedContent(
+                    targetState = char,
+                    transitionSpec = {
+                        (slideInVertically(animationSpec = tween(560, easing = FastOutSlowInEasing)) { height -> height * 3 / 4 } +
+                                fadeIn(animationSpec = tween(400)) +
+                                scaleIn(animationSpec = tween(560), initialScale = 0.88f)) togetherWith
+                                (slideOutVertically(animationSpec = tween(560, easing = FastOutSlowInEasing)) { height -> -height * 3 / 4 } +
+                                        fadeOut(animationSpec = tween(300)) +
+                                        scaleOut(animationSpec = tween(560), targetScale = 0.88f))
+                    },
+                    label = "StandbyHourDigit_$index"
+                ) { targetChar ->
+                    Text(
+                        text = targetChar.toString(),
+                        fontSize = fontSize,
+                        fontWeight = FontWeight.Light,
+                        fontFamily = FontFamily.SansSerif,
+                        color = color,
+                        letterSpacing = (-1.5).sp
+                    )
+                }
+            }
+
+            // Separador ':' com pulso suave contínuo a cada segundo
+            if (minutesPart != null) {
+                Text(
+                    text = ":",
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = FontFamily.SansSerif,
+                    color = color,
+                    letterSpacing = (-1.5).sp,
+                    modifier = Modifier.graphicsLayer { alpha = colonAlpha }
+                )
+
+                // Dígitos do Minuto com Odômetro Vertical Elástico
+                minutesPart.forEachIndexed { index, char ->
+                    AnimatedContent(
+                        targetState = char,
+                        transitionSpec = {
+                            (slideInVertically(animationSpec = tween(560, easing = FastOutSlowInEasing)) { height -> height * 3 / 4 } +
+                                    fadeIn(animationSpec = tween(400)) +
+                                    scaleIn(animationSpec = tween(560), initialScale = 0.88f)) togetherWith
+                                    (slideOutVertically(animationSpec = tween(560, easing = FastOutSlowInEasing)) { height -> -height * 3 / 4 } +
+                                            fadeOut(animationSpec = tween(300)) +
+                                            scaleOut(animationSpec = tween(560), targetScale = 0.88f))
+                        },
+                        label = "StandbyMinuteDigit_$index"
+                    ) { targetChar ->
+                        Text(
+                            text = targetChar.toString(),
+                            fontSize = fontSize,
+                            fontWeight = FontWeight.Light,
+                            fontFamily = FontFamily.SansSerif,
+                            color = color,
+                            letterSpacing = (-1.5).sp
+                        )
+                    }
+                }
+            }
+        }
+
+        if (showSecondsBar) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .width(130.dp)
+                    .height(3.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.12f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(secondFraction.coerceIn(0.02f, 1f))
+                        .clip(CircleShape)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    accentColor.copy(alpha = 0.45f),
+                                    accentColor
+                                )
+                            )
+                        )
+                )
             }
         }
     }

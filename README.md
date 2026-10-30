@@ -61,17 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.2.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.2.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.3.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.3.0)
 
-### 🆕 Novidades na v3.2.0
+### 🆕 Novidades na v3.3.0
+- 🎵 **Sincronização Sub-Milissegundo do Player de Música:** Correção da referência temporal no Android para `SystemClock.elapsedRealtime()`, garantindo que o tempo decorrido e restante avancem fluidamente segundo a segundo para qualquer player (Spotify, YouTube Music, Apple Music, Deezer), com suporte a faixas longas e podcasts (`H:MM:SS`).
+- ✨ **Hero Card de IA & Ações Rápidas Bento:** Redesenho moderno da busca externa com moldura Bento com aura animada em gradiente Aurora, identificação contextual do provedor de IA (`Gemini Flash` / `Groq IA`), micro-pílula de ação tátil elástica e chips Bento individuais lapidados para Google, YouTube, Play Store e Maps.
+- 🌌 **Transição Espacial Cinematográfica (~650ms):** Entrada e saída da Tela Lateral (−1 Widgets / Feed) com profundidade tridimensional, paralaxe acelerada por GPU (`graphicsLayer`), cantos dinâmicos (`32.dp ↔ 0.dp`) e cascata de medalhões (`JournalCascadeItem`).
+- ⏰ **Relógio Digital Animado no Modo Descanso (`16:44`):** Odômetro vertical elástico por dígito ao virar o minuto, pulso senoidal suave nos dois-pontos a cada segundo e micro-barra luminosa de 60 segundos no modo StandBy ao carregar o aparelho.
+- 🧹 **Faxina Editorial na Central de Widgets:** Eliminação de blocos redundantes no rodapé, unificação da telemetria nos 3 anéis superiores (Bateria, Clima e Foco/Tempo de Tela clicável para abrir o Bem-Estar Digital) e padronização visual em molduras Bento `#EFECE2` / `#161820`.
+- ⌨️ **Foco Instantâneo do Teclado ao Abrir a Gaveta:** Resolução da abertura automática do teclado virtual ao acessar a lista de apps ou realizar o gesto de deslizar para cima (swipe up).
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v3.2.0</b></summary>
 - 🎵 **Player de Música Estilo Apple Music:** Scrubber tátil interativo com busca de faixa real (`seekTo`), capa de álbum dinâmica que expande e retrai com física de mola (`68.dp`), equalizador de 3 barras e contagem de tempo transcorrido/restante.
 - 🏛️ **Central de Widgets Bento Editorial:** Reformulação completa da Tela −1 no padrão editorial Journal com papel quente `#F7F4EB`, medalhões lapidados de borda dupla (`44.dp`), Quick Controls 2x2 e anéis de telemetria zero-allocation (Bateria, Clima e Foco).
 - ⚡ **Física Tátil & Micro-Sheen Global (`tesseraPressable`):** Compressão tátil responsiva com feedback háptico e onda de reflexo especular zenital em todos os cartões e chips da Central e do Feed, acompanhada por animação de entrada em cascata (`JournalCascadeItem`).
 - 💎 **Doca de Pesquisa Lapidada (Morphing Dock):** No modo lupa inativo opera como uma joia facetada redonda de `56.dp` e expande de forma contínua por mola espacial até a barra completa sem salto visual.
 - ☀️ **Saudação Dinâmica & Edição Rápida:** Cabeçalho com data abreviada e ponto coral (`"QUA •"`), saudação personalizada por turno, chips interativos (clima, compromissos reais, notas e foco), botão voltar ergonômico apontando para a direita (`→`) e botão de ajuste com `WidgetsQuickEditBottomSheet` para ligar/desligar e reorganizar widgets ao vivo.
 - 📐 **Correções Visuais e Margens Seguras:** Insets zenitais generosos respeitando cutouts de tela, e correção de contraste para o Dino Widget e modais de notas em modo claro.
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v3.1.1</b></summary>
 - 🐛 **Correção na Tela Lateral (−1):** Corrigido o problema onde a Central de Widgets não abria ao fazer o gesto na tela inicial quando selecionada individualmente ou em conjunto com o feed.

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.CardShape
@@ -114,83 +116,65 @@ fun AppListSkeleton(
 fun AppListEmptyState(
     query: String,
     modifier: Modifier = Modifier,
+    isLightMode: Boolean = false,
+    isAmoledMode: Boolean = false,
+    provider: String = "GROQ",
     onAskAi: ((String) -> Unit)? = null
 ) {
+    val cardBg = when {
+        isLightMode -> Color(0xFFEFECE2)
+        isAmoledMode -> Color(0xFF10121A)
+        else -> DarkSurface
+    }
+    val borderCol = when {
+        isLightMode -> Color(0xFFDDD8CB)
+        isAmoledMode -> Color(0x25FFFFFF)
+        else -> DarkSurfaceBorder
+    }
+    val textPrimary = if (isLightMode) Color(0xFF1C1917) else TextPrimary
+    val textSecondary = if (isLightMode) Color(0xFF78716C) else TextSecondary
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 32.dp),
-        color = DarkSurface,
-        shape = CardShape,
-        border = BorderStroke(1.dp, DarkSurfaceBorder)
+            .padding(horizontal = 16.dp, vertical = 24.dp),
+        color = cardBg,
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(0.5.dp, borderCol)
     ) {
         Column(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.SearchOff,
                 contentDescription = null,
-                tint = TextTertiary,
+                tint = textSecondary,
                 modifier = Modifier.size(32.dp)
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "Nenhum aplicativo encontrado",
                 style = MaterialTheme.typography.titleSmall,
-                color = TextPrimary
+                color = textPrimary,
+                fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = if (query.isNotBlank()) "Sem resultados para \"$query\"" else "Nenhum aplicativo inicializável",
+                text = if (query.isNotBlank()) "Sem correspondência para \"$query\"" else "Nenhum aplicativo inicializável",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
+                color = textSecondary
             )
 
             if (query.isNotBlank()) {
-                if (onAskAi != null) {
-                    Spacer(modifier = Modifier.height(18.dp))
-                    Surface(
-                        shape = com.tessera.launcher.ui.theme.PillShape,
-                        color = Color(0xFF14141E),
-                        border = BorderStroke(1.dp, com.tessera.launcher.ui.theme.phoneAiWhiteBrush(0.8f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(com.tessera.launcher.ui.theme.PillShape)
-                            .clickable { onAskAi(query) }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Perguntar ao Groq (IA)",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                                    fontSize = 14.sp
-                                ),
-                                color = TextPrimary
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(18.dp))
                 SearchExternalActions(
                     query = query,
                     isLiquidGlass = false,
+                    isLightMode = isLightMode,
+                    isAmoledMode = isAmoledMode,
+                    provider = provider,
                     onAskAi = onAskAi,
                     modifier = Modifier.fillMaxWidth()
                 )

@@ -142,6 +142,16 @@ fun SearchMorphingDock(
         }
     }
 
+    LaunchedEffect(isExpanded) {
+        if (isExpanded) {
+            kotlinx.coroutines.delay(40)
+            try {
+                focusRequester.requestFocus()
+                keyboardController?.show()
+            } catch (_: Exception) {}
+        }
+    }
+
     val dockShape = Tessera.shapes.pill
     val buttonShape = Tessera.shapes.full
 
@@ -405,14 +415,14 @@ fun SearchMorphingDock(
                 }
 
                 // 2. Modo Expandido: Linha de Busca Completa
-                if (expandProgress > 0.1f) {
+                if (isExpanded || expandProgress > 0.05f) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                             .graphicsLayer {
-                                alpha = ((expandProgress - 0.1f) / 0.9f).coerceIn(0f, 1f)
+                                alpha = ((expandProgress - 0.05f) / 0.95f).coerceIn(0f, 1f)
                             }
                     ) {
                         Icon(

@@ -59,8 +59,8 @@ fun WidgetsQuickEditBottomSheet(
     onMoveWidgetDown: (WidgetType) -> Unit,
     isDinoEnabled: Boolean,
     onToggleDino: (Boolean) -> Unit,
-    isScreenTimeEnabled: Boolean,
-    onToggleScreenTime: (Boolean) -> Unit,
+    isScreenTimeEnabled: Boolean = false,
+    onToggleScreenTime: (Boolean) -> Unit = {},
     isSmartDockEnabled: Boolean,
     onToggleSmartDock: (Boolean) -> Unit,
     isLightMode: Boolean,
@@ -281,18 +281,6 @@ fun WidgetsQuickEditBottomSheet(
                 }
 
                 // Chaves extras opcionais
-                item {
-                    ExtraWidgetRow(
-                        title = "Tempo de Tela & Foco",
-                        checked = isScreenTimeEnabled,
-                        onCheckedChange = onToggleScreenTime,
-                        cardColor = cardColor,
-                        borderColor = borderColor,
-                        textPrimary = textPrimary,
-                        isLightMode = isLightMode
-                    )
-                }
-
                 item {
                     ExtraWidgetRow(
                         title = "Apps Sugeridos (Bandeja Contextual)",

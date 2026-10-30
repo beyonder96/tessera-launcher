@@ -220,7 +220,7 @@ fun ScreenTimeWidgetCard(
 /**
  * Tenta abrir o aplicativo de Bem-Estar Digital do sistema ou o painel de uso.
  */
-private fun openDigitalWellbeing(context: Context) {
+fun openDigitalWellbeing(context: Context) {
     val wellbeingIntents = listOf(
         Intent().setClassName("com.google.android.apps.wellbeing", "com.google.android.apps.wellbeing.home.TopLevelSettingsActivity"),
         Intent("com.google.android.apps.wellbeing.action.SETTINGS"),
@@ -234,5 +234,30 @@ private fun openDigitalWellbeing(context: Context) {
             true
         }.getOrDefault(false)
         if (success) return
+    }
+}
+
+/**
+ * Abre o Bem-Estar Digital se autorizado ou direciona para as configurações de Acesso de Uso.
+ */
+fun openOrRequestDigitalWellbeing(context: Context, hasPermission: Boolean) {
+    if (hasPermission) {
+        openDigitalWellbeing(context)
+    } else {
+        val packageUriIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+            data = Uri.parse("package:${context.packageName}")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val success = runCatching {
+            context.startActivity(packageUriIntent)
+            true
+        }.getOrDefault(false)
+        if (!success) {
+            runCatching {
+                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+            }
+        }
     }
 }

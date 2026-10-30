@@ -140,8 +140,15 @@ import com.tessera.launcher.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import com.tessera.launcher.ui.components.LocalLateralPanelProgress
+import com.tessera.launcher.ui.theme.tokens.LateralSpatialMath
 import com.tessera.launcher.ui.state.FeedState
 
 @Composable
@@ -192,6 +199,26 @@ fun HomeScreen(
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+
+    val panelProgress = remember { Animatable(if (uiState.isFeedOpen) 1f else 0f) }
+
+    LaunchedEffect(uiState.isFeedOpen) {
+        if (uiState.isFeedOpen) {
+            panelProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = LateralSpatialMath.springSpatialCinematic
+            )
+        } else if (panelProgress.value > 0f) {
+            panelProgress.animateTo(
+                targetValue = 0f,
+                animationSpec = LateralSpatialMath.springSpatialCinematic
+            )
+        }
+    }
+
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
@@ -202,6 +229,7 @@ fun HomeScreen(
     val isRestingHomeScreen = !uiState.isDrawerOpen &&
         !uiState.isSettingsOpen &&
         !uiState.isFeedOpen &&
+        panelProgress.value <= 0.01f &&
         !uiState.isSearchExpanded &&
         uiState.searchQuery.isEmpty() &&
         folderToView == null &&
@@ -225,7 +253,11 @@ fun HomeScreen(
     }
 
     BackHandler(enabled = true) {
-        if (viewModel.handleFeedBackPress()) {
+        if (uiState.isFeedOpen || panelProgress.value > 0.01f) {
+            scope.launch {
+                panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                viewModel.closeFeed()
+            }
             return@BackHandler
         }
         val handled = viewModel.handleBackPress()
@@ -235,16 +267,22 @@ fun HomeScreen(
         }
     }
 
-    // Abertura imediata e fluida do teclado ao abrir busca ou drawer (0ms artificial latency)
+    // Abertura imediata e fluida do teclado ao abrir busca ou drawer (com retry resiliente de montagem de layout)
     LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen, uiState.searchQuery) {
         val isExplicitAiSearch = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
                 uiState.searchQuery.contains("@groq", ignoreCase = true) ||
                 uiState.searchQuery.contains("@gemini", ignoreCase = true)
         if ((uiState.isSearchExpanded || uiState.isDrawerOpen) && (uiState.isAutoOpenKeyboard || isExplicitAiSearch)) {
+            kotlinx.coroutines.delay(45)
             try {
                 focusRequester.requestFocus()
                 keyboardController?.show()
             } catch (_: Exception) {
+                kotlinx.coroutines.delay(55)
+                try {
+                    focusRequester.requestFocus()
+                    keyboardController?.show()
+                } catch (_: Exception) {}
             }
         } else if (!uiState.isSearchExpanded && !uiState.isDrawerOpen) {
             focusManager.clearFocus()
@@ -338,10 +376,19 @@ fun HomeScreen(
             }
         }
 
-        // Camada Principal da Launcher (com padding da barra de status e gestos)
+        // Camada Principal da Launcher (com profundidade espacial de fundo e paralaxe ao abrir a Tela -1)
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer {
+                    val p = panelProgress.value
+                    if (p > 0.001f) {
+                        scaleX = LateralSpatialMath.homeScale(p)
+                        scaleY = LateralSpatialMath.homeScale(p)
+                        translationX = LateralSpatialMath.homeParallaxX(p, screenWidthPx)
+                        alpha = LateralSpatialMath.homeAlpha(p)
+                    }
+                }
                 .padding(top = statusBarTopPadding)
                 // Gestos de Toque: Toque duplo e Manter pressionado (Restritos à Tela Inicial Limpa)
                 .pointerInput(
@@ -502,6 +549,7 @@ fun HomeScreen(
                             } else { // Deslizar para a DIREITA
                                 if (uiState.leftScreenMode != "disabled") {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    viewModel.warmUpLateralPanel()
                                     viewModel.openFeed()
                                 } else if (uiState.isSwipeRightEnabled) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -813,6 +861,9 @@ fun HomeScreen(
                                                     query = uiState.searchQuery,
                                                     inAppSearchPackages = uiState.inAppSearchPackages,
                                                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    isLightMode = uiState.isLightMode,
+                                                    isAmoledMode = uiState.isAmoledMode,
+                                                    provider = uiState.aiProvider,
                                                     onAskAi = { viewModel.executeAiSearch(it) },
                                                     modifier = Modifier.padding(top = 8.dp)
                                                 )
@@ -822,6 +873,9 @@ fun HomeScreen(
                                 } else {
                                     AppListEmptyState(
                                         query = state.query,
+                                        isLightMode = uiState.isLightMode,
+                                        isAmoledMode = uiState.isAmoledMode,
+                                        provider = uiState.aiProvider,
                                         onAskAi = { viewModel.executeAiSearch(it) }
                                     )
                                 }
@@ -1034,6 +1088,9 @@ fun HomeScreen(
                                             query = uiState.searchQuery,
                                             inAppSearchPackages = uiState.inAppSearchPackages,
                                             isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                            isLightMode = uiState.isLightMode,
+                                            isAmoledMode = uiState.isAmoledMode,
+                                            provider = uiState.aiProvider,
                                             onAskAi = { viewModel.executeAiSearch(it) },
                                             modifier = Modifier.padding(top = 8.dp)
                                         )
@@ -1097,7 +1154,7 @@ fun HomeScreen(
         ) {
 
             SearchMorphingDock(
-                isExpanded = if (!uiState.isCollapseDockEnabled) true else uiState.isSearchExpanded,
+                isExpanded = !uiState.isCollapseDockEnabled || uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
                 searchQuery = uiState.searchQuery,
                 onQueryChange = { viewModel.onSearchQueryChange(it) },
                 onExpandClick = {
@@ -1311,163 +1368,219 @@ fun HomeScreen(
             )
         }
 
-        // Tela −1: Painel Lateral Unificado (Widgets e/ou Feed com seletor iOS)
-        AnimatedVisibility(
-            visible = uiState.isFeedOpen && uiState.leftScreenMode != "disabled",
-            enter = slideInHorizontally(
-                initialOffsetX = { -it },
-                animationSpec = Tessera.motion.springSpatialOffset
-            ) + fadeIn(animationSpec = Tessera.motion.fadeStandard),
-            exit = slideOutHorizontally(
-                targetOffsetX = { -it },
-                animationSpec = Tessera.motion.springSpatialOffset
-            ) + fadeOut(animationSpec = Tessera.motion.fadeQuick)
-        ) {
-            val showSegmentedSelector = uiState.leftScreenMode == "both"
-            val currentTab = when (uiState.leftScreenMode) {
-                "feed" -> 1
-                "widgets" -> 0
-                else -> uiState.lateralPanelTab
-            }
-            val safeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().coerceAtLeast(36.dp) + 12.dp
+        // Tela −1: Palco Espacial Cinematográfico (~650ms, Cascata Suave & Cantos Dinâmicos 32dp ↔ 0dp)
+        val isPanelVisible = (uiState.isFeedOpen || panelProgress.value > 0.001f) && uiState.leftScreenMode != "disabled"
+        if (isPanelVisible) {
+            val p = panelProgress.value
+            val translationXPx = -screenWidthPx * (1f - p)
+            val cornerRadiusDp = (LateralSpatialMath.panelCornerFraction(p) * 32f).dp
 
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        if (uiState.isLightMode) Color(0xFFF7F4EB)
-                        else if (uiState.isAmoledMode) Color.Black
-                        else Color(0xFF0B0B0D)
-                    )
-                    .padding(top = safeTopPadding)
-            ) {
-                if (showSegmentedSelector) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        TesseraSegmentedControl(
-                            options = listOf("Central", "Feed"),
-                            selectedIndex = uiState.lateralPanelTab,
-                            onOptionSelected = {
-                                viewModel.setLateralPanelTab(it)
-                                if (it == 1 && uiState.feedState !is FeedState.Success) {
-                                    viewModel.loadFeed()
+                    .graphicsLayer {
+                        translationX = translationXPx
+                        scaleX = LateralSpatialMath.panelScale(p)
+                        scaleY = LateralSpatialMath.panelScale(p)
+                        alpha = LateralSpatialMath.panelAlpha(p)
+                        if (cornerRadiusDp > 0.5.dp) {
+                            shape = RoundedCornerShape(
+                                topEnd = cornerRadiusDp,
+                                bottomEnd = cornerRadiusDp
+                            )
+                            clip = true
+                        }
+                    }
+                    .pointerInput(Unit) {
+                        var totalDragX = 0f
+                        detectHorizontalDragGestures(
+                            onDragStart = { totalDragX = 0f },
+                            onDragEnd = {
+                                if (totalDragX < -80f) {
+                                    scope.launch {
+                                        panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                                        viewModel.closeFeed()
+                                    }
                                 }
                             },
-                            isLightMode = uiState.isLightMode
+                            onHorizontalDrag = { _, dragAmount ->
+                                totalDragX += dragAmount
+                            }
                         )
                     }
-                }
+            ) {
+                CompositionLocalProvider(LocalLateralPanelProgress provides { panelProgress.value }) {
+                    val showSegmentedSelector = uiState.leftScreenMode == "both"
+                    val currentTab = when (uiState.leftScreenMode) {
+                        "feed" -> 1
+                        "widgets" -> 0
+                        else -> uiState.lateralPanelTab
+                    }
+                    val safeTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding().coerceAtLeast(36.dp) + 12.dp
 
-                Box(modifier = Modifier.weight(1f)) {
-                    AnimatedContent(
-                        targetState = currentTab,
-                        transitionSpec = {
-                            fadeIn(tween(220)) togetherWith fadeOut(tween(180))
-                        },
-                        label = "lateralPanelTabs"
-                    ) { targetTab ->
-                        if (targetTab == 0) {
-                            WidgetsShelfScreen(
-                                userName = uiState.greetingUserName,
-                                onSaveUserName = { viewModel.setGreetingUserName(it) },
-                                hasTopSegmentedControl = showSegmentedSelector,
-                                enabledWidgets = uiState.enabledWidgets,
-                                batteryPercentage = uiState.batteryPercentage,
-                                isCharging = uiState.isCharging,
-                                currentTime = uiState.formattedTime,
-                                formattedDate = uiState.formattedDate,
-                                nextCalendarEvent = uiState.nextCalendarEvent,
-                                hasCalendarPermission = uiState.hasCalendarPermission,
-                                onRequestCalendarPermission = onRequestCalendarPermission,
-                                onCalendarClick = { viewModel.launchCalendarApp() },
-                                mediaPlayback = uiState.mediaPlayback,
-                                hasNotificationAccess = uiState.hasNotificationAccess,
-                                onRequestNotificationAccess = {
-                                    context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    })
-                                },
-                                onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
-                                onSkipNext = { viewModel.skipNextMedia() },
-                                onSkipPrevious = { viewModel.skipPreviousMedia() },
-                                onSeekTo = { viewModel.seekToMedia(it) },
-                                onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
-                                isDinoWidgetEnabled = uiState.isDinoWidgetEnabled,
-                                onToggleDino = { viewModel.setDinoWidgetEnabled(it) },
-                                isNotesWidgetEnabled = uiState.isNotesWidgetEnabled,
-                                isTorchOn = uiState.isTorchOn,
-                                isWifiActive = uiState.isWifiActive,
-                                isBluetoothActive = uiState.isBluetoothActive,
-                                ringerMode = uiState.ringerMode,
-                                onToggleTorch = { viewModel.toggleTorch() },
-                                onOpenWifi = { viewModel.openWifiSettings() },
-                                onOpenBluetooth = { viewModel.openBluetoothSettings() },
-                                onCycleRingerMode = { viewModel.cycleRingerMode() },
-                                notesTasks = uiState.notesTasks,
-                                onAddNoteTask = { viewModel.addNoteTask(it) },
-                                onToggleNoteTask = { viewModel.toggleNoteTask(it) },
-                                onRemoveNoteTask = { viewModel.removeNoteTask(it) },
-                                onNotesClick = { isNotesTasksOpen = true },
-                                weatherInfo = uiState.weatherInfo,
-                                hasLocationPermission = uiState.hasLocationPermission,
-                                onRequestLocationPermission = onRequestLocationPermission,
-                                onRefreshWeather = { viewModel.refreshWeather() },
-                                isWeatherLoading = uiState.isWeatherLoading,
-                                weatherError = uiState.weatherError,
-                                batteryWidgetStyle = uiState.batteryWidgetStyle,
-                                mediaWidgetStyle = uiState.mediaWidgetStyle,
-                                notesWidgetFilter = uiState.notesWidgetFilter,
-                                onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
-                                onToggleWidget = { viewModel.toggleWidget(it) },
-                                onMoveWidgetUp = { viewModel.moveWidgetUp(it) },
-                                onMoveWidgetDown = { viewModel.moveWidgetDown(it) },
-                                isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
-                                isAmoledMode = uiState.isAmoledMode,
-                                isLightMode = uiState.isLightMode,
-                                smartGlanceBriefing = uiState.smartGlanceBriefing,
-                                isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
-                                predictedApps = uiState.predictedApps,
-                                isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
-                                onTogglePredictedApps = { viewModel.setSmartDockEnabled(it) },
-                                onAppClick = { app -> viewModel.launchApp(app) },
-                                onAppLongClick = { app -> selectedAppForMenu = app },
-                                iconShape = uiState.iconShape,
-                                isThemedIcons = uiState.isThemedIconsEnabled,
-                                accentColor = uiState.activeAccentColor,
-                                screenTimeInfo = uiState.screenTimeInfo,
-                                isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
-                                onToggleScreenTime = { viewModel.setScreenTimeWidgetEnabled(it) },
-                                recentNotifications = uiState.recentNotifications,
-                                notificationCounts = uiState.notificationCounts,
-                                onDismissNotification = { viewModel.dismissNotification(it) },
-                                onOpenNotificationsHub = { viewModel.openNotificationsHub() },
-                                onClose = { viewModel.closeFeed() },
-                                onOpenSettings = {
-                                    viewModel.openSettings()
-                                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
-                                }
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                if (uiState.isLightMode) Color(0xFFF7F4EB)
+                                else if (uiState.isAmoledMode) Color.Black
+                                else Color(0xFF0B0B0D)
                             )
-                        } else {
-                            FeedScreen(
-                                hasTopSegmentedControl = showSegmentedSelector,
-                                feedState = uiState.feedState,
-                                activeSource = null,
-                                enabledSources = uiState.feedEnabledSources,
-                                isLightMode = uiState.isLightMode,
-                                onSourceSelected = { },
-                                onPostClick = { url ->
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .padding(top = safeTopPadding)
+                    ) {
+                        if (showSegmentedSelector) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 20.dp, vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                TesseraSegmentedControl(
+                                    options = listOf("Central", "Feed"),
+                                    selectedIndex = uiState.lateralPanelTab,
+                                    onOptionSelected = {
+                                        viewModel.setLateralPanelTab(it)
+                                        if (it == 1 && uiState.feedState !is FeedState.Success) {
+                                            viewModel.loadFeed()
+                                        }
+                                    },
+                                    isLightMode = uiState.isLightMode
+                                )
+                            }
+                        }
+
+                        Box(modifier = Modifier.weight(1f)) {
+                            AnimatedContent(
+                                targetState = currentTab,
+                                transitionSpec = {
+                                    if (targetState > initialState) {
+                                        (slideInHorizontally(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS, easing = LateralSpatialMath.spatialTabEasing)) { it / 3 } +
+                                                fadeIn(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS))) togetherWith
+                                                (slideOutHorizontally(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS, easing = LateralSpatialMath.spatialTabEasing)) { -it / 3 } +
+                                                        fadeOut(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS / 2)))
+                                    } else {
+                                        (slideInHorizontally(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS, easing = LateralSpatialMath.spatialTabEasing)) { -it / 3 } +
+                                                fadeIn(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS))) togetherWith
+                                                (slideOutHorizontally(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS, easing = LateralSpatialMath.spatialTabEasing)) { it / 3 } +
+                                                        fadeOut(tween(LateralSpatialMath.SPATIAL_TAB_DURATION_MILLIS / 2)))
                                     }
-                                    runCatching { context.startActivity(intent) }
                                 },
-                                onRefresh = { viewModel.refreshFeed() },
-                                onClose = { viewModel.closeFeed() }
-                            )
+                                label = "lateralPanelTabs"
+                            ) { targetTab ->
+                                if (targetTab == 0) {
+                                    WidgetsShelfScreen(
+                                        userName = uiState.greetingUserName,
+                                        onSaveUserName = { viewModel.setGreetingUserName(it) },
+                                        hasTopSegmentedControl = showSegmentedSelector,
+                                        enabledWidgets = uiState.enabledWidgets,
+                                        batteryPercentage = uiState.batteryPercentage,
+                                        isCharging = uiState.isCharging,
+                                        currentTime = uiState.formattedTime,
+                                        formattedDate = uiState.formattedDate,
+                                        nextCalendarEvent = uiState.nextCalendarEvent,
+                                        hasCalendarPermission = uiState.hasCalendarPermission,
+                                        onRequestCalendarPermission = onRequestCalendarPermission,
+                                        onCalendarClick = { viewModel.launchCalendarApp() },
+                                        mediaPlayback = uiState.mediaPlayback,
+                                        hasNotificationAccess = uiState.hasNotificationAccess,
+                                        onRequestNotificationAccess = {
+                                            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            })
+                                        },
+                                        onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
+                                        onSkipNext = { viewModel.skipNextMedia() },
+                                        onSkipPrevious = { viewModel.skipPreviousMedia() },
+                                        onSeekTo = { viewModel.seekToMedia(it) },
+                                        onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
+                                        isDinoWidgetEnabled = uiState.isDinoWidgetEnabled,
+                                        onToggleDino = { viewModel.setDinoWidgetEnabled(it) },
+                                        isNotesWidgetEnabled = uiState.isNotesWidgetEnabled,
+                                        isTorchOn = uiState.isTorchOn,
+                                        isWifiActive = uiState.isWifiActive,
+                                        isBluetoothActive = uiState.isBluetoothActive,
+                                        ringerMode = uiState.ringerMode,
+                                        onToggleTorch = { viewModel.toggleTorch() },
+                                        onOpenWifi = { viewModel.openWifiSettings() },
+                                        onOpenBluetooth = { viewModel.openBluetoothSettings() },
+                                        onCycleRingerMode = { viewModel.cycleRingerMode() },
+                                        notesTasks = uiState.notesTasks,
+                                        onAddNoteTask = { viewModel.addNoteTask(it) },
+                                        onToggleNoteTask = { viewModel.toggleNoteTask(it) },
+                                        onRemoveNoteTask = { viewModel.removeNoteTask(it) },
+                                        onNotesClick = { isNotesTasksOpen = true },
+                                        weatherInfo = uiState.weatherInfo,
+                                        hasLocationPermission = uiState.hasLocationPermission,
+                                        onRequestLocationPermission = onRequestLocationPermission,
+                                        onRefreshWeather = { viewModel.refreshWeather() },
+                                        isWeatherLoading = uiState.isWeatherLoading,
+                                        weatherError = uiState.weatherError,
+                                        batteryWidgetStyle = uiState.batteryWidgetStyle,
+                                        mediaWidgetStyle = uiState.mediaWidgetStyle,
+                                        notesWidgetFilter = uiState.notesWidgetFilter,
+                                        onWidgetLongClick = { configType -> viewModel.openWidgetConfig(configType) },
+                                        onToggleWidget = { viewModel.toggleWidget(it) },
+                                        onMoveWidgetUp = { viewModel.moveWidgetUp(it) },
+                                        onMoveWidgetDown = { viewModel.moveWidgetDown(it) },
+                                        isLiquidGlass = (uiState.isLiquidGlassEnabled && !uiState.isAmoledMode) || uiState.searchBarOpacity < 98,
+                                        isAmoledMode = uiState.isAmoledMode,
+                                        isLightMode = uiState.isLightMode,
+                                        smartGlanceBriefing = uiState.smartGlanceBriefing,
+                                        isSmartGlanceEnabled = uiState.isSmartGlanceEnabled,
+                                        predictedApps = uiState.predictedApps,
+                                        isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
+                                        onTogglePredictedApps = { viewModel.setSmartDockEnabled(it) },
+                                        onAppClick = { app -> viewModel.launchApp(app) },
+                                        onAppLongClick = { app -> selectedAppForMenu = app },
+                                        iconShape = uiState.iconShape,
+                                        isThemedIcons = uiState.isThemedIconsEnabled,
+                                        accentColor = uiState.activeAccentColor,
+                                        screenTimeInfo = uiState.screenTimeInfo,
+                                        isScreenTimeWidgetEnabled = uiState.isScreenTimeWidgetEnabled,
+                                        onToggleScreenTime = { viewModel.setScreenTimeWidgetEnabled(it) },
+                                        recentNotifications = uiState.recentNotifications,
+                                        notificationCounts = uiState.notificationCounts,
+                                        onDismissNotification = { viewModel.dismissNotification(it) },
+                                        onOpenNotificationsHub = { viewModel.openNotificationsHub() },
+                                        onClose = {
+                                            scope.launch {
+                                                panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                                                viewModel.closeFeed()
+                                            }
+                                        },
+                                        onOpenSettings = {
+                                            scope.launch {
+                                                panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                                                viewModel.closeFeed()
+                                            }
+                                            viewModel.openSettings()
+                                            viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
+                                        }
+                                    )
+                                } else {
+                                    FeedScreen(
+                                        hasTopSegmentedControl = showSegmentedSelector,
+                                        feedState = uiState.feedState,
+                                        activeSource = null,
+                                        enabledSources = uiState.feedEnabledSources,
+                                        isLightMode = uiState.isLightMode,
+                                        onSourceSelected = { },
+                                        onPostClick = { url ->
+                                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            }
+                                            runCatching { context.startActivity(intent) }
+                                        },
+                                        onRefresh = { viewModel.refreshFeed() },
+                                        onClose = {
+                                            scope.launch {
+                                                panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                                                viewModel.closeFeed()
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

@@ -355,9 +355,7 @@ class MainViewModel(
                 }
                 if (!wasCharging && isNowCharging) {
                     val state = _uiState.value
-                    if (state.isPhotoStandByOnChargeEnabled &&
-                        state.isPhotoWidgetEnabled &&
-                        !state.photoWidgetUri.isNullOrBlank()) {
+                    if (state.isPhotoStandByOnChargeEnabled) {
                         _uiState.update { it.copy(isPhotoStandByOpen = true) }
                     }
                 }
@@ -2055,6 +2053,16 @@ class MainViewModel(
     }
 
     // Tela Lateral (-1): Central de Widgets e/ou Feed Social
+    fun warmUpLateralPanel() {
+        if (_uiState.value.leftScreenMode == "disabled") return
+        if (_uiState.value.leftScreenMode == "widgets" || _uiState.value.leftScreenMode == "both") {
+            refreshPredictedApps()
+            refreshWeather()
+            refreshScreenTime()
+            refreshCalendarAndPermissions()
+        }
+    }
+
     fun openFeed(initialTab: Int? = null) {
         if (_uiState.value.leftScreenMode == "disabled") return
         _uiState.update { state ->
