@@ -72,6 +72,11 @@ fun AiResponseCard(
 ) {
     val context = LocalContext.current
 
+    // Não renderiza caixa vazia se não houver resposta, não estiver carregando e não houver erro
+    if (response.isNullOrBlank() && !isLoading && error.isNullOrBlank()) {
+        return
+    }
+
     val surfaceBg = when {
         isLightMode -> LightCardBackground
         isAmoledMode -> AmoledCardBackground

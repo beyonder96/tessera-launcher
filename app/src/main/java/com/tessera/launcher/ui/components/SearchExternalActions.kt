@@ -60,6 +60,7 @@ fun SearchExternalActions(
     isLightMode: Boolean = false,
     isAmoledMode: Boolean = false,
     provider: String = "GROQ",
+    showAiHeroCard: Boolean = true,
     onAskAi: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -122,7 +123,7 @@ fun SearchExternalActions(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // 1. Hero Card de IA com Glow Especular
-        if (onAskAi != null) {
+        if (showAiHeroCard && onAskAi != null) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()

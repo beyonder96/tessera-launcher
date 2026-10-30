@@ -749,11 +749,8 @@ fun HomeScreen(
                             is AppsListState.Empty -> {
                                 val isAiSearchActive = uiState.isAiSearchEnabled && (
                                     uiState.isAiSearchLoading ||
-                                    uiState.aiSearchResponse != null ||
-                                    uiState.aiSearchError != null ||
-                                    uiState.searchQuery.contains("@ai", ignoreCase = true) ||
-                                    uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
-                                    uiState.searchQuery.contains("@groq", ignoreCase = true)
+                                    !uiState.aiSearchResponse.isNullOrBlank() ||
+                                    !uiState.aiSearchError.isNullOrBlank()
                                 )
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
@@ -900,12 +897,11 @@ fun HomeScreen(
                                             uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
                                             uiState.searchQuery.contains("@groq", ignoreCase = true)
 
-                                    // Resposta IA (Gemini / Groq)
+                                    // Resposta IA (Gemini / Groq) — Exibida exclusivamente quando há consulta em andamento, resposta ou erro
                                     val isAiSearchActive = uiState.isAiSearchEnabled && (
                                         uiState.isAiSearchLoading ||
-                                        uiState.aiSearchResponse != null ||
-                                        uiState.aiSearchError != null ||
-                                        isAiCommand
+                                        !uiState.aiSearchResponse.isNullOrBlank() ||
+                                        !uiState.aiSearchError.isNullOrBlank()
                                     )
 
                                     if (isAiSearchActive) {
@@ -1091,6 +1087,7 @@ fun HomeScreen(
                                             isLightMode = uiState.isLightMode,
                                             isAmoledMode = uiState.isAmoledMode,
                                             provider = uiState.aiProvider,
+                                            showAiHeroCard = !isAiSearchActive,
                                             onAskAi = { viewModel.executeAiSearch(it) },
                                             modifier = Modifier.padding(top = 8.dp)
                                         )
@@ -1367,30 +1364,32 @@ fun HomeScreen(
                 accentColor = uiState.activeAccentColor
             )
         }
+    }
 
-        // Tela −1: Palco Espacial Cinematográfico (~650ms, Cascata Suave & Cantos Dinâmicos 32dp ↔ 0dp)
-        val isPanelVisible = (uiState.isFeedOpen || panelProgress.value > 0.001f) && uiState.leftScreenMode != "disabled"
-        if (isPanelVisible) {
-            val p = panelProgress.value
-            val translationXPx = -screenWidthPx * (1f - p)
-            val cornerRadiusDp = (LateralSpatialMath.panelCornerFraction(p) * 32f).dp
+    // Tela −1: Palco Espacial Cinematográfico (~650ms, Cascata Suave & Cantos Dinâmicos 32dp ↔ 0dp)
+    val isPanelVisible = (uiState.isFeedOpen || panelProgress.value > 0.001f) && uiState.leftScreenMode != "disabled"
+    if (isPanelVisible) {
+        val p = panelProgress.value
+        val translationXPx = -screenWidthPx * (1f - p)
+        val cornerRadiusDp = (LateralSpatialMath.panelCornerFraction(p) * 32f).dp
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        translationX = translationXPx
-                        scaleX = LateralSpatialMath.panelScale(p)
-                        scaleY = LateralSpatialMath.panelScale(p)
-                        alpha = LateralSpatialMath.panelAlpha(p)
-                        if (cornerRadiusDp > 0.5.dp) {
-                            shape = RoundedCornerShape(
-                                topEnd = cornerRadiusDp,
-                                bottomEnd = cornerRadiusDp
-                            )
-                            clip = true
-                        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    translationX = translationXPx
+                    scaleX = LateralSpatialMath.panelScale(p)
+                    scaleY = LateralSpatialMath.panelScale(p)
+                    alpha = LateralSpatialMath.panelAlpha(p)
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0.5f)
+                    if (cornerRadiusDp > 0.5.dp) {
+                        shape = RoundedCornerShape(
+                            topEnd = cornerRadiusDp,
+                            bottomEnd = cornerRadiusDp
+                        )
+                        clip = true
                     }
+                }
                     .pointerInput(Unit) {
                         var totalDragX = 0f
                         detectHorizontalDragGestures(
@@ -1615,7 +1614,6 @@ fun HomeScreen(
             weatherCondition = uiState.weatherInfo?.condition,
             accentColor = uiState.activeAccentColor
         )
-    }
     }
 }
 

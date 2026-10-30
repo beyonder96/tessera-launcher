@@ -61,17 +61,22 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.3.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.3.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.3.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.3.1)
 
-### 🆕 Novidades na v3.3.0
+### 🆕 Novidades na v3.3.1
+- 📐 **Correção do Alinhamento da Tela Lateral (−1 Widgets / Feed):** Eliminado o erro de aninhamento onde o painel lateral herdava a transformação de paralaxe da Home, eliminando o vão à esquerda e garantindo preenchimento perfeito de 100% da largura da tela.
+- 🧹 **Remoção de Bloco Redundante na Busca com IA:** Corrigido o disparo precoce do card de resposta que exibia um bloco vazio de título do Gemini acima do Hero Card ao digitar `@ai `, apresentando uma interface limpa com convite tátil para a consulta.
+
+### 📋 Versões Anteriores
+<details>
+<summary><b>v3.3.0</b></summary>
 - 🎵 **Sincronização Sub-Milissegundo do Player de Música:** Correção da referência temporal no Android para `SystemClock.elapsedRealtime()`, garantindo que o tempo decorrido e restante avancem fluidamente segundo a segundo para qualquer player (Spotify, YouTube Music, Apple Music, Deezer), com suporte a faixas longas e podcasts (`H:MM:SS`).
 - ✨ **Hero Card de IA & Ações Rápidas Bento:** Redesenho moderno da busca externa com moldura Bento com aura animada em gradiente Aurora, identificação contextual do provedor de IA (`Gemini Flash` / `Groq IA`), micro-pílula de ação tátil elástica e chips Bento individuais lapidados para Google, YouTube, Play Store e Maps.
 - 🌌 **Transição Espacial Cinematográfica (~650ms):** Entrada e saída da Tela Lateral (−1 Widgets / Feed) com profundidade tridimensional, paralaxe acelerada por GPU (`graphicsLayer`), cantos dinâmicos (`32.dp ↔ 0.dp`) e cascata de medalhões (`JournalCascadeItem`).
 - ⏰ **Relógio Digital Animado no Modo Descanso (`16:44`):** Odômetro vertical elástico por dígito ao virar o minuto, pulso senoidal suave nos dois-pontos a cada segundo e micro-barra luminosa de 60 segundos no modo StandBy ao carregar o aparelho.
 - 🧹 **Faxina Editorial na Central de Widgets:** Eliminação de blocos redundantes no rodapé, unificação da telemetria nos 3 anéis superiores (Bateria, Clima e Foco/Tempo de Tela clicável para abrir o Bem-Estar Digital) e padronização visual em molduras Bento `#EFECE2` / `#161820`.
 - ⌨️ **Foco Instantâneo do Teclado ao Abrir a Gaveta:** Resolução da abertura automática do teclado virtual ao acessar a lista de apps ou realizar o gesto de deslizar para cima (swipe up).
-
-### 📋 Versões Anteriores
+</details>
 <details>
 <summary><b>v3.2.0</b></summary>
 - 🎵 **Player de Música Estilo Apple Music:** Scrubber tátil interativo com busca de faixa real (`seekTo`), capa de álbum dinâmica que expande e retrai com física de mola (`68.dp`), equalizador de 3 barras e contagem de tempo transcorrido/restante.
