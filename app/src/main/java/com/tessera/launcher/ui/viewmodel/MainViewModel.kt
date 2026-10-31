@@ -275,10 +275,12 @@ class MainViewModel(
 
             greetingUserName = preferences.getGreetingUserName(),
             isWifiActive = quickSettingsHelper.isWifiEnabled(),
-            isBluetoothActive = quickSettingsHelper.isBluetoothEnabled()
+            isBluetoothActive = quickSettingsHelper.isBluetoothEnabled(),
 
-            // Fase 4: Perfis de Foco
-
+            // Modo Foco Zen & Widgets Vinculados
+            isZenModeActive = preferences.isZenModeActive(),
+            zenModeEndTime = preferences.getZenModeEndTime(),
+            zenModeAllowedApps = preferences.getZenModeAllowedApps()
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -299,6 +301,19 @@ class MainViewModel(
         refreshSmartGlance()
         refreshScreenTime()
         loadWallpaper()
+        observeZenModeExpiration()
+    }
+
+    private fun observeZenModeExpiration() {
+        viewModelScope.launch {
+            while (true) {
+                delay(10_000)
+                val state = _uiState.value
+                if (state.isZenModeActive && state.zenModeEndTime > 0L && System.currentTimeMillis() > state.zenModeEndTime) {
+                    stopZenMode()
+                }
+            }
+        }
     }
 
     fun observeInstalledApps() {
@@ -323,7 +338,8 @@ class MainViewModel(
                             setDefaultMusicApp("com.spotify.music")
                         }
                     }
-                    _uiState.update { it.copy(allInstalledApps = apps) }
+                    val linked = preferences.getAllLinkedWidgets(apps.map { it.packageName })
+                    _uiState.update { it.copy(allInstalledApps = apps, linkedAppWidgets = linked) }
                     applyFilter(_uiState.value.searchQuery)
                     refreshPredictedApps()
                 }
@@ -686,6 +702,14 @@ class MainViewModel(
         val isExact = _uiState.value.isExactSearchEnabled
         val hiddenPkgs = if (_uiState.value.isPinUnlocked) emptySet() else _uiState.value.hiddenAppsPackages
         var visibleApps = allApps.filterNot { hiddenPkgs.contains(it.packageName) }
+
+        // Restrição de Apps no Modo Foco Zen
+        if (_uiState.value.isZenModeActive) {
+            val allowed = _uiState.value.zenModeAllowedApps
+            if (allowed.isNotEmpty()) {
+                visibleApps = visibleApps.filter { allowed.contains(it.packageName) }
+            }
+        }
 
         val filtered = if (trimmed.isEmpty()) {
             if (_uiState.value.isAppCategoriesEnabled && _uiState.value.selectedAppCategory != com.tessera.launcher.data.model.AppCategory.ALL) {
@@ -2461,6 +2485,53 @@ class MainViewModel(
         refreshScreenTime()
         if (preferences.isSmartGlanceEnabled()) {
             refreshSmartGlance()
+        }
+    }
+
+    // Modo Foco Zen / Desintoxicação Digital
+    fun startZenMode(durationMinutes: Int = 30) {
+        preferences.setZenMode(true, durationMinutes)
+        _uiState.update {
+            it.copy(
+                isZenModeActive = true,
+                zenModeEndTime = preferences.getZenModeEndTime(),
+                zenModeAllowedApps = preferences.getZenModeAllowedApps()
+            )
+        }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun stopZenMode() {
+        preferences.setZenMode(false)
+        _uiState.update {
+            it.copy(
+                isZenModeActive = false,
+                zenModeEndTime = 0L
+            )
+        }
+        applyFilter(_uiState.value.searchQuery)
+    }
+
+    fun setZenModeAllowedApps(apps: Set<String>) {
+        preferences.setZenModeAllowedApps(apps)
+        _uiState.update { it.copy(zenModeAllowedApps = apps) }
+        if (_uiState.value.isZenModeActive) {
+            applyFilter(_uiState.value.searchQuery)
+        }
+    }
+
+    // Pop-up Widgets Vinculados a Aplicativos da Gaveta
+    fun linkWidgetToApp(packageName: String, widgetId: Int) {
+        preferences.setAppLinkedWidget(packageName, widgetId)
+        _uiState.update {
+            it.copy(linkedAppWidgets = it.linkedAppWidgets + (packageName to widgetId))
+        }
+    }
+
+    fun unlinkWidgetFromApp(packageName: String) {
+        preferences.removeAppLinkedWidget(packageName)
+        _uiState.update {
+            it.copy(linkedAppWidgets = it.linkedAppWidgets - packageName)
         }
     }
 }

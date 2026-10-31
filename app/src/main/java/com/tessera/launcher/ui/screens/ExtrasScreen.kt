@@ -7,6 +7,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,16 +35,24 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.PhoneAndroid
+import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -116,6 +125,7 @@ fun ExtrasScreen(
     }
 
     val context = LocalContext.current
+    var showZenDurationDialog by remember { mutableStateOf(false) }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
@@ -238,6 +248,85 @@ fun ExtrasScreen(
                     iconBackground = iconBackground,
                     onClick = onNavigateToCommands
                 )
+
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                // Modo Foco Zen
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                if (uiState.isZenModeActive) {
+                                    viewModel.stopZenMode()
+                                } else {
+                                    showZenDurationDialog = true
+                                }
+                            }
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(iconBackground),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.SelfImprovement,
+                            contentDescription = null,
+                            tint = if (uiState.isZenModeActive) uiState.activeAccentColor else primaryTextColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Modo Foco Zen",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = primaryTextColor
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (uiState.isZenModeActive) "Ativo • Bloqueando distrações" else "Bloqueia telas laterais e filtra apps essenciais.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            ),
+                            color = secondaryTextColor
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Switch(
+                        checked = uiState.isZenModeActive,
+                        onCheckedChange = { active ->
+                            if (active) {
+                                showZenDurationDialog = true
+                            } else {
+                                viewModel.stopZenMode()
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                            checkedTrackColor = uiState.activeAccentColor,
+                            checkedBorderColor = Color.Transparent,
+                            uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else Color(0xFF8E8E93),
+                            uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF1E1E24),
+                            uncheckedBorderColor = Color.Transparent
+                        )
+                    )
+                }
 
                 HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
@@ -434,6 +523,72 @@ fun ExtrasScreen(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+
+    if (showZenDurationDialog) {
+        Dialog(onDismissRequest = { showZenDurationDialog = false }) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = cardBackground,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            ) {
+                Column(modifier = Modifier.padding(22.dp)) {
+                    Text(
+                        text = "Iniciar Sessão de Foco Zen",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        ),
+                        color = primaryTextColor
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Escolha a duração desejada para o Modo Zen:",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp),
+                        color = secondaryTextColor
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    val durations = listOf(15, 25, 30, 45, 60)
+                    durations.forEach { mins ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.startZenMode(mins)
+                                    showZenDurationDialog = false
+                                }
+                                .padding(vertical = 10.dp, horizontal = 8.dp)
+                        ) {
+                            Text(
+                                text = "$mins minutos",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = primaryTextColor,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(onClick = { showZenDurationDialog = false }) {
+                            Text("Cancelar", color = secondaryTextColor)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

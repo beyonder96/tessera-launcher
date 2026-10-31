@@ -3,6 +3,9 @@ package com.tessera.launcher.data.helper
 import com.tessera.launcher.ui.components.MathEvaluator
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.time.ZonedDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 enum class OmniCategory(val displayName: String, val emoji: String) {
@@ -10,6 +13,7 @@ enum class OmniCategory(val displayName: String, val emoji: String) {
     UNIT("Medida", "📐"),
     PERCENTAGE("Porcentagem", "📊"),
     MATH("Cálculo", "🧮"),
+    TIMEZONE("Fuso Horário", "🌍"),
     ACTION("Ação Rápida", "⚡")
 }
 
@@ -69,16 +73,22 @@ object OmniSearchEvaluator {
         // 1. Ações Rápidas (@wapp, @wa, @call)
         evaluateAction(query)?.let { return it }
 
-        // 2. Porcentagem (ex: "15% de 240", "500 + 10%")
+        // 2. Timer e Alarme Rápido (ex: "timer 5 min", "alarme 07:30")
+        evaluateTimerAndAlarm(query)?.let { return it }
+
+        // 3. Fuso Horário e Relógio Mundial (ex: "hora em toquio", "time in london")
+        evaluateTimezone(query)?.let { return it }
+
+        // 4. Porcentagem (ex: "15% de 240", "500 + 10%")
         evaluatePercentage(query)?.let { return it }
 
-        // 3. Conversão de Moedas (ex: "10 usd em brl", "50 eur para brl")
+        // 5. Conversão de Moedas (ex: "10 usd em brl", "50 eur para brl")
         evaluateCurrency(query)?.let { return it }
 
-        // 4. Conversão de Unidades de Medida (ex: "5 km em milhas", "100 f em c")
+        // 6. Conversão de Unidades de Medida (ex: "5 km em milhas", "100 f em c", "16 gb em mb")
         evaluateUnit(query)?.let { return it }
 
-        // 5. Cálculo Matemático Puro (ex: "12 * 45", "@calc 2^8")
+        // 7. Cálculo Matemático Puro (ex: "12 * 45", "@calc 2^8")
         evaluateMath(query)?.let { return it }
 
         return null
@@ -310,6 +320,150 @@ object OmniSearchEvaluator {
                 query,
                 "${decimalFormat.format(res)} L",
                 "1 galão = 3,7854 litros"
+            )
+        }
+
+        // 5. Armazenamento Digital
+        if ((from == "gb" || from == "gigabyte" || from == "gigabytes") &&
+            (to == "mb" || to == "megabyte" || to == "megabytes")) {
+            val res = value * 1024.0
+            return OmniResult(OmniCategory.UNIT, query, "${decimalFormat.format(res)} MB", "1 GB = 1024 MB")
+        }
+        if ((from == "mb" || from == "megabyte" || from == "megabytes") &&
+            (to == "gb" || to == "gigabyte" || to == "gigabytes")) {
+            val res = value / 1024.0
+            return OmniResult(OmniCategory.UNIT, query, "${decimalFormat.format(res)} GB", "1 MB = 0,000976 GB")
+        }
+        if ((from == "tb" || from == "terabyte" || from == "terabytes") &&
+            (to == "gb" || to == "gigabyte" || to == "gigabytes")) {
+            val res = value * 1024.0
+            return OmniResult(OmniCategory.UNIT, query, "${decimalFormat.format(res)} GB", "1 TB = 1024 GB")
+        }
+        if ((from == "mb" || from == "megabyte" || from == "megabytes") &&
+            (to == "kb" || to == "kilobyte" || to == "kilobytes")) {
+            val res = value * 1024.0
+            return OmniResult(OmniCategory.UNIT, query, "${decimalFormat.format(res)} KB", "1 MB = 1024 KB")
+        }
+
+        return null
+    }
+
+    private val TIMEZONE_CITIES = mapOf(
+        "toquio" to Pair("Asia/Tokyo", "Tóquio, Japão"),
+        "tokyo" to Pair("Asia/Tokyo", "Tóquio, Japão"),
+        "nova york" to Pair("America/New_York", "Nova York, EUA"),
+        "new york" to Pair("America/New_York", "Nova York, EUA"),
+        "ny" to Pair("America/New_York", "Nova York, EUA"),
+        "londres" to Pair("Europe/London", "Londres, Reino Unido"),
+        "london" to Pair("Europe/London", "Londres, Reino Unido"),
+        "paris" to Pair("Europe/Paris", "Paris, França"),
+        "lisboa" to Pair("Europe/Lisbon", "Lisboa, Portugal"),
+        "lisbon" to Pair("Europe/Lisbon", "Lisboa, Portugal"),
+        "berlim" to Pair("Europe/Berlin", "Berlim, Alemanha"),
+        "berlin" to Pair("Europe/Berlin", "Berlim, Alemanha"),
+        "roma" to Pair("Europe/Rome", "Roma, Itália"),
+        "rome" to Pair("Europe/Rome", "Roma, Itália"),
+        "madrid" to Pair("Europe/Madrid", "Madri, Espanha"),
+        "sydney" to Pair("Australia/Sydney", "Sydney, Austrália"),
+        "los angeles" to Pair("America/Los_Angeles", "Los Angeles, EUA"),
+        "dubai" to Pair("Asia/Dubai", "Dubai, Emirados Árabes"),
+        "sao paulo" to Pair("America/Sao_Paulo", "São Paulo, Brasil"),
+        "brasilia" to Pair("America/Sao_Paulo", "Brasília, Brasil"),
+        "toronto" to Pair("America/Toronto", "Toronto, Canadá"),
+        "seul" to Pair("Asia/Seoul", "Seul, Coreia do Sul"),
+        "seoul" to Pair("Asia/Seoul", "Seul, Coreia do Sul")
+    )
+
+    private fun evaluateTimezone(query: String): OmniResult? {
+        val pattern = Regex("""^(?:hora|horas|que horas s[aã]o|hor[aá]rio|time)\s*(?:em|in|de|at)?\s*(.+)$""", RegexOption.IGNORE_CASE)
+        val match = pattern.find(query) ?: return null
+        val cityQuery = match.groupValues[1].trim().lowercase()
+            .replace("?", "").replace("!", "").trim()
+
+        val entry = TIMEZONE_CITIES[cityQuery]
+            ?: TIMEZONE_CITIES.entries.firstOrNull { cityQuery.contains(it.key) }?.value
+            ?: return null
+
+        return try {
+            val zoneId = ZoneId.of(entry.first)
+            val nowInZone = ZonedDateTime.now(zoneId)
+            val localNow = ZonedDateTime.now()
+
+            val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+            val formattedTime = nowInZone.format(timeFormatter)
+
+            val dayDiff = nowInZone.dayOfYear - localNow.dayOfYear
+            val dayDesc = when (dayDiff) {
+                1, -364, -365 -> "Amanhã"
+                -1, 364, 365 -> "Ontem"
+                else -> "Hoje"
+            }
+
+            val offsetHours = (nowInZone.offset.totalSeconds - localNow.offset.totalSeconds) / 3600
+            val offsetDesc = if (offsetHours >= 0) "+${offsetHours}h" else "${offsetHours}h"
+
+            OmniResult(
+                category = OmniCategory.TIMEZONE,
+                sourceQuery = query,
+                primaryResult = "$formattedTime ($dayDesc)",
+                secondaryDetail = "${entry.second} • Fuso $offsetDesc em relação a você"
+            )
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun evaluateTimerAndAlarm(query: String): OmniResult? {
+        // Timer: ex: "timer 5 min", "timer 10", "temporizador 30s"
+        val timerPattern = Regex("""^(?:timer|temporizador)\s*(\d+)\s*(m|min|minutos?|s|seg|segundos?)?$""", RegexOption.IGNORE_CASE)
+        val timerMatch = timerPattern.find(query)
+        if (timerMatch != null) {
+            val amount = timerMatch.groupValues[1].toIntOrNull() ?: return null
+            val unit = timerMatch.groupValues[2].lowercase()
+            val totalSeconds = if (unit.startsWith("s")) amount else amount * 60
+            val displayDesc = if (unit.startsWith("s")) "$amount seg" else "$amount min"
+
+            return OmniResult(
+                category = OmniCategory.ACTION,
+                sourceQuery = query,
+                primaryResult = "Iniciar Timer de $displayDesc",
+                secondaryDetail = "Toque para abrir e iniciar o temporizador no relógio",
+                actionType = "timer",
+                actionPayload = totalSeconds.toString()
+            )
+        }
+
+        // Alarme: ex: "alarme 07:30", "alarme 8h", "despertador 6:00"
+        val alarmPattern = Regex("""^(?:alarme|alarm|despertador)\s*(?:para|as|às|at)?\s*(\d{1,2})(?:[:hH](\d{2}))?$""", RegexOption.IGNORE_CASE)
+        val alarmMatch = alarmPattern.find(query)
+        if (alarmMatch != null) {
+            val hour = alarmMatch.groupValues[1].toIntOrNull() ?: return null
+            val minute = alarmMatch.groupValues.getOrNull(2)?.takeIf { it.isNotBlank() }?.toIntOrNull() ?: 0
+            if (hour in 0..23 && minute in 0..59) {
+                val formattedTime = String.format("%02d:%02d", hour, minute)
+                return OmniResult(
+                    category = OmniCategory.ACTION,
+                    sourceQuery = query,
+                    primaryResult = "Definir Alarme para $formattedTime",
+                    secondaryDetail = "Toque para agendar no aplicativo de relógio",
+                    actionType = "alarm",
+                    actionPayload = "$hour:$minute"
+                )
+            }
+        }
+
+        // Modo Foco Zen: "zen", "foco", "modo zen", "modo foco", "zen 25", "foco 45 min"
+        val zenPattern = Regex("""^(?:zen|foco|modo\s+zen|modo\s+foco)(?:\s+(\d+)\s*(?:m|min|minutos?)?)?$""", RegexOption.IGNORE_CASE)
+        val zenMatch = zenPattern.find(query)
+        if (zenMatch != null) {
+            val minutes = zenMatch.groupValues.getOrNull(1)?.takeIf { it.isNotBlank() }?.toIntOrNull() ?: 30
+            return OmniResult(
+                category = OmniCategory.ACTION,
+                sourceQuery = query,
+                primaryResult = "Ativar Modo Foco Zen ($minutes min)",
+                secondaryDetail = "Bloqueia distrações e restringe apps permitidos",
+                actionType = "zen",
+                actionPayload = minutes.toString()
             )
         }
 

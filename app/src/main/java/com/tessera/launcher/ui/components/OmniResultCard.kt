@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.AlarmClock
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,9 +25,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.SelfImprovement
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -62,6 +66,7 @@ fun OmniResultCard(
     accentColor: Color,
     isLightMode: Boolean,
     isAmoledMode: Boolean,
+    onStartZenMode: ((Int) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -126,6 +131,39 @@ fun OmniResultCard(
                 } catch (_: Exception) {
                     Toast.makeText(context, "Não foi possível abrir o discador", Toast.LENGTH_SHORT).show()
                 }
+            }
+            "timer" -> {
+                try {
+                    val seconds = result.actionPayload?.toIntOrNull() ?: 300
+                    val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
+                        putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+                        putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Não foi possível abrir o temporizador", Toast.LENGTH_SHORT).show()
+                }
+            }
+            "alarm" -> {
+                try {
+                    val parts = result.actionPayload.orEmpty().split(":")
+                    val hour = parts.getOrNull(0)?.toIntOrNull() ?: 7
+                    val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                    val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
+                        putExtra(AlarmClock.EXTRA_HOUR, hour)
+                        putExtra(AlarmClock.EXTRA_MINUTES, minute)
+                        putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    Toast.makeText(context, "Não foi possível agendar o alarme", Toast.LENGTH_SHORT).show()
+                }
+            }
+            "zen" -> {
+                val mins = result.actionPayload?.toIntOrNull() ?: 30
+                onStartZenMode?.invoke(mins)
             }
         }
     }
@@ -235,14 +273,28 @@ fun OmniResultCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (result.actionType == "whatsapp") Icons.Outlined.Chat else Icons.Outlined.Call,
+                        imageVector = when (result.actionType) {
+                            "whatsapp" -> Icons.Outlined.Chat
+                            "call" -> Icons.Outlined.Call
+                            "timer" -> Icons.Outlined.HourglassEmpty
+                            "alarm" -> Icons.Outlined.Alarm
+                            "zen" -> Icons.Outlined.SelfImprovement
+                            else -> Icons.Outlined.Chat
+                        },
                         contentDescription = null,
                         tint = Color.Black,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (result.actionType == "whatsapp") "Abrir WhatsApp" else "Discar Número",
+                        text = when (result.actionType) {
+                            "whatsapp" -> "Abrir WhatsApp"
+                            "call" -> "Discar Número"
+                            "timer" -> "Iniciar Timer"
+                            "alarm" -> "Definir Alarme"
+                            "zen" -> "Ativar Foco Zen"
+                            else -> "Executar"
+                        },
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                         color = Color.Black
                     )

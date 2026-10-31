@@ -24,6 +24,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Widgets
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,6 +87,7 @@ fun AppListItem(
     isThemedIcons: Boolean = false,
     isHideAppLabels: Boolean = false,
     isRightAligned: Boolean = false,
+    hasLinkedWidget: Boolean = false,
     notificationCount: Int = 0,
     accentColor: Color = Color(0xFF3B82F6),
     isLightMode: Boolean = false
@@ -270,6 +274,15 @@ fun AppListItem(
                         modifier = Modifier
                             .background(Tessera.palette.surfaceSubtle, Tessera.shapes.micro)
                             .padding(horizontal = 4.dp, vertical = 1.dp)
+                    )
+                }
+                if (hasLinkedWidget) {
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        imageVector = Icons.Outlined.Widgets,
+                        contentDescription = "Widget disponível",
+                        tint = Tessera.palette.textSecondary.copy(alpha = 0.55f),
+                        modifier = Modifier.size(13.dp)
                     )
                 }
             }

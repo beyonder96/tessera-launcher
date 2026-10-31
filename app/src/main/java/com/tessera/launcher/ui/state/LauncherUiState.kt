@@ -266,6 +266,10 @@ data class LauncherUiState(
     val feedEnabledSources: Set<FeedSource> = setOf(FeedSource.NEWS),
     val customRssSources: List<CustomRssSource> = emptyList(),
     val hostedWidgetIds: List<Int> = emptyList(),
+    val isZenModeActive: Boolean = false,
+    val zenModeEndTime: Long = 0L,
+    val zenModeAllowedApps: Set<String> = emptySet(),
+    val linkedAppWidgets: Map<String, Int> = emptyMap(),
     val isFeedAiSummariesEnabled: Boolean = false,
 
     // Smart Dock (Previsão Contextual)

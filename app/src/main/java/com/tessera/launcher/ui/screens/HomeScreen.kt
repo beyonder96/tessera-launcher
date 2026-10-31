@@ -102,6 +102,8 @@ import com.tessera.launcher.ui.components.Alphabet
 import com.tessera.launcher.ui.components.AlphabetScroller
 import com.tessera.launcher.ui.components.AppCategoriesBar
 import com.tessera.launcher.ui.components.AppContextMenu
+import com.tessera.launcher.ui.components.AppPopUpWidgetModal
+import com.tessera.launcher.ui.components.ZenFocusCard
 import com.tessera.launcher.ui.components.AppListEmptyState
 import com.tessera.launcher.ui.components.AppListErrorState
 import com.tessera.launcher.ui.components.AppListItem
@@ -164,6 +166,7 @@ fun HomeScreen(
     appWidgetHost: AppWidgetHost? = null,
     appWidgetManager: AppWidgetManager? = null,
     onAddAppWidget: () -> Unit = {},
+    onPickAndLinkWidget: (String) -> Unit = {},
     onRemoveAppWidget: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -228,6 +231,7 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
+    var activePopUpWidgetApp by remember { mutableStateOf<AppInfo?>(null) }
     var isNotesTasksOpen by remember { mutableStateOf(false) }
     var folderToView by remember { mutableStateOf<AppFolder?>(null) }
     val haptic = LocalHapticFeedback.current
@@ -239,7 +243,8 @@ fun HomeScreen(
         !uiState.isSearchExpanded &&
         uiState.searchQuery.isEmpty() &&
         folderToView == null &&
-        selectedAppForMenu == null
+        selectedAppForMenu == null &&
+        activePopUpWidgetApp == null
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
@@ -259,6 +264,10 @@ fun HomeScreen(
     }
 
     BackHandler(enabled = true) {
+        if (activePopUpWidgetApp != null) {
+            activePopUpWidgetApp = null
+            return@BackHandler
+        }
         if (uiState.isFeedOpen || panelProgress.value > 0.01f) {
             scope.launch {
                 panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
@@ -553,11 +562,11 @@ fun HomeScreen(
                                     viewModel.executeGestureAction(uiState.swipeLeftAction, context)
                                 }
                             } else { // Deslizar para a DIREITA
-                                if (uiState.leftScreenMode != "disabled") {
+                                if (uiState.leftScreenMode != "disabled" && !uiState.isZenModeActive) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.warmUpLateralPanel()
                                     viewModel.openFeed()
-                                } else if (uiState.isSwipeRightEnabled) {
+                                } else if (uiState.isSwipeRightEnabled && !uiState.isZenModeActive) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.executeGestureAction(uiState.swipeRightAction, context)
                                 }
@@ -813,6 +822,7 @@ fun HomeScreen(
                                                     accentColor = uiState.activeAccentColor,
                                                     isLightMode = uiState.isLightMode,
                                                     isAmoledMode = uiState.isAmoledMode,
+                                                    onStartZenMode = { minutes -> viewModel.startZenMode(minutes) },
                                                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
@@ -965,6 +975,7 @@ fun HomeScreen(
                                                 accentColor = uiState.activeAccentColor,
                                                 isLightMode = uiState.isLightMode,
                                                 isAmoledMode = uiState.isAmoledMode,
+                                                onStartZenMode = { minutes -> viewModel.startZenMode(minutes) },
                                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                             )
                                         }
@@ -1013,6 +1024,18 @@ fun HomeScreen(
 
                                   // Aplicativos filtrados (ocultos em modo calculadora/contatos)
                                   if (!isCalcMode && !isContactsMode) {
+                                      // Banner do Modo Foco Zen
+                                      if (uiState.isZenModeActive) {
+                                          item(key = "zen_focus_banner") {
+                                              ZenFocusCard(
+                                                  endTime = uiState.zenModeEndTime,
+                                                  onFinishEarly = { viewModel.stopZenMode() },
+                                                  isLightMode = uiState.isLightMode,
+                                                  accentColor = uiState.activeAccentColor,
+                                                  modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                                              )
+                                          }
+                                      }
                                       // Sugestões da IA no Topo da Gaveta (Estilo Niagara)
                                       if (uiState.searchQuery.isEmpty() &&
                                           uiState.selectedAppCategory == com.tessera.launcher.data.model.AppCategory.ALL &&
@@ -1061,6 +1084,7 @@ fun HomeScreen(
                                          isThemedIcons = uiState.isThemedIconsEnabled,
                                          isHideAppLabels = uiState.isHideAppLabelsEnabled,
                                          isRightAligned = uiState.isDrawerRightAligned,
+                                         hasLinkedWidget = uiState.linkedAppWidgets.containsKey(app.packageName),
                                          notificationCount = uiState.notificationCounts[app.packageName] ?: 0,
                                          accentColor = uiState.activeAccentColor,
                                          isLightMode = uiState.isLightMode,
@@ -1077,7 +1101,11 @@ fun HomeScreen(
                                              selectedAppForMenu = app
                                          },
                                          onSwipeRight = {
-                                             selectedAppForMenu = app
+                                             if (uiState.linkedAppWidgets.containsKey(app.packageName)) {
+                                                 activePopUpWidgetApp = app
+                                             } else {
+                                                 selectedAppForMenu = app
+                                             }
                                          }
                                      )
                                  }
@@ -1191,11 +1219,19 @@ fun HomeScreen(
                 shortcuts = if (uiState.isAppShortcutsEnabled) viewModel.getAppShortcuts(app.packageName) else emptyList(),
                 installedIconPacks = viewModel.getInstalledIconPacks(),
                 currentCustomIconPack = uiState.customAppIcons[app.packageName],
+                hasLinkedWidget = uiState.linkedAppWidgets.containsKey(app.packageName),
                 onShortcutClick = { shortcut ->
                     viewModel.launchShortcut(shortcut.packageName, shortcut.id)
                 },
                 onChangeIconPack = { packPkg ->
                     viewModel.setCustomAppIcon(app.packageName, packPkg)
+                },
+                onLinkWidget = {
+                    onPickAndLinkWidget(app.packageName)
+                },
+                onUnlinkWidget = {
+                    viewModel.unlinkWidgetFromApp(app.packageName)
+                    Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
                 },
                 onHideApp = {
                     viewModel.toggleHiddenApp(app.packageName)
@@ -1226,6 +1262,31 @@ fun HomeScreen(
                     Toast.makeText(context, "${app.label} removido", Toast.LENGTH_SHORT).show()
                 }
             )
+        }
+
+        // Modal de Pop-up Widget Vinculado ao Aplicativo
+        activePopUpWidgetApp?.let { app ->
+            val widgetId = uiState.linkedAppWidgets[app.packageName]
+            if (widgetId != null) {
+                AppPopUpWidgetModal(
+                    app = app,
+                    widgetId = widgetId,
+                    appWidgetHost = appWidgetHost,
+                    appWidgetManager = appWidgetManager,
+                    onDismiss = { activePopUpWidgetApp = null },
+                    onOpenApp = {
+                        viewModel.launchApp(app)
+                        activePopUpWidgetApp = null
+                    },
+                    onUnlinkWidget = {
+                        viewModel.unlinkWidgetFromApp(app.packageName)
+                        Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
+                        activePopUpWidgetApp = null
+                    },
+                    isLightMode = uiState.isLightMode,
+                    accentColor = uiState.activeAccentColor
+                )
+            }
         }
 
         // Modais de Configuração dos Widgets por Toque Longo
@@ -1552,6 +1613,10 @@ fun HomeScreen(
                                         appWidgetManager = appWidgetManager,
                                         onAddAppWidget = onAddAppWidget,
                                         onRemoveAppWidget = onRemoveAppWidget,
+                                        isZenModeActive = uiState.isZenModeActive,
+                                        zenModeEndTime = uiState.zenModeEndTime,
+                                        onStartZenMode = { viewModel.startZenMode(it) },
+                                        onStopZenMode = { viewModel.stopZenMode() },
                                         onClose = {
                                             scope.launch {
                                                 panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)

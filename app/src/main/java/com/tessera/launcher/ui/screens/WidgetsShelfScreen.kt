@@ -68,6 +68,7 @@ import com.tessera.launcher.ui.components.QuickControlBentoGrid
 import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.VerseFocusWidgetCard
 import com.tessera.launcher.ui.components.WidgetsQuickEditBottomSheet
+import com.tessera.launcher.ui.components.ZenFocusCard
 import com.tessera.launcher.ui.components.openOrRequestDigitalWellbeing
 import com.tessera.launcher.ui.state.WidgetConfigType
 
@@ -151,6 +152,10 @@ fun WidgetsShelfScreen(
     appWidgetManager: AppWidgetManager? = null,
     onAddAppWidget: () -> Unit = {},
     onRemoveAppWidget: (Int) -> Unit = {},
+    isZenModeActive: Boolean = false,
+    zenModeEndTime: Long = 0L,
+    onStartZenMode: (Int) -> Unit = {},
+    onStopZenMode: () -> Unit = {},
     onClose: () -> Unit,
     onOpenSettings: () -> Unit,
     hasTopSegmentedControl: Boolean = false,
@@ -205,6 +210,21 @@ fun WidgetsShelfScreen(
                             openOrRequestDigitalWellbeing(context, screenTimeInfo?.hasPermission == true)
                         }
                     )
+                }
+            }
+
+            // Modo Foco Zen Ativo
+            if (isZenModeActive) {
+                item(key = "zone_zen_focus_active") {
+                    JournalCascadeItem(index = 1) {
+                        ZenFocusCard(
+                            endTime = zenModeEndTime,
+                            onFinishEarly = onStopZenMode,
+                            isLightMode = isLightMode,
+                            accentColor = accentColor,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
 

@@ -45,6 +45,11 @@ class LauncherPreferences(context: Context) {
         private const val KEY_DEFAULT_WIDGET_CARD_INDEX = "default_widget_card_index"
         private const val KEY_SHOW_STATUS_BAR = "show_status_bar"
 
+        // Modo Zen / Foco
+        private const val KEY_ZEN_MODE_ACTIVE = "zen_mode_active"
+        private const val KEY_ZEN_MODE_END_TIME = "zen_mode_end_time"
+        private const val KEY_ZEN_MODE_ALLOWED_APPS = "zen_mode_allowed_apps"
+
         // Gestos
         private const val KEY_GESTURE_DOUBLE_TAP_ENABLED = "gesture_double_tap_enabled"
         private const val KEY_GESTURE_DOUBLE_TAP_ACTION = "gesture_double_tap_action"
@@ -748,4 +753,65 @@ class LauncherPreferences(context: Context) {
         prefs.edit().putString(KEY_GREETING_USER_NAME, name.trim()).apply()
     }
 
+    // Modo Foco Zen / Desintoxicação Digital
+    fun isZenModeActive(): Boolean {
+        val active = prefs.getBoolean(KEY_ZEN_MODE_ACTIVE, false)
+        if (!active) return false
+        val endTime = prefs.getLong(KEY_ZEN_MODE_END_TIME, 0L)
+        if (endTime > 0 && System.currentTimeMillis() > endTime) {
+            setZenMode(false)
+            return false
+        }
+        return true
+    }
+
+    fun getZenModeEndTime(): Long = prefs.getLong(KEY_ZEN_MODE_END_TIME, 0L)
+
+    fun setZenMode(active: Boolean, durationMinutes: Int = 30) {
+        val endTime = if (active) System.currentTimeMillis() + (durationMinutes * 60 * 1000L) else 0L
+        prefs.edit()
+            .putBoolean(KEY_ZEN_MODE_ACTIVE, active)
+            .putLong(KEY_ZEN_MODE_END_TIME, endTime)
+            .apply()
+    }
+
+    fun getZenModeAllowedApps(): Set<String> {
+        val defaultApps = setOf(
+            "com.google.android.dialer",
+            "com.android.dialer",
+            "com.google.android.calendar",
+            "com.google.android.apps.messaging",
+            "com.whatsapp"
+        )
+        return prefs.getStringSet(KEY_ZEN_MODE_ALLOWED_APPS, defaultApps) ?: defaultApps
+    }
+
+    fun setZenModeAllowedApps(apps: Set<String>) {
+        prefs.edit().putStringSet(KEY_ZEN_MODE_ALLOWED_APPS, apps).apply()
+    }
+
+    // Pop-up Widgets vinculados a Apps da Lista
+    fun getAppLinkedWidget(packageName: String): Int? {
+        val id = prefs.getInt("linked_widget_$packageName", -1)
+        return if (id != -1) id else null
+    }
+
+    fun setAppLinkedWidget(packageName: String, widgetId: Int) {
+        prefs.edit().putInt("linked_widget_$packageName", widgetId).apply()
+    }
+
+    fun removeAppLinkedWidget(packageName: String) {
+        prefs.edit().remove("linked_widget_$packageName").apply()
+    }
+
+    fun getAllLinkedWidgets(installedPackages: List<String>): Map<String, Int> {
+        val result = mutableMapOf<String, Int>()
+        for (pkg in installedPackages) {
+            val id = getAppLinkedWidget(pkg)
+            if (id != null) {
+                result[pkg] = id
+            }
+        }
+        return result
+    }
 }

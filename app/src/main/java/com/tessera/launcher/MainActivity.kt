@@ -80,6 +80,7 @@ class MainActivity : ComponentActivity() {
     // Gerenciador de Widgets Nativos do Android (AppWidgetHost)
     private val APPWIDGET_HOST_ID = 2048
     private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    private var pendingAppWidgetPackage: String? = null
     private lateinit var appWidgetHost: AppWidgetHost
     private lateinit var appWidgetManager: AppWidgetManager
 
@@ -87,9 +88,16 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK && pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
-            viewModel.addHostedWidgetId(pendingAppWidgetId)
+            val pkg = pendingAppWidgetPackage
+            if (pkg != null) {
+                viewModel.linkWidgetToApp(pkg, pendingAppWidgetId)
+                pendingAppWidgetPackage = null
+            } else {
+                viewModel.addHostedWidgetId(pendingAppWidgetId)
+            }
         } else if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             appWidgetHost.deleteAppWidgetId(pendingAppWidgetId)
+            pendingAppWidgetPackage = null
         }
         pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     }
@@ -106,18 +114,26 @@ class MainActivity : ComponentActivity() {
                 }
                 widgetConfigLauncher.launch(intent)
             } else {
-                viewModel.addHostedWidgetId(pendingAppWidgetId)
+                val pkg = pendingAppWidgetPackage
+                if (pkg != null) {
+                    viewModel.linkWidgetToApp(pkg, pendingAppWidgetId)
+                    pendingAppWidgetPackage = null
+                } else {
+                    viewModel.addHostedWidgetId(pendingAppWidgetId)
+                }
                 pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
             }
         } else if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
             appWidgetHost.deleteAppWidgetId(pendingAppWidgetId)
             pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            pendingAppWidgetPackage = null
         }
     }
 
     fun pickAndAddAppWidget() {
         val newId = appWidgetHost.allocateAppWidgetId()
         pendingAppWidgetId = newId
+        pendingAppWidgetPackage = null
         val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
         }
@@ -126,6 +142,23 @@ class MainActivity : ComponentActivity() {
         } catch (_: Exception) {
             appWidgetHost.deleteAppWidgetId(newId)
             pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            pendingAppWidgetPackage = null
+        }
+    }
+
+    fun pickAndLinkWidgetForApp(packageName: String) {
+        val newId = appWidgetHost.allocateAppWidgetId()
+        pendingAppWidgetId = newId
+        pendingAppWidgetPackage = packageName
+        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
+        }
+        try {
+            widgetPickLauncher.launch(pickIntent)
+        } catch (_: Exception) {
+            appWidgetHost.deleteAppWidgetId(newId)
+            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            pendingAppWidgetPackage = null
         }
     }
 
@@ -267,6 +300,7 @@ class MainActivity : ComponentActivity() {
                     appWidgetHost = appWidgetHost,
                     appWidgetManager = appWidgetManager,
                     onAddAppWidget = { pickAndAddAppWidget() },
+                    onPickAndLinkWidget = { pickAndLinkWidgetForApp(it) },
                     onRemoveAppWidget = { widgetId ->
                         appWidgetHost.deleteAppWidgetId(widgetId)
                         viewModel.removeHostedWidgetId(widgetId)

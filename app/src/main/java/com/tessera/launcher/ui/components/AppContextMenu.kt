@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Shortcut
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -85,8 +86,11 @@ fun AppContextMenu(
     shortcuts: List<AppShortcutItem> = emptyList(),
     installedIconPacks: List<IconPackInfo> = emptyList(),
     currentCustomIconPack: String? = null,
+    hasLinkedWidget: Boolean = false,
     onShortcutClick: (AppShortcutItem) -> Unit = {},
     onChangeIconPack: (String?) -> Unit = {},
+    onLinkWidget: () -> Unit = {},
+    onUnlinkWidget: () -> Unit = {},
     onDismiss: () -> Unit,
     onOpenAppSettings: () -> Unit,
     onHideApp: () -> Unit = {},
@@ -289,6 +293,50 @@ fun AppContextMenu(
                         )
                         Text(
                             text = "Personalizar ícone deste aplicativo",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 12.sp
+                            ),
+                            color = TextSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Ação: Widget Pop-up (Vincular ou Remover)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = ripple(color = Color(0x22FFFFFF)),
+                            onClick = {
+                                onDismiss()
+                                if (hasLinkedWidget) onUnlinkWidget() else onLinkWidget()
+                            }
+                        )
+                        .padding(horizontal = 12.dp, vertical = 11.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Widgets,
+                        contentDescription = "Widget Pop-up",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
+                        Text(
+                            text = if (hasLinkedWidget) "Remover widget pop-up" else "Vincular widget pop-up",
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 14.sp
+                            ),
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = if (hasLinkedWidget) "Toque para desvincular o widget deste app" else "Deslize o app para a direita para abrir",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),

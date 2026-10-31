@@ -63,6 +63,22 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
 - 🏷️ **Página de Releases:** [Baixar na Release v3.4.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.4.0)
 
+### 🆕 Novidades na v3.5.0
+- ⚡ **Omni-Search com Superpoderes Raycast:**
+  - Consulta de Fusos Horários e Relógio Global (`hora em toquio`, `horário em londres`, `que horas são em nova york`) com cálculo de fuso e indicador relativo (*Hoje*, *Amanhã*, *Ontem*).
+  - Ações rápidas de Timers (`timer 5 min`) e Alarmes (`alarme 07:30`) nativos com disparo no relógio do Android.
+  - Conversões de armazenamento digital (GB, MB, TB, KB).
+  - Acionamento instantâneo do Modo Zen via busca (`zen`, `foco`, `modo zen 30`).
+- 🧘 **Modo Foco Zen / Desintoxicação Digital:**
+  - Card banner minimalista com contagem regressiva em tempo real e encerramento antecipado.
+  - Restrição da gaveta de aplicativos e da pesquisa apenas para apps essenciais permitidos.
+  - Bloqueio automático de telas laterais (Feed RSS e Shelf de Widgets) para prevenir distrações.
+  - Seletor de tempo de foco (15, 25, 30, 45, 60 min) em Extras e observador em segundo plano com restauração automática.
+- 🪟 **Pop-up Widgets na Gaveta de Apps (Swipe para a Direita):**
+  - Vincule qualquer widget nativo do Android diretamente a um app através do menu de contexto.
+  - Indicador visual elegante na lista de apps para identificar apps com widget disponível.
+  - Deslizar o app para a direita abre o widget em um modal pop-up flutuante interativo com opção de desvinculação e abertura rápida do app.
+
 ### 🆕 Novidades na v3.4.0
 - 🧩 **Suporte Nativo a Widgets de Terceiros na Shelf:** Agora você pode adicionar, configurar e renderizar widgets nativos de qualquer aplicativo instalado no seu Android (Spotify, WhatsApp, Relógio, etc.) diretamente na Central Bento com botão de remoção rápida.
 - 📰 **Feed RSS & Atom Customizado:** Remoção completa de redes sociais legadas (Bluesky e Reddit). O feed agora é 100% focado em fontes RSS cadastradas diretamente por você, com suporte a filtros por fonte e resumos com IA.
