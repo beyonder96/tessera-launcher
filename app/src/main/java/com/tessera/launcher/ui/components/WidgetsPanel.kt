@@ -5,9 +5,14 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import java.util.Calendar
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -40,6 +45,8 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.FlashlightOn
@@ -65,6 +72,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -1249,9 +1257,14 @@ fun VerseFocusWidgetCard(
         Spacer(modifier = Modifier.width(12.dp))
 
         // Coluna com Cabeçalho e Versículo NVI
+        val fullVerse = verses[currentVerseIndex]
+        val parts = fullVerse.split(" — ")
+        val quoteText = parts.getOrNull(0) ?: fullVerse
+        val referenceText = parts.getOrNull(1) ?: ""
+
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.Center
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1262,7 +1275,7 @@ fun VerseFocusWidgetCard(
                     text = "Versículo do dia (NVI)",
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         letterSpacing = 0.5.sp
                     ),
                     color = headerColor
@@ -1280,17 +1293,32 @@ fun VerseFocusWidgetCard(
                 )
             }
 
+            Spacer(modifier = Modifier.height(3.dp))
+
             Text(
-                text = verses[currentVerseIndex],
+                text = quoteText,
                 style = MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.Medium,
-                    fontSize = 12.sp,
-                    lineHeight = 15.sp
+                    fontSize = if (quoteText.length > 70) 11.sp else 12.sp,
+                    lineHeight = if (quoteText.length > 70) 14.sp else 15.sp
                 ),
                 color = quoteTextColor,
-                maxLines = 2,
+                maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
+
+            if (referenceText.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "— $referenceText",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 10.sp
+                    ),
+                    color = headerColor,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -1725,80 +1753,57 @@ fun NotificationsWidgetCard(
     recentNotifications: List<AppNotificationItem>,
     onOpenHub: () -> Unit,
     onDismissTop: () -> Unit,
+    onDismissNotification: ((String) -> Unit)? = null,
     accentColor: Color,
     isAmoledMode: Boolean = false,
     isLightMode: Boolean = false,
     isLiquidGlass: Boolean = false
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
     val topItem = recentNotifications.firstOrNull()
+
     val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
     val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
+    val cardItemBg = if (isLightMode) Color(0xFFF2EFE8) else if (isAmoledMode) Color(0xFF0D0D11) else Color(0xFF1B1B22)
+    val cardItemBorder = if (isLightMode) Color(0xFFDDD8CB) else if (isAmoledMode) Color(0xFF22222A) else Color(0xFF2A2A35)
     val primaryText = if (isLightMode) Color(0xFF0F172A) else Color.White
     val secondaryText = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onOpenHub
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Ícone com ponto indicador
-        Box(
+    if (topItem == null) {
+        Row(
             modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(13.dp))
-                .background(badgeBg)
-                .border(1.dp, badgeBorder, RoundedCornerShape(13.dp)),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onOpenHub
+                )
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = "Notificações",
-                tint = if (recentNotifications.isNotEmpty()) accentColor else primaryText,
-                modifier = Modifier.size(22.dp)
-            )
-            if (recentNotifications.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .clip(CircleShape)
-                        .background(accentColor)
-                        .align(Alignment.TopEnd)
-                        .padding(top = 4.dp, end = 4.dp)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(badgeBg)
+                    .border(1.dp, badgeBorder, RoundedCornerShape(13.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = "Notificações",
+                    tint = primaryText,
+                    modifier = Modifier.size(22.dp)
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-        // Conteúdo central
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.Center
-        ) {
-            if (topItem != null) {
-                Text(
-                    text = "${topItem.appName} • ${topItem.title}",
-                    color = primaryText,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = topItem.text.ifBlank { "Toque para abrir a central" },
-                    color = secondaryText,
-                    fontSize = 11.5.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            } else {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = "Notificações",
                     color = primaryText,
@@ -1816,40 +1821,302 @@ fun NotificationsWidgetCard(
                 )
             }
         }
+        return
+    }
 
-        // Ações à direita
-        if (topItem != null) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow))
+    ) {
+        if (!isExpanded) {
+            // Pilha Estilo iOS com Efeito 3D de Cartas Sobrepostas
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(recentNotifications) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount < -12f && recentNotifications.size > 1) {
+                                isExpanded = true
+                            }
+                        }
+                    }
+                    .padding(bottom = if (recentNotifications.size > 2) 10.dp else if (recentNotifications.size > 1) 6.dp else 0.dp),
+                contentAlignment = Alignment.TopCenter
             ) {
+                // Carta 2 de Fundo (Camada mais profunda da pilha)
+                if (recentNotifications.size > 2) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .graphicsLayer {
+                                scaleX = 0.88f
+                                translationY = 10.dp.toPx()
+                                alpha = 0.40f
+                            }
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(cardItemBg)
+                            .border(0.5.dp, cardItemBorder, RoundedCornerShape(16.dp))
+                    )
+                }
+
+                // Carta 1 de Fundo (Camada intermediária da pilha)
                 if (recentNotifications.size > 1) {
                     Box(
                         modifier = Modifier
-                            .clip(CircleShape)
-                            .background(accentColor.copy(alpha = 0.18f))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .graphicsLayer {
+                                scaleX = 0.94f
+                                translationY = 5.dp.toPx()
+                                alpha = 0.75f
+                            }
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(cardItemBg)
+                            .border(0.5.dp, cardItemBorder, RoundedCornerShape(16.dp))
+                    )
+                }
+
+                // Carta Frontal (Notificação Principal da Pilha)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(cardItemBg)
+                        .border(1.dp, cardItemBorder, RoundedCornerShape(16.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                if (recentNotifications.size > 1) {
+                                    isExpanded = true
+                                } else {
+                                    try {
+                                        topItem.contentIntent?.send()
+                                    } catch (_: Exception) {
+                                        onOpenHub()
+                                    }
+                                }
+                            }
+                        )
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Ícone com ponto indicador da pilha
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(badgeBg)
+                            .border(1.dp, badgeBorder, RoundedCornerShape(12.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "Notificações",
+                            tint = accentColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(accentColor)
+                                .align(Alignment.TopEnd)
+                                .padding(top = 3.dp, end = 3.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = "+${recentNotifications.size - 1}",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
+                            text = "${topItem.appName} • ${topItem.title}",
+                            color = primaryText,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = topItem.text.ifBlank { "Toque para abrir a central" },
+                            color = secondaryText,
+                            fontSize = 11.5.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        if (recentNotifications.size > 1) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(accentColor.copy(alpha = 0.15f))
+                                    .clickable { isExpanded = true }
+                                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = "${recentNotifications.size} alertas",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = accentColor
+                                )
+                            }
+                        }
+
+                        if (!topItem.isOngoing) {
+                            IconButton(
+                                onClick = {
+                                    onDismissNotification?.invoke(topItem.key) ?: onDismissTop()
+                                },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = "Dispensar",
+                                    tint = secondaryText,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Estado Expandido: Lista Completa Revelada em Cascata com Gesto de Recolher
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures { _, dragAmount ->
+                            if (dragAmount > 15f) {
+                                isExpanded = false
+                            }
+                        }
+                    },
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Cabeçalho da Pilha Expandida
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "PILHA DE NOTIFICAÇÕES (${recentNotifications.size})",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        color = secondaryText
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { isExpanded = false }
+                            .padding(horizontal = 8.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Recolher",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
                             color = accentColor
+                        )
+                        Icon(
+                            imageVector = Icons.Outlined.KeyboardArrowUp,
+                            contentDescription = "Recolher pilha",
+                            tint = accentColor,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
-                if (!topItem.isOngoing) {
-                    IconButton(
-                        onClick = onDismissTop,
-                        modifier = Modifier.size(28.dp)
+                // Todas as Notificações Reveladas
+                recentNotifications.forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(cardItemBg)
+                            .border(0.5.dp, cardItemBorder, RoundedCornerShape(14.dp))
+                            .clickable {
+                                try {
+                                    item.contentIntent?.send()
+                                } catch (_: Exception) {
+                                    onOpenHub()
+                                }
+                            }
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Dispensar",
-                            tint = secondaryText,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(badgeBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Notifications,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "${item.appName} • ${item.title}",
+                                color = primaryText,
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (item.text.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = item.text,
+                                    color = secondaryText,
+                                    fontSize = 11.5.sp,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        if (!item.isOngoing) {
+                            IconButton(
+                                onClick = {
+                                    onDismissNotification?.invoke(item.key) ?: onDismissTop()
+                                },
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Close,
+                                    contentDescription = "Dispensar",
+                                    tint = secondaryText,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

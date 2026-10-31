@@ -4,7 +4,6 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -26,30 +25,32 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AutoAwesome
-import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.ChevronRight
-import androidx.compose.material.icons.outlined.FlashOn
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FlashlightOn
-import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.HourglassEmpty
-import androidx.compose.material.icons.outlined.Layers
-import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.RssFeed
 import androidx.compose.material.icons.outlined.SportsEsports
-import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.material.icons.outlined.Widgets
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
@@ -66,22 +67,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tessera.launcher.data.model.FeedSource
+import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.ui.components.TesseraSegmentedControl
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.AmoledBlack
-import com.tessera.launcher.ui.theme.CardShape
 import com.tessera.launcher.ui.theme.DarkBackground
-import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.LightBackground
@@ -91,7 +88,6 @@ import com.tessera.launcher.ui.theme.LightDivider
 import com.tessera.launcher.ui.theme.LightIconBackground
 import com.tessera.launcher.ui.theme.LightTextPrimary
 import com.tessera.launcher.ui.theme.LightTextSecondary
-import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
@@ -183,14 +179,14 @@ fun LateralPanelSettingsScreen(
             )
         }
 
-        // Seletor Segmentado Estilo iOS no Topo: [ Central de Widgets | Feed Social ]
+        // Seletor Segmentado Estilo iOS no Topo: [ Central de Widgets | Feed de Notícias ]
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 6.dp)
         ) {
             TesseraSegmentedControl(
-                options = listOf("Central de Widgets", "Feed Social"),
+                options = listOf("Central de Widgets", "Feed de Notícias"),
                 selectedIndex = selectedTab,
                 onOptionSelected = { selectedTab = it },
                 isLightMode = isLight,
@@ -249,7 +245,7 @@ fun LateralPanelSettingsScreen(
                     HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     LateralModeOptionRow(
-                        title = "Feed Social & Notícias",
+                        title = "Feed de Notícias (RSS)",
                         subtitle = "Abre sua linha do tempo de notícias com resumos por IA",
                         isSelected = uiState.leftScreenMode == "feed",
                         onClick = { viewModel.setLeftScreenMode("feed") },
@@ -278,7 +274,7 @@ fun LateralPanelSettingsScreen(
                 // ABA 0: CENTRAL DE WIDGETS
                 // ==========================================
                 Text(
-                    text = "WIDGETS DA PÁGINA LATERAL",
+                    text = "WIDGETS DA CENTRAL BENTO",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -296,11 +292,11 @@ fun LateralPanelSettingsScreen(
                 ) {
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         LateralToggleRow(
-                            icon = Icons.Outlined.AutoAwesome,
-                            title = "Smart Glance (Now & Next)",
-                            subtitle = "Resumo contextual de agenda, clima e tarefas no topo da shelf",
-                            checked = uiState.isSmartGlanceEnabled,
-                            onCheckedChange = { viewModel.setSmartGlanceEnabled(it) },
+                            icon = Icons.Outlined.MusicNote,
+                            title = "Palco Apple Music",
+                            subtitle = "Player de mídia hero com capa e controles musicais",
+                            checked = uiState.enabledWidgets.contains(WidgetType.MEDIA),
+                            onCheckedChange = { viewModel.toggleWidget(WidgetType.MEDIA) },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -310,11 +306,39 @@ fun LateralPanelSettingsScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                         LateralToggleRow(
-                            icon = Icons.Outlined.MenuBook,
-                            title = "Notas e diário",
-                            subtitle = "Notas rápidas, lista de afazeres e entradas do diário",
-                            checked = uiState.isNotesWidgetEnabled,
-                            onCheckedChange = { viewModel.setNotesWidgetEnabled(it) },
+                            icon = Icons.Outlined.WbSunny,
+                            title = "Clima e Previsão",
+                            subtitle = "Temperatura local e condição meteorológica em tempo real",
+                            checked = uiState.enabledWidgets.contains(WidgetType.WEATHER),
+                            onCheckedChange = { viewModel.toggleWidget(WidgetType.WEATHER) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
+                            primaryTextColor = primaryTextColor,
+                            secondaryTextColor = secondaryTextColor
+                        )
+
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                        LateralToggleRow(
+                            icon = Icons.Outlined.CalendarToday,
+                            title = "Agenda e Calendário",
+                            subtitle = "Próximo compromisso e data editorial sincronizada",
+                            checked = uiState.enabledWidgets.contains(WidgetType.CALENDAR),
+                            onCheckedChange = { viewModel.toggleWidget(WidgetType.CALENDAR) },
+                            isLightMode = isLight,
+                            iconBgColor = iconBg,
+                            primaryTextColor = primaryTextColor,
+                            secondaryTextColor = secondaryTextColor
+                        )
+
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                        LateralToggleRow(
+                            icon = Icons.Outlined.BatteryStd,
+                            title = "Nível de Bateria",
+                            subtitle = "Percentual de bateria e status do carregamento",
+                            checked = uiState.enabledWidgets.contains(WidgetType.BATTERY),
+                            onCheckedChange = { viewModel.toggleWidget(WidgetType.BATTERY) },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -325,8 +349,8 @@ fun LateralPanelSettingsScreen(
 
                         LateralToggleRow(
                             icon = Icons.Outlined.SportsEsports,
-                            title = "Jogo do Dino",
-                            subtitle = "Jogo retrô interativo do dinossauro pulando",
+                            title = "Jogo do Dino (Chrome Retro)",
+                            subtitle = "Minigame retrô autêntico em pixel-art com dinossauro pulando",
                             checked = uiState.isDinoWidgetEnabled,
                             onCheckedChange = { viewModel.setDinoWidgetEnabled(it) },
                             isLightMode = isLight,
@@ -339,8 +363,8 @@ fun LateralPanelSettingsScreen(
 
                         LateralToggleRow(
                             icon = Icons.Outlined.Apps,
-                            title = "Apps Sugeridos (IA)",
-                            subtitle = "Cards de apps sugeridos com base em padrões de uso",
+                            title = "Dock de Apps Sugeridos",
+                            subtitle = "Atalhos preditivos para os aplicativos mais utilizados",
                             checked = uiState.isSmartDockEnabled,
                             onCheckedChange = { viewModel.setSmartDockEnabled(it) },
                             isLightMode = isLight,
@@ -353,7 +377,7 @@ fun LateralPanelSettingsScreen(
 
                         LateralToggleRow(
                             icon = Icons.Outlined.HourglassEmpty,
-                            title = "Tempo de tela (Bem-Estar)",
+                            title = "Tempo de Tela (Bem-Estar)",
                             subtitle = "Tempo diário de uso e ranking dos principais aplicativos",
                             checked = uiState.isScreenTimeWidgetEnabled,
                             onCheckedChange = { viewModel.setScreenTimeWidgetEnabled(it) },
@@ -428,7 +452,7 @@ fun LateralPanelSettingsScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = if (uiState.hasNotificationAccess) "Autorizado • Sincroniza player e badges" else "Necessário para controle de música",
+                                text = if (uiState.hasNotificationAccess) "Autorizado • Sincroniza player e deck estilo iOS" else "Necessário para controle de música e notificações",
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                 color = secondaryTextColor
                             )
@@ -445,9 +469,9 @@ fun LateralPanelSettingsScreen(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // COMPORTAMENTO & REPOUSO
+                // WIDGETS DO ANDROID (TERCEIROS)
                 Text(
-                    text = "COMPORTAMENTO & REPOUSO",
+                    text = "WIDGETS DO ANDROID (TERCEIROS)",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -463,46 +487,45 @@ fun LateralPanelSettingsScreen(
                     border = BorderStroke(1.dp, cardBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                        LateralToggleRow(
-                            icon = Icons.Outlined.FlashOn,
-                            title = "Trocar ao tocar música",
-                            subtitle = "Muda para o player de mídia automaticamente ao iniciar uma faixa",
-                            checked = uiState.isSwitchOnMusicPlayEnabled,
-                            onCheckedChange = { viewModel.setSwitchOnMusicPlayEnabled(it) },
-                            isLightMode = isLight,
-                            iconBgColor = iconBg,
-                            primaryTextColor = primaryTextColor,
-                            secondaryTextColor = secondaryTextColor
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(iconBg),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Widgets,
+                                contentDescription = null,
+                                tint = primaryTextColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
 
-                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
+                        Spacer(modifier = Modifier.width(14.dp))
 
-                        LateralToggleRow(
-                            icon = Icons.Outlined.SwapVert,
-                            title = "Smart Stacks (Rotação Inteligente)",
-                            subtitle = "Gire widgets com deslize vertical no topo da shelf",
-                            checked = uiState.isSmartStackRotateEnabled,
-                            onCheckedChange = { viewModel.setSmartStackRotateEnabled(it) },
-                            isLightMode = isLight,
-                            iconBgColor = iconBg,
-                            primaryTextColor = primaryTextColor,
-                            secondaryTextColor = secondaryTextColor
-                        )
-
-                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                        LateralToggleRow(
-                            icon = Icons.Outlined.BatteryChargingFull,
-                            title = "Modo Repouso ao carregar",
-                            subtitle = "Abre o relógio com foto e rotação livre ao conectar o carregador",
-                            checked = uiState.isPhotoStandByOnChargeEnabled,
-                            onCheckedChange = { viewModel.setPhotoStandByOnChargeEnabled(it) },
-                            isLightMode = isLight,
-                            iconBgColor = iconBg,
-                            primaryTextColor = primaryTextColor,
-                            secondaryTextColor = secondaryTextColor
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Widgets Hospedados",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                color = primaryTextColor
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "${uiState.hostedWidgetIds.size} widget(s) de terceiros adicionados. Gerencie e adicione mais diretamente no rodapé da Central de Widgets.",
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 16.sp),
+                                color = secondaryTextColor
+                            )
+                        }
                     }
                 }
 
@@ -510,10 +533,10 @@ fun LateralPanelSettingsScreen(
 
             } else {
                 // ==========================================
-                // ABA 1: FEED SOCIAL & NOTÍCIAS
+                // ABA 1: FEED DE NOTÍCIAS (RSS)
                 // ==========================================
                 Text(
-                    text = "ESTADO DO FEED SOCIAL",
+                    text = "ESTADO DO FEED DE NOTÍCIAS",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -531,9 +554,9 @@ fun LateralPanelSettingsScreen(
                 ) {
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         LateralToggleRow(
-                            icon = Icons.Outlined.AutoAwesome,
-                            title = "Ativar Feed Social",
-                            subtitle = "Linha do tempo de notícias e redes com resumos por IA",
+                            icon = Icons.Outlined.RssFeed,
+                            title = "Ativar Feed de Notícias",
+                            subtitle = "Linha do tempo de notícias dos seus feeds RSS cadastrados",
                             checked = uiState.isFeedEnabled,
                             onCheckedChange = { viewModel.setFeedEnabled(it) },
                             isLightMode = isLight,
@@ -563,72 +586,9 @@ fun LateralPanelSettingsScreen(
                 if (uiState.isFeedEnabled) {
                     Spacer(modifier = Modifier.height(20.dp))
 
+                    // SEÇÃO DE CADASTRO DE NOVA FONTE RSS
                     Text(
-                        text = "PRESETS REGIONAIS RÁPIDOS",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp
-                        ),
-                        color = tertiaryTextColor,
-                        modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            shape = PillShape,
-                            color = cardBg,
-                            border = BorderStroke(1.dp, cardBorder),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    viewModel.setFeedEnabledSources(setOf(FeedSource.NEWS.name, FeedSource.REDDIT.name, FeedSource.BLUESKY.name))
-                                    viewModel.setFeedSubreddits(listOf("tecnologia", "brasil", "gamesEcultura"))
-                                    viewModel.setFeedBlueskyHandles(listOf("g1.globo.com", "tecmundo.com.br", "canaltech.com.br"))
-                                    viewModel.refreshFeed()
-                                }
-                        ) {
-                            Text(
-                                text = "🇧🇷 Brasil (PT-BR)",
-                                color = primaryTextColor,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
-                        }
-
-                        Surface(
-                            shape = PillShape,
-                            color = cardBg,
-                            border = BorderStroke(1.dp, cardBorder),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable {
-                                    viewModel.setFeedEnabledSources(setOf(FeedSource.REDDIT.name, FeedSource.BLUESKY.name))
-                                    viewModel.setFeedSubreddits(listOf("technology", "androiddev", "worldnews"))
-                                    viewModel.setFeedBlueskyHandles(listOf("theverge.com", "techcrunch.com", "bsky.app"))
-                                    viewModel.refreshFeed()
-                                }
-                        ) {
-                            Text(
-                                text = "🌐 Global (EN)",
-                                color = primaryTextColor,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 12.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    Text(
-                        text = "FONTES DE CONTEÚDO",
+                        text = "ADICIONAR NOVA FONTE RSS",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -644,126 +604,187 @@ fun LateralPanelSettingsScreen(
                         border = BorderStroke(1.dp, cardBorder),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column {
-                            FeedSource.values().forEachIndexed { index, source ->
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { viewModel.toggleFeedSource(source) }
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        text = source.displayName,
-                                        color = primaryTextColor,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Switch(
-                                        checked = uiState.feedEnabledSources.contains(source),
-                                        onCheckedChange = { viewModel.toggleFeedSource(source) },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = if (isLight) LightBackground else Color.Black,
-                                            checkedTrackColor = if (isLight) LightTextPrimary else Color.White,
-                                            checkedBorderColor = if (isLight) LightTextPrimary else Color.White,
-                                            uncheckedThumbColor = if (isLight) Color(0xFF8E8E93) else Color(0xFF636366),
-                                            uncheckedTrackColor = if (isLight) Color(0xFFE5E0D0) else Color(0xFF2C2C2E)
+                        var newTitle by remember { mutableStateOf("") }
+                        var newUrl by remember { mutableStateOf("") }
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = newTitle,
+                                onValueChange = { newTitle = it },
+                                label = { Text("Nome da Fonte (ex: G1 Tecnologia)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = primaryTextColor,
+                                    unfocusedBorderColor = cardBorder,
+                                    focusedLabelColor = primaryTextColor,
+                                    unfocusedLabelColor = secondaryTextColor
+                                )
+                            )
+
+                            OutlinedTextField(
+                                value = newUrl,
+                                onValueChange = { newUrl = it },
+                                label = { Text("URL do Feed RSS / Atom") },
+                                placeholder = { Text("https://exemplo.com/rss") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = primaryTextColor,
+                                    unfocusedBorderColor = cardBorder,
+                                    focusedLabelColor = primaryTextColor,
+                                    unfocusedLabelColor = secondaryTextColor
+                                )
+                            )
+
+                            Button(
+                                onClick = {
+                                    if (newTitle.isNotBlank() && newUrl.isNotBlank()) {
+                                        viewModel.addCustomRssSource(newTitle.trim(), newUrl.trim())
+                                        newTitle = ""
+                                        newUrl = ""
+                                    }
+                                },
+                                enabled = newTitle.isNotBlank() && newUrl.isNotBlank(),
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isLight) Color(0xFF1C1917) else Color(0xFFF7F4EB),
+                                    contentColor = if (isLight) Color(0xFFF7F4EB) else Color(0xFF1C1917)
+                                )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Cadastrar Fonte",
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // LISTA DE FONTES RSS CADASTRADAS
+                    Text(
+                        text = "FONTES CADASTRADAS (${uiState.customRssSources.size})",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        ),
+                        color = tertiaryTextColor,
+                        modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
+                    )
+
+                    Surface(
+                        shape = LateralCardShape,
+                        color = cardBg,
+                        border = BorderStroke(1.dp, cardBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (uiState.customRssSources.isEmpty()) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.RssFeed,
+                                    contentDescription = null,
+                                    tint = secondaryTextColor,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Nenhuma fonte RSS cadastrada",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = primaryTextColor
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Cadastre URLs de feeds RSS dos seus portais de notícias favoritos no formulário acima.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = secondaryTextColor,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        } else {
+                            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                                uiState.customRssSources.forEachIndexed { index, source ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = source.name,
+                                                style = MaterialTheme.typography.bodyMedium.copy(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 14.5.sp
+                                                ),
+                                                color = primaryTextColor
+                                            )
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = source.url,
+                                                style = MaterialTheme.typography.bodySmall.copy(
+                                                    fontSize = 11.5.sp
+                                                ),
+                                                color = secondaryTextColor,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        Switch(
+                                            checked = source.isEnabled,
+                                            onCheckedChange = { viewModel.toggleCustomRssSource(source.id) },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = if (isLight) LightBackground else Color.Black,
+                                                checkedTrackColor = if (isLight) LightTextPrimary else Color.White,
+                                                checkedBorderColor = if (isLight) LightTextPrimary else Color.White,
+                                                uncheckedThumbColor = if (isLight) Color(0xFF8E8E93) else Color(0xFF636366),
+                                                uncheckedTrackColor = if (isLight) Color(0xFFE5E0D0) else Color(0xFF2C2C2E)
+                                            )
                                         )
-                                    )
+
+                                        Spacer(modifier = Modifier.width(4.dp))
+
+                                        IconButton(
+                                            onClick = { viewModel.removeCustomRssSource(source.id) },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Delete,
+                                                contentDescription = "Excluir fonte",
+                                                tint = if (isLight) Color(0xFFBA1A1A) else Color(0xFFFFB4AB),
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    }
+
+                                    if (index < uiState.customRssSources.size - 1) {
+                                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
+                                    }
                                 }
-                                if (index < FeedSource.values().size - 1) {
-                                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
-                                }
                             }
-                        }
-                    }
-
-                    val isRedditEnabled = uiState.feedEnabledSources.any { it.name == "REDDIT" }
-                    if (isRedditEnabled) {
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text(
-                            text = "SUBREDDITS (separados por vírgula)",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp
-                            ),
-                            color = tertiaryTextColor,
-                            modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
-                        )
-
-                        Surface(
-                            shape = LateralCardShape,
-                            color = cardBg,
-                            border = BorderStroke(1.dp, cardBorder),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            var textValue by remember(uiState.feedSubreddits) {
-                                mutableStateOf(uiState.feedSubreddits.joinToString(", "))
-                            }
-                            BasicTextField(
-                                value = textValue,
-                                onValueChange = { newValue ->
-                                    textValue = newValue
-                                    val list = newValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                                    viewModel.setFeedSubreddits(list)
-                                },
-                                textStyle = TextStyle(
-                                    color = primaryTextColor,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                cursorBrush = SolidColor(primaryTextColor),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            )
-                        }
-                    }
-
-                    val isBlueskyEnabled = uiState.feedEnabledSources.any { it.name == "BLUESKY" }
-                    if (isBlueskyEnabled) {
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        Text(
-                            text = "BLUESKY HANDLES (separados por vírgula)",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp
-                            ),
-                            color = tertiaryTextColor,
-                            modifier = Modifier.padding(start = 6.dp, bottom = 8.dp)
-                        )
-
-                        Surface(
-                            shape = LateralCardShape,
-                            color = cardBg,
-                            border = BorderStroke(1.dp, cardBorder),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            var textValue by remember(uiState.feedBlueskyHandles) {
-                                mutableStateOf(uiState.feedBlueskyHandles.joinToString(", "))
-                            }
-                            BasicTextField(
-                                value = textValue,
-                                onValueChange = { newValue ->
-                                    textValue = newValue
-                                    val list = newValue.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                                    viewModel.setFeedBlueskyHandles(list)
-                                },
-                                textStyle = TextStyle(
-                                    color = primaryTextColor,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Normal
-                                ),
-                                cursorBrush = SolidColor(primaryTextColor),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            )
                         }
                     }
 

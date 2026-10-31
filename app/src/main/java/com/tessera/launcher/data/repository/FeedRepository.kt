@@ -25,29 +25,24 @@ class FeedRepository(
 
     companion object {
         private const val TAG = "FeedRepository"
-        private const val REDDIT_BASE = "https://www.reddit.com/r/"
-        private const val BLUESKY_BASE = "https://public.api.bsky.app/xrpc/"
         private const val CACHE_TTL_MS = 15 * 60 * 1000L
-        private const val DEFAULT_LIMIT = 20
         private const val CONNECT_TIMEOUT = 4_000
         private const val READ_TIMEOUT = 5_000
-        private const val USER_AGENT = "android:com.tessera.launcher:v1.8.8 (by /u/tessera_launcher)"
+        private const val USER_AGENT = "android:com.tessera.launcher:v1.8.8 (RSS Reader)"
 
         /**
-         * Sanitiza e formata profundamente textos de matérias e posts (RSS, Reddit, Bluesky):
+         * Sanitiza e formata profundamente textos de matérias RSS:
          * - Remove marcadores CDATA residuais (<![CDATA[ e ]]>)
          * - Remove tags HTML, scripts, estilos, comentários e tabelas
          * - Decodifica entidades HTML nomeadas e numéricas (&quot;, &amp;, &ndash;, etc.)
          * - Remove links e marcações markdown
          * - Remove repetições do título no início do corpo da matéria
-         * - Remove símbolos residuais ou pontuações no início do texto
          * - Normaliza espaçamentos e quebras
          */
         fun formatFeedText(raw: String?, titleToDeduplicate: String? = null): String {
             if (raw.isNullOrBlank()) return ""
 
             var text = raw
-                // 1. Remover marcadores CDATA e comentários XML/HTML em qualquer posição
                 .replace("<![CDATA[", "")
                 .replace("]]>", "")
                 .replace("]]", "")
@@ -57,13 +52,11 @@ class FeedRepository(
                 .replace(Regex("<style[\\s\\S]*?</style>", RegexOption.IGNORE_CASE), " ")
                 .replace(Regex("<table[\\s\\S]*?</table>", RegexOption.IGNORE_CASE), " ")
 
-            // 2. Quebras de bloco HTML para espaços delimitados
             text = text
                 .replace(Regex("<br\\s*/?>", RegexOption.IGNORE_CASE), " ")
                 .replace(Regex("</?(?:p|div|li|tr|h[1-6]|blockquote)[^>]*>", RegexOption.IGNORE_CASE), " ")
-                .replace(Regex("<[^>]+>"), " ") // Remove qualquer outra tag HTML restante
+                .replace(Regex("<[^>]+>"), " ")
 
-            // 3. Decodificar entidades HTML (tratar dupla codificação primeiro)
             if (text.contains("&amp;")) {
                 text = text.replace("&amp;", "&")
             }
@@ -106,41 +99,24 @@ class FeedRepository(
                     .replace("&Ocirc;", "Ô")
             }
 
-            // 4. Limpar espaços invisíveis, marcadores Markdown e códigos
             text = text
                 .replace('\u00A0', ' ')
                 .replace("\u200B", "")
                 .replace(Regex("\\[link\\]|\\[comments\\]", RegexOption.IGNORE_CASE), "")
-                .replace(Regex("\\[([^\\]]+)\\]\\([^\\)]+\\)"), "$1") // Markdown links
-                .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1") // Markdown bold
-                .replace(Regex("\\*([^*]+)\\*"), "$1") // Markdown italic
+                .replace(Regex("\\[([^\\]]+)\\]\\([^\\)]+\\)"), "$1")
+                .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1")
+                .replace(Regex("\\*([^*]+)\\*"), "$1")
 
-            // 5. Normalizar espaços
             text = text.replace(Regex("\\s+"), " ").trim()
 
-            // 6. Remover título duplicado no início do texto (comum em RSS de notícias)
             if (!titleToDeduplicate.isNullOrBlank()) {
                 val cleanTitle = titleToDeduplicate.trim()
-                val withoutTitle = when {
-                    text.startsWith(cleanTitle, ignoreCase = true) -> text.substring(cleanTitle.length).trim()
-                    else -> {
-                        val prefix = cleanTitle.take(25).trim()
-                        if (prefix.length >= 15 && text.startsWith(prefix, ignoreCase = true)) {
-                            val matchingEnd = text.indexOfAny(charArrayOf('.', ':', '—', '-', '\n'), startIndex = prefix.length)
-                            if (matchingEnd in prefix.length..cleanTitle.length + 15) {
-                                text.substring(matchingEnd + 1).trim()
-                            } else text
-                        } else text
-                    }
-                }
-                if (withoutTitle.isNotBlank()) {
-                    text = withoutTitle
+                if (text.startsWith(cleanTitle, ignoreCase = true)) {
+                    text = text.substring(cleanTitle.length).trim()
                 }
             }
 
-            // 7. Remover símbolos soltos ou pontuações que possam ter sobrado no início
-            text = text.replace(Regex("^[\\s\\]\\>\\-\\–\\—\\:\\.\\,\\•\\*\\|#@!~]+"), "").trim()
-
+            text = text.replace(Regex("^[\\s\\-–—:•·|/]+"), "").trim()
             return text
         }
     }
@@ -148,6 +124,11 @@ class FeedRepository(
     private var lastFetchTime: Long = 0L
 
     suspend fun fetchFeed(forceRefresh: Boolean = false): FeedResult {
+        val sources = preferences.getCustomRssSources().filter { it.isEnabled }
+        if (sources.isEmpty()) {
+            return FeedResult.Empty
+        }
+
         val cachedJson = preferences.getFeedCachedJson()
         val cacheValid = !forceRefresh &&
             cachedJson != null &&
@@ -159,50 +140,22 @@ class FeedRepository(
         }
 
         return try {
-            val enabledSources = preferences.getFeedEnabledSources()
             val posts = mutableListOf<FeedPost>()
 
             coroutineScope {
-                val deferredList = mutableListOf<kotlinx.coroutines.Deferred<List<FeedPost>>>()
-
-                if (FeedSource.NEWS.name in enabledSources) {
-                    deferredList.add(async(Dispatchers.IO) {
-                        runCatching { fetchBrazilianNewsRss() }.getOrDefault(emptyList())
-                    })
-                }
-
-                if (FeedSource.REDDIT.name in enabledSources) {
-                    val subreddits = preferences.getFeedSubreddits()
-                    for (sub in subreddits) {
-                        val cleanSub = sub.trim().removePrefix("/r/").removePrefix("r/").removePrefix("/").trim()
-                        if (cleanSub.isNotBlank()) {
-                            deferredList.add(async(Dispatchers.IO) {
-                                runCatching { fetchRedditSubreddit(cleanSub) }.getOrDefault(emptyList())
-                            })
-                        }
+                val deferredList = sources.map { source ->
+                    async(Dispatchers.IO) {
+                        runCatching {
+                            val xml = httpGet(source.url)
+                            if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
+                                parseStandardRss(xml, source.name, FeedSource.NEWS)
+                            } else {
+                                emptyList()
+                            }
+                        }.getOrDefault(emptyList())
                     }
                 }
-
-                if (FeedSource.BLUESKY.name in enabledSources) {
-                    val handles = preferences.getFeedBlueskyHandles()
-                    for (handle in handles) {
-                        val cleanHandle = handle.trim().removePrefix("@").trim()
-                        if (cleanHandle.isNotBlank()) {
-                            deferredList.add(async(Dispatchers.IO) {
-                                runCatching { fetchBlueskyAuthor(cleanHandle) }.getOrDefault(emptyList())
-                            })
-                        }
-                    }
-                }
-
-                val results = deferredList.awaitAll()
-                results.forEach { posts.addAll(it) }
-            }
-
-            if (posts.isEmpty()) {
-                // Fallback resiliente imediato: RSS confiável (G1 Tecnologia, Ars Technica, The Verge)
-                val fallbackNews = fetchFallbackRss()
-                posts.addAll(fallbackNews)
+                deferredList.awaitAll().forEach { posts.addAll(it) }
             }
 
             if (posts.isEmpty()) {
@@ -215,7 +168,6 @@ class FeedRepository(
             } else {
                 var sorted = posts.distinctBy { it.id }.sortedByDescending { it.createdAt }
 
-                // Aplicar resumos de IA se habilitado de forma rápida
                 if (preferences.isFeedAiSummariesEnabled()) {
                     val aiHelper = com.tessera.launcher.data.helper.AiSummaryHelper()
                     sorted = sorted.map { post ->
@@ -238,216 +190,6 @@ class FeedRepository(
             }
         }
     }
-
-    private suspend fun fetchRedditSubreddit(subreddit: String): List<FeedPost> =
-        withContext(Dispatchers.IO) {
-            // 1. Tentar endpoint JSON oficial do Reddit primeiro (mais rico em campos e score)
-            val jsonUrl = "${REDDIT_BASE}${subreddit}/hot.json?limit=$DEFAULT_LIMIT&raw_json=1"
-            val json = httpGet(jsonUrl)
-            if (json != null && json.startsWith("{") && json.contains("\"children\"")) {
-                try {
-                    val root = JSONObject(json)
-                    val children = root.optJSONObject("data")?.optJSONArray("children")
-                    if (children != null && children.length() > 0) {
-                        val jsonPosts = parseRedditChildren(children, subreddit)
-                        if (jsonPosts.isNotEmpty()) return@withContext jsonPosts
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Reddit JSON parse error for r/$subreddit, tentando RSS", e)
-                }
-            }
-
-            // 2. Fallback para feed RSS caso JSON seja bloqueado ou falhe
-            val rssUrl = "${REDDIT_BASE}${subreddit}/.rss?limit=$DEFAULT_LIMIT"
-            val rssXml = httpGet(rssUrl)
-            if (rssXml != null && rssXml.contains("<entry")) {
-                val rssPosts = parseRedditRss(rssXml, subreddit)
-                if (rssPosts.isNotEmpty()) return@withContext rssPosts
-            }
-
-            emptyList()
-        }
-
-    private fun parseRedditRss(xml: String, subreddit: String): List<FeedPost> {
-        val posts = mutableListOf<FeedPost>()
-        val entryRegex = Regex("<entry[\\s\\S]*?</entry>")
-        val titleRegex = Regex("<title(?:[^>]*)>([\\s\\S]*?)</title>")
-        val authorRegex = Regex("<author>\\s*<name>([^<]+)</name>")
-        val linkRegex = Regex("<link\\s+href=\"([^\"]+)\"")
-        val idRegex = Regex("<id>([^<]+)</id>")
-        val updatedRegex = Regex("<updated>([^<]+)</updated>")
-        val thumbRegex = Regex("<media:thumbnail\\s+url=\"([^\"]+)\"")
-        val contentRegex = Regex("<content(?:[^>]*)>([\\s\\S]*?)</content>")
-
-        for (match in entryRegex.findAll(xml)) {
-            val entry = match.value
-            val rawTitle = titleRegex.find(entry)?.groupValues?.getOrNull(1) ?: continue
-            val title = formatFeedText(rawTitle)
-            if (title.isBlank()) continue
-
-            val author = authorRegex.find(entry)?.groupValues?.getOrNull(1)?.removePrefix("/u/") ?: "reddit"
-            val link = linkRegex.find(entry)?.groupValues?.getOrNull(1) ?: ""
-            val id = idRegex.find(entry)?.groupValues?.getOrNull(1) ?: link.hashCode().toString()
-            val thumb = thumbRegex.find(entry)?.groupValues?.getOrNull(1)?.replace("&amp;", "&")
-            val updatedStr = updatedRegex.find(entry)?.groupValues?.getOrNull(1)
-            val created = try {
-                if (updatedStr != null) java.time.Instant.parse(updatedStr).toEpochMilli()
-                else System.currentTimeMillis()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-
-            val rawContent = contentRegex.find(entry)?.groupValues?.getOrNull(1) ?: ""
-            val bodyText = formatFeedText(rawContent, titleToDeduplicate = title).take(500)
-
-            posts.add(
-                FeedPost(
-                    id = "reddit_$id",
-                    source = FeedSource.REDDIT,
-                    author = author,
-                    authorHandle = "u/$author",
-                    title = title,
-                    body = bodyText,
-                    subreddit = subreddit,
-                    score = 0,
-                    commentCount = 0,
-                    url = link,
-                    thumbnailUrl = thumb,
-                    createdAt = created
-                )
-            )
-        }
-        return posts
-    }
-
-    private fun parseRedditChildren(children: JSONArray, subreddit: String): List<FeedPost> {
-        val posts = mutableListOf<FeedPost>()
-        for (i in 0 until children.length()) {
-            val child = children.getJSONObject(i)
-            if (child.optString("kind") != "t3") continue
-            val data = child.getJSONObject("data")
-
-            if (data.optBoolean("stickied", false)) continue
-
-            val id = data.optString("id", "reddit_$i")
-            val author = data.optString("author", "[deleted]")
-            val title = data.optString("title", "")
-            val selftext = data.optString("selftext", "")
-            val score = data.optInt("score", 0)
-            val numComments = data.optInt("num_comments", 0)
-            val permalink = data.optString("permalink", "")
-            val created = (data.optDouble("created_utc", 0.0) * 1000).toLong()
-            val thumbnail = data.optString("thumbnail", "")
-                .takeIf { it.startsWith("http") }
-
-            val cleanTitle = formatFeedText(title)
-            val cleanBody = formatFeedText(selftext, titleToDeduplicate = cleanTitle).take(500)
-
-            posts.add(
-                FeedPost(
-                    id = "reddit_$id",
-                    source = FeedSource.REDDIT,
-                    author = author,
-                    authorHandle = "u/$author",
-                    title = cleanTitle.ifBlank { null },
-                    body = cleanBody,
-                    subreddit = subreddit,
-                    score = score,
-                    commentCount = numComments,
-                    url = if (permalink.startsWith("http")) permalink else "https://www.reddit.com$permalink",
-                    thumbnailUrl = thumbnail,
-                    createdAt = if (created > 0L) created else System.currentTimeMillis()
-                )
-            )
-        }
-        return posts
-    }
-
-    private suspend fun fetchBlueskyAuthor(handle: String): List<FeedPost> =
-        withContext(Dispatchers.IO) {
-            val cleanHandle = handle.trim()
-                .removePrefix("@")
-                .let { if (!it.contains(".")) "$it.bsky.social" else it }
-
-            val url = "${BLUESKY_BASE}app.bsky.feed.getAuthorFeed?actor=$cleanHandle&limit=$DEFAULT_LIMIT"
-            val json = httpGet(url) ?: return@withContext emptyList()
-
-            try {
-                val root = JSONObject(json)
-                val feed = root.optJSONArray("feed") ?: return@withContext emptyList()
-                parseBlueskyFeed(feed, cleanHandle)
-            } catch (e: Exception) {
-                Log.e(TAG, "Bluesky parse error for @$cleanHandle", e)
-                emptyList()
-            }
-        }
-
-    private fun parseBlueskyFeed(feed: JSONArray, handle: String): List<FeedPost> {
-        val posts = mutableListOf<FeedPost>()
-        for (i in 0 until feed.length()) {
-            val item = feed.optJSONObject(i) ?: continue
-            val post = item.optJSONObject("post") ?: continue
-            val record = post.optJSONObject("record") ?: continue
-
-            val uri = post.optString("uri", "bsky_$i")
-            val author = post.optJSONObject("author")
-            val displayName = author?.optString("displayName", handle)?.ifBlank { handle } ?: handle
-            val authorHandle = author?.optString("handle", handle)?.ifBlank { handle } ?: handle
-
-            var text = record.optString("text", "")
-            if (text.isBlank()) {
-                text = post.optJSONObject("embed")?.optJSONObject("record")?.optJSONObject("value")?.optString("text", "") ?: ""
-            }
-            if (text.isBlank()) {
-                text = post.optJSONObject("embed")?.optJSONObject("external")?.optString("title", "") ?: ""
-            }
-
-            val createdAt = record.optString("createdAt", "")
-            val likeCount = post.optInt("likeCount", 0)
-            val replyCount = post.optInt("replyCount", 0)
-
-            val timestamp = try {
-                if (createdAt.isNotBlank()) java.time.Instant.parse(createdAt).toEpochMilli()
-                else System.currentTimeMillis()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-
-            val postId = uri.substringAfterLast("/")
-            val webUrl = "https://bsky.app/profile/$authorHandle/post/$postId"
-
-            // Extrair imagem thumbnail de embed (images ou external)
-            val embed = post.optJSONObject("embed")
-            val thumb = embed?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
-                ?: embed?.optJSONObject("media")?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
-                ?: embed?.optJSONObject("external")?.optString("thumb")
-                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONObject("external")?.optString("thumb")
-                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONArray("images")?.optJSONObject(0)?.optString("thumb")
-
-            val externalTitle = embed?.optJSONObject("external")?.optString("title")
-                ?: post.optJSONArray("embeds")?.optJSONObject(0)?.optJSONObject("external")?.optString("title")
-                ?: embed?.optJSONObject("media")?.optJSONObject("external")?.optString("title")
-
-            posts.add(
-                FeedPost(
-                    id = "bsky_$postId",
-                    source = FeedSource.BLUESKY,
-                    author = displayName,
-                    authorHandle = authorHandle,
-                    title = externalTitle?.takeIf { it.isNotBlank() }?.let { formatFeedText(it) }?.takeIf { it.isNotBlank() },
-                    body = formatFeedText(text, titleToDeduplicate = externalTitle).take(500),
-                    score = likeCount,
-                    commentCount = replyCount,
-                    url = webUrl,
-                    thumbnailUrl = thumb?.takeIf { it.startsWith("http") },
-                    createdAt = timestamp
-                )
-            )
-        }
-        return posts
-    }
-
-    private fun unescapeHtml(text: String): String = formatFeedText(text)
 
     private fun httpGet(urlString: String): String? {
         var connection: HttpURLConnection? = null
@@ -484,49 +226,6 @@ class FeedRepository(
         }
     }
 
-    private suspend fun fetchBrazilianNewsRss(): List<FeedPost> = withContext(Dispatchers.IO) {
-        val newsSources = listOf(
-            "https://g1.globo.com/rss/g1/tecnologia/" to "G1 Tecnologia",
-            "https://rss.tecmundo.com.br/feed" to "TecMundo",
-            "https://canaltech.com.br/rss/" to "Canaltech"
-        )
-        val posts = mutableListOf<FeedPost>()
-        coroutineScope {
-            val deferred = newsSources.map { (url, name) ->
-                async {
-                    runCatching {
-                        val xml = httpGet(url)
-                        if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
-                            parseStandardRss(xml, name, FeedSource.NEWS)
-                        } else {
-                            emptyList()
-                        }
-                    }.getOrDefault(emptyList())
-                }
-            }
-            deferred.awaitAll().forEach { posts.addAll(it) }
-        }
-        posts
-    }
-
-    private suspend fun fetchFallbackRss(): List<FeedPost> = withContext(Dispatchers.IO) {
-        val brNews = fetchBrazilianNewsRss()
-        if (brNews.isNotEmpty()) return@withContext brNews
-
-        val globalUrls = listOf(
-            "https://www.theverge.com/rss/index.xml" to "The Verge",
-            "https://feeds.arstechnica.com/arstechnica/index" to "Ars Technica"
-        )
-        for ((url, name) in globalUrls) {
-            val xml = httpGet(url)
-            if (xml != null && (xml.contains("<entry") || xml.contains("<item"))) {
-                val parsed = parseStandardRss(xml, name, FeedSource.NEWS)
-                if (parsed.isNotEmpty()) return@withContext parsed
-            }
-        }
-        emptyList()
-    }
-
     private fun parseStandardRss(xml: String, defaultAuthor: String, source: FeedSource): List<FeedPost> {
         val posts = mutableListOf<FeedPost>()
         val isAtom = xml.contains("<feed") || xml.contains("<entry")
@@ -548,42 +247,55 @@ class FeedRepository(
             val rawDesc = descRegex.find(item)?.groupValues?.getOrNull(1) ?: ""
             val body = formatFeedText(rawDesc, titleToDeduplicate = title).take(450)
             val author = authorRegex.find(item)?.groupValues?.getOrNull(1)?.trim()?.let { formatFeedText(it) }?.ifBlank { defaultAuthor } ?: defaultAuthor
-            val dateStr = pubDateRegex.find(item)?.groupValues?.getOrNull(1)?.trim()
+
+            val dateStr = pubDateRegex.find(item)?.groupValues?.getOrNull(1)?.trim() ?: ""
+            val timestamp = parseRssDate(dateStr)
+
             val thumb = thumbRegex.find(item)?.let { m ->
-                m.groupValues.getOrNull(1)?.ifBlank { null }
-                    ?: m.groupValues.getOrNull(2)?.ifBlank { null }
-                    ?: m.groupValues.getOrNull(3)?.ifBlank { null }
+                m.groupValues.getOrNull(1)?.takeIf { it.isNotBlank() }
+                    ?: m.groupValues.getOrNull(2)?.takeIf { it.isNotBlank() }
+                    ?: m.groupValues.getOrNull(3)?.takeIf { it.isNotBlank() }
             }
 
-            val timestamp = try {
-                if (dateStr != null) {
-                    if (dateStr.contains("T")) java.time.Instant.parse(dateStr).toEpochMilli()
-                    else java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME.parse(dateStr, java.time.Instant::from).toEpochMilli()
-                } else System.currentTimeMillis()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-
-            val id = "rss_" + (link.ifBlank { title }).hashCode().toString()
+            val id = (link.ifBlank { title }).hashCode().toString()
 
             posts.add(
                 FeedPost(
-                    id = id,
+                    id = "rss_$id",
                     source = source,
                     author = author,
-                    authorHandle = defaultAuthor.lowercase().replace(" ", ""),
+                    authorHandle = "",
                     title = title,
                     body = body,
-                    subreddit = if (source == FeedSource.REDDIT) "tecnologia" else null,
+                    subreddit = null,
                     score = 0,
                     commentCount = 0,
                     url = link,
-                    thumbnailUrl = thumb?.takeIf { it.startsWith("http") },
+                    thumbnailUrl = thumb,
                     createdAt = timestamp
                 )
             )
         }
         return posts
+    }
+
+    private fun parseRssDate(dateStr: String): Long {
+        if (dateStr.isBlank()) return System.currentTimeMillis()
+        val formats = listOf(
+            java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.US),
+            java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US),
+            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+        )
+        for (format in formats) {
+            try {
+                val parsed = format.parse(dateStr)
+                if (parsed != null) return parsed.time
+            } catch (_: Exception) {}
+        }
+        return System.currentTimeMillis()
     }
 
     private fun cachePosts(posts: List<FeedPost>) {
@@ -615,11 +327,11 @@ class FeedRepository(
             val posts = mutableListOf<FeedPost>()
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
-                val sourceName = obj.optString("source", "REDDIT")
+                val sourceName = obj.optString("source", "NEWS")
                 val source = try {
                     FeedSource.valueOf(sourceName)
                 } catch (_: Exception) {
-                    FeedSource.REDDIT
+                    FeedSource.NEWS
                 }
 
                 val rawTitle = obj.optString("title").takeIf { it != "null" && it.isNotBlank() }

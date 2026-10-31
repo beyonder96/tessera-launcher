@@ -18,6 +18,7 @@ import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
 import com.tessera.launcher.data.preference.WidgetType
@@ -233,14 +234,11 @@ class MainViewModel(
             calendarHideFinished = preferences.isCalendarHideFinished(),
             calendarIs24hFormat = preferences.isCalendar24hFormat(),
 
-            // Feed Social
+            // Feed RSS
             isFeedEnabled = preferences.isFeedEnabled(),
-            feedSubreddits = preferences.getFeedSubreddits(),
-            feedBlueskyHandles = preferences.getFeedBlueskyHandles(),
-            feedEnabledSources = preferences.getFeedEnabledSources()
-                .mapNotNull { name -> runCatching { FeedSource.valueOf(name) }.getOrNull() }
-                .toSet()
-                .ifEmpty { setOf(FeedSource.REDDIT) },
+            customRssSources = preferences.getCustomRssSources(),
+            feedEnabledSources = setOf(FeedSource.NEWS),
+            hostedWidgetIds = preferences.getHostedWidgetIds(),
             isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
 
             // Smart Dock (Previsão Contextual)
@@ -2132,6 +2130,35 @@ class MainViewModel(
         _uiState.update { it.copy(feedBlueskyHandles = handles) }
     }
 
+    fun addCustomRssSource(name: String, url: String) {
+        val newSource = CustomRssSource(name = name.trim(), url = url.trim(), isEnabled = true)
+        preferences.addCustomRssSource(newSource)
+        _uiState.update { it.copy(customRssSources = preferences.getCustomRssSources()) }
+        refreshFeed()
+    }
+
+    fun removeCustomRssSource(id: String) {
+        preferences.removeCustomRssSource(id)
+        _uiState.update { it.copy(customRssSources = preferences.getCustomRssSources()) }
+        refreshFeed()
+    }
+
+    fun toggleCustomRssSource(id: String) {
+        preferences.toggleCustomRssSource(id)
+        _uiState.update { it.copy(customRssSources = preferences.getCustomRssSources()) }
+        refreshFeed()
+    }
+
+    fun addHostedWidgetId(id: Int) {
+        preferences.addHostedWidgetId(id)
+        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
+    }
+
+    fun removeHostedWidgetId(id: Int) {
+        preferences.removeHostedWidgetId(id)
+        _uiState.update { it.copy(hostedWidgetIds = preferences.getHostedWidgetIds()) }
+    }
+
     fun toggleFeedSource(source: FeedSource) {
         val current = _uiState.value.feedEnabledSources.toMutableSet()
         if (current.contains(source)) {
@@ -2393,14 +2420,11 @@ class MainViewModel(
                 calendarHideFinished = preferences.isCalendarHideFinished(),
                 calendarIs24hFormat = preferences.isCalendar24hFormat(),
 
-                // Feed Social
+                // Feed RSS
                 isFeedEnabled = preferences.isFeedEnabled(),
-                feedSubreddits = preferences.getFeedSubreddits(),
-                feedBlueskyHandles = preferences.getFeedBlueskyHandles(),
-                feedEnabledSources = preferences.getFeedEnabledSources()
-                    .mapNotNull { name -> runCatching { FeedSource.valueOf(name) }.getOrNull() }
-                    .toSet()
-                    .ifEmpty { setOf(FeedSource.REDDIT) },
+                customRssSources = preferences.getCustomRssSources(),
+                feedEnabledSources = setOf(FeedSource.NEWS),
+                hostedWidgetIds = preferences.getHostedWidgetIds(),
                 isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
 
                 // Smart Dock (Previsão Contextual)

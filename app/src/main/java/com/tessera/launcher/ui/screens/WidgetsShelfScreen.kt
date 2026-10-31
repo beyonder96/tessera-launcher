@@ -1,22 +1,38 @@
 package com.tessera.launcher.ui.screens
 
+import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -31,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
@@ -128,6 +146,11 @@ fun WidgetsShelfScreen(
     notificationCounts: Map<String, Int>,
     onDismissNotification: (String) -> Unit,
     onOpenNotificationsHub: () -> Unit,
+    hostedWidgetIds: List<Int> = emptyList(),
+    appWidgetHost: AppWidgetHost? = null,
+    appWidgetManager: AppWidgetManager? = null,
+    onAddAppWidget: () -> Unit = {},
+    onRemoveAppWidget: (Int) -> Unit = {},
     onClose: () -> Unit,
     onOpenSettings: () -> Unit,
     hasTopSegmentedControl: Boolean = false,
@@ -258,6 +281,7 @@ fun WidgetsShelfScreen(
                                             onDismissNotification(top.key)
                                         }
                                     },
+                                    onDismissNotification = onDismissNotification,
                                     accentColor = accentColor,
                                     isAmoledMode = isAmoledMode,
                                     isLightMode = isLightMode,
@@ -328,6 +352,84 @@ fun WidgetsShelfScreen(
                     }
                 }
             }
+
+            // 5. Widgets de Terceiros do Android (Hospedados via AppWidgetHost)
+            items(hostedWidgetIds, key = { "hosted_widget_$it" }) { widgetId ->
+                JournalCascadeItem(index = 8) {
+                    val appWidgetInfo = remember(widgetId) { appWidgetManager?.getAppWidgetInfo(widgetId) }
+                    JournalBentoCard(isLightMode = isLightMode) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = appWidgetInfo?.loadLabel(context.packageManager)?.toString() ?: "Widget",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isLightMode) Color(0xFF1C1B1F) else Color(0xFFE6E1E5)
+                                )
+                                IconButton(
+                                    onClick = { onRemoveAppWidget(widgetId) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Close,
+                                        contentDescription = "Remover widget",
+                                        tint = if (isLightMode) Color(0xFF79747E) else Color(0xFF938F99),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                            if (appWidgetHost != null && appWidgetInfo != null) {
+                                AndroidView(
+                                    factory = { ctx ->
+                                        appWidgetHost.createView(ctx, widgetId, appWidgetInfo).apply {
+                                            setAppWidget(widgetId, appWidgetInfo)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp))
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 6. Botão para Adicionar Novo Widget do Android
+            item(key = "add_hosted_widget_action") {
+                OutlinedButton(
+                    onClick = onAddAppWidget,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(
+                        1.dp,
+                        if (isLightMode) Color(0xFFDDD8CB) else Color(0x33FFFFFF)
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = if (isLightMode) Color(0xFF1C1B1F) else Color(0xFFE6E1E5)
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Adicionar Widget do Android",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
 
         // Bottom Sheet Journal de Personalização Rápida Ao Vivo
@@ -345,6 +447,7 @@ fun WidgetsShelfScreen(
                 onToggleScreenTime = onToggleScreenTime,
                 isSmartDockEnabled = isPredictedAppsWidgetEnabled,
                 onToggleSmartDock = onTogglePredictedApps,
+                onAddAppWidget = onAddAppWidget,
                 isLightMode = isLightMode,
                 onOpenFullSettings = {
                     isQuickEditOpen = false

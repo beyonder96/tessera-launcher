@@ -2,6 +2,9 @@ package com.tessera.launcher.data.preference
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.tessera.launcher.data.model.CustomRssSource
+import org.json.JSONArray
+import org.json.JSONObject
 
 enum class WidgetType(val displayName: String) {
     NOW_AND_NEXT("Now & Next (Smart Glance)"),
@@ -119,6 +122,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_FEED_SUBREDDITS = "feed_subreddits"
         private const val KEY_FEED_BLUESKY_HANDLES = "feed_bluesky_handles"
         private const val KEY_FEED_SOURCES_ENABLED = "feed_sources_enabled"
+        private const val KEY_CUSTOM_RSS_SOURCES = "custom_rss_sources"
         private const val KEY_FEED_CACHED_JSON = "feed_cached_json"
         private const val KEY_FEED_AI_SUMMARIES = "feed_ai_summaries"
 
@@ -510,6 +514,62 @@ class LauncherPreferences(context: Context) {
     fun isFeedEnabled(): Boolean = prefs.getBoolean(KEY_FEED_ENABLED, true)
     fun setFeedEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_FEED_ENABLED, enabled).apply()
 
+    fun getCustomRssSources(): List<CustomRssSource> {
+        val json = prefs.getString(KEY_CUSTOM_RSS_SOURCES, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(json)
+            val list = mutableListOf<CustomRssSource>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                list.add(
+                    CustomRssSource(
+                        id = obj.optString("id", java.util.UUID.randomUUID().toString()),
+                        name = obj.optString("name", "RSS"),
+                        url = obj.optString("url", ""),
+                        isEnabled = obj.optBoolean("isEnabled", true)
+                    )
+                )
+            }
+            list.filter { it.url.isNotBlank() }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveCustomRssSources(sources: List<CustomRssSource>) {
+        val array = JSONArray()
+        for (source in sources) {
+            val obj = JSONObject().apply {
+                put("id", source.id)
+                put("name", source.name)
+                put("url", source.url)
+                put("isEnabled", source.isEnabled)
+            }
+            array.put(obj)
+        }
+        prefs.edit().putString(KEY_CUSTOM_RSS_SOURCES, array.toString()).apply()
+    }
+
+    fun addCustomRssSource(source: CustomRssSource) {
+        val current = getCustomRssSources().toMutableList()
+        current.removeAll { it.url.trim().equals(source.url.trim(), ignoreCase = true) }
+        current.add(source)
+        saveCustomRssSources(current)
+    }
+
+    fun removeCustomRssSource(id: String) {
+        val current = getCustomRssSources().toMutableList()
+        current.removeAll { it.id == id }
+        saveCustomRssSources(current)
+    }
+
+    fun toggleCustomRssSource(id: String) {
+        val current = getCustomRssSources().map {
+            if (it.id == id) it.copy(isEnabled = !it.isEnabled) else it
+        }
+        saveCustomRssSources(current)
+    }
+
     fun getFeedSubreddits(): List<String> {
         val defaultSubs = if (java.util.Locale.getDefault().language == "pt") "tecnologia,brasil,gamesEcultura" else "technology,androiddev,worldnews"
         val raw = prefs.getString(KEY_FEED_SUBREDDITS, defaultSubs) ?: defaultSubs
@@ -527,7 +587,7 @@ class LauncherPreferences(context: Context) {
         prefs.edit().putString(KEY_FEED_BLUESKY_HANDLES, handles.joinToString(",")).apply()
 
     fun getFeedEnabledSources(): Set<String> {
-        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "NEWS,REDDIT,BLUESKY") ?: "NEWS,REDDIT,BLUESKY"
+        val raw = prefs.getString(KEY_FEED_SOURCES_ENABLED, "NEWS") ?: "NEWS"
         return raw.split(",").map { it.trim() }.filter { it.isNotBlank() }.toSet()
     }
     fun setFeedEnabledSources(sources: Set<String>) =

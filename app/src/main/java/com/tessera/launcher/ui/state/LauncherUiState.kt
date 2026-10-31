@@ -9,6 +9,7 @@ import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.data.model.AppCategory
+import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.model.LiveActivityInfo
@@ -260,9 +261,11 @@ data class LauncherUiState(
     val isFeedEnabled: Boolean = true,
     val isFeedOpen: Boolean = false,
     val feedState: FeedState = FeedState.Loading,
-    val feedSubreddits: List<String> = listOf("technology", "androiddev", "worldnews"),
+    val feedSubreddits: List<String> = emptyList(),
     val feedBlueskyHandles: List<String> = emptyList(),
-    val feedEnabledSources: Set<FeedSource> = setOf(FeedSource.REDDIT),
+    val feedEnabledSources: Set<FeedSource> = setOf(FeedSource.NEWS),
+    val customRssSources: List<CustomRssSource> = emptyList(),
+    val hostedWidgetIds: List<Int> = emptyList(),
     val isFeedAiSummariesEnabled: Boolean = false,
 
     // Smart Dock (Previsão Contextual)

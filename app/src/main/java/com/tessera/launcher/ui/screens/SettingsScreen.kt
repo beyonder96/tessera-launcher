@@ -344,7 +344,7 @@ fun SettingsScreen(
                     SettingsItemRow(
                         icon = Icons.Outlined.Dashboard,
                         title = "Central & Feed (Tela −1)",
-                        subtitle = "Widgets, feeds e seletor da tela lateral.",
+                        subtitle = "Central de widgets Bento e Feed de notícias RSS.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
                         isLight = isLight
                     )

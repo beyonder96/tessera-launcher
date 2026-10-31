@@ -61,13 +61,22 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.3.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.3.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.4.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.4.0)
 
-### 🆕 Novidades na v3.3.1
-- 📐 **Correção do Alinhamento da Tela Lateral (−1 Widgets / Feed):** Eliminado o erro de aninhamento onde o painel lateral herdava a transformação de paralaxe da Home, eliminando o vão à esquerda e garantindo preenchimento perfeito de 100% da largura da tela.
-- 🧹 **Remoção de Bloco Redundante na Busca com IA:** Corrigido o disparo precoce do card de resposta que exibia um bloco vazio de título do Gemini acima do Hero Card ao digitar `@ai `, apresentando uma interface limpa com convite tátil para a consulta.
+### 🆕 Novidades na v3.4.0
+- 🧩 **Suporte Nativo a Widgets de Terceiros na Shelf:** Agora você pode adicionar, configurar e renderizar widgets nativos de qualquer aplicativo instalado no seu Android (Spotify, WhatsApp, Relógio, etc.) diretamente na Central Bento com botão de remoção rápida.
+- 📰 **Feed RSS & Atom Customizado:** Remoção completa de redes sociais legadas (Bluesky e Reddit). O feed agora é 100% focado em fontes RSS cadastradas diretamente por você, com suporte a filtros por fonte e resumos com IA.
+- 📲 **Deck de Notificações Estilo iOS:** Notificações agrupadas em pilha 3D com efeito de cartas sobrepostas, expansão fluida por toque/deslize em mola natural e recolhimento intuitivo.
+- 🦖 **Dino Run Retrô em Pixel-Art Autêntica:** Minigame totalmente redesenhado fiel ao clássico T-Rex do Google Chrome, com animação de pernas, cactos com galhos, nuvens e terreno em rolagem com pedrinhas.
+- 📖 **Versículo Bíblico sem Cortes:** Citação com tipografia dinâmica adaptativa e referência destacada separadamente, exibindo passagens completas de forma impecável.
+- 🌤️ **Micro-Chip de Clima & Alinhamento Editorial:** Novo chip de temperatura e condição climática no topo da Shelf Bento, com alinhamento vertical harmonizado junto à saudação.
+- 🧹 **Auditoria e Limpeza de Configurações:** Remoção de opções fantasmas na Tela Lateral (−1), sincronização dos toggles com os cartões Bento reais e migração do "Modo Repouso ao carregar" para a tela de Extras.
 
 ### 📋 Versões Anteriores
+
+#### v3.3.1
+- 📐 **Correção do Alinhamento da Tela Lateral (−1 Widgets / Feed):** Eliminado o erro de aninhamento onde o painel lateral herdava a transformação de paralaxe da Home, eliminando o vão à esquerda e garantindo preenchimento perfeito de 100% da largura da tela.
+- 🧹 **Remoção de Bloco Redundante na Busca com IA:** Corrigido o disparo precoce do card de resposta que exibia um bloco vazio de título do Gemini acima do Hero Card ao digitar `@ai `, apresentando uma interface limpa com convite tátil para a consulta.
 <details>
 <summary><b>v3.3.0</b></summary>
 - 🎵 **Sincronização Sub-Milissegundo do Player de Música:** Correção da referência temporal no Android para `SystemClock.elapsedRealtime()`, garantindo que o tempo decorrido e restante avancem fluidamente segundo a segundo para qualquer player (Spotify, YouTube Music, Apple Music, Deezer), com suporte a faixas longas e podcasts (`H:MM:SS`).

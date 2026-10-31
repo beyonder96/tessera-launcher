@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.FileDownload
@@ -296,6 +297,75 @@ fun ExtrasScreen(
                     Switch(
                         checked = uiState.isShowStatusBarEnabled,
                         onCheckedChange = { viewModel.setShowStatusBarEnabled(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
+                            checkedTrackColor = uiState.activeAccentColor,
+                            checkedBorderColor = Color.Transparent,
+                            uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else Color(0xFF8E8E93),
+                            uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF1E1E24),
+                            uncheckedBorderColor = Color.Transparent
+                        )
+                    )
+                }
+
+                HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                // 5. Modo Repouso ao carregar (Toggle com Switch)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                viewModel.setPhotoStandByOnChargeEnabled(!uiState.isPhotoStandByOnChargeEnabled)
+                            }
+                        )
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(iconBackground),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.BatteryChargingFull,
+                            contentDescription = null,
+                            tint = primaryTextColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Modo Repouso ao carregar",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = primaryTextColor
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Abre o relógio com foto e rotação livre ao conectar o carregador.",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            ),
+                            color = secondaryTextColor
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    Switch(
+                        checked = uiState.isPhotoStandByOnChargeEnabled,
+                        onCheckedChange = { viewModel.setPhotoStandByOnChargeEnabled(it) },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                             checkedTrackColor = uiState.activeAccentColor,

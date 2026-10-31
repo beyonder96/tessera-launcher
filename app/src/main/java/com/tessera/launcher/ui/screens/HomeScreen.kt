@@ -1,5 +1,7 @@
 package com.tessera.launcher.ui.screens
 
+import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -159,6 +161,10 @@ fun HomeScreen(
     onRequestCalendarPermission: () -> Unit,
     onRequestContactsPermission: () -> Unit = {},
     onRequestLocationPermission: () -> Unit = {},
+    appWidgetHost: AppWidgetHost? = null,
+    appWidgetManager: AppWidgetManager? = null,
+    onAddAppWidget: () -> Unit = {},
+    onRemoveAppWidget: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -1541,6 +1547,11 @@ fun HomeScreen(
                                         notificationCounts = uiState.notificationCounts,
                                         onDismissNotification = { viewModel.dismissNotification(it) },
                                         onOpenNotificationsHub = { viewModel.openNotificationsHub() },
+                                        hostedWidgetIds = uiState.hostedWidgetIds,
+                                        appWidgetHost = appWidgetHost,
+                                        appWidgetManager = appWidgetManager,
+                                        onAddAppWidget = onAddAppWidget,
+                                        onRemoveAppWidget = onRemoveAppWidget,
                                         onClose = {
                                             scope.launch {
                                                 panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
@@ -1560,6 +1571,7 @@ fun HomeScreen(
                                     FeedScreen(
                                         hasTopSegmentedControl = showSegmentedSelector,
                                         feedState = uiState.feedState,
+                                        customRssSources = uiState.customRssSources,
                                         activeSource = null,
                                         enabledSources = uiState.feedEnabledSources,
                                         isLightMode = uiState.isLightMode,
@@ -1571,6 +1583,14 @@ fun HomeScreen(
                                             runCatching { context.startActivity(intent) }
                                         },
                                         onRefresh = { viewModel.refreshFeed() },
+                                        onOpenSettings = {
+                                            scope.launch {
+                                                panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+                                                viewModel.closeFeed()
+                                            }
+                                            viewModel.openSettings()
+                                            viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
+                                        },
                                         onClose = {
                                             scope.launch {
                                                 panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)

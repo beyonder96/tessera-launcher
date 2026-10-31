@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.Check
@@ -63,6 +64,7 @@ fun WidgetsQuickEditBottomSheet(
     onToggleScreenTime: (Boolean) -> Unit = {},
     isSmartDockEnabled: Boolean,
     onToggleSmartDock: (Boolean) -> Unit,
+    onAddAppWidget: () -> Unit = {},
     isLightMode: Boolean,
     onOpenFullSettings: () -> Unit,
     onDismiss: () -> Unit
@@ -302,6 +304,39 @@ fun WidgetsQuickEditBottomSheet(
                         borderColor = borderColor,
                         textPrimary = textPrimary,
                         isLightMode = isLightMode
+                    )
+                }
+            }
+
+            // Botão para Adicionar Widget do Android
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+                    .background(cardColor)
+                    .tesseraPressable(onClick = {
+                        onDismiss()
+                        onAddAppWidget()
+                    })
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null,
+                        tint = textPrimary,
+                        modifier = Modifier.size(17.dp)
+                    )
+                    Text(
+                        text = "Adicionar Widget do Android",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = textPrimary
                     )
                 }
             }

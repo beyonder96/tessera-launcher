@@ -1,6 +1,8 @@
 package com.tessera.launcher
 
 import android.Manifest
+import android.appwidget.AppWidgetHost
+import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -75,9 +77,64 @@ class MainActivity : ComponentActivity() {
         viewModel.updateLocationPermission(isGranted)
     }
 
+    // Gerenciador de Widgets Nativos do Android (AppWidgetHost)
+    private val APPWIDGET_HOST_ID = 2048
+    private var pendingAppWidgetId: Int = AppWidgetManager.INVALID_APPWIDGET_ID
+    private lateinit var appWidgetHost: AppWidgetHost
+    private lateinit var appWidgetManager: AppWidgetManager
+
+    private val widgetConfigLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK && pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            viewModel.addHostedWidgetId(pendingAppWidgetId)
+        } else if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            appWidgetHost.deleteAppWidgetId(pendingAppWidgetId)
+        }
+        pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+    }
+
+    private val widgetPickLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK && pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            val appWidgetInfo = appWidgetManager.getAppWidgetInfo(pendingAppWidgetId)
+            if (appWidgetInfo?.configure != null) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
+                    component = appWidgetInfo.configure
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
+                }
+                widgetConfigLauncher.launch(intent)
+            } else {
+                viewModel.addHostedWidgetId(pendingAppWidgetId)
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            }
+        } else if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            appWidgetHost.deleteAppWidgetId(pendingAppWidgetId)
+            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+    }
+
+    fun pickAndAddAppWidget() {
+        val newId = appWidgetHost.allocateAppWidgetId()
+        pendingAppWidgetId = newId
+        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
+        }
+        try {
+            widgetPickLauncher.launch(pickIntent)
+        } catch (_: Exception) {
+            appWidgetHost.deleteAppWidgetId(newId)
+            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        appWidgetManager = AppWidgetManager.getInstance(this)
+        appWidgetHost = AppWidgetHost(this, APPWIDGET_HOST_ID)
 
         // Maximizar taxa de atualização da tela para 120Hz / alta fluidez
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -206,9 +263,30 @@ class MainActivity : ComponentActivity() {
                                 Manifest.permission.ACCESS_COARSE_LOCATION
                             )
                         )
+                    },
+                    appWidgetHost = appWidgetHost,
+                    appWidgetManager = appWidgetManager,
+                    onAddAppWidget = { pickAndAddAppWidget() },
+                    onRemoveAppWidget = { widgetId ->
+                        appWidgetHost.deleteAppWidgetId(widgetId)
+                        viewModel.removeHostedWidgetId(widgetId)
                     }
                 )
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (::appWidgetHost.isInitialized) {
+            appWidgetHost.startListening()
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (::appWidgetHost.isInitialized) {
+            appWidgetHost.stopListening()
         }
     }
 

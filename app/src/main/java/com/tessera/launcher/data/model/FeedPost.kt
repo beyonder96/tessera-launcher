@@ -1,14 +1,13 @@
 package com.tessera.launcher.data.model
 
 /**
- * Modelo unificado de post para o Feed Social.
- * Suporta Reddit, Bluesky e Twitter/X.
+ * Modelo unificado de matéria para o Feed de Notícias RSS.
  */
 data class FeedPost(
     val id: String,
-    val source: FeedSource,
+    val source: FeedSource = FeedSource.NEWS,
     val author: String,
-    val authorHandle: String,
+    val authorHandle: String = "",
     val title: String?,
     val body: String,
     val subreddit: String? = null,
@@ -36,15 +35,9 @@ data class FeedPost(
         }
 
     val sourceLabel: String
-        get() = when (source) {
-            FeedSource.REDDIT -> "r/${subreddit?.removePrefix("/r/")?.removePrefix("r/") ?: "reddit"}"
-            FeedSource.BLUESKY -> "@${authorHandle.removePrefix("@")}"
-            FeedSource.NEWS -> author.ifBlank { "Notícias" }
-        }
+        get() = author.ifBlank { "Notícias" }
 }
 
 enum class FeedSource(val displayName: String, val chipName: String = displayName) {
-    NEWS("Notícias Brasil (G1, TecMundo, Canaltech)", "Notícias"),
-    REDDIT("Reddit", "Reddit"),
-    BLUESKY("Bluesky", "Bluesky")
+    NEWS("Notícias RSS", "Notícias")
 }

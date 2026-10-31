@@ -1,8 +1,5 @@
 package com.tessera.launcher.ui.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -13,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,22 +58,38 @@ fun DinoWidgetCard(
     var dinoY by remember { mutableFloatStateOf(0f) }
     var velocityY by remember { mutableFloatStateOf(0f) }
     val gravity = 0.95f
-    val jumpVelocity = -11.0f
+    val jumpVelocity = -11.5f
 
-    var obstacleX by remember { mutableFloatStateOf(350f) }
-    val obstacleSpeed = 6f
+    var obstacleX by remember { mutableFloatStateOf(420f) }
+    var obstacleType by remember { mutableIntStateOf(0) }
+    val obstacleSpeed = 6.2f
+
+    var groundScroll by remember { mutableFloatStateOf(0f) }
+    var cloudX by remember { mutableFloatStateOf(260f) }
+    var legFrame by remember { mutableIntStateOf(0) }
+    var tickCounter by remember { mutableIntStateOf(0) }
 
     // Loop do Jogo (60 FPS)
     LaunchedEffect(isPlaying) {
         if (!isPlaying) return@LaunchedEffect
-        obstacleX = 400f
+        obstacleX = 420f
+        obstacleType = (0..2).random()
         dinoY = 0f
         velocityY = 0f
         score = 0
         isGameOver = false
+        groundScroll = 0f
+        cloudX = 260f
+        tickCounter = 0
 
         while (isActive && isPlaying) {
             delay(16) // ~60 FPS
+            tickCounter++
+
+            // Alternar pernas da corrida a cada ~100ms
+            if (tickCounter % 6 == 0) {
+                legFrame = 1 - legFrame
+            }
 
             // Física do Pulo
             dinoY += velocityY
@@ -87,22 +99,31 @@ fun DinoWidgetCard(
                 velocityY = 0f
             }
 
+            // Rolagem contínua do terreno e nuvens
+            groundScroll = (groundScroll + obstacleSpeed) % 200f
+            cloudX -= 0.6f
+            if (cloudX < -40f) {
+                cloudX = 450f
+            }
+
             // Movimento do Obstáculo
             obstacleX -= obstacleSpeed
-            if (obstacleX < -30f) {
-                obstacleX = 400f
+            if (obstacleX < -40f) {
+                obstacleX = (380..440).random().toFloat()
+                obstacleType = (0..2).random()
                 score += 10
                 if (score > highScore) highScore = score
             }
 
-            // Colisão com Cacto (Dino x ~30f a 46f, Cacto em obstacleX)
-            val dinoLeft = 30f
-            val dinoRight = dinoLeft + 16f
+            // Colisão com Cacto
+            val dinoLeft = 32f
+            val dinoRight = dinoLeft + 18f
             val obstacleLeft = obstacleX
-            val obstacleRight = obstacleX + 10f
+            val obstacleRight = obstacleX + if (obstacleType == 1) 22f else 12f
 
             val isHorizCollision = dinoRight > obstacleLeft && dinoLeft < obstacleRight
-            val isVertCollision = dinoY > -14f // Se não pulou alto o suficiente
+            val obstacleHeight = if (obstacleType == 2) 25f else 20f
+            val isVertCollision = (dinoY + 26f) > (26f - obstacleHeight + 4f)
 
             if (isHorizCollision && isVertCollision) {
                 isGameOver = true
@@ -115,7 +136,7 @@ fun DinoWidgetCard(
     val boxModifier = if (isDockMode) {
         modifier
             .fillMaxWidth()
-            .height(96.dp)
+            .height(105.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -139,7 +160,7 @@ fun DinoWidgetCard(
 
         modifier
             .fillMaxWidth()
-            .height(115.dp)
+            .height(120.dp)
             .border(border, CardShape)
             .clip(CardShape)
             .background(background)
@@ -159,7 +180,7 @@ fun DinoWidgetCard(
     }
 
     Box(modifier = boxModifier) {
-        // Placar Superior
+        // Placar Superior Estilo Arcade Chrome
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,59 +205,131 @@ fun DinoWidgetCard(
         val inkColor = if (isLightMode) Color(0xFF1C1917) else Color.White
         val groundColor = if (isLightMode) Color(0xFFC5BFB0) else Color(0x55FFFFFF)
 
-        // Canvas com Dino, Cacto e Linha do Chão
+        // Canvas com Sprite Autêntico do Chrome T-Rex, Cactos e Terreno Infinito
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val groundY = size.height - 6f
+            val groundY = size.height - 8f
 
-            // Linha do Chão
+            // 1. Nuvens em pixel art no céu
+            if (cloudX < size.width + 30f) {
+                val cloudColor = if (isLightMode) Color(0xFFD6D1C4) else Color(0x40FFFFFF)
+                drawRect(cloudColor, Offset(cloudX, 14f), Size(26f, 6f))
+                drawRect(cloudColor, Offset(cloudX + 5f, 9f), Size(14f, 6f))
+                drawRect(cloudColor, Offset(cloudX + 2f, 17f), Size(8f, 3f))
+                drawRect(cloudColor, Offset(cloudX + 16f, 17f), Size(8f, 3f))
+            }
+
+            // 2. Linha do Chão e Textura Retrô com pedrinhas em rolagem contínua
             drawLine(
                 color = groundColor,
                 start = Offset(0f, groundY),
                 end = Offset(size.width, groundY),
                 strokeWidth = 1.5f
             )
+            val segWidth = 80f
+            for (i in -1..(size.width / segWidth).toInt() + 1) {
+                val segX = i * segWidth - (groundScroll % segWidth)
+                drawRect(groundColor, Offset(segX + 10f, groundY + 3f), Size(3f, 1.5f))
+                drawRect(groundColor, Offset(segX + 28f, groundY + 5f), Size(2f, 1.5f))
+                drawRect(groundColor, Offset(segX + 45f, groundY + 2f), Size(5f, 1.5f))
+                drawRect(groundColor, Offset(segX + 65f, groundY + 4f), Size(2.5f, 1.5f))
+            }
 
-            // Dinossauro Retrô (Pixel Art)
+            // 3. T-Rex Autêntico do Chrome em Pixel Art
             val dinoBaseX = 30f
-            val currentDinoY = groundY - 18f + dinoY
+            val currentDinoY = groundY - 26f + dinoY
 
-            // Corpo
+            // Cabeça & Focinho
+            drawRect(inkColor, Offset(dinoBaseX + 11f, currentDinoY), Size(12f, 10f))
+            drawRect(inkColor, Offset(dinoBaseX + 15f, currentDinoY), Size(8f, 4f))
+
+            // Olho do Dino (recorte)
             drawRect(
-                color = inkColor,
-                topLeft = Offset(dinoBaseX, currentDinoY),
-                size = Size(14f, 16f)
-            )
-            // Cabeça
-            drawRect(
-                color = inkColor,
-                topLeft = Offset(dinoBaseX + 7f, currentDinoY - 6f),
-                size = Size(10f, 8f)
-            )
-            // Olho
-            drawRect(
-                color = if (isLightMode) Color.White else Color.Black,
-                topLeft = Offset(dinoBaseX + 13f, currentDinoY - 4f),
+                color = if (isLightMode) Color(0xFFF7F4EB) else Color.Black,
+                topLeft = Offset(dinoBaseX + 13f, currentDinoY + 2f),
                 size = Size(2.5f, 2.5f)
             )
 
-            // Cacto Retrô
+            // Recorte da boca
+            drawRect(
+                color = if (isLightMode) Color(0xFFF7F4EB) else Color.Black,
+                topLeft = Offset(dinoBaseX + 18f, currentDinoY + 7f),
+                size = Size(5f, 1.5f)
+            )
+
+            // Pescoço e Peito
+            drawRect(inkColor, Offset(dinoBaseX + 9f, currentDinoY + 9f), Size(7f, 6f))
+
+            // Corpo e Costas
+            drawRect(inkColor, Offset(dinoBaseX + 3f, currentDinoY + 11f), Size(12f, 9f))
+
+            // Cauda curvada
+            drawRect(inkColor, Offset(dinoBaseX, currentDinoY + 8f), Size(3.5f, 6f))
+            drawRect(inkColor, Offset(dinoBaseX + 2f, currentDinoY + 13f), Size(3f, 5f))
+
+            // Braço do T-Rex
+            drawRect(inkColor, Offset(dinoBaseX + 16f, currentDinoY + 13f), Size(3f, 2f))
+            drawRect(inkColor, Offset(dinoBaseX + 18f, currentDinoY + 14.5f), Size(1.5f, 2f))
+
+            // Patinhas do T-Rex (com animação de corrida fiel ao Chrome)
+            if (dinoY < 0f || isGameOver || !isPlaying) {
+                // Parado / Pulando: pernas esticadas prontas para pousar
+                drawRect(inkColor, Offset(dinoBaseX + 7f, currentDinoY + 20f), Size(2.5f, 6f))
+                drawRect(inkColor, Offset(dinoBaseX + 7f, currentDinoY + 25f), Size(4.5f, 1.5f))
+
+                drawRect(inkColor, Offset(dinoBaseX + 12f, currentDinoY + 20f), Size(2.5f, 6f))
+                drawRect(inkColor, Offset(dinoBaseX + 12f, currentDinoY + 25f), Size(4.5f, 1.5f))
+            } else if (legFrame == 0) {
+                // Frame 0: Perna esquerda no chão, direita levantada
+                drawRect(inkColor, Offset(dinoBaseX + 6f, currentDinoY + 20f), Size(2.5f, 6f))
+                drawRect(inkColor, Offset(dinoBaseX + 6f, currentDinoY + 25f), Size(4.5f, 1.5f))
+
+                drawRect(inkColor, Offset(dinoBaseX + 12f, currentDinoY + 20f), Size(2.5f, 3.5f))
+                drawRect(inkColor, Offset(dinoBaseX + 14f, currentDinoY + 22.5f), Size(3.5f, 2f))
+            } else {
+                // Frame 1: Perna direita no chão, esquerda levantada
+                drawRect(inkColor, Offset(dinoBaseX + 6f, currentDinoY + 20f), Size(2.5f, 3.5f))
+                drawRect(inkColor, Offset(dinoBaseX + 4f, currentDinoY + 22.5f), Size(3.5f, 2f))
+
+                drawRect(inkColor, Offset(dinoBaseX + 12f, currentDinoY + 20f), Size(2.5f, 6f))
+                drawRect(inkColor, Offset(dinoBaseX + 12f, currentDinoY + 25f), Size(4.5f, 1.5f))
+            }
+
+            // 4. Cactos Autênticos em Pixel Art
             if (obstacleX < size.width + 40f) {
-                drawRect(
-                    color = inkColor,
-                    topLeft = Offset(obstacleX, groundY - 18f),
-                    size = Size(10f, 18f)
-                )
-                // Braços do Cacto
-                drawRect(
-                    color = inkColor,
-                    topLeft = Offset(obstacleX - 3f, groundY - 13f),
-                    size = Size(3.5f, 7f)
-                )
-                drawRect(
-                    color = inkColor,
-                    topLeft = Offset(obstacleX + 9.5f, groundY - 10f),
-                    size = Size(3.5f, 7f)
-                )
+                fun drawCactus(x: Float, height: Float) {
+                    val cBaseY = groundY - height
+                    // Tronco central
+                    drawRect(inkColor, Offset(x + 4f, cBaseY), Size(4f, height))
+                    drawRect(inkColor, Offset(x + 4.5f, cBaseY - 1.5f), Size(3f, 1.5f))
+
+                    // Braço Esquerdo
+                    val leftArmY = cBaseY + height * 0.35f
+                    drawRect(inkColor, Offset(x, leftArmY + 3f), Size(4.5f, 3f))
+                    drawRect(inkColor, Offset(x, leftArmY - 3f), Size(3f, 7f))
+                    drawRect(inkColor, Offset(x + 0.5f, leftArmY - 4.5f), Size(2f, 1.5f))
+
+                    // Braço Direito
+                    val rightArmY = cBaseY + height * 0.48f
+                    drawRect(inkColor, Offset(x + 7.5f, rightArmY + 3f), Size(4.5f, 3f))
+                    drawRect(inkColor, Offset(x + 9f, rightArmY - 2f), Size(3f, 6f))
+                    drawRect(inkColor, Offset(x + 9.5f, rightArmY - 3.5f), Size(2f, 1.5f))
+                }
+
+                when (obstacleType) {
+                    1 -> {
+                        // Cacto Duplo
+                        drawCactus(obstacleX, 19f)
+                        drawCactus(obstacleX + 12f, 16f)
+                    }
+                    2 -> {
+                        // Cacto Alto
+                        drawCactus(obstacleX, 25f)
+                    }
+                    else -> {
+                        // Cacto Clássico Único
+                        drawCactus(obstacleX, 20f)
+                    }
+                }
             }
         }
 

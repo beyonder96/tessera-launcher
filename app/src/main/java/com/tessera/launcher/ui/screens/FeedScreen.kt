@@ -15,6 +15,8 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RssFeed
+import androidx.compose.material.icons.outlined.Tune
+import com.tessera.launcher.data.model.CustomRssSource
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -49,13 +51,15 @@ fun FeedScreen(
     onPostClick: (String) -> Unit,
     onRefresh: () -> Unit,
     onClose: () -> Unit,
+    customRssSources: List<CustomRssSource> = emptyList(),
+    onOpenSettings: () -> Unit = {},
     hasTopSegmentedControl: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
     val backgroundColor = if (isLightMode) LightBackground else Color(0xF20D0D11)
     
-    var localSelectedSource by remember { mutableStateOf<FeedSource?>(activeSource) }
+    var selectedSourceTitle by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = modifier
@@ -92,6 +96,15 @@ fun FeedScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     JournalMedallion(
+                        icon = Icons.Outlined.Tune,
+                        contentDescription = "Configurar Fontes RSS",
+                        size = 38.dp,
+                        iconSize = 18.dp,
+                        isLightMode = isLightMode,
+                        onClick = onOpenSettings
+                    )
+
+                    JournalMedallion(
                         icon = Icons.Outlined.Refresh,
                         contentDescription = "Recarregar",
                         size = 38.dp,
@@ -112,7 +125,7 @@ fun FeedScreen(
             }
         }
 
-        if (enabledSources.isNotEmpty()) {
+        if (customRssSources.size > 1) {
             JournalCascadeItem(index = 1) {
                 LazyRow(
                     modifier = Modifier
@@ -123,19 +136,18 @@ fun FeedScreen(
                     item {
                         SourceChip(
                             name = "Tudo",
-                            isSelected = localSelectedSource == null,
+                            isSelected = selectedSourceTitle == null,
                             isLightMode = isLightMode,
-                            onClick = { localSelectedSource = null }
+                            onClick = { selectedSourceTitle = null }
                         )
                     }
-                    items(enabledSources.toList()) { source ->
+                    items(customRssSources) { source ->
                         SourceChip(
-                            name = source.chipName,
-                            isSelected = localSelectedSource == source,
+                            name = source.name,
+                            isSelected = selectedSourceTitle.equals(source.name, ignoreCase = true),
                             isLightMode = isLightMode,
                             onClick = { 
-                                localSelectedSource = source
-                                onSourceSelected(source)
+                                selectedSourceTitle = source.name
                             }
                         )
                     }
@@ -146,7 +158,10 @@ fun FeedScreen(
         Box(modifier = Modifier.weight(1f)) {
             when (feedState) {
                 is FeedState.Loading -> FeedSkeleton(isLightMode = isLightMode)
-                is FeedState.Empty -> FeedEmptyState(isLightMode = isLightMode)
+                is FeedState.Empty -> FeedEmptyState(
+                    isLightMode = isLightMode,
+                    onOpenSettings = onOpenSettings
+                )
                 is FeedState.Error -> FeedErrorState(
                     message = feedState.message,
                     isLightMode = isLightMode,
@@ -154,14 +169,17 @@ fun FeedScreen(
                 )
                 is FeedState.Success -> {
                     val posts = feedState.posts
-                    val filteredPosts = if (localSelectedSource == null) {
+                    val filteredPosts = if (selectedSourceTitle == null) {
                         posts
                     } else {
-                        posts.filter { it.source == localSelectedSource }
+                        posts.filter { it.author.equals(selectedSourceTitle, ignoreCase = true) || it.sourceLabel.equals(selectedSourceTitle, ignoreCase = true) }
                     }
 
                     if (filteredPosts.isEmpty()) {
-                        FeedEmptyState(isLightMode = isLightMode)
+                        FeedEmptyState(
+                            isLightMode = isLightMode,
+                            onOpenSettings = onOpenSettings
+                        )
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
@@ -287,9 +305,13 @@ private fun FeedSkeleton(isLightMode: Boolean) {
 }
 
 @Composable
-private fun FeedEmptyState(isLightMode: Boolean) {
+private fun FeedEmptyState(
+    isLightMode: Boolean,
+    onOpenSettings: () -> Unit = {}
+) {
     val primaryTextColor = if (isLightMode) LightTextPrimary else TextPrimary
     val secondaryTextColor = if (isLightMode) LightTextSecondary else TextSecondary
+    val borderColor = if (isLightMode) LightCardBorder else DarkSurfaceBorder
 
     Column(
         modifier = Modifier
@@ -306,7 +328,7 @@ private fun FeedEmptyState(isLightMode: Boolean) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Nenhum post encontrado",
+            text = "Nenhuma notícia encontrada",
             color = primaryTextColor,
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
@@ -314,11 +336,26 @@ private fun FeedEmptyState(isLightMode: Boolean) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Verifique sua conexão ou adicione subreddits nas configurações.",
+            text = "Cadastre URLs de feeds RSS dos seus portais de notícias favoritos para visualizá-los aqui.",
             color = secondaryTextColor,
             fontSize = 14.sp,
             textAlign = TextAlign.Center
         )
+        Spacer(modifier = Modifier.height(20.dp))
+        Surface(
+            modifier = Modifier.clickable(onClick = onOpenSettings),
+            shape = PillShape,
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, borderColor)
+        ) {
+            Text(
+                text = "Cadastrar Fontes RSS",
+                color = primaryTextColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
+            )
+        }
     }
 }
 

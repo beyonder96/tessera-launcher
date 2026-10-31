@@ -2,7 +2,6 @@ package com.tessera.launcher.data.helper
 
 import com.tessera.launcher.data.model.FeedPost
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 /**
@@ -27,11 +26,7 @@ class AiSummaryHelper {
         }
         
         // Generic fallback summary
-        val topicName = when (post.source) {
-            com.tessera.launcher.data.model.FeedSource.NEWS -> post.author.ifBlank { "Notícias" }
-            com.tessera.launcher.data.model.FeedSource.REDDIT -> "r/${post.subreddit ?: "reddit"}"
-            com.tessera.launcher.data.model.FeedSource.BLUESKY -> "@${post.authorHandle.removePrefix("@")}"
-        }
+        val topicName = post.author.ifBlank { "Notícias" }
         "IA: Destaque de $topicName."
     }
 }

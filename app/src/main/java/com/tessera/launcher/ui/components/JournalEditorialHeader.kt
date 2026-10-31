@@ -145,30 +145,47 @@ fun JournalEditorialHeader(
             }
         }
 
-        // 2. Narrativa Editorial em FlowRow com micro-chips exclusivos (Agenda & Tarefas)
+        // 2. Narrativa Editorial em FlowRow com micro-chips exclusivos alinhados (Clima, Agenda & Tarefas)
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = "$greeting,",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Normal,
-                color = mutedTextColor
-            )
-
-            // Nome do usuário (ou 'Kenned') com toque para personalizar
-            Text(
-                text = if (userName.isNotBlank()) "$userName." else "você.",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = primaryTextColor,
-                modifier = Modifier.tesseraPressable(
-                    pressedScale = 0.94f,
-                    onClick = onOpenQuickEdit
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    text = "$greeting,",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = mutedTextColor
                 )
-            )
+
+                // Nome do usuário (ou 'Kenned') com toque para personalizar
+                Text(
+                    text = if (userName.isNotBlank()) "$userName." else "você.",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = primaryTextColor,
+                    modifier = Modifier.tesseraPressable(
+                        pressedScale = 0.94f,
+                        onClick = onOpenQuickEdit
+                    )
+                )
+            }
+
+            // Chip Clima & Temperatura
+            if (weatherInfo != null && weatherInfo.displayTemperature.isNotBlank()) {
+                val tempText = "${weatherInfo.displayTemperature} · ${weatherInfo.condition}"
+                EditorialChip(
+                    icon = Icons.Outlined.WbSunny,
+                    text = tempText,
+                    accentColor = Color(0xFFF59E0B),
+                    isLightMode = isLightMode,
+                    onClick = onWeatherClick
+                )
+            }
 
             // Chip Agenda
             if (nextCalendarEvent != null) {
