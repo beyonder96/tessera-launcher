@@ -5,7 +5,11 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -135,14 +139,18 @@ fun PhotoStandByModal(
         mediaPlayback.isPlaying || (mediaPlayback.hasActiveSession && mediaPlayback.title.isNotBlank())
     )
 
-    // Ativa rotação automática por sensor enquanto o Modo Repouso estiver aberto
+    // Ativa rotação automática por sensor enquanto o Modo Repouso estiver aberto de forma segura
     DisposableEffect(isOpen) {
         val activity = context as? Activity
         if (isOpen && activity != null) {
             val previousOrientation = activity.requestedOrientation
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            runCatching {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            }
             onDispose {
-                activity.requestedOrientation = previousOrientation
+                runCatching {
+                    activity.requestedOrientation = previousOrientation
+                }
             }
         } else {
             onDispose {}
@@ -416,13 +424,43 @@ fun PhotoStandByModal(
 
 /**
  * Badge do Ícone do Tessera Launcher no cabeçalho.
- * Ao tocar, fecha o Modo Repouso e retorna imediatamente ao início.
+ * Renderiza o ícone do aplicativo de forma segura (sem usar painterResource em adaptive-icon)
+ * e, ao tocar, fecha o Modo Repouso retornando imediatamente à tela inicial.
  */
 @Composable
 private fun StandByTesseraBadge(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val launcherIconBitmap = remember(context) {
+        runCatching {
+            val pm = context.packageManager
+            val drawable = pm.getApplicationIcon(context.packageName)
+            val size = 96
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+                drawable.background?.let {
+                    it.setBounds(0, 0, size, size)
+                    it.draw(canvas)
+                }
+                drawable.foreground?.let {
+                    it.setBounds(0, 0, size, size)
+                    it.draw(canvas)
+                }
+                bmp
+            } else if (drawable is BitmapDrawable && drawable.bitmap != null && !drawable.bitmap.isRecycled) {
+                drawable.bitmap
+            } else {
+                drawable.setBounds(0, 0, size, size)
+                drawable.draw(canvas)
+                bmp
+            }
+        }.getOrNull()
+    }
+
     Box(
         modifier = modifier
             .size(38.dp)
@@ -435,13 +473,23 @@ private fun StandByTesseraBadge(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Image(
-            painter = painterResource(id = R.mipmap.ic_launcher),
-            contentDescription = "Tessera Launcher",
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-        )
+        if (launcherIconBitmap != null && !launcherIconBitmap.isRecycled) {
+            Image(
+                bitmap = launcherIconBitmap.asImageBitmap(),
+                contentDescription = "Tessera Launcher",
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+            )
+        } else {
+            Image(
+                painter = painterResource(id = R.drawable.ic_tessera_header_logo),
+                contentDescription = "Tessera Launcher",
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+            )
+        }
     }
 }
 
@@ -516,6 +564,12 @@ private fun StandByPhotoCard(
     cardSize: Dp,
     modifier: Modifier = Modifier
 ) {
+    val safeImageBitmap = remember(bitmap) {
+        runCatching {
+            bitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
+        }.getOrNull()
+    }
+
     Box(
         modifier = modifier
             .size(cardSize)
@@ -534,9 +588,9 @@ private fun StandByPhotoCard(
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (bitmap != null) {
+        if (safeImageBitmap != null) {
             Image(
-                bitmap = bitmap.asImageBitmap(),
+                bitmap = safeImageBitmap,
                 contentDescription = "Foto em modo repouso",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -577,6 +631,12 @@ private fun StandByAlbumCard(
     onOpenMusicApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val albumBitmap = remember(mediaPlayback.artwork) {
+        runCatching {
+            mediaPlayback.artwork?.takeIf { !it.isRecycled }?.asImageBitmap()
+        }.getOrNull()
+    }
+
     Box(
         modifier = modifier
             .size(cardSize)
@@ -591,9 +651,9 @@ private fun StandByAlbumCard(
         contentAlignment = Alignment.Center
     ) {
         // Arte do Álbum ou Fallback Degradê
-        if (mediaPlayback.artwork != null) {
+        if (albumBitmap != null) {
             Image(
-                bitmap = mediaPlayback.artwork.asImageBitmap(),
+                bitmap = albumBitmap,
                 contentDescription = "Capa do álbum",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
@@ -879,7 +939,7 @@ fun SplitFlapDigit(
     val flipProgress = remember { Animatable(0f) }
     val density = LocalDensity.current.density
     val cameraDist = 28f * density
-    val cornerRadius = remember(cardWidth) { (cardWidth * 0.16f).coerceIn(6.dp, 12.dp) }
+    val cornerRadius = remember(cardWidth) { (cardWidth * 0.16f).coerceIn(4.dp, 12.dp) }
 
     LaunchedEffect(digit) {
         if (digit != displayedDigit && digit != upcomingDigit) {
@@ -1045,7 +1105,7 @@ private fun HalfDigitSurface(
     cornerRadius: Dp,
     modifier: Modifier = Modifier
 ) {
-    val halfHeight = (cardHeight - 2.dp) / 2
+    val halfHeight = ((cardHeight - 2.dp) / 2).coerceAtLeast(1.dp)
     val shape = if (isTop) {
         RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
     } else {

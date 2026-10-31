@@ -61,7 +61,12 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.1)
+
+### 🆕 Novidades na v3.7.1
+- 🛡️ **Correção Crítica no Modo Repouso (StandBy):**
+  - Resolução definitiva do crash ao ingressar no modo repouso, substituindo a chamada de `painterResource` em ícones adaptativos do sistema por renderização gráfica nativa com salvaguarda `runCatching` e salvaguarda para bitmaps reciclados.
+  - Blindagem adicional para rotação por sensor e memória de artwork de mídia.
 
 ### 🆕 Novidades na v3.7.0
 - 🕰️ **Relógio Mecânico Flip 3D (Estilo Placar / Split-Flap):**
