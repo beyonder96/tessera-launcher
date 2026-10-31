@@ -3,6 +3,7 @@ package com.tessera.launcher.ui.state
 import android.graphics.drawable.Drawable
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.ContactInfo
+import com.tessera.launcher.data.helper.RamInfo
 import com.tessera.launcher.data.helper.WeatherInfo
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.preference.WidgetType
@@ -111,6 +112,7 @@ data class LauncherUiState(
     val isSearchExpanded: Boolean = false,
     val batteryPercentage: Int = 100,
     val isCharging: Boolean = false,
+    val ramInfo: RamInfo = RamInfo(),
     val formattedTime: String = "--:--",
     val formattedDate: String = "---",
     val mediaPlayback: MediaPlaybackInfo = MediaPlaybackInfo(),
@@ -312,7 +314,9 @@ data class LauncherUiState(
     // Notificações Comuns & Hub
     val notificationCounts: Map<String, Int> = emptyMap(),
     val recentNotifications: List<AppNotificationItem> = emptyList(),
-    val isNotificationsHubOpen: Boolean = false
+    val isNotificationsHubOpen: Boolean = false,
+    val isWidgetPickerOpen: Boolean = false,
+    val widgetPickerFilterPackage: String? = null
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)

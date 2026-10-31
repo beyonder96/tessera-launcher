@@ -1083,6 +1083,7 @@ fun CustomizationScreen(
                         subtitle = when (uiState.iconShape) {
                             "CYLINDER" -> "Cilindro"
                             "CIRCLE" -> "Círculo"
+                            "RECTANGLE" -> "Retângulo"
                             "LOSANGO" -> "Losango"
                             "SQUIRCLE" -> "Squircle"
                             "SQUARE" -> "Quadrado"

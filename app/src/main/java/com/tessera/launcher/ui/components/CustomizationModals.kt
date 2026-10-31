@@ -771,6 +771,7 @@ fun IconShapeBottomSheet(
     val shapes = listOf(
         "CIRCLE" to "Círculo",
         "CYLINDER" to "Cilindro",
+        "RECTANGLE" to "Retângulo",
         "LOSANGO" to "Losango",
         "SQUIRCLE" to "Squircle",
         "SQUARE" to "Quadrado",
@@ -846,6 +847,7 @@ fun IconShapeBottomSheet(
                                     when (shapeKey) {
                                         "CIRCLE" -> CircleShape
                                         "CYLINDER" -> RoundedCornerShape(28.dp)
+                                        "RECTANGLE" -> RoundedCornerShape(16.dp)
                                         "SQUIRCLE" -> RoundedCornerShape(22.dp)
                                         "SQUARE" -> RoundedCornerShape(6.dp)
                                         else -> RoundedCornerShape(20.dp)
@@ -856,6 +858,7 @@ fun IconShapeBottomSheet(
                                     shape = when (shapeKey) {
                                         "CIRCLE" -> CircleShape
                                         "CYLINDER" -> RoundedCornerShape(28.dp)
+                                        "RECTANGLE" -> RoundedCornerShape(16.dp)
                                         "SQUIRCLE" -> RoundedCornerShape(22.dp)
                                         "SQUARE" -> RoundedCornerShape(6.dp)
                                         else -> RoundedCornerShape(20.dp)
@@ -903,6 +906,15 @@ private fun ShapeGlyphVisual(shapeKey: String, isLight: Boolean = false) {
                     .height(38.dp)
                     .clip(RoundedCornerShape(13.dp))
                     .border(1.5.dp, glyphStroke, RoundedCornerShape(13.dp))
+            )
+        }
+        "RECTANGLE" -> {
+            Box(
+                modifier = Modifier
+                    .width(28.dp)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .border(1.5.dp, glyphStroke, RoundedCornerShape(6.dp))
             )
         }
         "LOSANGO" -> {

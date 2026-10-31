@@ -386,6 +386,12 @@ class MainViewModel(
                 }
             }
         }
+
+        viewModelScope.launch {
+            systemInfoHelper.observeRam().collect { ram ->
+                _uiState.update { it.copy(ramInfo = ram) }
+            }
+        }
     }
 
     private fun observeMediaService() {
@@ -1156,9 +1162,21 @@ class MainViewModel(
         _uiState.update { it.copy(isNotificationsHubOpen = false) }
     }
 
+    fun openWidgetPicker(filterPackage: String? = null) {
+        _uiState.update { it.copy(isWidgetPickerOpen = true, widgetPickerFilterPackage = filterPackage) }
+    }
+
+    fun closeWidgetPicker() {
+        _uiState.update { it.copy(isWidgetPickerOpen = false, widgetPickerFilterPackage = null) }
+    }
+
     fun handleBackPress(): Boolean {
         val state = _uiState.value
         return when {
+            state.isWidgetPickerOpen -> {
+                closeWidgetPicker()
+                true
+            }
             state.isPhotoStandByOpen -> {
                 closePhotoStandBy()
                 true

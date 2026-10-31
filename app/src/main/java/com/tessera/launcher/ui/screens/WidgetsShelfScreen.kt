@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.tessera.launcher.data.helper.CalendarEventInfo
+import com.tessera.launcher.data.helper.RamInfo
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import com.tessera.launcher.data.helper.WeatherInfo
@@ -84,6 +85,7 @@ fun WidgetsShelfScreen(
     enabledWidgets: List<WidgetType>,
     batteryPercentage: Int,
     isCharging: Boolean,
+    ramInfo: RamInfo = RamInfo(),
     currentTime: String,
     formattedDate: String,
     nextCalendarEvent: CalendarEventInfo?,
@@ -270,6 +272,7 @@ fun WidgetsShelfScreen(
                     JournalTelemetryRingsRow(
                         batteryPercentage = batteryPercentage,
                         isCharging = isCharging,
+                        ramInfo = ramInfo,
                         weatherInfo = weatherInfo,
                         screenTimeInfo = screenTimeInfo,
                         isLightMode = isLightMode,

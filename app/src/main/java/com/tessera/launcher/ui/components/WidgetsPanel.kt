@@ -2,7 +2,12 @@ package com.tessera.launcher.ui.components
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import java.util.Calendar
 import androidx.compose.animation.animateContentSize
@@ -79,6 +84,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -1749,6 +1755,68 @@ fun PredictedAppsWidgetCard(
 }
 
 @Composable
+fun NotificationAppIcon(
+    packageName: String,
+    largeIcon: Bitmap? = null,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 38.dp,
+    shape: Shape = RoundedCornerShape(10.dp),
+    fallbackTint: Color = Color(0xFF3B82F6)
+) {
+    val context = LocalContext.current
+    val bitmap = remember(packageName, largeIcon) {
+        largeIcon ?: runCatching {
+            val pm = context.packageManager
+            val drawable = pm.getApplicationIcon(packageName)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+                val bmp = Bitmap.createBitmap(120, 120, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bmp)
+                drawable.background?.let {
+                    it.setBounds(0, 0, 120, 120)
+                    it.draw(canvas)
+                }
+                drawable.foreground?.let {
+                    it.setBounds(0, 0, 120, 120)
+                    it.draw(canvas)
+                }
+                bmp
+            } else if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                drawable.bitmap
+            } else {
+                val bmp = Bitmap.createBitmap(120, 120, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bmp)
+                drawable.setBounds(0, 0, 120, 120)
+                drawable.draw(canvas)
+                bmp
+            }
+        }.getOrNull()
+    }
+
+    if (bitmap != null) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = null,
+            modifier = modifier
+                .size(size)
+                .clip(shape),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        Box(
+            modifier = modifier.size(size),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Notifications,
+                contentDescription = null,
+                tint = fallbackTint,
+                modifier = Modifier.size(size * 0.65f)
+            )
+        }
+    }
+}
+
+@Composable
 fun NotificationsWidgetCard(
     recentNotifications: List<AppNotificationItem>,
     onOpenHub: () -> Unit,
@@ -1783,11 +1851,7 @@ fun NotificationsWidgetCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(13.dp))
-                    .background(badgeBg)
-                    .border(1.dp, badgeBorder, RoundedCornerShape(13.dp)),
+                modifier = Modifier.size(38.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1903,28 +1967,26 @@ fun NotificationsWidgetCard(
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Ícone com ponto indicador da pilha
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(badgeBg)
-                            .border(1.dp, badgeBorder, RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "Notificações",
-                            tint = accentColor,
-                            modifier = Modifier.size(20.dp)
-                        )
+                    if (recentNotifications.size > 1) {
+                        // Quando tiver várias: somente o sino, sem o quadro de fundo!
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(accentColor)
-                                .align(Alignment.TopEnd)
-                                .padding(top = 3.dp, end = 3.dp)
+                            modifier = Modifier.size(38.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Notifications,
+                                contentDescription = "Várias notificações",
+                                tint = accentColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    } else {
+                        // Notificação individual: ícone real do app
+                        NotificationAppIcon(
+                            packageName = topItem.packageName,
+                            largeIcon = topItem.largeIcon,
+                            size = 38.dp,
+                            fallbackTint = accentColor
                         )
                     }
 
@@ -2061,20 +2123,12 @@ fun NotificationsWidgetCard(
                             .padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(badgeBg),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Notifications,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
+                        NotificationAppIcon(
+                            packageName = item.packageName,
+                            largeIcon = item.largeIcon,
+                            size = 32.dp,
+                            fallbackTint = accentColor
+                        )
 
                         Spacer(modifier = Modifier.width(10.dp))
 

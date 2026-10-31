@@ -275,32 +275,13 @@ fun NotificationsHubBottomSheet(
                                     .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Ícone do app ou imagem grande
-                                if (item.largeIcon != null) {
-                                    Image(
-                                        bitmap = item.largeIcon.asImageBitmap(),
-                                        contentDescription = item.appName,
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(RoundedCornerShape(10.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(40.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(accentColor.copy(alpha = 0.2f)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = item.appName.take(1).uppercase(),
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = accentColor
-                                        )
-                                    }
-                                }
+                                // Ícone real do aplicativo
+                                NotificationAppIcon(
+                                    packageName = item.packageName,
+                                    largeIcon = item.largeIcon,
+                                    size = 40.dp,
+                                    fallbackTint = accentColor
+                                )
 
                                 Spacer(modifier = Modifier.width(12.dp))
 

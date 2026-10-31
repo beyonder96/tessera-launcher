@@ -2,6 +2,8 @@ package com.tessera.launcher.ui.screens
 
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
+import com.tessera.launcher.ui.components.ModernWidgetPickerBottomSheet
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -167,6 +169,7 @@ fun HomeScreen(
     appWidgetManager: AppWidgetManager? = null,
     onAddAppWidget: () -> Unit = {},
     onPickAndLinkWidget: (String) -> Unit = {},
+    onSelectAppWidget: (AppWidgetProviderInfo, String?) -> Unit = { _, _ -> },
     onRemoveAppWidget: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -1541,6 +1544,7 @@ fun HomeScreen(
                                         enabledWidgets = uiState.enabledWidgets,
                                         batteryPercentage = uiState.batteryPercentage,
                                         isCharging = uiState.isCharging,
+                                        ramInfo = uiState.ramInfo,
                                         currentTime = uiState.formattedTime,
                                         formattedDate = uiState.formattedDate,
                                         nextCalendarEvent = uiState.nextCalendarEvent,
@@ -1697,8 +1701,25 @@ fun HomeScreen(
             isCharging = uiState.isCharging,
             weatherTemp = uiState.weatherInfo?.displayTemperature,
             weatherCondition = uiState.weatherInfo?.condition,
+            weatherCity = uiState.weatherInfo?.cityName,
             accentColor = uiState.activeAccentColor
         )
+
+        // Seletor Moderno de Widgets com Prévia Visual Real (Estilo Pixel Launcher / One UI)
+        if (appWidgetManager != null) {
+            ModernWidgetPickerBottomSheet(
+                isOpen = uiState.isWidgetPickerOpen,
+                onDismiss = { viewModel.closeWidgetPicker() },
+                onSelectWidget = { providerInfo ->
+                    onSelectAppWidget(providerInfo, uiState.widgetPickerFilterPackage)
+                },
+                appWidgetManager = appWidgetManager,
+                filterPackage = uiState.widgetPickerFilterPackage,
+                isLightMode = uiState.isLightMode,
+                isAmoledMode = uiState.isAmoledMode,
+                accentColor = uiState.activeAccentColor
+            )
+        }
     }
 }
 

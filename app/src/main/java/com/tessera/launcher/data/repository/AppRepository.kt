@@ -8,6 +8,7 @@ import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -34,6 +35,27 @@ class AppRepository(
 ) {
     private fun rasterizeDrawable(drawable: Drawable?, targetSize: Int = 120): Bitmap? {
         if (drawable == null) return null
+        // Tratar ícones adaptativos do Android O (8.0+) desconstruindo as camadas background e foreground.
+        // Isso evita que a máscara circular padrão do sistema / OEM (One UI, Pixel, etc.) seja queimada
+        // no bitmap final com cantos transparentes, permitindo que as formas (Quadrado, Retângulo, etc.)
+        // selecionadas pelo usuário no Tessera funcionem perfeitamente.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+            return try {
+                val bitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                drawable.background?.let { bg ->
+                    bg.setBounds(0, 0, targetSize, targetSize)
+                    bg.draw(canvas)
+                }
+                drawable.foreground?.let { fg ->
+                    fg.setBounds(0, 0, targetSize, targetSize)
+                    fg.draw(canvas)
+                }
+                bitmap
+            } catch (_: Throwable) {
+                null
+            }
+        }
         if (drawable is BitmapDrawable && drawable.bitmap != null) {
             val bmp = drawable.bitmap
             return if (bmp.width <= targetSize && bmp.height <= targetSize) {
@@ -77,9 +99,13 @@ class AppRepository(
 
                     val label = activity.label.toString()
                     val defaultIcon = try {
-                        activity.getBadgedIcon(0)
+                        activity.getIcon(0) ?: activity.getBadgedIcon(0)
                     } catch (_: Exception) {
-                        null
+                        try {
+                            activity.getBadgedIcon(0)
+                        } catch (_: Exception) {
+                            null
+                        }
                     }
 
                     // Prioridade do ícone: 1. Ícone customizado individual, 2. Icon Pack global, 3. Padrão

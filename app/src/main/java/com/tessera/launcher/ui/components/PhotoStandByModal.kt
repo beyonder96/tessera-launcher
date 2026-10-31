@@ -48,6 +48,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,21 +74,30 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Modo Repouso (StandBy / Ambient Mode com Foto e Relógio).
- * Ao ativar, expande a foto no centro com relógio de cabeceira e
- * ativa a rotação automática livre (sensor) para suporte a modo paisagem.
+ * Modo Repouso (StandBy / Ambient Smart Display com Relógio Âmbar e Widgets Modulares).
+ * Inspirado fielmente no design do StandBy Mode:
+ * - Cabeçalho CONNECTED GEEK
+ * - Relógio digital âmbar em negrito com odômetro suave
+ * - Data estilizada (Dia da semana e Mês/Dia)
+ * - Widget 1: Cartão de Clima com temperatura, condição, ícone lunar/solar e localização
+ * - Widget 2: Cartão de Foto arredondado com efeito pôr do sol ou imagem customizada
+ * - Rotação livre por sensor (orientação paisagem/cabeceira ou vertical)
  */
 @Composable
 fun PhotoStandByModal(
@@ -99,11 +110,21 @@ fun PhotoStandByModal(
     isCharging: Boolean,
     weatherTemp: String? = null,
     weatherCondition: String? = null,
-    accentColor: Color = Color(0xFF34C759)
+    weatherCity: String? = null,
+    accentColor: Color = Color(0xFFFFA040)
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val standbyAmber = Color(0xFFFFA040)
+
+    val now = remember(formattedTime) { Date() }
+    val dayOfWeek = remember(now) {
+        SimpleDateFormat("EEEE", Locale.getDefault()).format(now).replaceFirstChar { it.uppercase() }
+    }
+    val monthDay = remember(now) {
+        SimpleDateFormat("MMMM d", Locale.getDefault()).format(now).replaceFirstChar { it.uppercase() }
+    }
 
     // Ativa rotação automática por sensor enquanto o Modo Repouso estiver aberto
     DisposableEffect(isOpen) {
@@ -157,36 +178,33 @@ fun PhotoStandByModal(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Brilho difuso ambiente suave com o tom da foto ao fundo
-            if (bitmap != null) {
-                Image(
-                    bitmap = bitmap!!.asImageBitmap(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(80.dp)
-                )
-                // Vinheta escurecedora profunda AMOLED para contraste perfeito
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xDC000000))
-                )
-            }
+            // Brilho difuso ambiente suave com o tom âmbar de cabeceira ao fundo
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                standbyAmber.copy(alpha = 0.09f),
+                                Color.Transparent
+                            ),
+                            radius = 1200f
+                        )
+                    )
+            )
 
             // Botão Fechar discreto no topo
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 44.dp, end = 24.dp),
+                    .padding(top = 28.dp, end = 24.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(38.dp)
                         .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.12f))
+                        .background(Color.White.copy(alpha = 0.08f))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -197,170 +215,85 @@ fun PhotoStandByModal(
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "Fechar modo repouso",
-                        tint = TextPrimary,
-                        modifier = Modifier.size(20.dp)
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
             if (isLandscape) {
-                // Layout Paisagem (Bedside / Nightstand Dock)
-                if (bitmap != null) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 48.dp, vertical = 24.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        // Foto ampliada
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight(0.85f)
-                                .aspectRatio(1f)
-                                .shadow(28.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
-                                .clip(RoundedCornerShape(32.dp))
-                                .border(
-                                    BorderStroke(
-                                        1.dp,
-                                        Brush.verticalGradient(
-                                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
-                                        )
-                                    ),
-                                    RoundedCornerShape(32.dp)
-                                )
-                                .background(Color(0xFF141419)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                bitmap = bitmap!!.asImageBitmap(),
-                                contentDescription = "Foto em modo repouso",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(48.dp))
-
-                        // Relógio e Informações de Cabeceira
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.Start
-                        ) {
-                            StandByAnimatedTimeClock(
-                                formattedTime = formattedTime,
-                                fontSize = 76.sp,
-                                color = TextPrimary,
-                                accentColor = accentColor,
-                                showSecondsBar = true
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = formattedDate,
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Normal,
-                                color = TextSecondary
-                            )
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // Status de Bateria / Carregamento
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(Color.White.copy(alpha = 0.08f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
-                                    contentDescription = null,
-                                    tint = if (isCharging) accentColor else TextSecondary,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = if (isCharging) "Carregando • $batteryPercentage%" else "Bateria • $batteryPercentage%",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isCharging) accentColor else TextPrimary
-                                )
-                            }
-
-                            if (!weatherTemp.isNullOrBlank()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "$weatherTemp${if (!weatherCondition.isNullOrBlank()) " • $weatherCondition" else ""}",
-                                    fontSize = 14.sp,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    // Sem foto: relógio puro centralizado estilo cabeceira horizontal
+                // Layout Paisagem Idêntico à Foto de Referência (iOS StandBy Smart Display)
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 48.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Coluna da Esquerda: Header, Relógio Gigante Âmbar e Data
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 48.dp, vertical = 24.dp),
                         verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.padding(start = 12.dp)
                     ) {
+                        Text(
+                            text = "CONNECTED GEEK",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.8.sp,
+                            color = standbyAmber.copy(alpha = 0.85f)
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
                         StandByAnimatedTimeClock(
                             formattedTime = formattedTime,
-                            fontSize = 96.sp,
-                            color = TextPrimary,
-                            accentColor = accentColor,
-                            showSecondsBar = true
+                            fontSize = 86.sp,
+                            color = standbyAmber,
+                            accentColor = standbyAmber,
+                            showSecondsBar = false
                         )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = formattedDate,
-                            fontSize = 20.sp,
+                            text = dayOfWeek,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = standbyAmber
+                        )
+                        Text(
+                            text = monthDay,
+                            fontSize = 22.sp,
                             fontWeight = FontWeight.Normal,
-                            color = TextSecondary
+                            color = standbyAmber.copy(alpha = 0.9f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(36.dp))
+
+                    // Coluna da Direita: Os 2 Widgets Modulares (Clima e Foto)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StandByWeatherCard(
+                            weatherTemp = weatherTemp,
+                            weatherCondition = weatherCondition,
+                            weatherCity = weatherCity,
+                            formattedTime = formattedTime,
+                            standbyAmber = standbyAmber,
+                            cardSize = 154.dp
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
-                                .padding(horizontal = 14.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
-                                contentDescription = null,
-                                tint = if (isCharging) accentColor else TextSecondary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (isCharging) "Carregando • $batteryPercentage%" else "Bateria • $batteryPercentage%",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = if (isCharging) accentColor else TextPrimary
-                            )
-                        }
-
-                        if (!weatherTemp.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "$weatherTemp${if (!weatherCondition.isNullOrBlank()) " • $weatherCondition" else ""}",
-                                fontSize = 14.sp,
-                                color = TextSecondary
-                            )
-                        }
+                        StandByPhotoCard(
+                            bitmap = bitmap,
+                            cardSize = 154.dp
+                        )
                     }
                 }
             } else {
-                // Layout Retrato (Vertical)
+                // Layout Retrato (Vertical) com o mesmo padrão visual
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -368,98 +301,195 @@ fun PhotoStandByModal(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Relógio Superior com Animação Digital Suave
-                    StandByAnimatedTimeClock(
-                        formattedTime = formattedTime,
-                        fontSize = if (bitmap != null) 68.sp else 86.sp,
-                        color = TextPrimary,
-                        accentColor = accentColor,
-                        showSecondsBar = true
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = formattedDate,
-                        fontSize = if (bitmap != null) 16.sp else 18.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = TextSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // Bateria / Carregamento
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
-                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    // Header, Relógio Âmbar e Data
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = if (isCharging) Icons.Outlined.BatteryChargingFull else Icons.Outlined.BatteryStd,
-                            contentDescription = null,
-                            tint = if (isCharging) accentColor else TextSecondary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (isCharging) "Carregando • $batteryPercentage%" else "$batteryPercentage%",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = if (isCharging) accentColor else TextSecondary
+                            text = "CONNECTED GEEK",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.8.sp,
+                            color = standbyAmber.copy(alpha = 0.85f)
                         )
-                    }
 
-                    if (!weatherTemp.isNullOrBlank() && bitmap == null) {
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        StandByAnimatedTimeClock(
+                            formattedTime = formattedTime,
+                            fontSize = 76.sp,
+                            color = standbyAmber,
+                            accentColor = standbyAmber,
+                            showSecondsBar = false
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
                         Text(
-                            text = "$weatherTemp${if (!weatherCondition.isNullOrBlank()) " • $weatherCondition" else ""}",
-                            fontSize = 14.sp,
-                            color = TextSecondary
+                            text = dayOfWeek,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = standbyAmber
+                        )
+                        Text(
+                            text = monthDay,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = standbyAmber.copy(alpha = 0.9f)
                         )
                     }
 
-                    if (bitmap != null) {
-                        Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
-                        // Foto Central Ampliada
-                        Box(
-                            modifier = Modifier
-                                .sizeIn(maxWidth = 320.dp, maxHeight = 320.dp)
-                                .fillMaxWidth(0.82f)
-                                .aspectRatio(1f)
-                                .shadow(24.dp, RoundedCornerShape(32.dp), ambientColor = Color.Black, spotColor = Color.Black)
-                                .clip(RoundedCornerShape(32.dp))
-                                .border(
-                                    BorderStroke(
-                                        1.dp,
-                                        Brush.verticalGradient(
-                                            listOf(Color.White.copy(alpha = 0.35f), Color.White.copy(alpha = 0.08f))
-                                        )
-                                    ),
-                                    RoundedCornerShape(32.dp)
-                                )
-                                .background(Color(0xFF141419)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                bitmap = bitmap!!.asImageBitmap(),
-                                contentDescription = "Foto em modo repouso",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                    // Os 2 Widgets Modulares lado a lado
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StandByWeatherCard(
+                            weatherTemp = weatherTemp,
+                            weatherCondition = weatherCondition,
+                            weatherCity = weatherCity,
+                            formattedTime = formattedTime,
+                            standbyAmber = standbyAmber,
+                            cardSize = 144.dp
+                        )
+
+                        StandByPhotoCard(
+                            bitmap = bitmap,
+                            cardSize = 144.dp
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     Text(
                         text = "Toque em qualquer lugar para sair",
-                        fontSize = 13.sp,
-                        color = TextTertiary
+                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.35f)
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StandByWeatherCard(
+    weatherTemp: String?,
+    weatherCondition: String?,
+    weatherCity: String?,
+    formattedTime: String,
+    standbyAmber: Color,
+    cardSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    val tempDigits = weatherTemp?.filter { it.isDigit() || it == '-' }?.ifEmpty { "62" } ?: "62"
+    val condDisplay = (weatherCondition?.ifBlank { "clear" } ?: "clear").lowercase()
+    val cityDisplay = (weatherCity?.ifBlank { "SAN FRANCISCO" } ?: "SAN FRANCISCO").uppercase()
+    val isNightTime = remember(formattedTime) {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        hour < 6 || hour >= 18
+    }
+
+    Box(
+        modifier = modifier
+            .size(cardSize)
+            .clip(RoundedCornerShape(26.dp))
+            .background(Color(0xFF16161C))
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), RoundedCornerShape(26.dp))
+            .padding(14.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Column {
+                Text(
+                    text = "$tempDigits°",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+                Text(
+                    text = condDisplay,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = Color(0xFFA0A0A8)
+                )
+            }
+
+            Icon(
+                imageVector = if (isNightTime) Icons.Outlined.DarkMode else Icons.Outlined.WbSunny,
+                contentDescription = null,
+                tint = standbyAmber,
+                modifier = Modifier.size(34.dp)
+            )
+
+            Text(
+                text = cityDisplay,
+                fontSize = 10.5.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.sp,
+                color = Color(0xFFA0A0A8),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun StandByPhotoCard(
+    bitmap: Bitmap?,
+    cardSize: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(cardSize)
+            .clip(RoundedCornerShape(26.dp))
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)), RoundedCornerShape(26.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF2D150B),
+                        Color(0xFF8B3A0E),
+                        Color(0xFFD4621A),
+                        Color(0xFFFAA43A),
+                        Color(0xFF331606)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "Foto em modo repouso",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            // Estética Pôr do Sol inspirada na foto de referência
+            Box(modifier = Modifier.fillMaxSize()) {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFFE082).copy(alpha = 0.85f))
+                        .align(Alignment.Center)
+                )
+                Icon(
+                    imageVector = Icons.Outlined.WbSunny,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier
+                        .size(34.dp)
+                        .align(Alignment.Center)
+                )
             }
         }
     }
@@ -474,10 +504,10 @@ fun PhotoStandByModal(
 fun StandByAnimatedTimeClock(
     formattedTime: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = 76.sp,
-    color: Color = TextPrimary,
-    accentColor: Color = Color(0xFF34C759),
-    showSecondsBar: Boolean = true
+    fontSize: TextUnit = 82.sp,
+    color: Color = Color(0xFFFFA040),
+    accentColor: Color = Color(0xFFFFA040),
+    showSecondsBar: Boolean = false
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "StandbyClockTransition")
     val colonAlpha by infiniteTransition.animateFloat(
@@ -531,7 +561,7 @@ fun StandByAnimatedTimeClock(
                     Text(
                         text = targetChar.toString(),
                         fontSize = fontSize,
-                        fontWeight = FontWeight.Light,
+                        fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.SansSerif,
                         color = color,
                         letterSpacing = (-1.5).sp
@@ -544,7 +574,7 @@ fun StandByAnimatedTimeClock(
                 Text(
                     text = ":",
                     fontSize = fontSize,
-                    fontWeight = FontWeight.Light,
+                    fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.SansSerif,
                     color = color,
                     letterSpacing = (-1.5).sp,
@@ -568,7 +598,7 @@ fun StandByAnimatedTimeClock(
                         Text(
                             text = targetChar.toString(),
                             fontSize = fontSize,
-                            fontWeight = FontWeight.Light,
+                            fontWeight = FontWeight.Bold,
                             fontFamily = FontFamily.SansSerif,
                             color = color,
                             letterSpacing = (-1.5).sp

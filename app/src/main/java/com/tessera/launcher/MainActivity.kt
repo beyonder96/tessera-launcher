@@ -3,6 +3,7 @@ package com.tessera.launcher
 import android.Manifest
 import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProviderInfo
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -102,6 +103,45 @@ class MainActivity : ComponentActivity() {
         pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
     }
 
+    private val widgetBindLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK && pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            val appWidgetInfo = appWidgetManager.getAppWidgetInfo(pendingAppWidgetId)
+            if (appWidgetInfo?.configure != null) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
+                    component = appWidgetInfo.configure
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, pendingAppWidgetId)
+                }
+                try {
+                    widgetConfigLauncher.launch(intent)
+                } catch (_: Exception) {
+                    val pkg = pendingAppWidgetPackage
+                    if (pkg != null) {
+                        viewModel.linkWidgetToApp(pkg, pendingAppWidgetId)
+                        pendingAppWidgetPackage = null
+                    } else {
+                        viewModel.addHostedWidgetId(pendingAppWidgetId)
+                    }
+                    pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+                }
+            } else {
+                val pkg = pendingAppWidgetPackage
+                if (pkg != null) {
+                    viewModel.linkWidgetToApp(pkg, pendingAppWidgetId)
+                    pendingAppWidgetPackage = null
+                } else {
+                    viewModel.addHostedWidgetId(pendingAppWidgetId)
+                }
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            }
+        } else if (pendingAppWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+            appWidgetHost.deleteAppWidgetId(pendingAppWidgetId)
+            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            pendingAppWidgetPackage = null
+        }
+    }
+
     private val widgetPickLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -131,34 +171,62 @@ class MainActivity : ComponentActivity() {
     }
 
     fun pickAndAddAppWidget() {
-        val newId = appWidgetHost.allocateAppWidgetId()
-        pendingAppWidgetId = newId
-        pendingAppWidgetPackage = null
-        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
-        }
-        try {
-            widgetPickLauncher.launch(pickIntent)
-        } catch (_: Exception) {
-            appWidgetHost.deleteAppWidgetId(newId)
-            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-            pendingAppWidgetPackage = null
-        }
+        viewModel.openWidgetPicker()
     }
 
     fun pickAndLinkWidgetForApp(packageName: String) {
+        viewModel.openWidgetPicker(packageName)
+    }
+
+    fun onWidgetSelected(providerInfo: AppWidgetProviderInfo, targetPackage: String? = null) {
         val newId = appWidgetHost.allocateAppWidgetId()
         pendingAppWidgetId = newId
-        pendingAppWidgetPackage = packageName
-        val pickIntent = Intent(AppWidgetManager.ACTION_APPWIDGET_PICK).apply {
-            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
-        }
-        try {
-            widgetPickLauncher.launch(pickIntent)
+        pendingAppWidgetPackage = targetPackage
+
+        val canBind = try {
+            appWidgetManager.bindAppWidgetIdIfAllowed(newId, providerInfo.provider)
         } catch (_: Exception) {
-            appWidgetHost.deleteAppWidgetId(newId)
-            pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
-            pendingAppWidgetPackage = null
+            false
+        }
+
+        if (canBind) {
+            if (providerInfo.configure != null) {
+                val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_CONFIGURE).apply {
+                    component = providerInfo.configure
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
+                }
+                try {
+                    widgetConfigLauncher.launch(intent)
+                } catch (_: Exception) {
+                    if (targetPackage != null) {
+                        viewModel.linkWidgetToApp(targetPackage, newId)
+                        pendingAppWidgetPackage = null
+                    } else {
+                        viewModel.addHostedWidgetId(newId)
+                    }
+                    pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+                }
+            } else {
+                if (targetPackage != null) {
+                    viewModel.linkWidgetToApp(targetPackage, newId)
+                    pendingAppWidgetPackage = null
+                } else {
+                    viewModel.addHostedWidgetId(newId)
+                }
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+            }
+        } else {
+            val intent = Intent(AppWidgetManager.ACTION_APPWIDGET_BIND).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, newId)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_PROVIDER, providerInfo.provider)
+            }
+            try {
+                widgetBindLauncher.launch(intent)
+            } catch (_: Exception) {
+                appWidgetHost.deleteAppWidgetId(newId)
+                pendingAppWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+                pendingAppWidgetPackage = null
+            }
         }
     }
 
@@ -301,6 +369,9 @@ class MainActivity : ComponentActivity() {
                     appWidgetManager = appWidgetManager,
                     onAddAppWidget = { pickAndAddAppWidget() },
                     onPickAndLinkWidget = { pickAndLinkWidgetForApp(it) },
+                    onSelectAppWidget = { providerInfo, targetPackage ->
+                        onWidgetSelected(providerInfo, targetPackage)
+                    },
                     onRemoveAppWidget = { widgetId ->
                         appWidgetHost.deleteAppWidgetId(widgetId)
                         viewModel.removeHostedWidgetId(widgetId)

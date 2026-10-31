@@ -1,5 +1,6 @@
 package com.tessera.launcher.ui.components
 
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.outlined.Bluetooth
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.FlashlightOn
 import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Refresh
@@ -37,11 +39,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.data.helper.RamInfo
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.helper.WeatherInfo
+import java.util.Locale
 
 /**
  * Grade Bento 2x2 com cápsulas táteis lapidadas para Wi-Fi, Bluetooth, Lanterna e Som.
@@ -189,19 +194,21 @@ private fun BentoControlTile(
 }
 
 /**
- * Trio de Anéis de Telemetria (Bateria, Clima e Tempo de Tela) com Canvas zero-allocation.
+ * Trio de Anéis de Telemetria (Bateria, Memória RAM e Tempo de Tela) com Canvas zero-allocation.
  */
 @Composable
 fun JournalTelemetryRingsRow(
     batteryPercentage: Int,
     isCharging: Boolean,
-    weatherInfo: WeatherInfo?,
-    screenTimeInfo: ScreenTimeInfo?,
-    isLightMode: Boolean,
-    onWeatherRefresh: () -> Unit,
-    onScreenTimeClick: () -> Unit,
+    ramInfo: RamInfo = RamInfo(),
+    weatherInfo: WeatherInfo? = null,
+    screenTimeInfo: ScreenTimeInfo? = null,
+    isLightMode: Boolean = false,
+    onWeatherRefresh: (() -> Unit)? = null,
+    onScreenTimeClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val cardBg = if (isLightMode) Color(0xFFEFECE2) else Color(0xFF161820)
     val borderColor = if (isLightMode) Color(0xFFDDD8CB) else Color(0x25FFFFFF)
     val textPrimary = if (isLightMode) Color(0xFF1C1917) else Color(0xFFF7F4EB)
@@ -237,17 +244,31 @@ fun JournalTelemetryRingsRow(
                     .background(if (isLightMode) Color(0xFFDDD8CB) else Color(0x25FFFFFF))
             )
 
-            // 2. Anel Clima
-            val temp = weatherInfo?.temperature?.let { "$it°" } ?: "--"
-            val condition = weatherInfo?.condition?.take(8) ?: "Clima"
+            // 2. Anel Memória RAM Real
+            val ramPercent = ramInfo.usedPercentage
+            val ramUsedGbStr = String.format(Locale.getDefault(), "%.1f", ramInfo.usedGb)
+            val ramTotalGbStr = String.format(Locale.getDefault(), "%.1f", ramInfo.totalGb)
+            val ramRingColor = when {
+                ramPercent >= 85 -> Color(0xFFFF5252)
+                ramPercent >= 70 -> Color(0xFFF59E0B)
+                else -> Color(0xFF10B981)
+            }
             TelemetryRingItem(
-                valueText = temp,
-                labelText = condition.uppercase(),
-                progress = 0.75f,
-                ringColor = Color(0xFFF59E0B),
+                valueText = if (ramInfo.totalBytes > 0) "$ramPercent%" else "--%",
+                labelText = "RAM",
+                progress = (ramPercent / 100f).coerceIn(0f, 1f),
+                ringColor = ramRingColor,
                 isLightMode = isLightMode,
-                onClick = onWeatherRefresh,
-                centerIcon = Icons.Outlined.WbSunny
+                centerIcon = Icons.Outlined.Memory,
+                onClick = {
+                    if (ramInfo.totalBytes > 0) {
+                        Toast.makeText(
+                            context,
+                            "RAM: $ramUsedGbStr GB usados de $ramTotalGbStr GB ($ramPercent%)",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
             )
 
             // Divisor vertical sutil

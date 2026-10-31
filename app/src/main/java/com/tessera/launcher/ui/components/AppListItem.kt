@@ -140,6 +140,7 @@ fun AppListItem(
             "LOSANGO" -> RoundedCornerShape(6.dp)
             "SQUIRCLE" -> RoundedCornerShape(12.dp)
             "SQUARE" -> RoundedCornerShape(4.dp)
+            "RECTANGLE" -> RoundedCornerShape(8.dp)
             else -> IconShape
         }
     }
@@ -199,13 +200,18 @@ fun AppListItem(
                     .width(32.dp)
                     .height(42.dp)
                     .clip(shape)
+            } else if (iconShape == "RECTANGLE") {
+                Modifier
+                    .width(34.dp)
+                    .height(42.dp)
+                    .clip(shape)
             } else {
                 Modifier
                     .size(40.dp)
                     .clip(shape)
             }
 
-            val iconContainerModifier = if (iconShape == "CYLINDER") Modifier.size(42.dp) else Modifier.size(40.dp)
+            val iconContainerModifier = if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(42.dp) else Modifier.size(40.dp)
             Box(
                 modifier = iconContainerModifier,
                 contentAlignment = Alignment.Center

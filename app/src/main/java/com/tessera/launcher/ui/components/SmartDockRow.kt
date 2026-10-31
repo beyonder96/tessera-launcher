@@ -172,6 +172,7 @@ private fun SmartDockItem(
             "LOSANGO" -> RoundedCornerShape(6.dp)
             "SQUIRCLE" -> RoundedCornerShape(12.dp)
             "SQUARE" -> RoundedCornerShape(4.dp)
+            "RECTANGLE" -> RoundedCornerShape(8.dp)
             else -> IconShape
         }
     }
@@ -213,13 +214,18 @@ private fun SmartDockItem(
                 .width(30.dp)
                 .height(38.dp)
                 .clip(shape)
+        } else if (iconShape == "RECTANGLE") {
+            Modifier
+                .width(30.dp)
+                .height(38.dp)
+                .clip(shape)
         } else {
             Modifier
                 .size(38.dp)
                 .clip(shape)
         }
 
-        val iconContainerModifier = if (iconShape == "CYLINDER") Modifier.size(width = 30.dp, height = 38.dp) else Modifier.size(38.dp)
+        val iconContainerModifier = if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(width = 30.dp, height = 38.dp) else Modifier.size(38.dp)
         Box(
             modifier = iconContainerModifier,
             contentAlignment = Alignment.Center

@@ -7,6 +7,7 @@ import android.content.pm.LauncherApps
 import android.content.pm.ShortcutInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -64,6 +65,23 @@ class AddPinShortcutActivity : ComponentActivity() {
 
     private fun rasterizeDrawable(drawable: Drawable?, targetSize: Int = 144): Bitmap? {
         if (drawable == null) return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
+            return try {
+                val bitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                drawable.background?.let { bg ->
+                    bg.setBounds(0, 0, targetSize, targetSize)
+                    bg.draw(canvas)
+                }
+                drawable.foreground?.let { fg ->
+                    fg.setBounds(0, 0, targetSize, targetSize)
+                    fg.draw(canvas)
+                }
+                bitmap
+            } catch (_: Throwable) {
+                null
+            }
+        }
         if (drawable is BitmapDrawable && drawable.bitmap != null) {
             val bmp = drawable.bitmap
             return if (bmp.width <= targetSize && bmp.height <= targetSize) {

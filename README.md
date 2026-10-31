@@ -61,7 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.4.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.4.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.6.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.6.0)
+
+### 🆕 Novidades na v3.6.0
+- 🖼️ **Modo StandBy Autêntico Estilo Smart Display:**
+  - Redesenho visual completo com tipografia digital âmbar suave com efeito glow, cabeçalho de status editorial e data completa.
+  - Cards modulares duplos em squircle: card de clima com ícone celestial, temperatura, condição e cidade; e card de foto pessoal com fallback em gradiente dinâmico de pôr do sol.
+- 🧩 **Seletor Visual Moderno de Widgets (Estilo Pixel / One UI):**
+  - Substituição da lista em texto padrão do Android por um seletor nativo visual fluido em Bottom Sheet.
+  - Agrupamento inteligente por aplicativo, contagem de widgets disponíveis e busca instantânea.
+  - Pré-visualização gráfica real dos widgets (loadPreviewImage), identificação de dimensões no grid (ex: 4 × 2, 2 × 1) e vinculação direta com gestão de permissões.
+- 🔷 **Correção Completa dos Formatos de Ícones:**
+  - Resolução definitiva do corte de ícones (Quadrado, Retângulo, Círculo, Gotícula). O Launcher agora extrai e rasteriza ícones adaptativos do Android sem queimar a máscara circular padrão do sistema OEM, aplicando fielmente o formato definido pelo usuário.
+- ⚡ **Telemetria de RAM com Dados Reais:**
+  - O anel central da central de widgets agora afere o consumo de Memória RAM do sistema em tempo real via ActivityManager.MemoryInfo.
+  - Mudança dinâmica de cores (verde, âmbar e vermelho) conforme a carga e toque tátil com Toast informando GB usados e disponíveis.
+- 🔔 **Notificações com Ícone Real do App e Sino Limpo:**
+  - Exibição do ícone nativo do aplicativo de origem em notificações únicas.
+  - Apresentação limpa e moderna do ícone de sino quando há múltiplos alertas (removendo a caixa cinza de fundo).
 
 ### 🆕 Novidades na v3.5.0
 - ⚡ **Omni-Search com Superpoderes Raycast:**

@@ -1,5 +1,6 @@
 package com.tessera.launcher.data.helper
 
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -17,6 +18,15 @@ import java.util.Locale
 data class BatteryInfo(
     val percentage: Int,
     val isCharging: Boolean
+)
+
+data class RamInfo(
+    val totalBytes: Long = 0L,
+    val availBytes: Long = 0L,
+    val usedBytes: Long = 0L,
+    val usedPercentage: Int = 0,
+    val usedGb: Float = 0f,
+    val totalGb: Float = 0f
 )
 
 class SystemInfoHelper(private val context: Context) {
@@ -70,6 +80,36 @@ class SystemInfoHelper(private val context: Context) {
             val date = dateFormat.format(now).replaceFirstChar { it.uppercase() }
             emit(time to date)
             delay(1000)
+        }
+    }
+
+    fun getRamInfo(): RamInfo {
+        return try {
+            val memoryInfo = ActivityManager.MemoryInfo()
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            activityManager?.getMemoryInfo(memoryInfo)
+            val total = memoryInfo.totalMem
+            val avail = memoryInfo.availMem
+            val used = (total - avail).coerceAtLeast(0L)
+            val percentage = if (total > 0) ((used.toDouble() / total.toDouble()) * 100).toInt().coerceIn(0, 100) else 0
+            val bytesInGb = 1024f * 1024f * 1024f
+            RamInfo(
+                totalBytes = total,
+                availBytes = avail,
+                usedBytes = used,
+                usedPercentage = percentage,
+                usedGb = used / bytesInGb,
+                totalGb = total / bytesInGb
+            )
+        } catch (_: Exception) {
+            RamInfo()
+        }
+    }
+
+    fun observeRam(): Flow<RamInfo> = flow {
+        while (true) {
+            emit(getRamInfo())
+            delay(3000)
         }
     }
 }
