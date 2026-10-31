@@ -61,7 +61,20 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.6.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.6.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.0)
+
+### 🆕 Novidades na v3.7.0
+- 🕰️ **Relógio Mecânico Flip 3D (Estilo Placar / Split-Flap):**
+  - Animação física de dobra 3D horizontal em duas abas ao virar minutos e horas, com perspectiva real de câmera, chanfros laterais de placar e sombreamento dinâmico.
+  - Dois pontos `:` com pulsação suave contínua de opacidade.
+  - Remoção completa do antigo texto editorial ("CONNECTED GEEK") para um display ambiente limpo e elegante.
+- 🌤️ **Chip de Clima Compacto & Translúcido:**
+  - Redesenho do antigo cartão volumoso em um chip pílula elegante com acabamento *frosted glass*, exibindo temperatura, condição e ícone solar/lunar adaptativo ao dia e à noite.
+- 🎵 **Player Dinâmico com Capa de Álbum:**
+  - Ao reproduzir música (Spotify, YouTube Music, etc.), o relógio flip reduz seu tamanho suavemente em uma transição elástica fluida (*spring physics*), revelando o cartão da capa do álbum com título, artista e controles táteis rápidos.
+  - **Preservação Rigorosa do Tamanho da Foto:** O cartão de foto pessoal mantém estritamente suas dimensões originais (154dp em paisagem / 144dp em vertical), sem sofrer distorção.
+- 🔷 **Ícone Oficial do Tessera Launcher no Cabeçalho:**
+  - Badge no canto superior esquerdo com toque funcional para retornar instantaneamente à tela inicial do launcher.
 
 ### 🆕 Novidades na v3.6.0
 - 🖼️ **Modo StandBy Autêntico Estilo Smart Display:**

@@ -1702,7 +1702,10 @@ fun HomeScreen(
             weatherTemp = uiState.weatherInfo?.displayTemperature,
             weatherCondition = uiState.weatherInfo?.condition,
             weatherCity = uiState.weatherInfo?.cityName,
-            accentColor = uiState.activeAccentColor
+            accentColor = uiState.activeAccentColor,
+            mediaPlayback = uiState.mediaPlayback,
+            onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
+            onOpenMusicApp = { viewModel.launchDefaultMusicApp() }
         )
 
         // Seletor Moderno de Widgets com Prévia Visual Real (Estilo Pixel Launcher / One UI)
