@@ -1,6 +1,7 @@
 package com.tessera.launcher.ui.components
 
 import android.app.Activity
+import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Bitmap
@@ -141,7 +142,16 @@ fun PhotoStandByModal(
 
     // Ativa rotação automática por sensor enquanto o Modo Repouso estiver aberto de forma segura
     DisposableEffect(isOpen) {
-        val activity = context as? Activity
+        var act: Activity? = null
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is Activity) {
+                act = ctx
+                break
+            }
+            ctx = ctx.baseContext
+        }
+        val activity = act
         if (isOpen && activity != null) {
             val previousOrientation = activity.requestedOrientation
             runCatching {
@@ -440,24 +450,9 @@ private fun StandByTesseraBadge(
             val size = 96
             val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bmp)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
-                drawable.background?.let {
-                    it.setBounds(0, 0, size, size)
-                    it.draw(canvas)
-                }
-                drawable.foreground?.let {
-                    it.setBounds(0, 0, size, size)
-                    it.draw(canvas)
-                }
-                bmp
-            } else if (drawable is BitmapDrawable && drawable.bitmap != null && !drawable.bitmap.isRecycled) {
-                drawable.bitmap
-            } else {
-                drawable.setBounds(0, 0, size, size)
-                drawable.draw(canvas)
-                bmp
-            }
+            drawable.setBounds(0, 0, size, size)
+            drawable.draw(canvas)
+            bmp
         }.getOrNull()
     }
 

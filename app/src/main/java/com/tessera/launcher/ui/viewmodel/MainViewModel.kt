@@ -1744,17 +1744,13 @@ class MainViewModel(
                 if (fileBitmap != null) return fileBitmap
             }
             val drawable = wm.drawable ?: wm.peekDrawable() ?: return null
-            if (drawable is BitmapDrawable) {
-                drawable.bitmap
-            } else {
-                val w = drawable.intrinsicWidth.coerceAtLeast(1)
-                val h = drawable.intrinsicHeight.coerceAtLeast(1)
-                val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-                val canvas = Canvas(bmp)
-                drawable.setBounds(0, 0, canvas.width, canvas.height)
-                drawable.draw(canvas)
-                bmp
-            }
+            val w = drawable.intrinsicWidth.coerceAtLeast(1)
+            val h = drawable.intrinsicHeight.coerceAtLeast(1)
+            val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bmp)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+            bmp
         } catch (_: Throwable) {
             null
         }

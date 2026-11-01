@@ -337,9 +337,14 @@ fun AppleMusicJournalCard(
                         .background(if (isLightMode) Color(0xFFDDD8CB) else Color(0xFF222634)),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (media.artwork != null) {
+                    val safeArtwork = remember(media.artwork) {
+                        runCatching {
+                            media.artwork?.takeIf { !it.isRecycled }?.asImageBitmap()
+                        }.getOrNull()
+                    }
+                    if (safeArtwork != null) {
                         Image(
-                            bitmap = media.artwork.asImageBitmap(),
+                            bitmap = safeArtwork,
                             contentDescription = media.title,
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Crop

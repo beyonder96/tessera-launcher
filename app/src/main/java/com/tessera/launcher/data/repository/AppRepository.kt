@@ -58,11 +58,20 @@ class AppRepository(
         }
         if (drawable is BitmapDrawable && drawable.bitmap != null) {
             val bmp = drawable.bitmap
-            return if (bmp.width <= targetSize && bmp.height <= targetSize) {
-                bmp
-            } else {
-                Bitmap.createScaledBitmap(bmp, targetSize, targetSize, true)
+            val safeBmp = try {
+                if (!bmp.isRecycled && (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || bmp.config != Bitmap.Config.HARDWARE)) {
+                    if (bmp.width <= targetSize && bmp.height <= targetSize) {
+                        bmp
+                    } else {
+                        Bitmap.createScaledBitmap(bmp, targetSize, targetSize, true)
+                    }
+                } else {
+                    null
+                }
+            } catch (_: Throwable) {
+                null
             }
+            if (safeBmp != null) return safeBmp
         }
         return try {
             val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceAtMost(targetSize) else targetSize

@@ -407,16 +407,24 @@ class TesseraMediaService : NotificationListenerService() {
             }.getOrDefault("Player")
         }
 
-        val artwork: Bitmap? = metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
-            ?: metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART)
-            ?: metadata?.description?.iconBitmap
-            ?: metadata?.description?.iconUri?.let { uri ->
+        val artwork: Bitmap? = runCatching {
+            val raw = metadata?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                ?: metadata?.getBitmap(MediaMetadata.METADATA_KEY_ART)
+                ?: metadata?.description?.iconBitmap
+                ?: metadata?.description?.iconUri?.let { uri ->
+                    runCatching {
+                        contentResolver.openInputStream(uri)?.use { stream ->
+                            BitmapFactory.decodeStream(stream)
+                        }
+                    }.getOrNull()
+                }
+
+            raw?.takeIf { !it.isRecycled }?.let { bmp ->
                 runCatching {
-                    contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
-                }.getOrNull()
+                    bmp.copy(Bitmap.Config.ARGB_8888, false)
+                }.getOrNull() ?: bmp.takeIf { !it.isRecycled }
             }
+        }.getOrNull()
 
         _mediaState.value = MediaPlaybackInfo(
             title = title,

@@ -215,10 +215,15 @@ fun PhotoWidget(
                 )
             }
     ) {
-        if (bitmap != null) {
+        val safePhotoBitmap = remember(bitmap) {
+            runCatching {
+                bitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
+            }.getOrNull()
+        }
+        if (safePhotoBitmap != null) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Image(
-                    bitmap = bitmap!!.asImageBitmap(),
+                    bitmap = safePhotoBitmap,
                     contentDescription = "Foto da tela inicial",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()

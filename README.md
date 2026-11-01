@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.2)
+
+### 🆕 Novidades na v3.7.2
+- 🛡️ **Blindagem Geral contra Crashes e Estabilidade Reforçada:**
+  - **Rotação sem Destruição de Activity:** Adicionado `android:configChanges` para tratar orientação, densidade e tamanho de tela na `MainActivity`, garantindo que o Modo Repouso gire livremente por sensor sem destruir o ciclo de vida do `AppWidgetHost`.
+  - **Isolamento de Bitmaps de Mídia:** Capas de álbuns no `TesseraMediaService` agora são convertidas em cópias locais seguras em software ARGB_8888, eliminando crashes por reciclagem externa de bitmap (`Canvas: trying to use a recycled bitmap`) em `LiveCapsule`, `WidgetsPanel` e `AppleMusicJournalCard`.
+  - **Compatibilidade com Hardware Bitmaps:** Proteção nas rotinas de rasterização do seletor de widgets e do papel de parede do sistema contra incompatibilidades com o Skia/Compose em renderizações de blur e cortes de superfície.
+  - **Eliminação de Asserções Forçadas (`!!`):** Remoção de potenciais pontos de `NullPointerException` em molduras de fotos e papéis de parede.
 
 ### 🆕 Novidades na v3.7.1
 - 🛡️ **Correção Crítica no Modo Repouso (StandBy):**

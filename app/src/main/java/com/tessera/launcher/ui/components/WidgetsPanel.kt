@@ -1056,9 +1056,14 @@ fun MediaWidgetCard(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Capa do Álbum com cantos arredondados e borda sutil
-        if (mediaPlayback.artwork != null) {
+        val albumBitmap = remember(mediaPlayback.artwork) {
+            runCatching {
+                mediaPlayback.artwork?.takeIf { !it.isRecycled }?.asImageBitmap()
+            }.getOrNull()
+        }
+        if (albumBitmap != null) {
             Image(
-                bitmap = mediaPlayback.artwork.asImageBitmap(),
+                bitmap = albumBitmap,
                 contentDescription = "Capa do álbum",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier

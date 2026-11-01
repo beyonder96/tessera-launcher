@@ -39,6 +39,7 @@
             android:clearTaskOnLaunch="true"
             android:stateNotNeeded="true"
             android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|uiMode|density"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

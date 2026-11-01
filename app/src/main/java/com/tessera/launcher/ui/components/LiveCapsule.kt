@@ -275,10 +275,14 @@ fun LiveCapsule(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val artwork = liveActivity.artwork
-                            if (artwork != null) {
+                            val safeArtworkBitmap = remember(liveActivity.artwork) {
+                                runCatching {
+                                    liveActivity.artwork?.takeIf { !it.isRecycled }?.asImageBitmap()
+                                }.getOrNull()
+                            }
+                            if (safeArtworkBitmap != null) {
                                 Image(
-                                    bitmap = artwork.asImageBitmap(),
+                                    bitmap = safeArtworkBitmap,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
@@ -601,10 +605,14 @@ fun LiveCapsule(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            val artwork = mediaPlayback.artwork
-                            if (artwork != null) {
+                            val safeArtworkBitmap = remember(mediaPlayback.artwork) {
+                                runCatching {
+                                    mediaPlayback.artwork?.takeIf { !it.isRecycled }?.asImageBitmap()
+                                }.getOrNull()
+                            }
+                            if (safeArtworkBitmap != null) {
                                 Image(
-                                    bitmap = artwork.asImageBitmap(),
+                                    bitmap = safeArtworkBitmap,
                                     contentDescription = "Capa do Álbum",
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier

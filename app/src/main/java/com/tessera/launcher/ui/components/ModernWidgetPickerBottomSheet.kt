@@ -730,37 +730,12 @@ private fun calculateWidgetGridSpan(providerInfo: AppWidgetProviderInfo): Pair<I
  */
 private fun rasterizeDrawableToBitmap(drawable: Drawable?, maxWidth: Int, maxHeight: Int): Bitmap? {
     if (drawable == null) return null
-    if (drawable is BitmapDrawable && drawable.bitmap != null) {
-        val bmp = drawable.bitmap
-        if (bmp.width <= maxWidth && bmp.height <= maxHeight) return bmp
-        val aspect = bmp.width.toFloat() / bmp.height.toFloat()
-        val targetW = if (aspect >= 1f) maxWidth else (maxHeight * aspect).toInt()
-        val targetH = if (aspect >= 1f) (maxWidth / aspect).toInt() else maxHeight
-        return Bitmap.createScaledBitmap(bmp, targetW.coerceAtLeast(1), targetH.coerceAtLeast(1), true)
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && drawable is AdaptiveIconDrawable) {
-        return try {
-            val bmp = Bitmap.createBitmap(maxWidth.coerceAtMost(144), maxHeight.coerceAtMost(144), Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bmp)
-            drawable.background?.let {
-                it.setBounds(0, 0, bmp.width, bmp.height)
-                it.draw(canvas)
-            }
-            drawable.foreground?.let {
-                it.setBounds(0, 0, bmp.width, bmp.height)
-                it.draw(canvas)
-            }
-            bmp
-        } catch (_: Throwable) {
-            null
-        }
-    }
     return try {
         val w = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth.coerceAtMost(maxWidth) else maxWidth
-        val h = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceAtMost(maxHeight) else (maxWidth * 2 / 3)
-        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val h = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight.coerceAtMost(maxHeight) else maxHeight
+        val bmp = Bitmap.createBitmap(w.coerceAtLeast(1), h.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
-        drawable.setBounds(0, 0, w, h)
+        drawable.setBounds(0, 0, bmp.width, bmp.height)
         drawable.draw(canvas)
         bmp
     } catch (_: Throwable) {

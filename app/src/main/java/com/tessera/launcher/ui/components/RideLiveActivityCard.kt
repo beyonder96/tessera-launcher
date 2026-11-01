@@ -154,14 +154,22 @@ fun RideLiveActivityCard(
 
                 // Canto Superior Direito: Avatar do motorista e/ou imagem do carro
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val driverAvatar = rideDetails.driverAvatar
-                    val vehicleImage = rideDetails.vehicleImage
+                    val safeAvatar = remember(rideDetails.driverAvatar) {
+                        runCatching {
+                            rideDetails.driverAvatar?.takeIf { !it.isRecycled }?.asImageBitmap()
+                        }.getOrNull()
+                    }
+                    val safeVehicle = remember(rideDetails.vehicleImage) {
+                        runCatching {
+                            rideDetails.vehicleImage?.takeIf { !it.isRecycled }?.asImageBitmap()
+                        }.getOrNull()
+                    }
 
-                    if (driverAvatar != null && vehicleImage != null) {
+                    if (safeAvatar != null && safeVehicle != null) {
                         // Stack sobreposta de avatar + carro
                         Box(contentAlignment = Alignment.CenterEnd) {
                             Image(
-                                bitmap = vehicleImage.asImageBitmap(),
+                                bitmap = safeVehicle,
                                 contentDescription = "Veículo",
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier
@@ -169,7 +177,7 @@ fun RideLiveActivityCard(
                                     .padding(end = 12.dp)
                             )
                             Image(
-                                bitmap = driverAvatar.asImageBitmap(),
+                                bitmap = safeAvatar,
                                 contentDescription = "Motorista",
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier
@@ -178,9 +186,9 @@ fun RideLiveActivityCard(
                                     .border(1.5.dp, cardBackground, CircleShape)
                             )
                         }
-                    } else if (driverAvatar != null) {
+                    } else if (safeAvatar != null) {
                         Image(
-                            bitmap = driverAvatar.asImageBitmap(),
+                            bitmap = safeAvatar,
                             contentDescription = "Motorista",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier

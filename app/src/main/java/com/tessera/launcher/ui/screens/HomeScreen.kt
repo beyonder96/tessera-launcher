@@ -353,9 +353,14 @@ fun HomeScreen(
     ) {
         // Camada 0: Papel de Parede da Tela Inicial com Borrão Dinâmico Acelerado por GPU
         if (uiState.isSystemWallpaperEnabled) {
-            if (wallpaperBitmap != null) {
+            val safeWallpaper = remember(wallpaperBitmap) {
+                runCatching {
+                    wallpaperBitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
+                }.getOrNull()
+            }
+            if (safeWallpaper != null) {
                 Image(
-                    bitmap = wallpaperBitmap!!.asImageBitmap(),
+                    bitmap = safeWallpaper,
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()

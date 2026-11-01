@@ -154,10 +154,14 @@ fun DeliveryLiveActivityCard(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val storeLogo = deliveryDetails.storeLogo
-                    if (storeLogo != null) {
+                    val safeStoreLogo = remember(deliveryDetails.storeLogo) {
+                        runCatching {
+                            deliveryDetails.storeLogo?.takeIf { !it.isRecycled }?.asImageBitmap()
+                        }.getOrNull()
+                    }
+                    if (safeStoreLogo != null) {
                         Image(
-                            bitmap = storeLogo.asImageBitmap(),
+                            bitmap = safeStoreLogo,
                             contentDescription = "Logotipo da Loja",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
