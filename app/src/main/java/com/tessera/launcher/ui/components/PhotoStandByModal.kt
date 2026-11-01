@@ -45,6 +45,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -98,6 +99,7 @@ import com.tessera.launcher.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import kotlin.math.sin
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -850,10 +852,10 @@ fun StandByFlipClock(
     )
 
     val targetFontSize = when {
-        isLandscape && !isMusicActive -> 76f
-        isLandscape && isMusicActive -> 62f
-        !isLandscape && !isMusicActive -> 72f
-        else -> 56f
+        isLandscape && !isMusicActive -> 66f
+        isLandscape && isMusicActive -> 52f
+        !isLandscape && !isMusicActive -> 62f
+        else -> 48f
     }
     val fontSizeSp by animateFloatAsState(
         targetValue = targetFontSize,
@@ -913,19 +915,19 @@ fun StandByFlipClock(
         Spacer(modifier = Modifier.width(colonSpacing))
 
         Column(
-            verticalArrangement = Arrangement.spacedBy(cardHeight * 0.20f),
+            verticalArrangement = Arrangement.spacedBy(cardHeight * 0.22f),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.graphicsLayer { alpha = colonAlpha }
         ) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(if (isMusicActive) 5.dp else 6.dp)
                     .clip(CircleShape)
                     .background(color)
             )
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(if (isMusicActive) 5.dp else 6.dp)
                     .clip(CircleShape)
                     .background(color)
             )
@@ -956,8 +958,8 @@ fun StandByFlipClock(
 
 /**
  * Dígito Individual com Efeito Físico de Placar Mecânico (Split-Flap 3D).
- * Divide o número em metades superior e inferior com rotação em 3D,
- * linha de divisão realista e sombreamento progressivo.
+ * Renderiza um cartão unificado com linha de divisão mecânica central, chanfros nos pinos laterais,
+ * iluminação física e rotação suave em 3D ao virar o minuto/hora sem duplicação de dígitos.
  */
 @Composable
 fun SplitFlapDigit(
@@ -966,15 +968,14 @@ fun SplitFlapDigit(
     cardHeight: Dp,
     fontSize: TextUnit,
     textColor: Color = Color.White,
-    cardColor: Color = Color(0xFF16161A),
     modifier: Modifier = Modifier
 ) {
     var displayedDigit by remember { mutableStateOf(digit) }
     var upcomingDigit by remember { mutableStateOf(digit) }
     val flipProgress = remember { Animatable(0f) }
     val density = LocalDensity.current.density
-    val cameraDist = 28f * density
-    val cornerRadius = remember(cardWidth) { (cardWidth * 0.16f).coerceIn(6.dp, 12.dp) }
+    val cameraDist = 32f * density
+    val cornerRadius = remember(cardWidth) { (cardWidth * 0.18f).coerceIn(8.dp, 14.dp) }
 
     LaunchedEffect(digit) {
         if (digit != displayedDigit && digit != upcomingDigit) {
@@ -982,7 +983,7 @@ fun SplitFlapDigit(
             flipProgress.snapTo(0f)
             flipProgress.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 540, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 420, easing = FastOutSlowInEasing)
             )
             displayedDigit = upcomingDigit
             flipProgress.snapTo(0f)
@@ -990,193 +991,140 @@ fun SplitFlapDigit(
     }
 
     val isAnimating = flipProgress.value > 0f && flipProgress.value < 1f
-    val currentTopDigit = if (isAnimating) upcomingDigit else displayedDigit
-    val currentBottomDigit = if (isAnimating && flipProgress.value >= 0.5f) upcomingDigit else displayedDigit
-    val oldTopDigit = displayedDigit
-    val newBottomDigit = upcomingDigit
+    val currentDigit = if (isAnimating && flipProgress.value >= 0.5f) upcomingDigit else displayedDigit
+
+    // Rotação 3D ao virar a placa mecânica
+    val rotX = if (isAnimating) {
+        val p = flipProgress.value
+        if (p < 0.5f) {
+            -90f * (p * 2f)
+        } else {
+            90f * (1f - (p - 0.5f) * 2f)
+        }
+    } else 0f
+
+    val shadowAlpha = if (isAnimating) {
+        val p = flipProgress.value
+        (sin(p * Math.PI.toFloat()) * 0.40f).coerceIn(0f, 0.40f)
+    } else 0f
+
+    val shape = RoundedCornerShape(cornerRadius)
 
     Box(
         modifier = modifier
             .width(cardWidth)
             .height(cardHeight)
-    ) {
-        // 1. Base Estática (Metade Superior e Metade Inferior)
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            HalfDigitSurface(
-                digit = currentTopDigit,
-                isTop = true,
-                cardWidth = cardWidth,
-                cardHeight = cardHeight,
-                fontSize = fontSize,
-                textColor = textColor,
-                cardColor = cardColor,
-                cornerRadius = cornerRadius
-            )
-
-            HalfDigitSurface(
-                digit = currentBottomDigit,
-                isTop = false,
-                cardWidth = cardWidth,
-                cardHeight = cardHeight,
-                fontSize = fontSize,
-                textColor = textColor,
-                cardColor = cardColor,
-                cornerRadius = cornerRadius
-            )
-        }
-
-        // 2. Aba 3D Dinâmica em Movimento
-        if (isAnimating) {
-            val p = flipProgress.value
-            if (p < 0.5f) {
-                // Aba Superior Dobrando para Baixo (revelando o novo número por trás)
-                val rotX = -180f * p
-                Box(
-                    modifier = Modifier
-                        .width(cardWidth)
-                        .height(cardHeight / 2)
-                        .align(Alignment.TopCenter)
-                        .graphicsLayer {
-                            rotationX = rotX
-                            cameraDistance = cameraDist
-                            transformOrigin = TransformOrigin(0.5f, 1f)
-                        }
-                ) {
-                    HalfDigitSurface(
-                        digit = oldTopDigit,
-                        isTop = true,
-                        cardWidth = cardWidth,
-                        cardHeight = cardHeight,
-                        fontSize = fontSize,
-                        textColor = textColor,
-                        cardColor = cardColor,
-                        cornerRadius = cornerRadius
-                    )
-                    // Sombra da dobra superior
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius))
-                            .background(Color.Black.copy(alpha = (p * 1.5f).coerceIn(0f, 0.65f)))
-                    )
-                }
-            } else {
-                // Aba Inferior Caindo para a Frente (pousando sobre a base)
-                val rotX = 180f * (1f - p)
-                Box(
-                    modifier = Modifier
-                        .width(cardWidth)
-                        .height(cardHeight / 2)
-                        .align(Alignment.BottomCenter)
-                        .graphicsLayer {
-                            rotationX = rotX
-                            cameraDistance = cameraDist
-                            transformOrigin = TransformOrigin(0.5f, 0f)
-                        }
-                ) {
-                    HalfDigitSurface(
-                        digit = newBottomDigit,
-                        isTop = false,
-                        cardWidth = cardWidth,
-                        cardHeight = cardHeight,
-                        fontSize = fontSize,
-                        textColor = textColor,
-                        cardColor = cardColor,
-                        cornerRadius = cornerRadius
-                    )
-                    // Sombra diminuindo ao pousar
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius))
-                            .background(Color.Black.copy(alpha = ((1f - p) * 1.5f).coerceIn(0f, 0.65f)))
-                    )
-                }
+            .graphicsLayer {
+                rotationX = rotX
+                cameraDistance = cameraDist
             }
-        }
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF202026),
+                        Color(0xFF16161A),
+                        Color(0xFF0F0F12)
+                    )
+                )
+            )
+            .border(
+                BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                shape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        // Dígito Centralizado Único (Sem duplicações ou distorções)
+        Text(
+            text = currentDigit.toString(),
+            style = TextStyle(
+                fontSize = fontSize,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.SansSerif,
+                color = textColor,
+                letterSpacing = (-1.5).sp,
+                platformStyle = PlatformTextStyle(includeFontPadding = false),
+                lineHeightStyle = LineHeightStyle(
+                    alignment = LineHeightStyle.Alignment.Center,
+                    trim = LineHeightStyle.Trim.Both
+                )
+            )
+        )
 
-        // 3. Linha de Costura / Divisor Mecânico Central e Chanfros Laterais
+        // Brilho suave da metade superior (Sheen / Acabamento físico)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .align(Alignment.TopCenter)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.05f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        // Sombra suave na metade inferior
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .align(Alignment.BottomCenter)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.12f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        // Linha de Costura / Divisão Mecânica Central (Split seam)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.5.dp)
                 .align(Alignment.Center)
-                .background(Color(0xFF0A0A0D))
+                .background(Color(0xFF08080B))
         )
-        // Chanfro esquerdo
+        // Destaque especular sutil na borda inferior da costura
         Box(
             modifier = Modifier
-                .size(width = 3.dp, height = 5.dp)
+                .fillMaxWidth()
+                .height(0.6.dp)
+                .align(Alignment.Center)
+                .offset(y = 1.dp)
+                .background(Color.White.copy(alpha = 0.07f))
+        )
+
+        // Chanfro mecânico lateral esquerdo (Axle notch)
+        Box(
+            modifier = Modifier
+                .size(width = 3.dp, height = 6.dp)
                 .clip(RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp))
-                .background(Color(0xFF040406))
+                .background(Color(0xFF060608))
                 .align(Alignment.CenterStart)
         )
-        // Chanfro direito
+
+        // Chanfro mecânico lateral direito (Axle notch)
         Box(
             modifier = Modifier
-                .size(width = 3.dp, height = 5.dp)
+                .size(width = 3.dp, height = 6.dp)
                 .clip(RoundedCornerShape(topStart = 2.dp, bottomStart = 2.dp))
-                .background(Color(0xFF040406))
+                .background(Color(0xFF060608))
                 .align(Alignment.CenterEnd)
         )
-    }
-}
 
-/**
- * Superfície de Meio Dígito (Superior ou Inferior) com corte milimétrico do texto sem deslocamento de baseline.
- */
-@Composable
-private fun HalfDigitSurface(
-    digit: Char,
-    isTop: Boolean,
-    cardWidth: Dp,
-    cardHeight: Dp,
-    fontSize: TextUnit,
-    textColor: Color,
-    cardColor: Color,
-    cornerRadius: Dp,
-    modifier: Modifier = Modifier
-) {
-    val halfHeight = ((cardHeight - 2.dp) / 2).coerceAtLeast(1.dp)
-    val shape = if (isTop) {
-        RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
-    } else {
-        RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
-    }
-
-    Box(
-        modifier = modifier
-            .width(cardWidth)
-            .height(halfHeight)
-            .clip(shape)
-            .background(cardColor)
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), shape)
-            .clipToBounds(),
-        contentAlignment = if (isTop) Alignment.TopCenter else Alignment.BottomCenter
-    ) {
-        Box(
-            modifier = Modifier
-                .width(cardWidth)
-                .height(cardHeight),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = digit.toString(),
-                style = TextStyle(
-                    fontSize = fontSize,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.SansSerif,
-                    color = textColor,
-                    letterSpacing = (-1.5).sp,
-                    platformStyle = PlatformTextStyle(includeFontPadding = false),
-                    lineHeightStyle = LineHeightStyle(
-                        alignment = LineHeightStyle.Alignment.Center,
-                        trim = LineHeightStyle.Trim.Both
-                    )
-                )
+        // Sombra física dinâmica durante a rotação 3D
+        if (shadowAlpha > 0f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = shadowAlpha))
             )
         }
     }
