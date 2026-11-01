@@ -63,6 +63,16 @@ Você pode obter o APK compilado pronto para instalação no seu Android:
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
 - 🏷️ **Página de Releases:** [Baixar na Release v3.7.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.2)
 
+### 🆕 Novidades na v3.7.3
+- 🎨 **Redesign do Modo Repouso (StandBy / Smart Display):**
+  - **Paleta Monocromática Premium:** Transição total do laranja/âmbar para uma estética refinada em preto OLED puro (`#000000`), números em branco nítido (`#FFFFFF`), placas grafite acetinado (`#16161A`) e detalhes em cinza platina.
+  - **Layout Balanceado em 2 Quadrantes (Paisagem):** Divisão simétrica de 50%/50%. Quadrante esquerdo com relógio mecânico e data centralizados; quadrante direito com moldura de foto que expande harmoniosamente para 192dp quando a música está pausada (eliminando o vazio central assimétrico) e se acomoda lado a lado com a capa do álbum quando há música ativa.
+  - **Correção da Geometria do Relógio Flip:** Ajuste de métricas com `PlatformTextStyle(includeFontPadding = false)` e alinhamento geométrico milimétrico, corrigindo cortes estranhos e duplicações visuais nos dígitos superiores e inferiores.
+  - **Botão de Play/Pause de Alto Contraste:** Botão circular em branco sólido com ícone em preto puro (estética Dieter Rams / Apple).
+- 🔷 **Persistência Definitiva de Pacotes de Ícones da Play Store:**
+  - **Resolução de Regressão de Ícones:** Corrigido o bug onde pacotes de ícones baixados da Play Store sumiam após algum tempo. O observador de pacotes (`observeApps`) agora obtém dinamicamente o pacote configurado, prevenindo que atualizações de apps em segundo plano ou trocas de atalhos revertam os ícones para o padrão do sistema.
+  - **Suporte Aprimorado a appfilter.xml:** Limpeza automática de extensões (`.png`/`.xml`) e normalização de activities relativas (`.Activity`).
+
 ### 🆕 Novidades na v3.7.2
 - 🛡️ **Blindagem Geral contra Crashes e Estabilidade Reforçada:**
   - **Rotação sem Destruição de Activity:** Adicionado `android:configChanges` para tratar orientação, densidade e tamanho de tela na `MainActivity`, garantindo que o Modo Repouso gire livremente por sensor sem destruir o ciclo de vida do `AppWidgetHost`.
