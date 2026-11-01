@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,6 +51,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.MusicNote
@@ -80,8 +82,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -126,14 +131,18 @@ fun PhotoStandByModal(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val standbyAmber = Color(0xFFFFA040)
 
     val now = remember(formattedTime) { Date() }
     val dayOfWeek = remember(now) {
         SimpleDateFormat("EEEE", Locale.getDefault()).format(now).replaceFirstChar { it.uppercase() }
     }
     val monthDay = remember(now) {
-        SimpleDateFormat("MMMM d", Locale.getDefault()).format(now).replaceFirstChar { it.uppercase() }
+        val locale = Locale.getDefault()
+        if (locale.language == "pt") {
+            SimpleDateFormat("d 'de' MMMM", locale).format(now)
+        } else {
+            SimpleDateFormat("MMMM d", locale).format(now)
+        }.replaceFirstChar { it.uppercase() }
     }
 
     val isMusicActive = mediaPlayback != null && (
@@ -197,7 +206,7 @@ fun PhotoStandByModal(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF030305))
+                .background(Color(0xFF000000))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -205,44 +214,43 @@ fun PhotoStandByModal(
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Brilho difuso ambiente suave com o tom âmbar de cabeceira ao fundo
+            // Sutil vinheta neutra monocromática ao fundo
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.radialGradient(
                             listOf(
-                                standbyAmber.copy(alpha = 0.08f),
+                                Color.White.copy(alpha = 0.03f),
                                 Color.Transparent
                             ),
-                            radius = 1200f
+                            radius = 1100f
                         )
                     )
             )
 
-            // Barra Superior de Controles e Status
-            Row(
+            // Barra Superior de Controles e Status (perfeitamente centralizada e espaçada)
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
-                    .padding(top = 24.dp, start = 24.dp, end = 24.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(top = 20.dp, start = 24.dp, end = 24.dp)
             ) {
                 // Ícone do Tessera Launcher (canto superior esquerdo)
-                StandByTesseraBadge(onDismiss = onDismiss)
+                StandByTesseraBadge(
+                    onDismiss = onDismiss,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
 
-                // Em modo paisagem, o chip de clima é apresentado elegantemente no topo
+                // Em modo paisagem, o chip de clima é apresentado rigorosamente no centro da tela
                 if (isLandscape) {
                     StandByWeatherChip(
                         weatherTemp = weatherTemp,
                         weatherCondition = weatherCondition,
                         weatherCity = weatherCity,
                         formattedTime = formattedTime,
-                        standbyAmber = standbyAmber
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
                 }
 
                 // Botão Fechar discreto (canto superior direito)
@@ -251,17 +259,19 @@ fun PhotoStandByModal(
                         .size(38.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.08f))
+                        .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), CircleShape)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             onClick = onDismiss
-                        ),
+                        )
+                        .align(Alignment.CenterEnd),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Close,
                         contentDescription = "Fechar modo repouso",
-                        tint = TextSecondary,
+                        tint = Color.White.copy(alpha = 0.85f),
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -269,76 +279,95 @@ fun PhotoStandByModal(
 
             if (isLandscape) {
                 // ==========================================
-                // LAYOUT PAISAGEM (Horizontal)
+                // LAYOUT PAISAGEM (Horizontal) — 2 Quadrantes Balanceados
                 // ==========================================
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 40.dp, vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(top = 56.dp, bottom = 20.dp, start = 28.dp, end = 28.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Coluna da Esquerda: Relógio Flip e Data
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start,
-                        modifier = Modifier.padding(start = 8.dp)
+                    // Quadrante Esquerdo (50%): Relógio Mecânico Flip + Data
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        StandByFlipClock(
-                            formattedTime = formattedTime,
-                            isMusicActive = isMusicActive,
-                            isLandscape = true,
-                            color = standbyAmber
-                        )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            StandByFlipClock(
+                                formattedTime = formattedTime,
+                                isMusicActive = isMusicActive,
+                                isLandscape = true,
+                                color = Color.White
+                            )
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
-                        val dayFontSize = if (isMusicActive) 20.sp else 24.sp
-                        val monthFontSize = if (isMusicActive) 17.sp else 20.sp
+                            val dayFontSize = if (isMusicActive) 21.sp else 24.sp
+                            val monthFontSize = if (isMusicActive) 16.sp else 18.5.sp
 
-                        Text(
-                            text = dayOfWeek,
-                            fontSize = dayFontSize,
-                            fontWeight = FontWeight.SemiBold,
-                            color = standbyAmber
-                        )
-                        Text(
-                            text = monthDay,
-                            fontSize = monthFontSize,
-                            fontWeight = FontWeight.Normal,
-                            color = standbyAmber.copy(alpha = 0.85f)
-                        )
+                            Text(
+                                text = dayOfWeek,
+                                fontSize = dayFontSize,
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-0.3).sp,
+                                color = Color.White
+                            )
+                            Text(
+                                text = monthDay,
+                                fontSize = monthFontSize,
+                                fontWeight = FontWeight.Normal,
+                                color = Color(0xFFA1A1AA)
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.width(28.dp))
-
-                    // Coluna da Direita: Capa do Álbum (se ativa) + Foto de Tamanho Fixo
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(18.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    // Quadrante Direito (50%): Cards (Mídia + Foto)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Capa do Álbum (aparece quando a música está ativa)
-                        AnimatedVisibility(
-                            visible = isMusicActive,
-                            enter = fadeIn(tween(300)) + expandHorizontally(tween(350)),
-                            exit = fadeOut(tween(250)) + shrinkHorizontally(tween(300))
-                        ) {
-                            if (mediaPlayback != null) {
-                                StandByAlbumCard(
-                                    mediaPlayback = mediaPlayback,
-                                    cardSize = 154.dp,
-                                    standbyAmber = standbyAmber,
-                                    onTogglePlayPause = onTogglePlayPause,
-                                    onOpenMusicApp = onOpenMusicApp
-                                )
-                            }
-                        }
-
-                        // Cartão da Foto: mantém rigorosamente o mesmo tamanho (154dp)
-                        StandByPhotoCard(
-                            bitmap = bitmap,
-                            cardSize = 154.dp
+                        val photoCardSize by animateDpAsState(
+                            targetValue = if (isMusicActive) 152.dp else 192.dp,
+                            animationSpec = spring(
+                                stiffness = Spring.StiffnessMediumLow,
+                                dampingRatio = Spring.DampingRatioNoBouncy
+                            ),
+                            label = "PhotoCardSize"
                         )
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Capa do Álbum (quando houver música ativa)
+                            AnimatedVisibility(
+                                visible = isMusicActive,
+                                enter = fadeIn(tween(260)) + expandHorizontally(tween(300)),
+                                exit = fadeOut(tween(200)) + shrinkHorizontally(tween(260))
+                            ) {
+                                if (mediaPlayback != null) {
+                                    StandByAlbumCard(
+                                        mediaPlayback = mediaPlayback,
+                                        cardSize = 152.dp,
+                                        onTogglePlayPause = onTogglePlayPause,
+                                        onOpenMusicApp = onOpenMusicApp
+                                    )
+                                }
+                            }
+
+                            // Card de Foto
+                            StandByPhotoCard(
+                                bitmap = bitmap,
+                                cardSize = photoCardSize
+                            )
+                        }
                     }
                 }
             } else {
@@ -348,74 +377,81 @@ fun PhotoStandByModal(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 20.dp, vertical = 28.dp),
+                        .padding(top = 64.dp, bottom = 24.dp, start = 20.dp, end = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Chip de Clima Compacto no topo da coluna central
+                    // Chip de Clima no topo do fluxo vertical
                     StandByWeatherChip(
                         weatherTemp = weatherTemp,
                         weatherCondition = weatherCondition,
                         weatherCity = weatherCity,
-                        formattedTime = formattedTime,
-                        standbyAmber = standbyAmber
+                        formattedTime = formattedTime
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(26.dp))
 
                     // Relógio Flip Animado
                     StandByFlipClock(
                         formattedTime = formattedTime,
                         isMusicActive = isMusicActive,
                         isLandscape = false,
-                        color = standbyAmber
+                        color = Color.White
                     )
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    val dayFontSize = if (isMusicActive) 19.sp else 22.sp
-                    val monthFontSize = if (isMusicActive) 16.sp else 19.sp
+                    val dayFontSize = if (isMusicActive) 20.sp else 23.sp
+                    val monthFontSize = if (isMusicActive) 15.sp else 18.sp
 
                     Text(
                         text = dayOfWeek,
                         fontSize = dayFontSize,
                         fontWeight = FontWeight.SemiBold,
-                        color = standbyAmber
+                        letterSpacing = (-0.3).sp,
+                        color = Color.White
                     )
                     Text(
                         text = monthDay,
                         fontSize = monthFontSize,
                         fontWeight = FontWeight.Normal,
-                        color = standbyAmber.copy(alpha = 0.85f)
+                        color = Color(0xFFA1A1AA)
                     )
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // Linha de Cartões (Capa do Álbum e Foto de Tamanho Fixo)
+                    val portraitPhotoSize by animateDpAsState(
+                        targetValue = if (isMusicActive) 140.dp else 176.dp,
+                        animationSpec = spring(
+                            stiffness = Spring.StiffnessMediumLow,
+                            dampingRatio = Spring.DampingRatioNoBouncy
+                        ),
+                        label = "PortraitPhotoSize"
+                    )
+
+                    // Linha de Cartões (Capa do Álbum e Foto)
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AnimatedVisibility(
                             visible = isMusicActive,
-                            enter = fadeIn(tween(300)) + expandHorizontally(tween(350)),
-                            exit = fadeOut(tween(250)) + shrinkHorizontally(tween(300))
+                            enter = fadeIn(tween(260)) + expandHorizontally(tween(300)),
+                            exit = fadeOut(tween(200)) + shrinkHorizontally(tween(260))
                         ) {
                             if (mediaPlayback != null) {
                                 StandByAlbumCard(
                                     mediaPlayback = mediaPlayback,
-                                    cardSize = 144.dp,
-                                    standbyAmber = standbyAmber,
+                                    cardSize = 140.dp,
                                     onTogglePlayPause = onTogglePlayPause,
                                     onOpenMusicApp = onOpenMusicApp
                                 )
                             }
                         }
 
-                        // Cartão da Foto: mantém rigorosamente o mesmo tamanho (144dp)
                         StandByPhotoCard(
                             bitmap = bitmap,
-                            cardSize = 144.dp
+                            cardSize = portraitPhotoSize
                         )
                     }
 
@@ -490,7 +526,7 @@ private fun StandByTesseraBadge(
 
 /**
  * Chip de Clima Compacto e Translúcido.
- * Exibe ícone dinâmico lunar/solar, temperatura e condição resumida.
+ * Exibe ícone dinâmico lunar/solar, temperatura e condição resumida em tom monocromático.
  */
 @Composable
 private fun StandByWeatherChip(
@@ -498,7 +534,6 @@ private fun StandByWeatherChip(
     weatherCondition: String?,
     weatherCity: String?,
     formattedTime: String,
-    standbyAmber: Color,
     modifier: Modifier = Modifier
 ) {
     val tempDigits = weatherTemp?.filter { it.isDigit() || it == '-' }?.ifEmpty { "24" } ?: "24"
@@ -524,7 +559,7 @@ private fun StandByWeatherChip(
             Icon(
                 imageVector = if (isNightTime) Icons.Outlined.DarkMode else Icons.Outlined.WbSunny,
                 contentDescription = null,
-                tint = standbyAmber,
+                tint = Color.White,
                 modifier = Modifier.size(16.dp)
             )
             Text(
@@ -551,7 +586,7 @@ private fun StandByWeatherChip(
 
 /**
  * Cartão de Foto do Modo Repouso.
- * Mantém fixo o tamanho especificado (cardSize) independente do estado de reprodução.
+ * Mantém fixo o tamanho animado especificado (cardSize) com borda de vidro sutil.
  */
 @Composable
 private fun StandByPhotoCard(
@@ -573,11 +608,9 @@ private fun StandByPhotoCard(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF2D150B),
-                        Color(0xFF8B3A0E),
-                        Color(0xFFD4621A),
-                        Color(0xFFFAA43A),
-                        Color(0xFF331606)
+                        Color(0xFF222228),
+                        Color(0xFF141416),
+                        Color(0xFF0C0C0E)
                     )
                 )
             ),
@@ -591,22 +624,20 @@ private fun StandByPhotoCard(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            // Estética Pôr do Sol inspirada na referência
-            Box(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(Color(0xFFFFE082).copy(alpha = 0.85f))
-                        .align(Alignment.Center)
-                )
+            // Estética Minimalista Monocromática (Fallback quando nenhuma foto for escolhida)
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
                 Icon(
-                    imageVector = Icons.Outlined.WbSunny,
+                    imageVector = Icons.Outlined.AddPhotoAlternate,
                     contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.Center)
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -614,14 +645,12 @@ private fun StandByPhotoCard(
 }
 
 /**
- * Cartão da Capa do Álbum com Controles Rápidos de Reprodução.
- * Mesma dimensão do cartão de foto (154dp em paisagem / 144dp em retrato).
+ * Cartão da Capa do Álbum com Controles Rápidos de Reprodução em Padrão Monocromático.
  */
 @Composable
 private fun StandByAlbumCard(
     mediaPlayback: MediaPlaybackInfo,
     cardSize: Dp,
-    standbyAmber: Color,
     onTogglePlayPause: () -> Unit,
     onOpenMusicApp: () -> Unit,
     modifier: Modifier = Modifier
@@ -645,7 +674,7 @@ private fun StandByAlbumCard(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Arte do Álbum ou Fallback Degradê
+        // Arte do Álbum ou Fallback Degradê Obsidiana
         if (albumBitmap != null) {
             Image(
                 bitmap = albumBitmap,
@@ -660,9 +689,9 @@ private fun StandByAlbumCard(
                     .background(
                         Brush.radialGradient(
                             listOf(
-                                Color(0xFF2E243D),
-                                Color(0xFF181520),
-                                Color(0xFF0C0A10)
+                                Color(0xFF24242A),
+                                Color(0xFF141418),
+                                Color(0xFF0A0A0D)
                             )
                         )
                     ),
@@ -671,7 +700,7 @@ private fun StandByAlbumCard(
                 Icon(
                     imageVector = Icons.Outlined.MusicNote,
                     contentDescription = null,
-                    tint = standbyAmber.copy(alpha = 0.6f),
+                    tint = Color.White.copy(alpha = 0.6f),
                     modifier = Modifier.size(46.dp)
                 )
             }
@@ -686,7 +715,7 @@ private fun StandByAlbumCard(
                         listOf(
                             Color.Transparent,
                             Color(0x33000000),
-                            Color(0xDD000000)
+                            Color(0xEE000000)
                         )
                     )
                 )
@@ -704,18 +733,19 @@ private fun StandByAlbumCard(
             Box(
                 modifier = Modifier
                     .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.45f))
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
+                    .background(Color.Black.copy(alpha = 0.55f))
+                    .border(BorderStroke(0.5.dp, Color.White.copy(alpha = 0.15f)), CircleShape)
+                .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Box(
                         modifier = Modifier
                             .size(6.dp)
                             .clip(CircleShape)
-                            .background(if (mediaPlayback.isPlaying) standbyAmber else Color(0xFF8E8E93))
+                            .background(if (mediaPlayback.isPlaying) Color.White else Color(0xFF707078))
                     )
                     Text(
                         text = if (mediaPlayback.isPlaying) "TOCANDO" else "PAUSADO",
@@ -756,12 +786,12 @@ private fun StandByAlbumCard(
                     )
                 }
 
-                // Botão Play / Pause Flutuante
+                // Botão Play / Pause Flutuante em Branco Sólido com Ícone Preto de Alto Contraste
                 Box(
                     modifier = Modifier
-                        .size(32.dp)
+                        .size(34.dp)
                         .clip(CircleShape)
-                        .background(standbyAmber)
+                        .background(Color.White)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -792,14 +822,14 @@ fun StandByFlipClock(
     isMusicActive: Boolean,
     isLandscape: Boolean,
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFFFFA040)
+    color: Color = Color.White
 ) {
     // Dimensões animadas do relógio
     val targetWidth = when {
-        isLandscape && !isMusicActive -> 66.dp
-        isLandscape && isMusicActive -> 48.dp
-        !isLandscape && !isMusicActive -> 62.dp
-        else -> 46.dp
+        isLandscape && !isMusicActive -> 68.dp
+        isLandscape && isMusicActive -> 54.dp
+        !isLandscape && !isMusicActive -> 64.dp
+        else -> 50.dp
     }
     val cardWidth by animateDpAsState(
         targetValue = targetWidth,
@@ -808,10 +838,10 @@ fun StandByFlipClock(
     )
 
     val targetHeight = when {
-        isLandscape && !isMusicActive -> 104.dp
-        isLandscape && isMusicActive -> 74.dp
-        !isLandscape && !isMusicActive -> 96.dp
-        else -> 70.dp
+        isLandscape && !isMusicActive -> 100.dp
+        isLandscape && isMusicActive -> 80.dp
+        !isLandscape && !isMusicActive -> 94.dp
+        else -> 74.dp
     }
     val cardHeight by animateDpAsState(
         targetValue = targetHeight,
@@ -820,10 +850,10 @@ fun StandByFlipClock(
     )
 
     val targetFontSize = when {
-        isLandscape && !isMusicActive -> 68f
-        isLandscape && isMusicActive -> 46f
-        !isLandscape && !isMusicActive -> 62f
-        else -> 42f
+        isLandscape && !isMusicActive -> 76f
+        isLandscape && isMusicActive -> 62f
+        !isLandscape && !isMusicActive -> 72f
+        else -> 56f
     }
     val fontSizeSp by animateFloatAsState(
         targetValue = targetFontSize,
@@ -852,8 +882,8 @@ fun StandByFlipClock(
     val m1 = minutesStr.getOrElse(0) { '0' }
     val m2 = minutesStr.getOrElse(1) { '0' }
 
-    val digitSpacing = cardWidth * 0.08f
-    val colonSpacing = cardWidth * 0.14f
+    val digitSpacing = 6.dp
+    val colonSpacing = 10.dp
 
     Row(
         modifier = modifier,
@@ -879,17 +909,27 @@ fun StandByFlipClock(
             textColor = color
         )
 
-        // Separador ':' pulsante
+        // Separador ':' pulsante com dois círculos mecânicos
         Spacer(modifier = Modifier.width(colonSpacing))
 
-        Text(
-            text = ":",
-            fontSize = (fontSizeSp * 0.8f).sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.SansSerif,
-            color = color,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(cardHeight * 0.20f),
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.graphicsLayer { alpha = colonAlpha }
-        )
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(color)
+            )
+        }
 
         Spacer(modifier = Modifier.width(colonSpacing))
 
@@ -925,8 +965,8 @@ fun SplitFlapDigit(
     cardWidth: Dp,
     cardHeight: Dp,
     fontSize: TextUnit,
-    textColor: Color = Color(0xFFFFA040),
-    cardColor: Color = Color(0xFF141418),
+    textColor: Color = Color.White,
+    cardColor: Color = Color(0xFF16161A),
     modifier: Modifier = Modifier
 ) {
     var displayedDigit by remember { mutableStateOf(digit) }
@@ -934,7 +974,7 @@ fun SplitFlapDigit(
     val flipProgress = remember { Animatable(0f) }
     val density = LocalDensity.current.density
     val cameraDist = 28f * density
-    val cornerRadius = remember(cardWidth) { (cardWidth * 0.16f).coerceIn(4.dp, 12.dp) }
+    val cornerRadius = remember(cardWidth) { (cardWidth * 0.16f).coerceIn(6.dp, 12.dp) }
 
     LaunchedEffect(digit) {
         if (digit != displayedDigit && digit != upcomingDigit) {
@@ -1064,7 +1104,7 @@ fun SplitFlapDigit(
                 .fillMaxWidth()
                 .height(1.5.dp)
                 .align(Alignment.Center)
-                .background(Color(0xFF070709))
+                .background(Color(0xFF0A0A0D))
         )
         // Chanfro esquerdo
         Box(
@@ -1086,7 +1126,7 @@ fun SplitFlapDigit(
 }
 
 /**
- * Superfície de Meio Dígito (Superior ou Inferior) com corte milimétrico do texto.
+ * Superfície de Meio Dígito (Superior ou Inferior) com corte milimétrico do texto sem deslocamento de baseline.
  */
 @Composable
 private fun HalfDigitSurface(
@@ -1125,11 +1165,18 @@ private fun HalfDigitSurface(
         ) {
             Text(
                 text = digit.toString(),
-                fontSize = fontSize,
-                fontWeight = FontWeight.Black,
-                fontFamily = FontFamily.SansSerif,
-                color = textColor,
-                letterSpacing = (-1.5).sp
+                style = TextStyle(
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.SansSerif,
+                    color = textColor,
+                    letterSpacing = (-1.5).sp,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    lineHeightStyle = LineHeightStyle(
+                        alignment = LineHeightStyle.Alignment.Center,
+                        trim = LineHeightStyle.Trim.Both
+                    )
+                )
             )
         }
     }
