@@ -316,13 +316,16 @@ class MainViewModel(
         }
     }
 
+    private var appsObservationJob: Job? = null
+
     fun observeInstalledApps() {
-        viewModelScope.launch {
+        appsObservationJob?.cancel()
+        appsObservationJob = viewModelScope.launch {
             _uiState.update { it.copy(appsState = AppsListState.Loading) }
             appRepository.observeApps(
-                iconPackPackage = preferences.getSelectedIconPack(),
-                customIcons = _uiState.value.customAppIcons,
-                hiddenPackages = emptySet()
+                getIconPackPackage = { preferences.getSelectedIconPack() },
+                getCustomIcons = { parseCustomIcons(preferences.getCustomAppIconsRaw()) },
+                getHiddenPackages = { preferences.getHiddenAppsPackages() }
             )
                 .catch { error ->
                     _uiState.update {
@@ -339,7 +342,13 @@ class MainViewModel(
                         }
                     }
                     val linked = preferences.getAllLinkedWidgets(apps.map { it.packageName })
-                    _uiState.update { it.copy(allInstalledApps = apps, linkedAppWidgets = linked) }
+                    _uiState.update {
+                        it.copy(
+                            allInstalledApps = apps,
+                            linkedAppWidgets = linked,
+                            appsState = AppsListState.Success(apps)
+                        )
+                    }
                     applyFilter(_uiState.value.searchQuery)
                     refreshPredictedApps()
                 }
@@ -349,10 +358,19 @@ class MainViewModel(
     fun reloadAppsWithIconPack(pack: String?) {
         viewModelScope.launch {
             _uiState.update { it.copy(appsState = AppsListState.Loading) }
-            val apps = runCatching { appRepository.loadApps(pack) }.getOrDefault(allApps)
+            val custom = parseCustomIcons(preferences.getCustomAppIconsRaw())
+            val hidden = preferences.getHiddenAppsPackages()
+            val apps = runCatching {
+                appRepository.loadApps(pack, custom, hidden)
+            }.getOrDefault(allApps)
             allApps = apps
             applyFilter(_uiState.value.searchQuery)
-            _uiState.update { it.copy(appsState = AppsListState.Success(apps)) }
+            _uiState.update {
+                it.copy(
+                    allInstalledApps = apps,
+                    appsState = AppsListState.Success(apps)
+                )
+            }
         }
     }
 
@@ -1334,6 +1352,7 @@ class MainViewModel(
     fun setSelectedIconPack(packageName: String?) {
         preferences.setSelectedIconPack(packageName)
         _uiState.update { it.copy(selectedIconPack = packageName) }
+        appRepository.iconPackHelper.invalidateCache()
         reloadAppsWithIconPack(packageName)
     }
 
@@ -1627,7 +1646,7 @@ class MainViewModel(
         }
         preferences.setCustomAppIconsRaw(serializeCustomIcons(current))
         _uiState.update { it.copy(customAppIcons = current) }
-        observeInstalledApps()
+        reloadAppsWithIconPack(preferences.getSelectedIconPack())
     }
     fun removeCustomAppIcon(packageName: String) {
         setCustomAppIcon(packageName, null)

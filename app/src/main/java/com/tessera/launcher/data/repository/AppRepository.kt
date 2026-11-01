@@ -267,15 +267,24 @@ class AppRepository(
     /**
      * Observa mudanças nos aplicativos instalados/desinstalados/atualizados e atalhos fixados
      * emitindo uma nova lista automaticamente via BroadcastReceiver e LauncherApps.Callback.
+     * Os lambdas fornecedores garantem que o pacote de ícones e customizações mais recentes
+     * sejam sempre lidos dinamicamente, evitando que o pacote de ícones seja perdido após atualizações.
      */
     fun observeApps(
-        iconPackPackage: String? = null,
-        customIcons: Map<String, String> = emptyMap(),
-        hiddenPackages: Set<String> = emptySet()
+        getIconPackPackage: () -> String?,
+        getCustomIcons: () -> Map<String, String> = { emptyMap() },
+        getHiddenPackages: () -> Set<String> = { emptySet() }
     ): Flow<List<AppInfo>> = callbackFlow {
+        suspend fun fetchCurrentApps(): List<AppInfo> {
+            val pack = getIconPackPackage()
+            val custom = getCustomIcons()
+            val hidden = getHiddenPackages()
+            return loadApps(pack, custom, hidden)
+        }
+
         // Envia carga inicial
         launch(ioDispatcher) {
-            trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
+            trySend(fetchCurrentApps())
         }
 
         val packageChangeReceiver = object : BroadcastReceiver() {
@@ -285,8 +294,14 @@ class AppRepository(
                     action == Intent.ACTION_PACKAGE_REMOVED ||
                     action == Intent.ACTION_PACKAGE_CHANGED
                 ) {
+                    val changedPkg = intent.data?.schemeSpecificPart
+                    val currentPack = getIconPackPackage()
+                    // Se o próprio pacote de ícones ativo foi atualizado/reinstalado, invalida o cache
+                    if (changedPkg != null && changedPkg == currentPack) {
+                        iconPackHelper.invalidateCache()
+                    }
                     launch(ioDispatcher) {
-                        trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
+                        trySend(fetchCurrentApps())
                     }
                 }
             }
@@ -295,7 +310,7 @@ class AppRepository(
         val shortcutChangeReceiver = object : BroadcastReceiver() {
             override fun onReceive(c: Context?, intent: Intent?) {
                 launch(ioDispatcher) {
-                    trySend(loadApps(iconPackPackage, customIcons, hiddenPackages))
+                    trySend(fetchCurrentApps())
                 }
             }
         }
@@ -330,22 +345,26 @@ class AppRepository(
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
             val cb = object : LauncherApps.Callback() {
                 override fun onPackageAdded(packageName: String?, user: android.os.UserHandle?) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
                 override fun onPackageRemoved(packageName: String?, user: android.os.UserHandle?) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
                 override fun onPackageChanged(packageName: String?, user: android.os.UserHandle?) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    val currentPack = getIconPackPackage()
+                    if (packageName != null && packageName == currentPack) {
+                        iconPackHelper.invalidateCache()
+                    }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
                 override fun onPackagesAvailable(packageNames: Array<out String>?, user: android.os.UserHandle?, replacing: Boolean) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
                 override fun onPackagesUnavailable(packageNames: Array<out String>?, user: android.os.UserHandle?, replacing: Boolean) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
                 override fun onShortcutsChanged(packageName: String, shortcuts: MutableList<android.content.pm.ShortcutInfo>, user: android.os.UserHandle) {
-                    launch(ioDispatcher) { trySend(loadApps(iconPackPackage, customIcons, hiddenPackages)) }
+                    launch(ioDispatcher) { trySend(fetchCurrentApps()) }
                 }
             }
             try {
@@ -369,6 +388,16 @@ class AppRepository(
             }
         }
     }.flowOn(ioDispatcher)
+
+    fun observeApps(
+        iconPackPackage: String? = null,
+        customIcons: Map<String, String> = emptyMap(),
+        hiddenPackages: Set<String> = emptySet()
+    ): Flow<List<AppInfo>> = observeApps(
+        getIconPackPackage = { iconPackPackage },
+        getCustomIcons = { customIcons },
+        getHiddenPackages = { hiddenPackages }
+    )
 
     fun launchApp(packageName: String): Result<Unit> = runCatching {
         val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)?.apply {

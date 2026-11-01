@@ -62,6 +62,13 @@ class IconPackHelper(private val context: Context) {
         return result.sortedBy { it.label.lowercase() }
     }
 
+    @Synchronized
+    fun invalidateCache() {
+        cachedIconPackPackage = null
+        cachedComponentMap = emptyMap()
+        cachedResources = null
+    }
+
     /**
      * Carrega o appfilter.xml do pacote de ícones e armazena em cache.
      */
@@ -132,12 +139,26 @@ class IconPackHelper(private val context: Context) {
                                 .removeSuffix("}")
                                 .trim()
 
-                            map[cleanComp] = drawableName
+                            val cleanDrawable = drawableName
+                                .substringAfterLast("/")
+                                .removeSuffix(".png")
+                                .removeSuffix(".xml")
+                                .trim()
+
+                            map[cleanComp] = cleanDrawable
+
+                            // Suporta componentes relativos (ex: com.whatsapp/.HomeActivity -> com.whatsapp/com.whatsapp.HomeActivity)
+                            if (cleanComp.contains("/.")) {
+                                val pkg = cleanComp.substringBefore("/")
+                                val relActivity = cleanComp.substringAfter("/")
+                                val fullActivity = "$pkg$relActivity"
+                                map["$pkg/$fullActivity"] = cleanDrawable
+                            }
 
                             // Também mapeia pelo package name simples como fallback
                             val pkgOnly = cleanComp.substringBefore("/")
                             if (!map.containsKey(pkgOnly)) {
-                                map[pkgOnly] = drawableName
+                                map[pkgOnly] = cleanDrawable
                             }
                         }
                     }
