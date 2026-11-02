@@ -1,5 +1,6 @@
 package com.tessera.launcher.ui.theme
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -104,6 +105,144 @@ val LiquidGlassSheenBrush = liquidGlassSheenBrush(1f)
 val LightLiquidGlassSurfaceBrush = lightLiquidGlassSurfaceBrush(1f)
 val LightLiquidGlassBorderBrush = lightLiquidGlassBorderBrush(1f)
 val LightLiquidGlassSheenBrush = lightLiquidGlassSheenBrush(1f)
+
+// Sistema Vidro Líquido Apple (Apple Liquid Glass, Frosted Vibrancy & Specular Lens)
+fun appleLiquidGlassSurfaceBrush(
+    isLightMode: Boolean,
+    isAmoledMode: Boolean,
+    alphaFactor: Float = 1f
+): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return if (isLightMode) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFFFFFFFF).copy(alpha = 0.76f * a),
+                Color(0xFFF2F2F7).copy(alpha = 0.62f * a),
+                Color(0xFFE5E5EA).copy(alpha = 0.74f * a)
+            )
+        )
+    } else if (isAmoledMode) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF1E1E24).copy(alpha = 0.80f * a),
+                Color(0xFF101014).copy(alpha = 0.70f * a),
+                Color(0xFF060608).copy(alpha = 0.90f * a)
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color(0xFF28282E).copy(alpha = 0.75f * a),
+                Color(0xFF1C1C20).copy(alpha = 0.64f * a),
+                Color(0xFF121216).copy(alpha = 0.82f * a)
+            )
+        )
+    }
+}
+
+fun appleLiquidGlassBorderBrush(
+    isLightMode: Boolean,
+    alphaFactor: Float = 1f
+): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return if (isLightMode) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = (0.92f * a).coerceIn(0.25f, 0.95f)),
+                Color(0x66FFFFFF).copy(alpha = (0.45f * a).coerceIn(0.10f, 0.60f)),
+                Color(0x281C1917).copy(alpha = (0.22f * a).coerceIn(0.05f, 0.35f))
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = (0.55f * a).coerceIn(0.20f, 0.70f)), // Micro-borda de luz superior (rim light)
+                Color.White.copy(alpha = (0.18f * a).coerceIn(0.06f, 0.28f)),
+                Color.White.copy(alpha = (0.05f * a).coerceIn(0.01f, 0.10f))
+            )
+        )
+    }
+}
+
+fun appleLiquidGlassSheenBrush(
+    isLightMode: Boolean,
+    alphaFactor: Float = 1f
+): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return if (isLightMode) {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.45f * a),
+                Color.White.copy(alpha = 0.12f * a),
+                Color.Transparent
+            )
+        )
+    } else {
+        Brush.verticalGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.20f * a),
+                Color.White.copy(alpha = 0.04f * a),
+                Color.Transparent
+            )
+        )
+    }
+}
+
+fun appleLiquidGlassLensBrush(
+    isLightMode: Boolean,
+    alphaFactor: Float = 1f
+): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return if (isLightMode) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.82f * a),
+                Color(0x70FFFFFF).copy(alpha = 0.52f * a),
+                Color(0x25FFFFFF).copy(alpha = 0.28f * a)
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(90f, 90f)
+        )
+    } else {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = 0.30f * a),
+                Color.White.copy(alpha = 0.12f * a),
+                Color(0x08FFFFFF).copy(alpha = 0.06f * a)
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(90f, 90f)
+        )
+    }
+}
+
+fun appleLiquidGlassLensBorderBrush(
+    isLightMode: Boolean,
+    alphaFactor: Float = 1f
+): Brush {
+    val a = alphaFactor.coerceIn(0f, 1f)
+    return if (isLightMode) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = (0.95f * a).coerceIn(0.20f, 1f)),
+                Color.White.copy(alpha = (0.60f * a).coerceIn(0.10f, 0.80f)),
+                Color(0x301C1917).copy(alpha = (0.25f * a).coerceIn(0.05f, 0.40f))
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(90f, 90f)
+        )
+    } else {
+        Brush.linearGradient(
+            colors = listOf(
+                Color.White.copy(alpha = (0.65f * a).coerceIn(0.25f, 0.85f)),
+                Color.White.copy(alpha = (0.22f * a).coerceIn(0.08f, 0.35f)),
+                Color.White.copy(alpha = (0.06f * a).coerceIn(0.02f, 0.12f))
+            ),
+            start = Offset(0f, 0f),
+            end = Offset(90f, 90f)
+        )
+    }
+}
 
 // Tipografia Harmônica — Padrão San Francisco
 val TextPrimary = Color(0xFFF2F2F7) // Off-white padrão Apple

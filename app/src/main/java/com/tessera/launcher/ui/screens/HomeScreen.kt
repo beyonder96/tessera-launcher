@@ -1209,7 +1209,7 @@ fun HomeScreen(
                 searchBarTextType = uiState.searchBarTextType,
                 searchBarCustomText = uiState.searchBarCustomText,
                 currentTime = uiState.formattedTime,
-                isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                isLiquidGlass = uiState.isLiquidGlassEnabled,
                 isAmoledMode = uiState.isAmoledMode,
                 isLightMode = uiState.isLightMode,
                 searchBarOpacity = uiState.searchBarOpacity,

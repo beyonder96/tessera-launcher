@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.4)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.5)
+
+### 🆕 Novidades na v3.7.5
+- 🪟 **Efeito Apple Liquid Glass na Lupa e na Barra de Pesquisa:**
+  - **Medalhão de Lente Óptica (Lupa Inativa):** A lupa na tela inicial agora repousa em um medalhão lapidado de 40dp com curvatura convexa translúcida, aro chanfrado de alta refração e micro-reflexo de lente com resposta tátil de mola.
+  - **Cápsula de Vidro na Busca Expandida:** A lupa interna da barra de pesquisa agora fica acomodada em uma cápsula de lente vítrea com borda de luz pura especular.
+  - **Superfície Liquid Glass da Doca:** Acabamento em vidro líquido adaptável com curvatura de brilho contínuo (*sheen overlay*) e filete horizontal de luz no topo (*chamfer rim light*), brilhando tanto no tema claro (vidro de cristal puro) quanto escuro/AMOLED (vidro obsidiana de alta profundidade).
+  - **Botão de Configurações Harmonizado:** O botão de ajustes do modo Split agora compartilha a mesma estética e reflexo do vidro líquido.
 
 ### 🆕 Novidades na v3.7.4
 - ⏱️ **Correção Definitiva do Relógio no Modo Repouso (StandBy):**
