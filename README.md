@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.4](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.4)
+
+### 🆕 Novidades na v3.7.4
+- ⏱️ **Correção Definitiva do Relógio no Modo Repouso (StandBy):**
+  - **Eliminação da Duplicação de Dígitos:** Substituição da divisão em sub-caixas que provocava duplicação e compressão de algarismos no topo e na base de cada cartão (`19:36` sobre `19:36`).
+  - **Placa Mecânica Unificada Split-Flap:** Cada dígito é desenhado uma única vez, perfeitamente centralizado em um cartão sólido grafite com costura mecânica central (*split seam* com relevo especular de 0.6dp) e pinos laterais de eixo.
+  - **Animação Física 3D & Acabamento Acetinado:** Rotação suave em 3D ao virar o minuto/hora com sombreamento dinâmico e brilho sutil na metade superior.
+  - **Alinhamento dos Dois Pontos (`:`):** Centralização milimétrica dos círculos mecânicos pulsantes com o centro vertical das placas.
 
 ### 🆕 Novidades na v3.7.3
 - 🎨 **Redesign do Modo Repouso (StandBy / Smart Display):**
