@@ -53,6 +53,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddPhotoAlternate
+import androidx.compose.material.icons.outlined.BatteryChargingFull
+import androidx.compose.material.icons.outlined.BatteryStd
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DarkMode
 import androidx.compose.material.icons.outlined.MusicNote
@@ -244,15 +246,24 @@ fun PhotoStandByModal(
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
 
-                // Em modo paisagem, o chip de clima é apresentado rigorosamente no centro da tela
+                // Em modo paisagem, os chips de clima e bateria são apresentados centralizados no topo
                 if (isLandscape) {
-                    StandByWeatherChip(
-                        weatherTemp = weatherTemp,
-                        weatherCondition = weatherCondition,
-                        weatherCity = weatherCity,
-                        formattedTime = formattedTime,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    Row(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StandByWeatherChip(
+                            weatherTemp = weatherTemp,
+                            weatherCondition = weatherCondition,
+                            weatherCity = weatherCity,
+                            formattedTime = formattedTime
+                        )
+                        StandByBatteryChip(
+                            batteryPercentage = batteryPercentage,
+                            isCharging = isCharging
+                        )
+                    }
                 }
 
                 // Botão Fechar discreto (canto superior direito)
@@ -383,13 +394,22 @@ fun PhotoStandByModal(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Chip de Clima no topo do fluxo vertical
-                    StandByWeatherChip(
-                        weatherTemp = weatherTemp,
-                        weatherCondition = weatherCondition,
-                        weatherCity = weatherCity,
-                        formattedTime = formattedTime
-                    )
+                    // Chips de Clima e Bateria no topo do fluxo vertical
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        StandByWeatherChip(
+                            weatherTemp = weatherTemp,
+                            weatherCondition = weatherCondition,
+                            weatherCity = weatherCity,
+                            formattedTime = formattedTime
+                        )
+                        StandByBatteryChip(
+                            batteryPercentage = batteryPercentage,
+                            isCharging = isCharging
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(26.dp))
 
@@ -581,6 +601,64 @@ private fun StandByWeatherChip(
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFA0A0A8),
                 maxLines = 1
+            )
+        }
+    }
+}
+
+/**
+ * Chip de Bateria Compacto e Translúcido do Modo Repouso.
+ * Exibe ícone dinâmico (carregando/normal/baixa), percentual e acabamento de vidro idêntico ao chip de clima.
+ */
+@Composable
+private fun StandByBatteryChip(
+    batteryPercentage: Int,
+    isCharging: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val clampedPercentage = batteryPercentage.coerceIn(0, 100)
+    val isLowBattery = clampedPercentage <= 20 && !isCharging
+
+    val batteryTint = when {
+        isCharging -> Color(0xFF34D399) // Verde esmeralda brilhante
+        isLowBattery -> Color(0xFFF87171) // Alerta de bateria fraca
+        else -> Color.White
+    }
+
+    val borderColor = if (isCharging) {
+        Color(0xFF34D399).copy(alpha = 0.35f)
+    } else {
+        Color.White.copy(alpha = 0.12f)
+    }
+
+    Box(
+        modifier = modifier
+            .height(36.dp)
+            .clip(CircleShape)
+            .background(Color(0xFF16161D).copy(alpha = 0.88f))
+            .border(BorderStroke(1.dp, borderColor), CircleShape)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = if (isCharging) {
+                    Icons.Outlined.BatteryChargingFull
+                } else {
+                    Icons.Outlined.BatteryStd
+                },
+                contentDescription = if (isCharging) "Carregando" else "Bateria",
+                tint = batteryTint,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = "$clampedPercentage%",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isLowBattery) batteryTint else Color.White
             )
         }
     }
