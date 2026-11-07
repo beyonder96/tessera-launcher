@@ -564,6 +564,20 @@ class MainViewModel(
         }
     }
 
+    suspend fun querySettingsAi(prompt: String): String? {
+        val provider = _uiState.value.aiProvider
+        val apiKey = if (provider.equals("GEMINI", ignoreCase = true)) {
+            _uiState.value.geminiApiKey
+        } else {
+            _uiState.value.groqApiKey
+        }
+        val result = aiEngine.query(prompt, provider = provider, apiKey = apiKey)
+        return when (result) {
+            is com.tessera.launcher.data.helper.AiAnswerResult.Success -> result.answer
+            is com.tessera.launcher.data.helper.AiAnswerResult.Error -> null
+        }
+    }
+
     fun submitSearch(query: String) {
         val trimmed = query.trim()
         if (trimmed.isBlank()) return

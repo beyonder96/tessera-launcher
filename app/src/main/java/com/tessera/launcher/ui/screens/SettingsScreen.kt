@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BrightnessAuto
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -54,7 +55,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +73,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.R
 import com.tessera.launcher.ui.components.LanguageBottomSheet
+import com.tessera.launcher.ui.components.ModernSearchIcon
+import com.tessera.launcher.ui.components.SettingsSearchModal
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBorder
@@ -241,6 +246,8 @@ fun SettingsScreen(
         }
     }
 
+    var isSettingsSearchOpen by remember { mutableStateOf(false) }
+
     if (uiState.isLanguageModalOpen) {
         LanguageBottomSheet(
             selectedLanguage = uiState.selectedLanguage,
@@ -248,6 +255,22 @@ fun SettingsScreen(
             onDismiss = { viewModel.setLanguageModalOpen(false) },
             isAmoled = uiState.isAmoledMode,
             isLight = uiState.isLightMode
+        )
+    }
+
+    if (isSettingsSearchOpen) {
+        SettingsSearchModal(
+            isOpen = isSettingsSearchOpen,
+            onDismiss = { isSettingsSearchOpen = false },
+            onNavigateToSubScreen = { subScreen ->
+                isSettingsSearchOpen = false
+                viewModel.navigateToSettingsSubScreen(subScreen)
+            },
+            isAmoled = uiState.themeMode == "AMOLED" || uiState.isAmoledMode,
+            isLight = uiState.isLightMode,
+            onAskAi = { prompt ->
+                viewModel.querySettingsAi(prompt)
+            }
         )
     }
 
@@ -326,9 +349,82 @@ fun SettingsScreen(
                         .height(64.dp)
                         .align(Alignment.Center)
                 )
+
+                // Botão de Busca & Assistente IA no topo
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (isLight) Color(0x10000000) else Color(0x18FFFFFF))
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                if (isLight) Color(0x18000000) else Color(0x28FFFFFF)
+                            ),
+                            CircleShape
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { isSettingsSearchOpen = true }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.AutoAwesome,
+                        contentDescription = "Buscar configurações com IA",
+                        tint = if (isLight) primaryTextColor else Color(0xFF67E8F9),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Barra de Busca de Configurações Rápida & Assistente IA
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (isLight) Color(0xFFEBE8DC) else Color(0xFF14141A))
+                    .border(
+                        BorderStroke(
+                            1.dp,
+                            if (isLight) Color(0x20000000) else Color(0x25FFFFFF)
+                        ),
+                        RoundedCornerShape(20.dp)
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { isSettingsSearchOpen = true }
+                    )
+                    .padding(horizontal = 16.dp, vertical = 13.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ModernSearchIcon(
+                        tint = secondaryTextColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = "Buscar recursos ou perguntar à IA...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = secondaryTextColor,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        tint = Color(0xFF67E8F9),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
 
             // CATEGORIA 1: TELA & EXPERIÊNCIA
             SectionHeader(title = "TELA & EXPERIÊNCIA", color = secondaryTextColor)
