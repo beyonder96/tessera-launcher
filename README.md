@@ -61,7 +61,13 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.6)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.7)
+
+### 🆕 Novidades na v3.7.7
+- 🪟 **Aura de Desfoque Óptico (Backing Frosted Blur) & Difusão Refinada na Doca:**
+  - **Aura de Blur Traseira:** Adicionada camada de Gaussian blur óptico (`16.dp` unbounded) diretamente atrás da pílula de pesquisa e do botão de configurações, criando um halo de desfoque elegante que suaviza itens que deslizam por baixo.
+  - **Difusão Atmosférica Contínua:** Novo gradiente suave de difusão atrás da base da gaveta, eliminando o corte brusco de elementos e criando uma transição aveludada.
+  - **Superfície Liquid Glass Otimizada:** Ajustadas as fórmulas e opacidades de dispersão de luz em `appleLiquidGlassSurfaceBrush` (82%–90%), garantindo que o texto dos apps que passam por trás não polua nem dispute legibilidade com o texto `"Pesquisar..."` e os ícones da barra.
 
 ### 🆕 Novidades na v3.7.6
 - 🤖 **Central de IA Redesenhada (*Visagism / Liquid Glass*):**
