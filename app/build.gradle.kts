@@ -11,8 +11,8 @@ android {
         applicationId = "com.tessera.launcher"
         minSdk = 26
         targetSdk = 36
-        versionCode = 60
-        versionName = "3.7.5"
+        versionCode = 61
+        versionName = "3.7.6"
     }
 
     signingConfigs {

@@ -61,7 +61,26 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.5](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.5)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.6](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.6)
+
+### 🆕 Novidades na v3.7.6
+- 🤖 **Central de IA Redesenhada (*Visagism / Liquid Glass*):**
+  - **Interface Limpa:** Fim do título redundante `Consultar IA sobre "@ai "` e remoção de botões irrelevantes de busca web ao acionar a IA.
+  - **Hero Card Inteligente:** Aura luminosa do Gemini, indicador do modelo ativo (Gemini 2.5 Flash / Groq Llama 3.3) e 4 atalhos rápidos de prompts (*Agenda*, *Dicas de foco*, *Mensagem formal*, *Explicar conceito*).
+  - **Respostas Formatadas & Ações Rápidas:** Suporte a marcadores de lista (`•`), negrito e barra inferior com ações de Copiar (com feedback tátil), Compartilhar (`ACTION_SEND`) e Regenerar.
+- 🔍 **Busca Inteligente & Assistente IA nas Configurações:**
+  - **Botão e Barra de Busca Rápida:** Novo atalho no topo das configurações para encontrar qualquer recurso imediatamente.
+  - **Catálogo Indexado:** Busca local instantânea com sinônimos e palavras-chave cobrindo 100% dos recursos do launcher.
+  - **Assistente IA de Configurações:** Compreende linguagem natural (*"como mudar papel de parede"*, *"ocultar apps"*, *"desativar feed"*) e apresenta a resposta direta com botão de salto de 1 toque para a tela correspondente.
+- 🧩 **Correção e Estabilidade de Widgets de Outros Aplicativos:**
+  - **Configurações Protegidas:** Suporte a widgets com telas de configuração não exportadas (`android:exported="false"`) via `startAppWidgetConfigureActivityForResult` e `MODE_BACKGROUND_ACTIVITY_START_ALLOWED` (compatível com Android 14+).
+  - **Binding com Perfil Multi-usuário:** Adicionado `EXTRA_APPWIDGET_PROVIDER_PROFILE` para estabilidade em perfis de trabalho.
+  - **Fim do Colapso de Altura no Compose:** Altura dinâmica baseada em `targetCellHeight`/`minHeight` com envio das opções reais de tamanho (`updateAppWidgetOptions` e `updateAppWidgetSize`), garantindo renderização perfeita de widgets de terceiros (Spotify, Google Keep, Relógio).
+- 🔋 **Chip de Bateria no Modo Repouso (Standby):**
+  - Chip translúcido de bateria em estilo *Liquid Glass* integrado ao lado do clima em modo retrato e paisagem, com destaque dinâmico de carregamento (verde esmeralda) e alerta de bateria fraca.
+- 🪟 **Scroll Contínuo na Gaveta & Redesenho Moderno da Lupa:**
+  - **Remoção da Barra Densa:** Eliminado o corte rígido que fatiava aplicativos na base da gaveta; agora os apps deslizam fluidamente por baixo da doca translúcida.
+  - **Novo Desenho da Lupa (`ModernSearchIcon`):** Traço óptico contemporâneo com proporções balanceadas, haste a 45° com terminação arredondada e remoção do círculo interior redundante.
 
 ### 🆕 Novidades na v3.7.5
 - 🪟 **Efeito Apple Liquid Glass na Lupa e na Barra de Pesquisa:**
