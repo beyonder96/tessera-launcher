@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,7 +43,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -63,6 +63,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -73,6 +76,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.AmoledCardBackground
@@ -83,8 +87,6 @@ import com.tessera.launcher.ui.theme.DarkSurfaceBorderHover
 import com.tessera.launcher.ui.theme.LightCardBackground
 import com.tessera.launcher.ui.theme.LightCardBorder
 import com.tessera.launcher.ui.theme.appleLiquidGlassBorderBrush
-import com.tessera.launcher.ui.theme.appleLiquidGlassLensBorderBrush
-import com.tessera.launcher.ui.theme.appleLiquidGlassLensBrush
 import com.tessera.launcher.ui.theme.appleLiquidGlassSheenBrush
 import com.tessera.launcher.ui.theme.appleLiquidGlassSurfaceBrush
 import com.tessera.launcher.ui.theme.lightLiquidGlassBorderBrush
@@ -420,113 +422,51 @@ fun SearchMorphingDock(
                     )
                 }
 
-                // 1. Modo Lupa Inativa: Medalhão Lapidado de Vidro Líquido Apple (Apple Liquid Glass Lens)
+                // 1. Modo Lupa Inativa: Ícone Moderno sem círculo interior redundante
                 if (expandProgress < 0.25f) {
                     val lensInteraction = remember { MutableInteractionSource() }
                     val isLensPressed by lensInteraction.collectIsPressedAsState()
                     val lensScale by animateFloatAsState(
-                        targetValue = if (isLensPressed) 0.92f else 1f,
+                        targetValue = if (isLensPressed) 0.90f else 1f,
                         animationSpec = Tessera.motion.springPress,
                         label = "lens_press_scale"
                     )
 
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(54.dp)
                             .graphicsLayer {
                                 alpha = 1f - (expandProgress * 4f).coerceIn(0f, 1f)
                                 scaleX = lensScale
                                 scaleY = lensScale
-                            }
-                            .shadow(
-                                elevation = if (shouldUseLiquidGlass) 4.dp else 2.dp,
-                                shape = CircleShape,
-                                ambientColor = if (isLightMode) Color(0x15000000) else Color(0x35000000),
-                                spotColor = if (isLightMode) Color(0x20000000) else Color(0x45000000)
-                            )
-                            .clip(CircleShape)
-                            .background(
-                                if (shouldUseLiquidGlass) {
-                                    appleLiquidGlassLensBrush(isLightMode = isLightMode, alphaFactor = opacityFraction)
-                                } else {
-                                    SolidColor(if (isLightMode) Color(0x18000000) else Color(0x20FFFFFF))
-                                }
-                            )
-                            .border(
-                                BorderStroke(
-                                    0.8.dp,
-                                    if (shouldUseLiquidGlass) {
-                                        appleLiquidGlassLensBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction)
-                                    } else {
-                                        SolidColor(if (isLightMode) Color(0x60FFFFFF) else Color(0x25FFFFFF))
-                                    }
-                                ),
-                                CircleShape
-                            ),
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        // Micro-reflexo de curvatura convexa da lente
-                        if (shouldUseLiquidGlass) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(18.dp)
-                                    .align(Alignment.TopCenter)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = if (isLightMode) 0.55f else 0.28f),
-                                                Color.White.copy(alpha = if (isLightMode) 0.15f else 0.05f),
-                                                Color.Transparent
-                                            )
-                                        )
-                                    )
-                            )
-                        }
-
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "Expandir pesquisa",
+                        ModernSearchIcon(
                             tint = if (isLightMode) dockTextPrimary else Color.White,
-                            modifier = Modifier.size(21.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
 
-                // 2. Modo Expandido: Linha de Busca Completa com Lupa em Cápsula de Vidro Líquido
+                // 2. Modo Expandido: Linha de Busca Completa com Lupa
                 if (isExpanded || expandProgress > 0.05f) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 14.dp)
+                            .padding(horizontal = 16.dp)
                             .graphicsLayer {
                                 alpha = ((expandProgress - 0.05f) / 0.95f).coerceIn(0f, 1f)
                             }
                     ) {
-                        // Cápsula de Vidro Líquido para a Lupa na Barra de Busca (Apple Glass Search Lens Pill)
-                        Box(
+                        // Lupa Moderna sem cápsula interior
+                        ModernSearchIcon(
+                            tint = if (shouldUseLiquidGlass) {
+                                if (isLightMode) dockTextPrimary else Color.White.copy(alpha = 0.92f)
+                            } else dockIconTint,
                             modifier = Modifier
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .then(
-                                    if (shouldUseLiquidGlass) {
-                                        Modifier
-                                            .background(
-                                                appleLiquidGlassLensBrush(isLightMode = isLightMode, alphaFactor = opacityFraction * 0.85f)
-                                            )
-                                            .border(
-                                                BorderStroke(
-                                                    0.6.dp,
-                                                    appleLiquidGlassLensBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction * 0.75f)
-                                                ),
-                                                CircleShape
-                                            )
-                                    } else {
-                                        Modifier
-                                    }
-                                )
+                                .size(20.dp)
                                 .clickable(
                                     interactionSource = dockInteractionSource,
                                     indication = null,
@@ -534,38 +474,10 @@ fun SearchMorphingDock(
                                         focusRequester.requestFocus()
                                         onExpandClick()
                                     }
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (shouldUseLiquidGlass) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(14.dp)
-                                        .align(Alignment.TopCenter)
-                                        .clip(CircleShape)
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(
-                                                    Color.White.copy(alpha = if (isLightMode) 0.40f else 0.20f),
-                                                    Color.Transparent
-                                                )
-                                            )
-                                        )
                                 )
-                            }
+                        )
 
-                            Icon(
-                                imageVector = Icons.Outlined.Search,
-                                contentDescription = "Buscar",
-                                tint = if (shouldUseLiquidGlass) {
-                                    if (isLightMode) dockTextPrimary else Color.White.copy(alpha = 0.95f)
-                                } else dockIconTint,
-                                modifier = Modifier.size(19.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
                         BasicTextField(
                             value = textFieldValue,
@@ -775,5 +687,55 @@ fun SearchMorphingDock(
                 }
             }
         }
+    }
+}
+
+/**
+ * Ícone Moderno e Minimalista de Lupa de Busca (Redesenho Geométrico Especular).
+ * Possui proporções ópticas refinadas, haste esguia a 45 graus com terminação arredondada,
+ * sem círculos interiores ou molduras redundantes.
+ */
+@Composable
+fun ModernSearchIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = Color.White,
+    strokeWidth: Dp = 1.9.dp
+) {
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+        val strokePx = strokeWidth.toPx()
+
+        // Centro óptico da lente (equilibrado para o quadrante superior-esquerdo)
+        val centerX = w * 0.42f
+        val centerY = h * 0.42f
+        val radius = w * 0.27f
+
+        // 1. Lente circular perfeitamente equilibrada e lapidada
+        drawCircle(
+            color = tint,
+            radius = radius,
+            center = Offset(centerX, centerY),
+            style = Stroke(
+                width = strokePx,
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
+        )
+
+        // 2. Haste esbelta e elegante a 45 graus com ponta arredondada (estilo iOS Spotlight / SF Symbols)
+        val cos45 = 0.70710678f
+        val handleStartX = centerX + radius * cos45
+        val handleStartY = centerY + radius * cos45
+        val handleEndX = w * 0.85f
+        val handleEndY = h * 0.85f
+
+        drawLine(
+            color = tint,
+            start = Offset(handleStartX, handleStartY),
+            end = Offset(handleEndX, handleEndY),
+            strokeWidth = strokePx * 1.15f,
+            cap = StrokeCap.Round
+        )
     }
 }
