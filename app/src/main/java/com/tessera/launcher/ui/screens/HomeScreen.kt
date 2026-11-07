@@ -748,11 +748,13 @@ fun HomeScreen(
                     ),
             modifier = Modifier.fillMaxSize()
         ) {
+            val isCategoriesVisible = uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled
+            val drawerBottomPadding = if (isCategoriesVisible) 136.dp else 88.dp
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                    .padding(bottom = if (uiState.isWidgetExpanded && !uiState.isDrawerOpen) 310.dp else 84.dp)
             ) {
                 val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 8.dp else 32.dp
                 Spacer(modifier = Modifier.height(drawerTopPadding))
@@ -789,7 +791,7 @@ fun HomeScreen(
                                 ) {
                                       LazyColumn(
                                           state = listState,
-                                          contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
+                                          contentPadding = PaddingValues(top = 10.dp, bottom = drawerBottomPadding),
                                           modifier = Modifier.fillMaxSize(),
                                           verticalArrangement = Arrangement.Bottom
                                       ) {
@@ -914,7 +916,7 @@ fun HomeScreen(
                             is AppsListState.Success -> {
                                  LazyColumn(
                                      state = listState,
-                                     contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
+                                     contentPadding = PaddingValues(top = 10.dp, bottom = drawerBottomPadding),
                                      modifier = Modifier.fillMaxSize(),
                                      verticalArrangement = if (uiState.searchQuery.isNotEmpty()) Arrangement.Bottom else Arrangement.Top
                                  ) {
@@ -1169,20 +1171,12 @@ fun HomeScreen(
                                 }
                             }
                         },
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(
+                            end = 4.dp,
+                            bottom = if (isCategoriesVisible) 128.dp else 80.dp
+                        )
                     )
                 }
-            }
-
-            // Barra de Categorias (na parte de baixo, em cima da barra de pesquisa)
-            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
-                AppCategoriesBar(
-                    selectedCategory = uiState.selectedAppCategory,
-                    onCategorySelected = { category -> viewModel.selectAppCategory(category) },
-                    isLightMode = uiState.isLightMode,
-                    accentColor = uiState.activeAccentColor,
-                    modifier = Modifier.padding(bottom = 6.dp)
-                )
             }
         }
     }
@@ -1195,6 +1189,16 @@ fun HomeScreen(
                 .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Barra de Categorias (ancorada acima da barra de pesquisa)
+            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
+                AppCategoriesBar(
+                    selectedCategory = uiState.selectedAppCategory,
+                    onCategorySelected = { category -> viewModel.selectAppCategory(category) },
+                    isLightMode = uiState.isLightMode,
+                    accentColor = uiState.activeAccentColor,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+            }
 
             SearchMorphingDock(
                 isExpanded = !uiState.isCollapseDockEnabled || uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),

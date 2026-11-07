@@ -124,17 +124,17 @@ fun appleLiquidGlassSurfaceBrush(
     } else if (isAmoledMode) {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF1E1E24).copy(alpha = 0.80f * a),
-                Color(0xFF101014).copy(alpha = 0.70f * a),
-                Color(0xFF060608).copy(alpha = 0.90f * a)
+                Color(0xFF1E1E24).copy(alpha = 0.70f * a),
+                Color(0xFF101014).copy(alpha = 0.54f * a),
+                Color(0xFF060608).copy(alpha = 0.74f * a)
             )
         )
     } else {
         Brush.verticalGradient(
             colors = listOf(
-                Color(0xFF28282E).copy(alpha = 0.75f * a),
-                Color(0xFF1C1C20).copy(alpha = 0.64f * a),
-                Color(0xFF121216).copy(alpha = 0.82f * a)
+                Color(0xFF28282E).copy(alpha = 0.68f * a),
+                Color(0xFF1C1C20).copy(alpha = 0.52f * a),
+                Color(0xFF121216).copy(alpha = 0.72f * a)
             )
         )
     }
