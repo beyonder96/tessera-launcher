@@ -112,6 +112,7 @@ import com.tessera.launcher.ui.theme.LightTextSecondary
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 
 private val SettingsCardShape = RoundedCornerShape(26.dp)
 private val ItemDividerColor = Color(0xFF15151A)
