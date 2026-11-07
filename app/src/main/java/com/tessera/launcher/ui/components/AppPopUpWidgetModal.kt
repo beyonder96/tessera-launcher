@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -216,14 +217,36 @@ fun AppPopUpWidgetModal(
                         .padding(4.dp)
                 ) {
                     if (appWidgetHost != null && appWidgetInfo != null) {
+                        val widgetHeightDp = remember(appWidgetInfo) {
+                            val targetH = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appWidgetInfo.targetCellHeight > 0) {
+                                (appWidgetInfo.targetCellHeight * 68).coerceIn(120, 360)
+                            } else {
+                                (appWidgetInfo.minHeight).coerceIn(120, 340)
+                            }
+                            targetH.dp
+                        }
+
                         AndroidView(
                             factory = { ctx ->
                                 appWidgetHost.createView(ctx, widgetId, appWidgetInfo).apply {
                                     setAppWidget(widgetId, appWidgetInfo)
+                                    val density = ctx.resources.displayMetrics.density
+                                    val widthDp = (ctx.resources.displayMetrics.widthPixels / density).toInt().coerceAtLeast(100)
+                                    val heightDp = widgetHeightDp.value.toInt()
+                                    val options = android.os.Bundle().apply {
+                                        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, widthDp - 48)
+                                        putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, widthDp)
+                                        putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, heightDp)
+                                        putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, heightDp)
+                                    }
+                                    try {
+                                        updateAppWidgetSize(options, widthDp - 48, heightDp, widthDp, heightDp)
+                                    } catch (_: Throwable) {}
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .height(widgetHeightDp)
                                 .clip(RoundedCornerShape(14.dp))
                         )
                     } else {

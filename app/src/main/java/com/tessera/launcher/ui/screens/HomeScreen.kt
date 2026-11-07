@@ -775,9 +775,13 @@ fun HomeScreen(
                                     !uiState.aiSearchResponse.isNullOrBlank() ||
                                     !uiState.aiSearchError.isNullOrBlank()
                                 )
+                                val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
+                                        uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
+                                        uiState.searchQuery.startsWith("@groq", ignoreCase = true)
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
                                 if (isAiSearchActive ||
+                                    isAiCommand ||
                                     uiState.omniSearchResult != null ||
                                     uiState.calculatorResult != null ||
                                     uiState.matchingContacts.isNotEmpty() ||
@@ -875,8 +879,8 @@ fun HomeScreen(
                                             }
                                         }
 
-                                        // Barra externa de busca
-                                        if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled && !isAiSearchActive) {
+                                        // Barra externa de busca / Central de IA
+                                        if (uiState.searchQuery.isNotEmpty() && (uiState.isWebSearchEnabled || isAiCommand) && !isAiSearchActive) {
                                             item {
                                                 SearchExternalActions(
                                                     query = uiState.searchQuery,

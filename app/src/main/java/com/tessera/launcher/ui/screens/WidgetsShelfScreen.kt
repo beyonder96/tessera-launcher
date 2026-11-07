@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -408,16 +410,52 @@ fun WidgetsShelfScreen(
                                 }
                             }
                             if (appWidgetHost != null && appWidgetInfo != null) {
+                                val widgetHeightDp = remember(appWidgetInfo) {
+                                    val targetH = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && appWidgetInfo.targetCellHeight > 0) {
+                                        (appWidgetInfo.targetCellHeight * 68).coerceIn(100, 360)
+                                    } else {
+                                        (appWidgetInfo.minHeight).coerceIn(100, 340)
+                                    }
+                                    targetH.dp
+                                }
+
                                 AndroidView(
                                     factory = { ctx ->
                                         appWidgetHost.createView(ctx, widgetId, appWidgetInfo).apply {
                                             setAppWidget(widgetId, appWidgetInfo)
+                                            val density = ctx.resources.displayMetrics.density
+                                            val widthDp = (ctx.resources.displayMetrics.widthPixels / density).toInt().coerceAtLeast(100)
+                                            val heightDp = widgetHeightDp.value.toInt()
+                                            val options = android.os.Bundle().apply {
+                                                putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, widthDp - 48)
+                                                putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, widthDp)
+                                                putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, heightDp)
+                                                putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, heightDp)
+                                            }
+                                            try {
+                                                appWidgetManager?.updateAppWidgetOptions(widgetId, options)
+                                                updateAppWidgetSize(options, widthDp - 48, heightDp, widthDp, heightDp)
+                                            } catch (_: Throwable) {}
                                         }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .height(widgetHeightDp)
                                         .clip(RoundedCornerShape(12.dp))
                                 )
+                            } else {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "Widget não disponível ou removido",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (isLightMode) Color(0xFF79747E) else Color(0xFF938F99)
+                                    )
+                                }
                             }
                         }
                     }

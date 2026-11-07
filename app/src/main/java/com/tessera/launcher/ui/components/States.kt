@@ -134,6 +134,23 @@ fun AppListEmptyState(
     val textPrimary = if (isLightMode) Color(0xFF1C1917) else TextPrimary
     val textSecondary = if (isLightMode) Color(0xFF78716C) else TextSecondary
 
+    val isAiMode = query.startsWith("@ai", ignoreCase = true) ||
+            query.startsWith("@gemini", ignoreCase = true) ||
+            query.startsWith("@groq", ignoreCase = true)
+
+    if (isAiMode) {
+        SearchExternalActions(
+            query = query,
+            isLiquidGlass = false,
+            isLightMode = isLightMode,
+            isAmoledMode = isAmoledMode,
+            provider = provider,
+            onAskAi = onAskAi,
+            modifier = modifier.fillMaxWidth()
+        )
+        return
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
