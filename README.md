@@ -61,7 +61,15 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.7](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.7)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.7.8](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.8)
+
+### 🆕 Novidades na v3.7.8
+- 🔍 **Busca de Configurações Nativa em Primeiro Plano (Inline Foreground Search):**
+  - **Fim do Modal Bottom Sheet:** A busca de configurações agora ocorre diretamente na própria tela em primeiro plano, eliminando o painel deslizante (*Modal Bottom Sheet*) intrusivo.
+  - **Digitação Direta & Filtragem Instantânea:** Ao digitar na barra de busca, as categorias dão lugar dinamicamente aos resultados correspondentes com navegação de 1 toque para qualquer tela.
+  - **Eliminação de Ícones Redundantes de IA:** Removido o botão circular redundante de IA no cabeçalho superior junto ao logo Tessera, mantendo apenas o ícone de IA dentro da barra de pesquisa.
+  - **Assistente IA Integrado:** Resposta contextual em cartão compacto no topo dos resultados com botão de salto de 1 clique, botão rápido para limpar busca ("X") e suporte ao botão/gesto Voltar do sistema.
+  - **Chips de Sugestão Rápida:** Atalhos de descoberta (*Papel de Parede*, *Gestos*, *Ocultar Apps*, *Widgets*, *Tema AMOLED*, *Modo Foco*) visíveis quando a busca está vazia para acesso com um único toque.
 
 ### 🆕 Novidades na v3.7.7
 - 🪟 **Aura de Desfoque Óptico (Backing Frosted Blur) & Difusão Refinada na Doca:**
