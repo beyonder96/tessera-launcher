@@ -737,6 +737,7 @@ fun SearchMorphingDock(
         }
     }
 }
+}
 
 /**
  * Ícone Moderno e Minimalista de Lupa de Busca (Redesenho Geométrico Especular).
