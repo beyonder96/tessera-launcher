@@ -1182,49 +1182,71 @@ fun HomeScreen(
     }
 
         // Doca Inferior de Pesquisa & Controles Unificada
-        Column(
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Barra de Categorias (ancorada acima da barra de pesquisa)
-            if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
-                AppCategoriesBar(
-                    selectedCategory = uiState.selectedAppCategory,
-                    onCategorySelected = { category -> viewModel.selectAppCategory(category) },
-                    isLightMode = uiState.isLightMode,
-                    accentColor = uiState.activeAccentColor,
-                    modifier = Modifier.padding(bottom = 6.dp)
+            // Difusão atmosférica suave / Frosted Gradient Veil atrás da doca quando a gaveta estiver aberta
+            if (uiState.isDrawerOpen) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.35f),
+                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.75f)
+                                )
+                            )
+                        )
                 )
             }
 
-            SearchMorphingDock(
-                isExpanded = !uiState.isCollapseDockEnabled || uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-                searchQuery = uiState.searchQuery,
-                onQueryChange = { viewModel.onSearchQueryChange(it) },
-                onExpandClick = {
-                    viewModel.expandSearch()
-                },
-                onOpenSettings = {
-                    keyboardController?.hide()
-                    focusManager.clearFocus()
-                    viewModel.openSettings()
-                },
-                focusRequester = focusRequester,
-                searchBarStyle = uiState.searchBarStyle,
-                searchBarTextType = uiState.searchBarTextType,
-                searchBarCustomText = uiState.searchBarCustomText,
-                currentTime = uiState.formattedTime,
-                isLiquidGlass = uiState.isLiquidGlassEnabled,
-                isAmoledMode = uiState.isAmoledMode,
-                isLightMode = uiState.isLightMode,
-                searchBarOpacity = uiState.searchBarOpacity,
-                onAiSearchClick = {
-                    if (uiState.searchQuery.isBlank()) viewModel.onSearchQueryChange("@ai ") else viewModel.executeAiSearch()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime)),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Barra de Categorias (ancorada acima da barra de pesquisa)
+                if (uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled) {
+                    AppCategoriesBar(
+                        selectedCategory = uiState.selectedAppCategory,
+                        onCategorySelected = { category -> viewModel.selectAppCategory(category) },
+                        isLightMode = uiState.isLightMode,
+                        accentColor = uiState.activeAccentColor,
+                        modifier = Modifier.padding(bottom = 6.dp)
+                    )
                 }
-            )
+
+                SearchMorphingDock(
+                    isExpanded = !uiState.isCollapseDockEnabled || uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
+                    searchQuery = uiState.searchQuery,
+                    onQueryChange = { viewModel.onSearchQueryChange(it) },
+                    onExpandClick = {
+                        viewModel.expandSearch()
+                    },
+                    onOpenSettings = {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        viewModel.openSettings()
+                    },
+                    focusRequester = focusRequester,
+                    searchBarStyle = uiState.searchBarStyle,
+                    searchBarTextType = uiState.searchBarTextType,
+                    searchBarCustomText = uiState.searchBarCustomText,
+                    currentTime = uiState.formattedTime,
+                    isLiquidGlass = uiState.isLiquidGlassEnabled,
+                    isAmoledMode = uiState.isAmoledMode,
+                    isLightMode = uiState.isLightMode,
+                    searchBarOpacity = uiState.searchBarOpacity,
+                    onAiSearchClick = {
+                        if (uiState.searchQuery.isBlank()) viewModel.onSearchQueryChange("@ai ") else viewModel.executeAiSearch()
+                    }
+                )
+            }
         }
 
 

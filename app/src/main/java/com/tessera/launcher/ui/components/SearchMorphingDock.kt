@@ -55,6 +55,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
@@ -352,11 +354,34 @@ fun SearchMorphingDock(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            // Container Central da Doca com Morphing Contínuo
+            // Container Central da Doca com Morphing Contínuo e Aura de Blur
             Box(
-                modifier = Modifier
-                    .width(animatedWidth)
-                    .height(54.dp)
+                contentAlignment = Alignment.Center
+            ) {
+                // Aura de Blur Óptico Fosco (Backing Frosted Glass Blur)
+                Box(
+                    modifier = Modifier
+                        .width(animatedWidth + 8.dp)
+                        .height(58.dp)
+                        .graphicsLayer {
+                            scaleX = dockScale
+                            scaleY = dockScale
+                        }
+                        .blur(radius = 16.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                        .background(
+                            color = if (isLightMode) {
+                                Color.White.copy(alpha = 0.50f * opacityFraction)
+                            } else {
+                                Color.Black.copy(alpha = 0.75f * opacityFraction)
+                            },
+                            shape = dockShape
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .width(animatedWidth)
+                        .height(54.dp)
                     .graphicsLayer {
                         scaleX = dockScale
                         scaleY = dockScale
@@ -608,6 +633,7 @@ fun SearchMorphingDock(
                     }
                 }
             }
+        }
 
             // Botão de Engrenagem Separado nos modos Split
             if (isSplit) {
@@ -631,8 +657,30 @@ fun SearchMorphingDock(
                         )
 
                         Box(
-                            modifier = Modifier
-                                .size(50.dp)
+                            contentAlignment = Alignment.Center
+                        ) {
+                            // Aura de Blur Óptico Fosco atrás do botão de engrenagem
+                            Box(
+                                modifier = Modifier
+                                    .size(54.dp)
+                                    .graphicsLayer {
+                                        scaleX = settingsScale
+                                        scaleY = settingsScale
+                                    }
+                                    .blur(radius = 12.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                    .background(
+                                        color = if (isLightMode) {
+                                            Color.White.copy(alpha = 0.50f * opacityFraction)
+                                        } else {
+                                            Color.Black.copy(alpha = 0.75f * opacityFraction)
+                                        },
+                                        shape = buttonShape
+                                    )
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
                                 .graphicsLayer {
                                     scaleX = settingsScale
                                     scaleY = settingsScale
