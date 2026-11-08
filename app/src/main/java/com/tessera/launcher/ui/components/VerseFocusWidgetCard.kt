@@ -3,6 +3,8 @@ package com.tessera.launcher.ui.components
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -25,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FormatQuote
 import androidx.compose.material.icons.outlined.Refresh
@@ -32,12 +35,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.tessera.launcher.data.bridge.TesseraBridgeContract
+import com.tessera.launcher.data.bridge.TesseraCoreBridgeClient
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -72,7 +78,19 @@ fun VerseFocusWidgetCard(
 ) {
     val context = LocalContext.current
     var currentIndex by remember { mutableIntStateOf(0) }
-    val item = VERSE_COLLECTION[currentIndex % VERSE_COLLECTION.size]
+
+    val snapshot by TesseraCoreBridgeClient.snapshot.collectAsState()
+    val hasEcosystemVerse = !snapshot?.dailyVerseText.isNullOrBlank()
+    val streak = snapshot?.verseStreakDays ?: 0
+
+    val item = if (hasEcosystemVerse) {
+        DailyVerse(
+            text = snapshot?.dailyVerseText.orEmpty(),
+            reference = snapshot?.dailyVerseRef ?: "Tessera"
+        )
+    } else {
+        VERSE_COLLECTION[currentIndex % VERSE_COLLECTION.size]
+    }
 
     val border = if (isLiquidGlass) {
         BorderStroke(1.dp, LiquidGlassBorderBrush)
@@ -92,7 +110,18 @@ fun VerseFocusWidgetCard(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {
-                    currentIndex = (currentIndex + 1) % VERSE_COLLECTION.size
+                    if (hasEcosystemVerse) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("tessera://open/bible")).apply {
+                            setPackage(TesseraBridgeContract.CORE_PACKAGE)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val launched = runCatching { context.startActivity(intent) }.isSuccess
+                        if (!launched) {
+                            currentIndex = (currentIndex + 1) % VERSE_COLLECTION.size
+                        }
+                    } else {
+                        currentIndex = (currentIndex + 1) % VERSE_COLLECTION.size
+                    }
                 }
             )
             .padding(horizontal = 16.dp, vertical = 14.dp)
@@ -120,7 +149,7 @@ fun VerseFocusWidgetCard(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "VERSÍCULO & FOCO",
+                        text = if (hasEcosystemVerse) "VERSÍCULO • TESSERA" else "VERSÍCULO & FOCO",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -128,6 +157,23 @@ fun VerseFocusWidgetCard(
                         ),
                         color = TextSecondary
                     )
+                    if (streak > 0) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFFF9800).copy(alpha = 0.16f))
+                                .border(BorderStroke(0.5.dp, Color(0xFFFF9800).copy(alpha = 0.4f)), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "🔥 ${streak}d",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF9800)
+                            )
+                        }
+                    }
                 }
 
                 Icon(

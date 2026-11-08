@@ -79,6 +79,7 @@ object LiveActivityParser {
                 pkg in TIMER_PACKAGES ||
                 pkg in NAVIGATION_PACKAGES ||
                 pkg in FITNESS_PACKAGES ||
+                pkg == com.tessera.launcher.data.bridge.TesseraBridgeContract.CORE_PACKAGE ||
                 (pkg in CALL_PACKAGES && (category == Notification.CATEGORY_CALL || isOngoing))
 
         if (!isOngoing && !isEligibleCategory && !isKnownPackage) {
@@ -105,7 +106,16 @@ object LiveActivityParser {
 
         val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()?.trim()
 
+        val ecosystemKind = extras.getString("com.tessera.live.kind")
+
         val type = when {
+            pkg == com.tessera.launcher.data.bridge.TesseraBridgeContract.CORE_PACKAGE -> when (ecosystemKind?.uppercase()) {
+                "MARKET" -> LiveActivityType.MARKET
+                "TIME_CLOCK", "PONTO" -> LiveActivityType.TIME_CLOCK
+                "FOCUS", "CHRONOS" -> LiveActivityType.FOCUS
+                "TRANSIT" -> LiveActivityType.NAVIGATION
+                else -> LiveActivityType.OTHER
+            }
             pkg in RIDE_PACKAGES || category == Notification.CATEGORY_TRANSPORT -> LiveActivityType.RIDE
             pkg in DELIVERY_PACKAGES -> LiveActivityType.DELIVERY
             pkg in TIMER_PACKAGES || category == Notification.CATEGORY_STOPWATCH || extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER, false) -> LiveActivityType.TIMER
@@ -143,9 +153,12 @@ object LiveActivityParser {
         val priorityScore = when (type) {
             LiveActivityType.CALL -> 100
             LiveActivityType.TIMER -> 90
+            LiveActivityType.FOCUS -> 90
+            LiveActivityType.MARKET -> 85
             LiveActivityType.RIDE -> 80
             LiveActivityType.DELIVERY -> 75
             LiveActivityType.NAVIGATION -> 70
+            LiveActivityType.TIME_CLOCK -> 65
             LiveActivityType.FITNESS -> 60
             LiveActivityType.OTHER -> 30
         }
@@ -183,10 +196,15 @@ object LiveActivityParser {
             )
         } else null
 
+        val parsedNotificationActions = notification.actions?.mapNotNull { act ->
+            val actTitle = act.title?.toString() ?: return@mapNotNull null
+            com.tessera.launcher.data.model.LiveActivityAction(actTitle, act.actionIntent)
+        } ?: emptyList()
+
         val finalActions = rideDetails?.actions
             ?: deliveryDetails?.actions
             ?: navigationDetails?.actions
-            ?: emptyList()
+            ?: parsedNotificationActions
 
         return LiveActivityInfo(
             id = sbn.key,

@@ -1,5 +1,6 @@
 package com.tessera.launcher.data.helper
 
+import com.tessera.launcher.data.bridge.TesseraEcosystemSnapshot
 import com.tessera.launcher.ui.components.NoteTask
 
 enum class SmartGlanceActionType {
@@ -19,7 +20,7 @@ data class SmartGlanceBriefing(
 
 /**
  * Motor de Síntese Contextual ("Now & Next" / Smart Glance).
- * Combina sinais de agenda, meteorologia e tarefas para produzir um briefing diário
+ * Combina sinais de agenda, meteorologia, tarefas e ecossistema Tessera para produzir um briefing diário
  * relevante e conciso de forma 100% on-device.
  */
 class SmartGlanceEngine {
@@ -28,8 +29,32 @@ class SmartGlanceEngine {
         calendarEvent: CalendarEventInfo?,
         conflictInfo: CalendarConflictInfo?,
         weatherInfo: WeatherInfo?,
-        notesTasks: List<NoteTask>
+        notesTasks: List<NoteTask>,
+        ecosystemSnapshot: TesseraEcosystemSnapshot? = null
     ): SmartGlanceBriefing {
+        // 0. Prioridade Máxima: Alerta de trânsito crítico no ecossistema
+        if (!ecosystemSnapshot?.transitAnomalyAlert.isNullOrBlank()) {
+            return SmartGlanceBriefing(
+                primaryText = "Trânsito: ${ecosystemSnapshot.transitAnomalyAlert}",
+                secondaryText = if (calendarEvent != null) "${calendarEvent.title} às ${calendarEvent.timeFormatted}" else null,
+                iconType = "ALERT",
+                actionType = SmartGlanceActionType.NONE,
+                isUrgent = true
+            )
+        }
+
+        // 0.5. Prioridade Alta: Lembrete de Medicamento do ecossistema
+        if (!ecosystemSnapshot?.nextMedicationName.isNullOrBlank()) {
+            val medTime = if (!ecosystemSnapshot.nextMedicationTime.isNullOrBlank()) " às ${ecosystemSnapshot.nextMedicationTime}" else ""
+            return SmartGlanceBriefing(
+                primaryText = "Medicamento: ${ecosystemSnapshot.nextMedicationName}$medTime",
+                secondaryText = if (calendarEvent != null) "${calendarEvent.title} às ${calendarEvent.timeFormatted}" else null,
+                iconType = "ALERT",
+                actionType = SmartGlanceActionType.NONE,
+                isUrgent = true
+            )
+        }
+
         // 1. Prioridade Máxima: Conflito de eventos na agenda
         if (conflictInfo != null) {
             return SmartGlanceBriefing(
@@ -63,6 +88,21 @@ class SmartGlanceEngine {
                     isUrgent = true
                 )
             }
+        }
+
+        // 2.5. Ponto CLT: Fim de expediente iminente
+        if (ecosystemSnapshot?.timeClockStatus.equals("Trabalhando", ignoreCase = true) &&
+            ecosystemSnapshot != null &&
+            ecosystemSnapshot.timeClockWorkedMinutes > 0 &&
+            ecosystemSnapshot.timeClockWorkedMinutes >= (ecosystemSnapshot.timeClockTargetMinutes - 30)
+        ) {
+            return SmartGlanceBriefing(
+                primaryText = "Expediente quase concluído (${ecosystemSnapshot.timeClockWorkedMinutes / 60}h ${ecosystemSnapshot.timeClockWorkedMinutes % 60}m)",
+                secondaryText = "Lembre-se de registrar a saída",
+                iconType = "INFO",
+                actionType = SmartGlanceActionType.NONE,
+                isUrgent = false
+            )
         }
 
         // 3. Alerta Climático: Chuva ou Tempestade

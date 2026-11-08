@@ -86,6 +86,10 @@ data class AppShortcutItem(
 val DEFAULT_COMMANDS_LIST = listOf(
     CommandItem("ai", "IA Assistente", "@ai", "ai"),
     CommandItem("groq", "Groq IA", "@groq", "groq"),
+    CommandItem("gasto", "Registrar Gasto", "@gasto", "finance"),
+    CommandItem("mercado", "Lista de Mercado", "@mercado", "market"),
+    CommandItem("ponto", "Ponto CLT", "@ponto", "timeclock"),
+    CommandItem("agua", "Registrar Água", "@agua", "health"),
     CommandItem("calc", "Calculadora", "@calc", "calculator"),
     CommandItem("tasks", "Tarefas", "@t", "tasks"),
     CommandItem("notes", "Notas", "@n", "notes"),

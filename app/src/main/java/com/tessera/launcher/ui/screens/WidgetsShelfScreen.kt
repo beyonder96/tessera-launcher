@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.tessera.launcher.data.bridge.TesseraCoreBridgeClient
 import com.tessera.launcher.data.helper.CalendarEventInfo
 import com.tessera.launcher.data.helper.RamInfo
 import com.tessera.launcher.data.helper.ScreenTimeInfo
@@ -69,6 +71,9 @@ import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.ui.components.NotificationsWidgetCard
 import com.tessera.launcher.ui.components.QuickControlBentoGrid
 import com.tessera.launcher.ui.components.SmartDockRow
+import com.tessera.launcher.ui.components.TesseraFinancePulseCard
+import com.tessera.launcher.ui.components.TesseraMarketCard
+import com.tessera.launcher.ui.components.TesseraTimeClockCard
 import com.tessera.launcher.ui.components.VerseFocusWidgetCard
 import com.tessera.launcher.ui.components.WidgetsQuickEditBottomSheet
 import com.tessera.launcher.ui.components.ZenFocusCard
@@ -166,6 +171,7 @@ fun WidgetsShelfScreen(
     onQuickEditVisibilityChange: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val ecosystemSnapshot by TesseraCoreBridgeClient.snapshot.collectAsState()
     var isQuickEditOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(isQuickEditOpen) {
@@ -349,9 +355,41 @@ fun WidgetsShelfScreen(
                 }
             }
 
+            // 2.5. Módulos do Ecossistema Tessera Core (Finanças, Ponto CLT, Mercado)
+            if (ecosystemSnapshot?.isInstalled == true) {
+                item(key = "shelf_tessera_finance") {
+                    JournalCascadeItem(index = 6) {
+                        TesseraFinancePulseCard(
+                            isLiquidGlass = isLiquidGlass,
+                            isLightMode = isLightMode
+                        )
+                    }
+                }
+
+                item(key = "shelf_tessera_timeclock") {
+                    JournalCascadeItem(index = 7) {
+                        TesseraTimeClockCard(
+                            isLiquidGlass = isLiquidGlass,
+                            isLightMode = isLightMode
+                        )
+                    }
+                }
+
+                if ((ecosystemSnapshot?.marketPendingCount ?: 0) > 0) {
+                    item(key = "shelf_tessera_market") {
+                        JournalCascadeItem(index = 8) {
+                            TesseraMarketCard(
+                                isLiquidGlass = isLiquidGlass,
+                                isLightMode = isLightMode
+                            )
+                        }
+                    }
+                }
+            }
+
             // 3. Versículo / Foco Espiritual (Configurável e moldado em Bento)
             item(key = "shelf_verse") {
-                JournalCascadeItem(index = 6) {
+                JournalCascadeItem(index = 9) {
                     JournalBentoCard(isLightMode = isLightMode) {
                         VerseFocusWidgetCard(
                             isAmoledMode = isAmoledMode,

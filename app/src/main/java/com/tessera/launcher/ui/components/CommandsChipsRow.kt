@@ -23,8 +23,12 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Calculate
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.People
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,11 +58,15 @@ fun CommandsChipsRow(
     ) {
         items(commandsList, key = { it.id }) { item ->
             val icon: ImageVector = when (item.id) {
-                "ai" -> Icons.Outlined.AutoAwesome
+                "ai", "groq" -> Icons.Outlined.AutoAwesome
                 "calc" -> Icons.Outlined.Calculate
                 "contacts" -> Icons.Outlined.People
                 "send_message", "messages" -> Icons.Outlined.Chat
                 "whatsapp", "telegram" -> Icons.Outlined.Send
+                "gasto" -> Icons.Outlined.Payments
+                "mercado" -> Icons.Outlined.ShoppingCart
+                "ponto" -> Icons.Outlined.Schedule
+                "agua" -> Icons.Outlined.WaterDrop
                 else -> Icons.Outlined.Edit
             }
 

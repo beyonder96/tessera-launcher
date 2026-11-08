@@ -30,19 +30,28 @@ import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.HourglassEmpty
+import androidx.compose.material.icons.outlined.MonitorWeight
+import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SelfImprovement
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import com.tessera.launcher.data.bridge.TesseraCoreBridgeClient
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.helper.OmniCategory
@@ -70,6 +79,7 @@ fun OmniResultCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val cardBg = when {
         isLightMode -> LightCardBackground
@@ -164,6 +174,73 @@ fun OmniResultCard(
             "zen" -> {
                 val mins = result.actionPayload?.toIntOrNull() ?: 30
                 onStartZenMode?.invoke(mins)
+            }
+            "ecosystem_transaction" -> {
+                coroutineScope.launch {
+                    val parts = result.actionPayload.orEmpty().split("|")
+                    val type = parts.getOrNull(0) ?: "EXPENSE"
+                    val amount = parts.getOrNull(1)?.toDoubleOrNull() ?: 0.0
+                    val desc = parts.getOrNull(2) ?: "Lançamento"
+                    val res = TesseraCoreBridgeClient.quickTransaction(
+                        amount = amount,
+                        type = type,
+                        description = desc
+                    )
+                    res.onSuccess { msg ->
+                        Toast.makeText(context, "✓ $msg", Toast.LENGTH_SHORT).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            "ecosystem_market" -> {
+                coroutineScope.launch {
+                    val items = result.actionPayload.orEmpty()
+                    val res = TesseraCoreBridgeClient.addMarketItems(items)
+                    res.onSuccess { msg ->
+                        Toast.makeText(context, "✓ $msg", Toast.LENGTH_SHORT).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            "ecosystem_punch" -> {
+                coroutineScope.launch {
+                    val action = result.actionPayload ?: "TOGGLE"
+                    val res = TesseraCoreBridgeClient.punchTimeClock(action)
+                    res.onSuccess { msg ->
+                        Toast.makeText(context, "✓ $msg", Toast.LENGTH_SHORT).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            "ecosystem_health_water" -> {
+                coroutineScope.launch {
+                    val ml = result.actionPayload?.toIntOrNull() ?: 250
+                    val res = TesseraCoreBridgeClient.logHealth(waterMl = ml)
+                    res.onSuccess { msg ->
+                        Toast.makeText(context, "✓ +${ml}ml de água registrado", Toast.LENGTH_SHORT).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            "ecosystem_health_weight" -> {
+                coroutineScope.launch {
+                    val kg = result.actionPayload?.toDoubleOrNull()
+                    val res = TesseraCoreBridgeClient.logHealth(weightKg = kg)
+                    res.onSuccess { msg ->
+                        Toast.makeText(context, "✓ Peso ${kg}kg atualizado", Toast.LENGTH_SHORT).show()
+                    }.onFailure { err ->
+                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            "ecosystem_toggle_mask" -> {
+                coroutineScope.launch {
+                    TesseraCoreBridgeClient.toggleFinanceMask()
+                }
             }
         }
     }
@@ -279,6 +356,12 @@ fun OmniResultCard(
                             "timer" -> Icons.Outlined.HourglassEmpty
                             "alarm" -> Icons.Outlined.Alarm
                             "zen" -> Icons.Outlined.SelfImprovement
+                            "ecosystem_transaction" -> Icons.Outlined.Payments
+                            "ecosystem_market" -> Icons.Outlined.ShoppingCart
+                            "ecosystem_punch" -> Icons.Outlined.Schedule
+                            "ecosystem_health_water" -> Icons.Outlined.WaterDrop
+                            "ecosystem_health_weight" -> Icons.Outlined.MonitorWeight
+                            "ecosystem_toggle_mask" -> Icons.Outlined.Visibility
                             else -> Icons.Outlined.Chat
                         },
                         contentDescription = null,
@@ -293,6 +376,12 @@ fun OmniResultCard(
                             "timer" -> "Iniciar Timer"
                             "alarm" -> "Definir Alarme"
                             "zen" -> "Ativar Foco Zen"
+                            "ecosystem_transaction" -> "Salvar no Core"
+                            "ecosystem_market" -> "Adicionar ao Mercado"
+                            "ecosystem_punch" -> "Registrar Ponto"
+                            "ecosystem_health_water" -> "Registrar Água"
+                            "ecosystem_health_weight" -> "Atualizar Peso"
+                            "ecosystem_toggle_mask" -> "Alternar Visibilidade"
                             else -> "Executar"
                         },
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),

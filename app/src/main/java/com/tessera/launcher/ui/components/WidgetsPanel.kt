@@ -75,11 +75,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.tessera.launcher.data.bridge.TesseraBridgeContract
+import com.tessera.launcher.data.bridge.TesseraCoreBridgeClient
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1210,6 +1213,7 @@ fun VerseFocusWidgetCard(
     isLiquidGlass: Boolean = false,
     onLongClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val verses = remember {
         listOf(
             "“O Senhor é o meu pastor; de nada terei falta.” — Salmos 23:1 (NVI)",
@@ -1229,11 +1233,20 @@ fun VerseFocusWidgetCard(
     val dayOfYear = remember { java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR) }
     var currentVerseIndex by remember { mutableIntStateOf(dayOfYear % verses.size) }
 
+    val snapshot by TesseraCoreBridgeClient.snapshot.collectAsState()
+    val hasEcosystemVerse = !snapshot?.dailyVerseText.isNullOrBlank()
+    val streak = snapshot?.verseStreakDays ?: 0
+
     val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)
     val badgeBorder = if (isLightMode) Color(0x20000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.12f) else if (isAmoledMode) Color.White.copy(alpha = 0.10f) else Color(0xFF2A2A36)
     val quoteIconColor = if (isLightMode) Color(0xFF0F172A) else Color(0xFFAAAAAA)
     val headerColor = if (isLightMode) Color(0xFF475569) else Color(0xFF8E8E98)
     val quoteTextColor = if (isLightMode) Color(0xFF0F172A) else Color.White
+
+    val fullVerse = verses[currentVerseIndex]
+    val parts = fullVerse.split(" — ")
+    val quoteText = if (hasEcosystemVerse) snapshot?.dailyVerseText.orEmpty() else (parts.getOrNull(0) ?: fullVerse)
+    val referenceText = if (hasEcosystemVerse) snapshot?.dailyVerseRef.orEmpty() else (parts.getOrNull(1) ?: "")
 
     Row(
         modifier = Modifier
@@ -1241,7 +1254,20 @@ fun VerseFocusWidgetCard(
             .fillMaxHeight()
             .tesseraPressable(
                 pressedScale = 0.97f,
-                onClick = { currentVerseIndex = (currentVerseIndex + 1) % verses.size },
+                onClick = {
+                    if (hasEcosystemVerse) {
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("tessera://open/bible")).apply {
+                            setPackage(TesseraBridgeContract.CORE_PACKAGE)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        val launched = runCatching { context.startActivity(intent) }.isSuccess
+                        if (!launched) {
+                            currentVerseIndex = (currentVerseIndex + 1) % verses.size
+                        }
+                    } else {
+                        currentVerseIndex = (currentVerseIndex + 1) % verses.size
+                    }
+                },
                 onLongClick = onLongClick
             ),
         verticalAlignment = Alignment.CenterVertically
@@ -1267,12 +1293,7 @@ fun VerseFocusWidgetCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        // Coluna com Cabeçalho e Versículo NVI
-        val fullVerse = verses[currentVerseIndex]
-        val parts = fullVerse.split(" — ")
-        val quoteText = parts.getOrNull(0) ?: fullVerse
-        val referenceText = parts.getOrNull(1) ?: ""
-
+        // Coluna com Cabeçalho e Versículo NVI / Tessera
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
@@ -1282,15 +1303,34 @@ fun VerseFocusWidgetCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Versículo do dia (NVI)",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.5.sp,
-                        letterSpacing = 0.5.sp
-                    ),
-                    color = headerColor
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (hasEcosystemVerse) "Versículo do dia • Tessera" else "Versículo do dia (NVI)",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.5.sp,
+                            letterSpacing = 0.5.sp
+                        ),
+                        color = headerColor
+                    )
+                    if (streak > 0) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(0xFFFF9800).copy(alpha = 0.16f))
+                                .border(BorderStroke(0.5.dp, Color(0xFFFF9800).copy(alpha = 0.4f)), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                        ) {
+                            Text(
+                                text = "🔥 ${streak}d",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFF9800)
+                            )
+                        }
+                    }
+                }
 
                 Icon(
                     imageVector = Icons.Outlined.Refresh,

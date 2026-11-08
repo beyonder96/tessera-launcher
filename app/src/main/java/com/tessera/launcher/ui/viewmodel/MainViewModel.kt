@@ -13,6 +13,7 @@ import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tessera.launcher.data.bridge.TesseraCoreBridgeClient
 import com.tessera.launcher.data.helper.CalendarHelper
 import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
@@ -302,6 +303,15 @@ class MainViewModel(
         refreshScreenTime()
         loadWallpaper()
         observeZenModeExpiration()
+        observeTesseraEcosystem()
+    }
+
+    private fun observeTesseraEcosystem() {
+        viewModelScope.launch {
+            TesseraCoreBridgeClient.snapshot.collect {
+                refreshSmartGlance()
+            }
+        }
     }
 
     private fun observeZenModeExpiration() {
@@ -2297,7 +2307,8 @@ class MainViewModel(
         val conflict = calendarHelper.detectConflicts()
         val weather = _uiState.value.weatherInfo
         val notes = _uiState.value.notesTasks
-        val briefing = smartGlanceEngine.synthesizeBriefing(event, conflict, weather, notes)
+        val ecosystem = TesseraCoreBridgeClient.snapshot.value
+        val briefing = smartGlanceEngine.synthesizeBriefing(event, conflict, weather, notes, ecosystem)
         _uiState.update { it.copy(smartGlanceBriefing = briefing) }
     }
 

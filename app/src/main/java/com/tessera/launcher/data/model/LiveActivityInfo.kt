@@ -13,6 +13,9 @@ enum class LiveActivityType {
     NAVIGATION,  // Google Maps, Waze
     CALL,        // Ligação ativa (Telefone / WhatsApp)
     FITNESS,     // Strava, Nike Run Club
+    MARKET,      // Modo Mercado (Tessera Core)
+    TIME_CLOCK,  // Ponto & Jornada CLT (Tessera Core)
+    FOCUS,       // Sessão Pomodoro / Chronos (Tessera Core)
     OTHER        // Outros serviços em primeiro plano contínuos
 }
 

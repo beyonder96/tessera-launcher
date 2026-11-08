@@ -14,7 +14,8 @@ enum class OmniCategory(val displayName: String, val emoji: String) {
     PERCENTAGE("Porcentagem", "📊"),
     MATH("Cálculo", "🧮"),
     TIMEZONE("Fuso Horário", "🌍"),
-    ACTION("Ação Rápida", "⚡")
+    ACTION("Ação Rápida", "⚡"),
+    ECOSYSTEM("Tessera OS", "🪐")
 }
 
 data class OmniResult(
@@ -69,6 +70,9 @@ object OmniSearchEvaluator {
     fun evaluate(rawQuery: String): OmniResult? {
         val query = rawQuery.trim()
         if (query.isBlank()) return null
+
+        // 0. Super-Comandos do Ecossistema Tessera (Core ↔ Launcher)
+        evaluateTesseraEcosystem(query)?.let { return it }
 
         // 1. Ações Rápidas (@wapp, @wa, @call)
         evaluateAction(query)?.let { return it }
@@ -487,6 +491,150 @@ object OmniSearchEvaluator {
                 secondaryDetail = "Cálculo aritmético instantâneo"
             )
         }
+        return null
+    }
+
+    private fun evaluateTesseraEcosystem(query: String): OmniResult? {
+        val q = query.trim()
+
+        // 1. Saldo & VR
+        if (q.equals("saldo", ignoreCase = true) || q.equals("@saldo", ignoreCase = true)) {
+            val snap = com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.snapshot.value
+            val isMasked = snap?.isFinanceMasked ?: false
+            val bal = snap?.financeBalance ?: 0.0
+            val balText = if (isMasked) "•••••• (Oculto)" else "R$ ${currencyFormat.format(bal)}"
+            return OmniResult(
+                category = OmniCategory.ECOSYSTEM,
+                sourceQuery = query,
+                primaryResult = "Saldo Geral: $balText",
+                secondaryDetail = if (isMasked) "Toque para exibir valores do Core" else "Toque para ocultar valores",
+                actionType = "ecosystem_toggle_mask",
+                actionPayload = "BALANCE"
+            )
+        }
+
+        if (q.equals("vr", ignoreCase = true) || q.equals("@vr", ignoreCase = true) ||
+            q.equals("vale refeicao", ignoreCase = true) || q.equals("vale refeição", ignoreCase = true)) {
+            val snap = com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.snapshot.value
+            val isMasked = snap?.isFinanceMasked ?: false
+            val vr = snap?.financeVrBalance ?: 0.0
+            val vrText = if (isMasked) "•••••• (Oculto)" else "R$ ${currencyFormat.format(vr)}"
+            return OmniResult(
+                category = OmniCategory.ECOSYSTEM,
+                sourceQuery = query,
+                primaryResult = "Saldo VR: $vrText",
+                secondaryDetail = if (isMasked) "Toque para exibir valores do Core" else "Toque para ocultar valores",
+                actionType = "ecosystem_toggle_mask",
+                actionPayload = "VR"
+            )
+        }
+
+        // 2. Ponto CLT
+        if (q.equals("@ponto", ignoreCase = true) || q.equals("ponto", ignoreCase = true) ||
+            q.equals("bater ponto", ignoreCase = true)) {
+            val snap = com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.snapshot.value
+            val status = snap?.timeClockStatus ?: "Ponto CLT"
+            val worked = snap?.timeClockWorkedMinutes ?: 0
+            val detail = if (worked > 0) {
+                val h = worked / 60
+                val m = worked % 60
+                "Jornada hoje: ${h}h ${m}m • Toque para bater ponto"
+            } else {
+                "Toque para registrar batida no Tessera Core"
+            }
+            return OmniResult(
+                category = OmniCategory.ECOSYSTEM,
+                sourceQuery = query,
+                primaryResult = "Bater Ponto ($status)",
+                secondaryDetail = detail,
+                actionType = "ecosystem_punch",
+                actionPayload = "TOGGLE"
+            )
+        }
+
+        // 3. Gastos (@gasto 45.90 almoco ou gastei 25 uber)
+        val expenseMatch = Regex("""^(?:@gasto|gastei)\s+([0-9]+(?:[.,][0-9]{1,2})?)(?:\s+(.*))?$""", RegexOption.IGNORE_CASE).find(q)
+        if (expenseMatch != null) {
+            val amountStr = expenseMatch.groupValues[1].replace(",", ".")
+            val amount = amountStr.toDoubleOrNull()
+            val desc = expenseMatch.groupValues.getOrNull(2)?.trim()?.ifBlank { "Gasto" } ?: "Gasto"
+            if (amount != null && amount > 0) {
+                return OmniResult(
+                    category = OmniCategory.ECOSYSTEM,
+                    sourceQuery = query,
+                    primaryResult = "Registrar Gasto: R$ ${currencyFormat.format(amount)}",
+                    secondaryDetail = "Toque para salvar no Tessera Core ($desc)",
+                    actionType = "ecosystem_transaction",
+                    actionPayload = "EXPENSE|$amountStr|$desc"
+                )
+            }
+        }
+
+        // 4. Receitas (@receita 1200 freela ou recebi 150 pix)
+        val incomeMatch = Regex("""^(?:@receita|recebi)\s+([0-9]+(?:[.,][0-9]{1,2})?)(?:\s+(.*))?$""", RegexOption.IGNORE_CASE).find(q)
+        if (incomeMatch != null) {
+            val amountStr = incomeMatch.groupValues[1].replace(",", ".")
+            val amount = amountStr.toDoubleOrNull()
+            val desc = incomeMatch.groupValues.getOrNull(2)?.trim()?.ifBlank { "Receita" } ?: "Receita"
+            if (amount != null && amount > 0) {
+                return OmniResult(
+                    category = OmniCategory.ECOSYSTEM,
+                    sourceQuery = query,
+                    primaryResult = "Registrar Receita: R$ ${currencyFormat.format(amount)}",
+                    secondaryDetail = "Toque para salvar no Tessera Core ($desc)",
+                    actionType = "ecosystem_transaction",
+                    actionPayload = "INCOME|$amountStr|$desc"
+                )
+            }
+        }
+
+        // 5. Lista de Mercado (@mercado cafe, leite ou mercado arroz)
+        val marketMatch = Regex("""^(?:@mercado|mercado)\s+(.+)$""", RegexOption.IGNORE_CASE).find(q)
+        if (marketMatch != null) {
+            val items = marketMatch.groupValues[1].trim()
+            if (items.isNotBlank()) {
+                return OmniResult(
+                    category = OmniCategory.ECOSYSTEM,
+                    sourceQuery = query,
+                    primaryResult = "Mercado: $items",
+                    secondaryDetail = "Toque para adicionar à Lista de Compras do Core",
+                    actionType = "ecosystem_market",
+                    actionPayload = items
+                )
+            }
+        }
+
+        // 6. Hidratação (@agua 300 ou agua 500ml)
+        val waterMatch = Regex("""^(?:@agua|agua)(?:\s+(\d+)\s*(?:ml)?)?$""", RegexOption.IGNORE_CASE).find(q)
+        if (waterMatch != null) {
+            val ml = waterMatch.groupValues.getOrNull(1)?.toIntOrNull() ?: 250
+            return OmniResult(
+                category = OmniCategory.ECOSYSTEM,
+                sourceQuery = query,
+                primaryResult = "Hidratação: +${ml}ml",
+                secondaryDetail = "Toque para registrar consumo de água no Core",
+                actionType = "ecosystem_health_water",
+                actionPayload = ml.toString()
+            )
+        }
+
+        // 7. Peso (@peso 74.5 ou peso 75kg)
+        val weightMatch = Regex("""^(?:@peso|peso)\s+([0-9]+(?:[.,][0-9]{1,2})?)\s*(?:kg)?$""", RegexOption.IGNORE_CASE).find(q)
+        if (weightMatch != null) {
+            val weightStr = weightMatch.groupValues[1].replace(",", ".")
+            val kg = weightStr.toDoubleOrNull()
+            if (kg != null && kg > 0) {
+                return OmniResult(
+                    category = OmniCategory.ECOSYSTEM,
+                    sourceQuery = query,
+                    primaryResult = "Registrar Peso: ${decimalFormat.format(kg)} kg",
+                    secondaryDetail = "Toque para atualizar peso no Tessera Saúde",
+                    actionType = "ecosystem_health_weight",
+                    actionPayload = weightStr
+                )
+            }
+        }
+
         return null
     }
 }

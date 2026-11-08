@@ -228,6 +228,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Inicializar ponte de integração do ecossistema Tessera (Core ↔ Launcher)
+        com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.init(this)
+
         appWidgetManager = AppWidgetManager.getInstance(this)
         appWidgetHost = AppWidgetHost(this, APPWIDGET_HOST_ID)
 

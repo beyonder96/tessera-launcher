@@ -47,6 +47,9 @@ import androidx.compose.material.icons.outlined.Navigation
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SelfImprovement
+import androidx.compose.material.icons.outlined.ShoppingCart
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material.icons.outlined.Timer
@@ -254,6 +257,9 @@ fun LiveCapsule(
                     LiveActivityType.NAVIGATION -> Icons.Outlined.Navigation
                     LiveActivityType.CALL -> Icons.Outlined.Call
                     LiveActivityType.FITNESS -> Icons.AutoMirrored.Outlined.DirectionsRun
+                    LiveActivityType.MARKET -> Icons.Outlined.ShoppingCart
+                    LiveActivityType.TIME_CLOCK -> Icons.Outlined.Schedule
+                    LiveActivityType.FOCUS -> Icons.Outlined.SelfImprovement
                     LiveActivityType.OTHER -> Icons.Outlined.NotificationsActive
                 }
 
@@ -262,6 +268,9 @@ fun LiveCapsule(
                     LiveActivityType.RIDE -> Color(0xFF00E5FF)
                     LiveActivityType.DELIVERY -> Color(0xFFFF2E2E)
                     LiveActivityType.TIMER -> Color(0xFFFF9100)
+                    LiveActivityType.MARKET -> Color(0xFF00E676)
+                    LiveActivityType.TIME_CLOCK -> Color(0xFF3D5AFE)
+                    LiveActivityType.FOCUS -> Color(0xFFFFAB00)
                     else -> accentColor
                 }
 
@@ -365,6 +374,38 @@ fun LiveCapsule(
                                         .clip(CircleShape)
                                         .background(activityAccent)
                                 )
+                            }
+                        }
+
+                        // Botões de Ação Rápida (ex: ✓ Marcar Próximo, Pular, Bater Ponto, Parar Foco)
+                        if (liveActivity.actions.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                liveActivity.actions.take(2).forEach { action ->
+                                    Box(
+                                        modifier = Modifier
+                                            .height(30.dp)
+                                            .clip(RoundedCornerShape(15.dp))
+                                            .background(activityAccent.copy(alpha = 0.15f))
+                                            .border(1.dp, activityAccent.copy(alpha = 0.35f), RoundedCornerShape(15.dp))
+                                            .clickable {
+                                                try {
+                                                    action.intent?.send()
+                                                } catch (_: Exception) {}
+                                            }
+                                            .padding(horizontal = 12.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = action.title,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = activityAccent
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
