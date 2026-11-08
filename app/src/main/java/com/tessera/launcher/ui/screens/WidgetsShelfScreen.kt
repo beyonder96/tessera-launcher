@@ -375,14 +375,12 @@ fun WidgetsShelfScreen(
                     }
                 }
 
-                if ((ecosystemSnapshot?.marketPendingCount ?: 0) > 0) {
-                    item(key = "shelf_tessera_market") {
-                        JournalCascadeItem(index = 8) {
-                            TesseraMarketCard(
-                                isLiquidGlass = isLiquidGlass,
-                                isLightMode = isLightMode
-                            )
-                        }
+                item(key = "shelf_tessera_market") {
+                    JournalCascadeItem(index = 8) {
+                        TesseraMarketCard(
+                            isLiquidGlass = isLiquidGlass,
+                            isLightMode = isLightMode
+                        )
                     }
                 }
             }

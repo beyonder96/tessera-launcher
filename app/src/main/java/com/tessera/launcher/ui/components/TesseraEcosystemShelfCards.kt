@@ -271,7 +271,10 @@ fun TesseraTimeClockCard(
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(intent)
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                        val launch = context.packageManager.getLaunchIntentForPackage(TesseraBridgeContract.CORE_PACKAGE)
+                        if (launch != null) context.startActivity(launch)
+                    }
                 }
             )
             .padding(16.dp)
@@ -323,8 +326,14 @@ fun TesseraTimeClockCard(
                                     val res = TesseraCoreBridgeClient.punchTimeClock()
                                     res.onSuccess { msg ->
                                         Toast.makeText(context, "✓ $msg", Toast.LENGTH_SHORT).show()
-                                    }.onFailure { err ->
-                                        Toast.makeText(context, "Erro: ${err.message}", Toast.LENGTH_SHORT).show()
+                                    }.onFailure {
+                                        val launch = context.packageManager.getLaunchIntentForPackage(TesseraBridgeContract.CORE_PACKAGE)
+                                        if (launch != null) {
+                                            Toast.makeText(context, "Abrindo Tessera Core...", Toast.LENGTH_SHORT).show()
+                                            context.startActivity(launch)
+                                        } else {
+                                            Toast.makeText(context, "Tessera Core não encontrado", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 }
                             }
@@ -433,7 +442,10 @@ fun TesseraMarketCard(
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         context.startActivity(intent)
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                        val launch = context.packageManager.getLaunchIntentForPackage(TesseraBridgeContract.CORE_PACKAGE)
+                        if (launch != null) context.startActivity(launch)
+                    }
                 }
             )
             .padding(16.dp)

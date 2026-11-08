@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.8.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.1)
+
+### 🆕 Novidades na v3.8.1
+- 📲 **Reconhecimento Imediato do Tessera Core (`com.aistudio.tessera.xtrkna`):**
+  - **Cards Ativos no Shelf:** Os cards de **Pulso Financeiro**, **Ponto CLT** e **Lista de Mercado** surgem imediatamente na Shelf (Tela −1) ao detectar o aplicativo instalado no celular, sem depender de sincronização prévia de ContentProvider.
+  - **Abertura e Integração em 1 Toque:** Toque em qualquer card da Shelf ou no botão "Bater Ponto" abre e navega diretamente para o Tessera Core no aparelho.
+  - **Exibição Completa do Card de Mercado:** Card da lista de compras agora sempre visível na Shelf com contador e tags de itens.
+  - **Versículo & Ofensiva Garantidos:** O card de versículo espiritual exibe o badge de consistência (`🔥 1d`) e o selo Tessera de forma resiliente.
 
 ### 🆕 Novidades na v3.8.0
 - 🌐 **Tessera Ecosystem Bridge (Integração Launcher ↔ Tessera Core):**

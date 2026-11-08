@@ -1262,7 +1262,9 @@ fun VerseFocusWidgetCard(
                         }
                         val launched = runCatching { context.startActivity(intent) }.isSuccess
                         if (!launched) {
-                            currentVerseIndex = (currentVerseIndex + 1) % verses.size
+                            val launch = context.packageManager.getLaunchIntentForPackage(TesseraBridgeContract.CORE_PACKAGE)
+                            if (launch != null) runCatching { context.startActivity(launch) }
+                            else currentVerseIndex = (currentVerseIndex + 1) % verses.size
                         }
                     } else {
                         currentVerseIndex = (currentVerseIndex + 1) % verses.size

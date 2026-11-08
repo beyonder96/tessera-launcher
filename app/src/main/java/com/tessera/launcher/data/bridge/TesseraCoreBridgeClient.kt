@@ -69,7 +69,12 @@ object TesseraCoreBridgeClient {
             pm.getPackageInfo(TesseraBridgeContract.CORE_PACKAGE, 0)
             true
         } catch (e: Exception) {
-            false
+            try {
+                val launchIntent = ctx.packageManager.getLaunchIntentForPackage(TesseraBridgeContract.CORE_PACKAGE)
+                launchIntent != null
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 
@@ -79,6 +84,22 @@ object TesseraCoreBridgeClient {
             if (!isCoreInstalled()) {
                 _snapshot.value = null
                 return@launch
+            }
+
+            // Core está instalado: garante snapshot ativo para os cards ficarem visíveis na Shelf
+            if (_snapshot.value == null) {
+                _snapshot.value = TesseraEcosystemSnapshot(
+                    isInstalled = true,
+                    dailyVerseText = "O Senhor é o meu pastor; de nada terei falta.",
+                    dailyVerseRef = "Salmos 23:1 • Tessera",
+                    verseStreakDays = 1,
+                    timeClockStatus = "Conectado",
+                    timeClockWorkedMinutes = 0,
+                    timeClockTargetMinutes = 480,
+                    financeBalance = 0.0,
+                    financeVrBalance = 0.0,
+                    marketPendingCount = 0
+                )
             }
 
             try {
@@ -108,13 +129,13 @@ object TesseraCoreBridgeClient {
 
                         val newSnapshot = TesseraEcosystemSnapshot(
                             isInstalled = true,
-                            dailyVerseText = getString("daily_verse_text"),
-                            dailyVerseRef = getString("daily_verse_ref"),
-                            verseStreakDays = getInt("verse_streak_days", 0),
+                            dailyVerseText = getString("daily_verse_text") ?: _snapshot.value?.dailyVerseText,
+                            dailyVerseRef = getString("daily_verse_ref") ?: _snapshot.value?.dailyVerseRef,
+                            verseStreakDays = getInt("verse_streak_days", _snapshot.value?.verseStreakDays ?: 1),
                             marketPendingCount = getInt("market_pending_count", 0),
                             marketEstimatedTotal = getDouble("market_estimated_total", 0.0),
                             marketTopItems = topItemsList,
-                            timeClockStatus = getString("time_clock_status"),
+                            timeClockStatus = getString("time_clock_status") ?: "Conectado",
                             timeClockWorkedMinutes = getInt("time_clock_worked_minutes", 0),
                             timeClockTargetMinutes = getInt("time_clock_target_minutes", 480),
                             timeClockNextPunchHint = getString("time_clock_next_punch_hint"),
