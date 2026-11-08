@@ -61,7 +61,31 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.7.8](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.7.8)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.8.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.0)
+
+### 🆕 Novidades na v3.8.0
+- 🌐 **Tessera Ecosystem Bridge (Integração Launcher ↔ Tessera Core):**
+  - **Ponte IPC Reativa de Ultra-baixa Latência (< 15ms):** Conexão bidirecional instantânea entre a Launcher e o aplicativo principal Tessera Core via `ContentObserver` e IPC seguro.
+  - **Super-comandos Headless no OmniSearch:** Execute ações do seu dia a dia diretamente da barra de busca do Launcher sem precisar trocar de app:
+    - `@gasto 45 almoço` ou `@receita 500 freela` (Registro financeiro instantâneo com feedback tátil e cartão de confirmação).
+    - `@mercado leite, ovos, café` (Adiciona itens diretamente à lista de compras).
+    - `@ponto` (Bate ponto CLT instantaneamente com 1 toque).
+    - `@agua 300` e `@peso 74.5` (Registro rápido de hidratação e métricas de saúde).
+    - `saldo` e `vr` (Consulta imediata de saldos com opção de mascarar/revelar valores).
+  - **Chips de Ação Rápida:** Chips de atalho `@gasto`, `@mercado`, `@ponto` e `@agua` visíveis na gaveta para acelerar ainda mais o fluxo diário.
+- ⚡ **Live Activities & Cápsula Dinâmica (LiveCapsule):**
+  - **Suporte Nativo a Notificações do Ecossistema:** Reconhecimento automático de atividades em tempo real do Tessera Core (`MARKET`, `TIME_CLOCK`, `FOCUS`).
+  - **Controles Interativos:** A pílula/cápsula expandida agora exibe ícones contextuais e botões interativos de ação rápida extraídos diretamente da notificação.
+- 🍱 **Novos Cards Bento no Shelf (Tela −1):**
+  - **Pulso Financeiro (`TesseraFinancePulseCard`):** Card lapidado exibindo saldo total e saldo de benefício VR, com botão de alternância de máscara (`••••••`) e acesso direto.
+  - **Jornada & Ponto CLT (`TesseraTimeClockCard`):** Monitoramento visual da jornada de trabalho, barra de progresso em tempo real e botão de 1 toque para bater ponto.
+  - **Lista de Mercado (`TesseraMarketCard`):** Resumo do carrinho de compras pendente com tags dos primeiros itens e estimativa total.
+- 📖 **Versículo do Dia Sincronizado & Flame Streak:**
+  - **Sincronia Espiritual:** Versículo diário sincronizado diretamente do banco do Tessera Core.
+  - **Streak de Consistência:** Novo selo de chama com contador de dias consecutivos (`🔥 X dias`).
+  - **Deep Link Bíblia:** Toque direto para abrir a leitura completa no Tessera Core.
+- 🧠 **Smart Glance Contextual com Alertas Vitais:**
+  - Briefing diário agora incorpora alertas de trânsito em linhas públicas, lembretes urgentes de medicamentos e avisos de proximidade do término de expediente.
 
 ### 🆕 Novidades na v3.7.8
 - 🔍 **Busca de Configurações Nativa em Primeiro Plano (Inline Foreground Search):**
