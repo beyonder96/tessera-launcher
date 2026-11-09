@@ -114,7 +114,7 @@ import com.tessera.launcher.ui.components.AppListSkeleton
 import com.tessera.launcher.ui.components.CalculatorCard
 import com.tessera.launcher.ui.components.EditorialClockWidget
 import com.tessera.launcher.ui.components.FolderSearchCard
-import com.tessera.launcher.ui.components.LiveCapsule
+import com.tessera.launcher.ui.components.hud.TesseraIsland
 import com.tessera.launcher.ui.components.OmniResultCard
 import com.tessera.launcher.ui.components.BatteryConfigBottomSheet
 import com.tessera.launcher.ui.components.CalendarConfigBottomSheet
@@ -620,33 +620,32 @@ fun HomeScreen(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                // Live Capsule (Mini HUD flutuante no topo para mídia e bateria)
+                // Live HUD 2.0 (Ilha Dinâmica Tessera flutuante no topo)
                 if (uiState.isLiveCapsuleEnabled) {
-                    LiveCapsule(
+                    TesseraIsland(
+                        hudState = uiState.hudState,
                         mediaPlayback = uiState.mediaPlayback,
                         isCharging = uiState.isCharging,
                         batteryPercentage = uiState.batteryPercentage,
-                        isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                        isAmoledMode = uiState.isAmoledMode,
-                        isLightMode = uiState.isLightMode,
-                        accentColor = uiState.activeAccentColor,
-                        onMediaClick = {
-                            uiState.mediaPlayback.packageName?.let { pkg ->
-                                viewModel.launchApp(pkg)
-                            }
+                        defaultAccent = uiState.activeAccentColor,
+                        config = uiState.hudConfig,
+                        onOpenApp = { pkg ->
+                            viewModel.launchApp(pkg)
                         },
-                        onPlayPauseClick = {
+                        onPlayPauseMedia = {
                             viewModel.togglePlayPauseMedia()
                         },
-                        onNextClick = {
+                        onNextMedia = {
                             viewModel.skipNextMedia()
                         },
-                        onPreviousClick = {
+                        onPreviousMedia = {
                             viewModel.skipPreviousMedia()
                         },
-                        liveActivity = uiState.activeLiveActivity,
-                        onLiveActivityClick = { pkg ->
-                            viewModel.launchApp(pkg)
+                        onDismissPeek = {
+                            viewModel.dismissHudPeek()
+                        },
+                        onDismissActivity = { id ->
+                            viewModel.dismissHudActivity(id)
                         },
                         modifier = Modifier
                             .align(Alignment.TopCenter)

@@ -154,6 +154,16 @@ class LauncherPreferences(context: Context) {
         // Fase 2: Live Capsule
         private const val KEY_LIVE_CAPSULE_ENABLED = "live_capsule_enabled"
 
+        // Live HUD 2.0 (Ilha Dinâmica Tessera)
+        private const val KEY_HUD_PEEK_ENABLED = "hud_peek_enabled"
+        private const val KEY_HUD_PEEK_DURATION_MS = "hud_peek_duration_ms"
+        private const val KEY_HUD_HIDE_PEEK_CONTENT = "hud_hide_peek_content"
+        private const val KEY_HUD_SHOW_MEDIA = "hud_show_media"
+        private const val KEY_HUD_SHOW_CHARGING = "hud_show_charging"
+        private const val KEY_HUD_HAPTICS = "hud_haptics"
+        private const val KEY_HUD_DISABLED_TYPES = "hud_disabled_types"
+        private const val KEY_HUD_APP_RULES_JSON = "hud_app_rules_json"
+
         // Fase 3: Smart Stacks e Tempo de Tela
         private const val KEY_SMART_STACK_ROTATE_ENABLED = "smart_stack_rotate_enabled"
         private const val KEY_SCREEN_TIME_WIDGET_ENABLED = "screen_time_widget_enabled"
@@ -726,6 +736,65 @@ class LauncherPreferences(context: Context) {
 
     fun setLiveCapsuleEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_LIVE_CAPSULE_ENABLED, enabled).apply()
+    }
+
+    fun getHudConfig(): com.tessera.launcher.data.model.HudConfig {
+        val enabled = isLiveCapsuleEnabled()
+        val peekEnabled = prefs.getBoolean(KEY_HUD_PEEK_ENABLED, true)
+        val peekDurationMs = prefs.getLong(KEY_HUD_PEEK_DURATION_MS, 4000L)
+        val hideContent = prefs.getBoolean(KEY_HUD_HIDE_PEEK_CONTENT, false)
+        val showMedia = prefs.getBoolean(KEY_HUD_SHOW_MEDIA, true)
+        val showCharging = prefs.getBoolean(KEY_HUD_SHOW_CHARGING, true)
+        val haptics = prefs.getBoolean(KEY_HUD_HAPTICS, true)
+        val disabledTypesStr = prefs.getStringSet(KEY_HUD_DISABLED_TYPES, emptySet()) ?: emptySet()
+        val disabledTypes = disabledTypesStr.mapNotNull { name ->
+            runCatching { com.tessera.launcher.data.model.LiveActivityType.valueOf(name) }.getOrNull()
+        }.toSet()
+
+        val rulesJson = prefs.getString(KEY_HUD_APP_RULES_JSON, null)
+        val appRules = mutableMapOf<String, com.tessera.launcher.data.model.HudAppRule>()
+        if (!rulesJson.isNullOrBlank()) {
+            runCatching {
+                val json = JSONObject(rulesJson)
+                val keys = json.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    val v = json.getString(k)
+                    val rule = runCatching { com.tessera.launcher.data.model.HudAppRule.valueOf(v) }.getOrDefault(com.tessera.launcher.data.model.HudAppRule.AUTO)
+                    appRules[k] = rule
+                }
+            }
+        }
+
+        return com.tessera.launcher.data.model.HudConfig(
+            enabled = enabled,
+            peekEnabled = peekEnabled,
+            peekDurationMs = peekDurationMs,
+            hidePeekContent = hideContent,
+            showMedia = showMedia,
+            showCharging = showCharging,
+            haptics = haptics,
+            disabledTypes = disabledTypes,
+            appRules = appRules
+        )
+    }
+
+    fun setHudConfig(config: com.tessera.launcher.data.model.HudConfig) {
+        setLiveCapsuleEnabled(config.enabled)
+        val json = JSONObject()
+        config.appRules.forEach { (pkg, rule) ->
+            json.put(pkg, rule.name)
+        }
+        prefs.edit()
+            .putBoolean(KEY_HUD_PEEK_ENABLED, config.peekEnabled)
+            .putLong(KEY_HUD_PEEK_DURATION_MS, config.peekDurationMs)
+            .putBoolean(KEY_HUD_HIDE_PEEK_CONTENT, config.hidePeekContent)
+            .putBoolean(KEY_HUD_SHOW_MEDIA, config.showMedia)
+            .putBoolean(KEY_HUD_SHOW_CHARGING, config.showCharging)
+            .putBoolean(KEY_HUD_HAPTICS, config.haptics)
+            .putStringSet(KEY_HUD_DISABLED_TYPES, config.disabledTypes.map { it.name }.toSet())
+            .putString(KEY_HUD_APP_RULES_JSON, json.toString())
+            .apply()
     }
 
     // Fase 3: Smart Stacks e Tempo de Tela

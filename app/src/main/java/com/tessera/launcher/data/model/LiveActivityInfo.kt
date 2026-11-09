@@ -16,6 +16,8 @@ enum class LiveActivityType {
     MARKET,      // Modo Mercado (Tessera Core)
     TIME_CLOCK,  // Ponto & Jornada CLT (Tessera Core)
     FOCUS,       // Sessão Pomodoro / Chronos (Tessera Core)
+    PACKAGE,     // Encomendas e e-commerce (Mercado Livre, Shopee, Amazon, Correios, etc.)
+    PROGRESS,    // Downloads, uploads, processos longos (Play Store, Chrome, etc.)
     OTHER        // Outros serviços em primeiro plano contínuos
 }
 
@@ -138,5 +140,59 @@ data class LiveActivityInfo(
     val rideDetails: RideActivityDetails? = null,
     val deliveryDetails: DeliveryActivityDetails? = null,
     val navigationDetails: NavigationActivityDetails? = null,
+    val actions: List<LiveActivityAction> = emptyList(),
+    val appName: String = "",
+    val brandColor: Int? = null,
+    val criticalText: String? = null,
+    val milestones: List<HudMilestone> = emptyList(),
+    val isSticky: Boolean = false,
+    val expiresAt: Long? = null,
+    val source: HudSource = HudSource.HEURISTIC,
+    val packageDetails: PackageActivityDetails? = null
+)
+
+/**
+ * Origem / motor de identificação da Live Activity.
+ */
+enum class HudSource {
+    NATIVE_LIVE_UPDATE, // ProgressStyle / CallStyle / requestPromotedOngoing nativo (Android 16+)
+    ADAPTER,            // Parser especializado do Tessera (Uber, iFood, Maps, ML, etc.)
+    HEURISTIC,          // Heurística de notificação contínua aprovada pelo classificador
+    TESSERA_CORE        // Ecossistema nativo do Tessera Launcher
+}
+
+/**
+ * Marco individual em uma jornada de progresso por etapas (ex: Comprado -> Enviado -> Em rota -> Entregue).
+ */
+data class HudMilestone(
+    val label: String,
+    val reached: Boolean
+)
+
+/**
+ * Estágios de encomendas e rastreio de e-commerce.
+ */
+enum class PackageStage {
+    ORDERED,           // Pedido realizado / pagamento aprovado
+    SHIPPED,           // Enviado pelo vendedor / postado
+    IN_TRANSIT,        // Em trânsito entre centros de distribuição
+    OUT_FOR_DELIVERY,  // Saiu para entrega ao destinatário (hoje)
+    PICKUP_READY,      // Pronto para retirada na agência / locker
+    DELIVERED,         // Entregue
+    ISSUE              // Tentativa sem sucesso / aguardando ação / taxa alfandegária
+}
+
+/**
+ * Detalhes estruturados de encomendas e compras (Mercado Livre, Shopee, Amazon, Correios, Loggi, etc.).
+ */
+data class PackageActivityDetails(
+    val appName: String,
+    val stage: PackageStage = PackageStage.OUT_FOR_DELIVERY,
+    val headline: String,
+    val etaText: String? = null,
+    val trackingCode: String? = null,
+    val itemSummary: String? = null,
+    val packageLogo: Bitmap? = null,
+    val milestones: List<HudMilestone> = emptyList(),
     val actions: List<LiveActivityAction> = emptyList()
 )

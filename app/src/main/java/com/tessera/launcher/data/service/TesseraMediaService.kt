@@ -17,7 +17,7 @@ import android.os.SystemClock
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationManagerCompat
-import com.tessera.launcher.data.helper.LiveActivityParser
+import com.tessera.launcher.data.hud.LiveHudEngine
 import com.tessera.launcher.data.model.AppNotificationItem
 import com.tessera.launcher.data.model.LiveActivityInfo
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -75,9 +75,11 @@ class TesseraMediaService : NotificationListenerService() {
         private val _mediaState = MutableStateFlow(MediaPlaybackInfo())
         val mediaState: StateFlow<MediaPlaybackInfo> = _mediaState.asStateFlow()
 
-        private val _liveActivities = MutableStateFlow<Map<String, LiveActivityInfo>>(emptyMap())
+        val hudState: StateFlow<com.tessera.launcher.data.model.HudState> = LiveHudEngine.instance.hudState
+
+        @Deprecated("Use hudState")
+        val topLiveActivity: StateFlow<LiveActivityInfo?> get() = _topLiveActivity.asStateFlow()
         private val _topLiveActivity = MutableStateFlow<LiveActivityInfo?>(null)
-        val topLiveActivity: StateFlow<LiveActivityInfo?> = _topLiveActivity.asStateFlow()
 
         private val _activeNotifications = MutableStateFlow<Map<String, AppNotificationItem>>(emptyMap())
         private val _recentNotifications = MutableStateFlow<List<AppNotificationItem>>(emptyList())
@@ -118,11 +120,6 @@ class TesseraMediaService : NotificationListenerService() {
             }
         }
 
-        private fun refreshTopLiveActivity() {
-            val top = _liveActivities.value.values.maxByOrNull { it.priorityScore }
-            _topLiveActivity.value = top
-        }
-
         private fun updateNotificationsState() {
             val items = _activeNotifications.value.values.toList()
             _recentNotifications.value = items.sortedByDescending { it.timestamp }
@@ -137,6 +134,7 @@ class TesseraMediaService : NotificationListenerService() {
             try {
                 serviceInstance?.cancelNotification(key)
             } catch (_: Exception) {}
+            LiveHudEngine.instance.dismissActivity(key)
             val current = _activeNotifications.value.toMutableMap()
             if (current.remove(key) != null) {
                 _activeNotifications.value = current
@@ -228,13 +226,10 @@ class TesseraMediaService : NotificationListenerService() {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
 
-        val activity = LiveActivityParser.parse(sbn, this)
-        if (activity != null) {
-            val current = _liveActivities.value.toMutableMap()
-            current[sbn.key] = activity
-            _liveActivities.value = current
-            refreshTopLiveActivity()
-        }
+        val ranking = NotificationListenerService.Ranking()
+        val hasRanking = runCatching { currentRanking?.getRanking(sbn.key, ranking) == true }.getOrDefault(false)
+        LiveHudEngine.instance.onNotificationPosted(sbn, if (hasRanking) ranking else null, this)
+        _topLiveActivity.value = LiveHudEngine.instance.hudState.value.primary
 
         val notifItem = parseNotificationItem(sbn, this)
         if (notifItem != null) {
@@ -249,12 +244,8 @@ class TesseraMediaService : NotificationListenerService() {
         super.onNotificationRemoved(sbn)
         if (sbn == null) return
 
-        if (_liveActivities.value.containsKey(sbn.key)) {
-            val current = _liveActivities.value.toMutableMap()
-            current.remove(sbn.key)
-            _liveActivities.value = current
-            refreshTopLiveActivity()
-        }
+        LiveHudEngine.instance.onNotificationRemoved(sbn.key)
+        _topLiveActivity.value = LiveHudEngine.instance.hudState.value.primary
 
         if (_activeNotifications.value.containsKey(sbn.key)) {
             val current = _activeNotifications.value.toMutableMap()
@@ -296,18 +287,16 @@ class TesseraMediaService : NotificationListenerService() {
         try {
             val currentNotifs = mutableMapOf<String, AppNotificationItem>()
             activeNotifications?.forEach { sbn ->
-                LiveActivityParser.parse(sbn, this)?.let { act ->
-                    val current = _liveActivities.value.toMutableMap()
-                    current[sbn.key] = act
-                    _liveActivities.value = current
-                }
+                val ranking = NotificationListenerService.Ranking()
+                val hasRanking = runCatching { currentRanking?.getRanking(sbn.key, ranking) == true }.getOrDefault(false)
+                LiveHudEngine.instance.onNotificationPosted(sbn, if (hasRanking) ranking else null, this)
                 parseNotificationItem(sbn, this)?.let { item ->
                     currentNotifs[sbn.key] = item
                 }
             }
             _activeNotifications.value = currentNotifs
             updateNotificationsState()
-            refreshTopLiveActivity()
+            _topLiveActivity.value = LiveHudEngine.instance.hudState.value.primary
         } catch (_: Exception) {}
     }
 

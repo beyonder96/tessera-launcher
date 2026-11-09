@@ -43,6 +43,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.TextFields
@@ -957,42 +958,19 @@ fun CustomizationScreen(
 
                     CustomDivider(isLight = isLight)
 
-                    // Live Capsule (Mini HUD / Dynamic Island)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Live Capsule (Mini HUD)",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Cápsula flutuante no topo com ondas sonoras e status",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = textSecondary
-                            )
-                        }
-
-                        Switch(
-                            checked = uiState.isLiveCapsuleEnabled,
-                            onCheckedChange = { viewModel.setLiveCapsuleEnabled(it) },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
-                                checkedTrackColor = uiState.activeAccentColor,
-                                uncheckedThumbColor = if (isLight) Color(0xFFA8A29E) else textSecondary,
-                                uncheckedTrackColor = if (isLight) Color(0xFFDDD8CB) else Color(0xFF222228),
-                                uncheckedBorderColor = Color.Transparent
-                            )
-                        )
-                    }
+                    // Live HUD 2.0 (Ilha Dinâmica Tessera)
+                    CustomSettingsRow(
+                        icon = Icons.Outlined.NotificationsActive,
+                        title = "Live HUD (Ilha Dinâmica)",
+                        subtitle = if (uiState.isLiveCapsuleEnabled) {
+                            val rulesCount = uiState.hudConfig.appRules.size
+                            if (rulesCount > 0) "Ativo • $rulesCount regras por app" else "Ativo • Ilha Dinâmica com alertas"
+                        } else {
+                            "Desativado"
+                        },
+                        onClick = { viewModel.navigateToSettingsSubScreen(com.tessera.launcher.ui.state.SettingsSubScreen.LIVE_HUD) },
+                        isLight = isLight
+                    )
 
                     CustomDivider(isLight = isLight)
 

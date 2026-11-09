@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 
 /**
  * Sistema unificado de Física e Animações (Motion Tokens) do Tessera Launcher.
@@ -42,6 +43,10 @@ data class TesseraMotion(
         dampingRatio = 0.82f
     ),
     val springSpatialOffset: SpringSpec<IntOffset> = spring(
+        stiffness = 380f,
+        dampingRatio = 0.82f
+    ),
+    val springSpatialIntSize: SpringSpec<IntSize> = spring(
         stiffness = 380f,
         dampingRatio = 0.82f
     ),

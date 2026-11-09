@@ -20,6 +20,9 @@ import com.tessera.launcher.data.helper.AppUpdateInfo
 import com.tessera.launcher.data.helper.OmniResult
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.model.AppNotificationItem
+import com.tessera.launcher.data.model.HudConfig
+import com.tessera.launcher.data.model.HudState
+import com.tessera.launcher.data.model.ObservedApp
 import com.tessera.launcher.ui.theme.getAccentColor
 
 sealed interface AppsListState {
@@ -60,7 +63,8 @@ enum class SettingsSubScreen {
     PERMISSIONS,
     FEED,
     DEVELOPER,
-    TRANSPARENCY
+    TRANSPARENCY,
+    LIVE_HUD
 }
 
 data class AppFolder(
@@ -308,6 +312,9 @@ data class LauncherUiState(
 
     // Fase 2: Live Capsule (Mini HUD) e Omni-Search
     val isLiveCapsuleEnabled: Boolean = true,
+    val hudState: HudState = HudState(),
+    val hudConfig: HudConfig = HudConfig(),
+    val hudObservedApps: List<ObservedApp> = emptyList(),
     val omniSearchResult: OmniResult? = null,
 
     // Fase 3: Smart Stacks & Tempo de Tela

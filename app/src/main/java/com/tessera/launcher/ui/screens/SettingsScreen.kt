@@ -266,6 +266,15 @@ fun SettingsScreen(
             )
             return
         }
+        SettingsSubScreen.LIVE_HUD -> {
+            LiveHudSettingsScreen(
+                viewModel = viewModel,
+                uiState = uiState,
+                onBack = { viewModel.navigateBackSettings() },
+                modifier = modifier
+            )
+            return
+        }
         SettingsSubScreen.MAIN -> {
             // Exibição do Hub de Configurações Principal
         }

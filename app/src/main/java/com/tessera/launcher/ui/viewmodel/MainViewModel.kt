@@ -19,6 +19,9 @@ import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.data.hud.LiveHudEngine
+import com.tessera.launcher.data.model.HudAppRule
+import com.tessera.launcher.data.model.HudConfig
 import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
@@ -266,8 +269,9 @@ class MainViewModel(
             accentColorName = preferences.getAccentColor(),
             isBiometricUnlockEnabled = preferences.isBiometricUnlockEnabled(),
 
-            // Fase 2: Live Capsule
+            // Fase 2: Live Capsule e Live HUD 2.0
             isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
+            hudConfig = preferences.getHudConfig(),
 
             // Fase 3: Smart Stacks e Tempo de Tela
             isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
@@ -437,8 +441,13 @@ class MainViewModel(
             }
         }
         viewModelScope.launch {
-            TesseraMediaService.topLiveActivity.collect { liveActivity ->
-                _uiState.update { it.copy(activeLiveActivity = liveActivity) }
+            LiveHudEngine.instance.hudState.collect { state ->
+                _uiState.update { it.copy(hudState = state, activeLiveActivity = state.primary) }
+            }
+        }
+        viewModelScope.launch {
+            LiveHudEngine.instance.observedApps.collect { apps ->
+                _uiState.update { it.copy(hudObservedApps = apps) }
             }
         }
         viewModelScope.launch {
@@ -1019,6 +1028,7 @@ class MainViewModel(
                 SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.FEED -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
+                SettingsSubScreen.LIVE_HUD -> it.copy(currentSettingsScreen = SettingsSubScreen.CUSTOMIZATION)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
             }
         }
@@ -1730,8 +1740,34 @@ class MainViewModel(
     }
 
     fun setLiveCapsuleEnabled(enabled: Boolean) {
-        preferences.setLiveCapsuleEnabled(enabled)
-        _uiState.update { it.copy(isLiveCapsuleEnabled = enabled) }
+        updateHudConfig { it.copy(enabled = enabled) }
+    }
+
+    fun updateHudConfig(transform: (HudConfig) -> HudConfig) {
+        val updated = transform(_uiState.value.hudConfig)
+        preferences.setHudConfig(updated)
+        LiveHudEngine.instance.updateConfig(updated)
+        _uiState.update { it.copy(hudConfig = updated, isLiveCapsuleEnabled = updated.enabled) }
+    }
+
+    fun setHudAppRule(packageName: String, rule: HudAppRule) {
+        updateHudConfig { current ->
+            val rules = current.appRules.toMutableMap()
+            if (rule == HudAppRule.AUTO) {
+                rules.remove(packageName)
+            } else {
+                rules[packageName] = rule
+            }
+            current.copy(appRules = rules)
+        }
+    }
+
+    fun dismissHudActivity(id: String) {
+        LiveHudEngine.instance.dismissActivity(id)
+    }
+
+    fun dismissHudPeek() {
+        LiveHudEngine.instance.dismissPeek()
     }
 
     // Fase 3: Smart Stacks e Tempo de Tela

@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Opacity
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RssFeed
@@ -164,6 +165,15 @@ object SettingsCatalog {
             targetSubScreen = SettingsSubScreen.CUSTOMIZATION,
             icon = Icons.Outlined.Opacity,
             keywords = listOf("vidro liquido", "liquid glass", "vidro", "glass", "reflexo", "brilho", "especular", "apple glass")
+        ),
+        SettingIndexItem(
+            id = "live_hud",
+            title = "Live HUD (Ilha Dinâmica)",
+            description = "Atividades ao vivo, entregas, encomendas, peeks de notificação e regras por app.",
+            sectionName = "Personalização",
+            targetSubScreen = SettingsSubScreen.LIVE_HUD,
+            icon = Icons.Outlined.NotificationsActive,
+            keywords = listOf("live hud", "hud", "ilha dinamica", "dynamic island", "capsule", "peek", "notificacao", "notificacoes", "entrega", "ifood", "uber", "encomendas", "correios", "mercado livre")
         ),
 
         // 2. Busca & IA
