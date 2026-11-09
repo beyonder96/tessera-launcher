@@ -304,6 +304,14 @@ class MainViewModel(
         loadWallpaper()
         observeZenModeExpiration()
         observeTesseraEcosystem()
+        checkUpdatesOnStartup()
+    }
+
+    private fun checkUpdatesOnStartup() {
+        viewModelScope.launch {
+            delay(5_000)
+            checkForLauncherUpdates(force = false, userInitiated = false)
+        }
     }
 
     private fun observeTesseraEcosystem() {
@@ -2591,6 +2599,60 @@ class MainViewModel(
         _uiState.update {
             it.copy(linkedAppWidgets = it.linkedAppWidgets - packageName)
         }
+    }
+
+    // Gerenciador de Atualizações do Launcher (GitHub Releases)
+    fun checkForLauncherUpdates(force: Boolean = true, userInitiated: Boolean = true) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isCheckingAppUpdate = true) }
+            val info = com.tessera.launcher.data.helper.TesseraUpdateManager.checkForUpdates(
+                context = appContext,
+                forceCheck = force
+            )
+            _uiState.update {
+                it.copy(
+                    isCheckingAppUpdate = false,
+                    appUpdateInfo = info,
+                    isAppUpdateDialogOpen = if (info?.hasUpdate == true && userInitiated) true else it.isAppUpdateDialogOpen
+                )
+            }
+            if (userInitiated) {
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    val currentVersion = try {
+                        val pInfo = appContext.packageManager.getPackageInfo(appContext.packageName, 0)
+                        pInfo.versionName ?: ""
+                    } catch (e: Exception) {
+                        ""
+                    }
+                    if (info == null) {
+                        android.widget.Toast.makeText(
+                            appContext,
+                            "Não foi possível verificar atualizações. Verifique sua conexão.",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else if (!info.hasUpdate) {
+                        android.widget.Toast.makeText(
+                            appContext,
+                            "O Tessera Launcher já está na versão mais recente (v$currentVersion)!",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+        }
+    }
+
+    fun openAppUpdateDialog() {
+        _uiState.update { it.copy(isAppUpdateDialogOpen = true) }
+    }
+
+    fun dismissAppUpdateDialog() {
+        _uiState.update { it.copy(isAppUpdateDialogOpen = false) }
+    }
+
+    fun downloadAndInstallUpdate(context: Context, downloadUrl: String) {
+        dismissAppUpdateDialog()
+        com.tessera.launcher.data.helper.TesseraUpdateManager.launchDownload(context, downloadUrl)
     }
 }
 

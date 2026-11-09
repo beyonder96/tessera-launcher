@@ -67,14 +67,20 @@ object TesseraUpdateManager {
             var downloadUrl = releaseUrl
             val assets = json.optJSONArray("assets")
             if (assets != null) {
+                var releaseApkUrl: String? = null
+                var fallbackApkUrl: String? = null
                 for (i in 0 until assets.length()) {
                     val asset = assets.getJSONObject(i)
                     val assetName = asset.optString("name", "")
-                    if (assetName.endsWith(".apk", ignoreCase = true)) {
-                        downloadUrl = asset.optString("browser_download_url", releaseUrl)
+                    val assetUrl = asset.optString("browser_download_url", "")
+                    if (assetName.contains("release", ignoreCase = true) && assetName.endsWith(".apk", ignoreCase = true)) {
+                        releaseApkUrl = assetUrl
                         break
+                    } else if (assetName.endsWith(".apk", ignoreCase = true) && fallbackApkUrl == null) {
+                        fallbackApkUrl = assetUrl
                     }
                 }
+                downloadUrl = releaseApkUrl ?: fallbackApkUrl ?: releaseUrl
             }
 
             prefs.edit().putLong(KEY_LAST_CHECK, now).apply()

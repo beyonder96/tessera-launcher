@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetHost
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
 import com.tessera.launcher.ui.components.ModernWidgetPickerBottomSheet
+import com.tessera.launcher.ui.TesseraLauncherUpdateDialog
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -1756,6 +1757,18 @@ fun HomeScreen(
                 isLightMode = uiState.isLightMode,
                 isAmoledMode = uiState.isAmoledMode,
                 accentColor = uiState.activeAccentColor
+            )
+        }
+
+        // Modal de Atualização do Launcher (GitHub Releases)
+        if (uiState.isAppUpdateDialogOpen && uiState.appUpdateInfo != null) {
+            TesseraLauncherUpdateDialog(
+                updateInfo = uiState.appUpdateInfo!!,
+                onDismiss = { viewModel.dismissAppUpdateDialog() },
+                onDownload = {
+                    val url = uiState.appUpdateInfo?.downloadUrl ?: ""
+                    viewModel.downloadAndInstallUpdate(context, url)
+                }
             )
         }
     }

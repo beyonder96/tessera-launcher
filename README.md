@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.8.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.8.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.2)
+
+### 🆕 Novidades na v3.8.2
+- 🚀 **Atualizador Nativo do Launcher no App (In-App Updater):**
+  - **Botão "Verificar Atualizações":** Adicionado diretamente no menu de **Configurações** (sob *Transparência & Sobre*) e dentro da tela de **Desenvolvedor**.
+  - **Diálogo Interativo de Novidades:** Ao detectar uma nova versão no GitHub Releases, abre um pop-up elegante com changelog completo e botão "Baixar e Atualizar" com 1 clique (priorizando automaticamente o APK de Release assinado).
+  - **Pílula de Notificação Pulsante (`Update v3.x.x`):** Pílula visual com LED verde no topo das Configurações e no card de Desenvolvedor sempre que houver update disponível.
+  - **Verificação Silenciosa e Periódica:** Checagem automática a cada 6 horas ou instantânea com feedback claro ("Você já está na versão mais recente").
 
 ### 🆕 Novidades na v3.8.1
 - 📲 **Reconhecimento Imediato do Tessera Core (`com.aistudio.tessera.xtrkna`):**

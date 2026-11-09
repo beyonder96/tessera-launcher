@@ -16,6 +16,7 @@ import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.model.LiveActivityInfo
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
+import com.tessera.launcher.data.helper.AppUpdateInfo
 import com.tessera.launcher.data.helper.OmniResult
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.model.AppNotificationItem
@@ -320,7 +321,12 @@ data class LauncherUiState(
     val recentNotifications: List<AppNotificationItem> = emptyList(),
     val isNotificationsHubOpen: Boolean = false,
     val isWidgetPickerOpen: Boolean = false,
-    val widgetPickerFilterPackage: String? = null
+    val widgetPickerFilterPackage: String? = null,
+
+    // Atualizações do Launcher via GitHub Releases
+    val appUpdateInfo: AppUpdateInfo? = null,
+    val isCheckingAppUpdate: Boolean = false,
+    val isAppUpdateDialogOpen: Boolean = false
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)

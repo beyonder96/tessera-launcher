@@ -46,7 +46,9 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Terminal
+import com.tessera.launcher.ui.TesseraLauncherUpdatePill
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -302,6 +304,14 @@ fun DeveloperScreen(
                             color = textMain
                         )
                     }
+
+                    if (uiState.appUpdateInfo?.hasUpdate == true) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        TesseraLauncherUpdatePill(
+                            updateInfo = uiState.appUpdateInfo,
+                            onClick = { viewModel.openAppUpdateDialog() }
+                        )
+                    }
                 }
             }
 
@@ -389,6 +399,19 @@ fun DeveloperScreen(
                         onClick = {
                             viewModel.refreshFeed()
                             Toast.makeText(context, "Feed atualizado com sucesso.", Toast.LENGTH_SHORT).show()
+                        },
+                        isLight = isLight
+                    )
+
+                    DevActionItem(
+                        icon = Icons.Outlined.SystemUpdate,
+                        title = "Verificar Atualizações",
+                        subtitle = if (uiState.appUpdateInfo?.hasUpdate == true)
+                            "Nova versão v${uiState.appUpdateInfo?.remoteVersion} disponível no GitHub!"
+                        else
+                            "Consultar GitHub Releases por novas versões do Launcher",
+                        onClick = {
+                            viewModel.checkForLauncherUpdates(force = true, userInitiated = true)
                         },
                         isLight = isLight
                     )

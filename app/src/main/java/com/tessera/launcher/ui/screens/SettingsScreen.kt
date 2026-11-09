@@ -56,10 +56,12 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import com.tessera.launcher.ui.TesseraLauncherUpdatePill
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -409,12 +411,20 @@ fun SettingsScreen(
                         .align(Alignment.Center)
                 )
 
-                // Espaçador para balancear o layout sem ícone redundante de IA
-                Spacer(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .align(Alignment.CenterEnd)
-                )
+                // Pílula de atualização disponível ou espaçador balanceador
+                if (uiState.appUpdateInfo?.hasUpdate == true) {
+                    TesseraLauncherUpdatePill(
+                        updateInfo = uiState.appUpdateInfo,
+                        onClick = { viewModel.openAppUpdateDialog() },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    )
+                } else {
+                    Spacer(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .align(Alignment.CenterEnd)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -1016,6 +1026,20 @@ fun SettingsScreen(
                         title = "Desenvolvedor",
                         subtitle = "Depuração avançada, logs e informações do build.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.DEVELOPER) },
+                        isLight = isLight
+                    )
+
+                    ItemDivider(isLight = isLight)
+
+                    // 4. Atualizações
+                    SettingsItemRow(
+                        icon = Icons.Outlined.SystemUpdate,
+                        title = "Verificar Atualizações",
+                        subtitle = if (uiState.appUpdateInfo?.hasUpdate == true)
+                            "Nova versão v${uiState.appUpdateInfo?.remoteVersion} disponível para download!"
+                        else
+                            "Checar novas versões do Launcher no GitHub.",
+                        onClick = { viewModel.checkForLauncherUpdates(force = true, userInitiated = true) },
                         isLight = isLight
                     )
                 }
