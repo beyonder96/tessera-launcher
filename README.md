@@ -61,9 +61,24 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.8.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.8.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.9.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.9.0)
 
-### 🆕 Novidades na v3.8.2
+### 🆕 Novidades na v3.9.0
+- 🏝️ **Live HUD 2.0 (Tessera Island):**
+  - **Redesign Arquitetural Completo:** Ilha dinâmica fluida em preto puro AMOLED (`#000000`) com bordas translúcidas sutis, sombra orgânica e física de mola espacial (`springSpatialIntSize`).
+  - **Multitarefa Dinâmica (Split Island):** Quando há duas ou mais atividades simultâneas, uma bolha satélite de 48dp surge à direita, permitindo alternar a atividade primária com um simples toque.
+  - **Peek Temporário Inteligente:** Expansão rápida (~4s) para leitura ágil de mensagens (WhatsApp, Telegram, SMS), chamadas e alertas prioritários, com gesto de swipe para descartar.
+  - **Visualizadores Dedicados:** Onda sonora com barras oscilantes para música (`AudioWaveform`), cronômetro contínuo sem jank (`LiveChronometer`) e barra com marcos visuais (`MilestoneProgressBar`).
+- 📦 **Rastreamento de Encomendas & Sticky Activities:**
+  - **Reconhecimento de E-commerce:** Detecção automática de status de pedidos no Mercado Livre, Shopee, Amazon, AliExpress, Loggi, Correios, Shein e Temu.
+  - **Encomendas "Grudadas":** Ao detectar "saiu para entrega" ou transporte, a ilha mantém o rastreamento ativo mesmo após a notificação sumir da barra, até entrega (+2h), 24h sem updates ou swipe manual.
+  - **Painel Expandido de Encomendas:** Linha do tempo com 4 marcos visuais, extração inteligente de código de rastreio com botão de cópia rápida e atalho para o app.
+- ⚙️ **Painel de Configuração & Controle Granular do HUD:**
+  - **Nova Tela Dedicada:** Acessível em *Configurações > Personalização > Live HUD*.
+  - **Simulador Interativo:** Prévia ao vivo para testar as animações e transições da ilha (Encomendas, Multitarefa, Mídia, Peek).
+  - **Regras Individuais por App:** Configure qualquer app instalado como *Automático*, *Sempre na Ilha*, *Apenas Peek* ou *Ignorar*.
+  - **Histórico e Transparência:** Registro em tempo real de notificações processadas e o motivo semântico de cada decisão do classificador.
+- 🧪 **Compatibilidade Nativa com Android 16:** Sinais de `requestPromotedOngoing`, `ProgressStyle` e `CallStyle` integrados diretamente no motor de ranking e classificação.
 - 🚀 **Atualizador Nativo do Launcher no App (In-App Updater):**
   - **Botão "Verificar Atualizações":** Adicionado diretamente no menu de **Configurações** (sob *Transparência & Sobre*) e dentro da tela de **Desenvolvedor**.
   - **Diálogo Interativo de Novidades:** Ao detectar uma nova versão no GitHub Releases, abre um pop-up elegante com changelog completo e botão "Baixar e Atualizar" com 1 clique (priorizando automaticamente o APK de Release assinado).
