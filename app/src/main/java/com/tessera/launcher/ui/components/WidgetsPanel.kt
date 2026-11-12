@@ -1234,7 +1234,7 @@ fun VerseFocusWidgetCard(
     var currentVerseIndex by remember { mutableIntStateOf(dayOfYear % verses.size) }
 
     val snapshot by TesseraCoreBridgeClient.snapshot.collectAsState()
-    val hasEcosystemVerse = !snapshot?.dailyVerseText.isNullOrBlank()
+    val hasEcosystemVerse = snapshot?.hasSyncedData == true && !snapshot?.dailyVerseText.isNullOrBlank()
     val streak = snapshot?.verseStreakDays ?: 0
 
     val badgeBg = if (isLightMode) Color(0x14000000) else if (isLiquidGlass) Color.White.copy(alpha = 0.08f) else if (isAmoledMode) Color.White.copy(alpha = 0.05f) else Color(0xFF1C1C24)

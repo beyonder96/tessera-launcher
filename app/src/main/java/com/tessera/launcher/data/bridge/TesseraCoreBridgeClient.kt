@@ -86,14 +86,15 @@ object TesseraCoreBridgeClient {
                 return@launch
             }
 
-            // Core está instalado: garante snapshot ativo para os cards ficarem visíveis na Shelf
+            // Core está instalado: marca instalado aguardando dados da ponte
             if (_snapshot.value == null) {
                 _snapshot.value = TesseraEcosystemSnapshot(
                     isInstalled = true,
+                    hasSyncedData = false,
                     dailyVerseText = "O Senhor é o meu pastor; de nada terei falta.",
                     dailyVerseRef = "Salmos 23:1 • Tessera",
                     verseStreakDays = 1,
-                    timeClockStatus = "Conectado",
+                    timeClockStatus = "Aguardando sincronização",
                     timeClockWorkedMinutes = 0,
                     timeClockTargetMinutes = 480,
                     financeBalance = 0.0,
@@ -111,7 +112,13 @@ object TesseraCoreBridgeClient {
                     null
                 )
 
-                cursor?.use { c ->
+                if (cursor == null) {
+                    Log.w(TAG, "ContentResolver retornou cursor nulo para ${TesseraBridgeContract.SNAPSHOT_URI}. " +
+                            "Verifique se o ContentProvider está ativo e com android:exported=\"true\" no Tessera Core.")
+                    return@launch
+                }
+
+                cursor.use { c ->
                     if (c.moveToFirst()) {
                         fun getString(col: String): String? =
                             try { c.getColumnIndex(col).takeIf { it >= 0 }?.let { c.getString(it) } } catch (_: Exception) { null }
@@ -129,6 +136,7 @@ object TesseraCoreBridgeClient {
 
                         val newSnapshot = TesseraEcosystemSnapshot(
                             isInstalled = true,
+                            hasSyncedData = true,
                             dailyVerseText = getString("daily_verse_text") ?: _snapshot.value?.dailyVerseText,
                             dailyVerseRef = getString("daily_verse_ref") ?: _snapshot.value?.dailyVerseRef,
                             verseStreakDays = getInt("verse_streak_days", _snapshot.value?.verseStreakDays ?: 1),
@@ -153,12 +161,15 @@ object TesseraCoreBridgeClient {
                             themeMode = getString("theme_mode")
                         )
                         _snapshot.value = newSnapshot
+                        Log.d(TAG, "Snapshot do Tessera Core sincronizado com sucesso!")
+                    } else {
+                        Log.w(TAG, "Cursor do ContentProvider do Tessera Core retornou sem linhas.")
                     }
                 }
             } catch (e: SecurityException) {
-                Log.w(TAG, "Sem permissão para consultar ContentProvider do Tessera Core: ${e.message}")
+                Log.e(TAG, "Sem permissão para consultar ContentProvider do Tessera Core: ${e.message}", e)
             } catch (e: Exception) {
-                Log.w(TAG, "Erro ao atualizar snapshot do Tessera Core: ${e.message}")
+                Log.e(TAG, "Erro ao atualizar snapshot do Tessera Core: ${e.message}", e)
             }
         }
     }

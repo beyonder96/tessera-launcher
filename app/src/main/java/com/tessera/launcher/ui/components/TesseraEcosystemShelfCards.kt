@@ -75,9 +75,18 @@ fun TesseraFinancePulseCard(
     if (snapshot == null || !snapshot!!.isInstalled) return
 
     val snap = snapshot!!
+    val hasSynced = snap.hasSyncedData
     val isMasked = snap.isFinanceMasked
-    val balStr = if (isMasked) "••••••" else "R$ ${currencyFormat.format(snap.financeBalance)}"
-    val vrStr = if (isMasked) "••••••" else "R$ ${currencyFormat.format(snap.financeVrBalance)}"
+    val balStr = when {
+        !hasSynced -> "Sincronizando..."
+        isMasked -> "••••••"
+        else -> "R$ ${currencyFormat.format(snap.financeBalance)}"
+    }
+    val vrStr = when {
+        !hasSynced -> "—"
+        isMasked -> "••••••"
+        else -> "R$ ${currencyFormat.format(snap.financeVrBalance)}"
+    }
 
     val cardTextPrimary = if (isLightMode) Color(0xFF1C1B1F) else TextPrimary
     val cardTextSecondary = if (isLightMode) Color(0xFF57534E) else TextSecondary
@@ -236,10 +245,11 @@ fun TesseraTimeClockCard(
     if (snapshot == null || !snapshot!!.isInstalled) return
 
     val snap = snapshot!!
-    val status = snap.timeClockStatus ?: "CLT"
+    val hasSynced = snap.hasSyncedData
+    val status = if (hasSynced) (snap.timeClockStatus ?: "CLT") else "Aguardando sincronização"
     val workedMin = snap.timeClockWorkedMinutes
     val targetMin = snap.timeClockTargetMinutes.coerceAtLeast(60)
-    val progress = (workedMin.toFloat() / targetMin).coerceIn(0f, 1f)
+    val progress = if (hasSynced) (workedMin.toFloat() / targetMin).coerceIn(0f, 1f) else 0f
 
     val cardTextPrimary = if (isLightMode) Color(0xFF1C1B1F) else TextPrimary
     val cardTextSecondary = if (isLightMode) Color(0xFF57534E) else TextSecondary
@@ -365,7 +375,11 @@ fun TesseraTimeClockCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "${workedMin / 60}h ${workedMin % 60}min de ${targetMin / 60}h previstas",
+                        text = if (hasSynced) {
+                            "${workedMin / 60}h ${workedMin % 60}min de ${targetMin / 60}h previstas"
+                        } else {
+                            "Toque para abrir a jornada no Tessera Core"
+                        },
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                         color = cardTextSecondary
                     )
@@ -409,6 +423,7 @@ fun TesseraMarketCard(
     if (snapshot == null || !snapshot!!.isInstalled) return
 
     val snap = snapshot!!
+    val hasSynced = snap.hasSyncedData
     val count = snap.marketPendingCount
     val totalEst = snap.marketEstimatedTotal
     val items = snap.marketTopItems
@@ -494,7 +509,19 @@ fun TesseraMarketCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (count > 0) {
+            if (!hasSynced) {
+                Text(
+                    text = "Aguardando sincronização de itens",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = cardTextPrimary
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Toque para abrir a lista no Tessera Core",
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = cardTextSecondary
+                )
+            } else if (count > 0) {
                 Text(
                     text = "$count ${if (count == 1) "item pendente" else "itens pendentes"}",
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),

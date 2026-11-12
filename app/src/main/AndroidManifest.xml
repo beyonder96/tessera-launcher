@@ -27,6 +27,7 @@
 
     <queries>
         <package android:name="com.aistudio.tessera.xtrkna" />
+        <provider android:authorities="com.aistudio.tessera.xtrkna.bridge" />
     </queries>
 
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />

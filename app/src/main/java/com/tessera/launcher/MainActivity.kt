@@ -403,5 +403,6 @@ class MainActivity : ComponentActivity() {
                 viewModel.loadWallpaper()
             }
         }
+        com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.refreshSnapshot()
     }
 }

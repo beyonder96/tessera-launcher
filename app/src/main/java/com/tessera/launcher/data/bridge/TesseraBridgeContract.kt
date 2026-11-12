@@ -59,6 +59,7 @@ object TesseraBridgeContract {
  */
 data class TesseraEcosystemSnapshot(
     val isInstalled: Boolean = false,
+    val hasSyncedData: Boolean = false,
     val dailyVerseText: String? = null,
     val dailyVerseRef: String? = null,
     val verseStreakDays: Int = 0,

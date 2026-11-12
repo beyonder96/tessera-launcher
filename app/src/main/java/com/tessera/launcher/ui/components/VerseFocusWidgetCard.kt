@@ -80,7 +80,7 @@ fun VerseFocusWidgetCard(
     var currentIndex by remember { mutableIntStateOf(0) }
 
     val snapshot by TesseraCoreBridgeClient.snapshot.collectAsState()
-    val hasEcosystemVerse = !snapshot?.dailyVerseText.isNullOrBlank()
+    val hasEcosystemVerse = snapshot?.hasSyncedData == true && !snapshot?.dailyVerseText.isNullOrBlank()
     val streak = snapshot?.verseStreakDays ?: 0
 
     val item = if (hasEcosystemVerse) {
