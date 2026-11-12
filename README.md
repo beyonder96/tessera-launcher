@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.9.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.9.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v3.9.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.9.1)
+
+### 🆕 Novidades na v3.9.1
+- 🔗 **Correção Completa do Ecossistema Tessera Core (`com.aistudio.tessera.xtrkna`):**
+  - **Package Visibility no Android 16 (API 36):** Adicionada a autoridade do provider (`com.aistudio.tessera.xtrkna.bridge`) à tag `<queries>` no Manifest, permitindo que o `ContentResolver` acesse o ContentProvider cross-app sem bloqueios de privacidade do Android 11+.
+  - **Sincronização Ativa em Primeiro Plano:** O Launcher agora dispara `refreshSnapshot()` automaticamente ao retornar do Tessera Core (`onResume`), refletindo imediatamente pontos batidos e transações.
+  - **Eliminação de Zeros Enganosos:** Cards de Pulso Financeiro, Ponto CLT e Mercado agora exibem status honesto de conexão (*"Sincronizando...", "Aguardando sincronização"*) em vez de valores fictícios zerados (`R$ 0,00` ou `0h 0min`).
+  - **Regra Estrita de Exibição:** Os widgets do ecossistema só aparecem para usuários que possuem o Tessera Core instalado no dispositivo.
 
 ### 🆕 Novidades na v3.9.0
 - 🏝️ **Live HUD 2.0 (Tessera Island):**
