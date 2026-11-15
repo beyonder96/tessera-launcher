@@ -61,7 +61,28 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v3.9.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v3.9.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.0.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.0)
+
+### 🆕 Novidades na v4.0.0
+- 💎 **Motor Comercial & Auto-Trial de 3 Dias (72 horas):**
+  - **Experiência Pro Instantânea:** Novos usuários ganham 72 horas de acesso completo a todos os recursos Pro sem cadastro prévio.
+  - **Freemium Soft Lock Ético:** Ao fim do período, recursos essenciais permanecem 100% gratuitos para sempre (gaveta de apps, busca Omni, atalhos, calculadora e temas base).
+  - **Licenciamento Criptográfico Offline (HMAC-SHA256):** Chaves no formato `TESS-{TIPO}-{DADOS4}-{SIG4}` com validação em tempo real e proteção contra retrocesso de relógio do sistema.
+  - **Chaves Suportadas:** `GIFT` (3 a 7 dias estritos para promoções), `MENS` (30d), `SEMS` (180d), `ANUL` (365d), `LIFE` (Vitalício) e `MSTR` (Master: Vitalício + IA + Gerador Nativo).
+- 🧠 **Isolamento Absoluto de IA (Zero Custo para não-Master):**
+  - Todas as chamadas de API, endpoints de IA, chips de comandos `@ai` e atalhos externos são estritamente ocultados para usuários não-Master.
+  - Rótulo Niagara higienizado para `"APPS SUGERIDOS"`.
+- 🎬 **Onboarding Flagship 120Hz de 4 Atos:**
+  - **Ato 1 (O Despertar Minimalista):** Anéis cinéticos e tipografia editorial sobre manifesto visual minimalista.
+  - **Ato 2 (Estética Viva):** Micro-mockup interativo ao vivo com alternador de temas (`AMOLED Profundo` vs `Papel Minimalista`) e paleta cromática de autor com resposta tátil instantânea.
+  - **Ato 3 (A Coreografia Espacial):** Demonstração cinética de gestos, tela lateral e física fluida de molas.
+  - **Ato 4 (Passaporte do Fundador & Ativação):** Cartão holográfico metálico, 1 toque para definir launcher padrão (`RoleManager`) e gaveta de ativação de licenças.
+- 🛡️ **Remoção Total do Live HUD & Permissão READ_SMS:**
+  - Código do Live HUD, classificadores e ilha dinâmica removidos integralmente do app.
+  - Expurgo da permissão `READ_SMS` do Manifest, garantindo privacidade absoluta e conformidade total com a Google Play.
+- 🚨 **Modo de Segurança com Auto-Recuperação & R8 Shrinking:**
+  - Detecção inteligente de crash loops consecutivos com diálogo preventivo de recuperação de layouts.
+  - Regras ProGuard/R8 otimizadas: APK final encolhido para apenas **2.4 MB**!
 
 ### 🆕 Novidades na v3.9.1
 - 🔗 **Correção Completa do Ecossistema Tessera Core (`com.aistudio.tessera.xtrkna`):**
