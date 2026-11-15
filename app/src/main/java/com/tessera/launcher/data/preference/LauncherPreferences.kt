@@ -37,7 +37,6 @@ class LauncherPreferences(context: Context) {
         private const val KEY_SHOW_APP_SHORTCUTS = "show_app_shortcuts"
         private const val KEY_WEB_SEARCH_ENABLED = "web_search_enabled"
         private const val KEY_SEARCH_CONTACTS = "search_contacts"
-        private const val KEY_SEARCH_MESSAGES = "search_messages"
         private const val KEY_CALCULATOR_CARD = "calculator_card"
         private const val KEY_WIDGET_DINO = "widget_dino"
         private const val KEY_WIDGET_NOTES = "widget_notes"
@@ -151,22 +150,25 @@ class LauncherPreferences(context: Context) {
         private const val KEY_ACCENT_COLOR = "accent_color"
         private const val KEY_BIOMETRIC_UNLOCK_ENABLED = "biometric_unlock_enabled"
 
-        // Fase 2: Live Capsule
-        private const val KEY_LIVE_CAPSULE_ENABLED = "live_capsule_enabled"
-
-        // Live HUD 2.0 (Ilha Dinâmica Tessera)
-        private const val KEY_HUD_PEEK_ENABLED = "hud_peek_enabled"
-        private const val KEY_HUD_PEEK_DURATION_MS = "hud_peek_duration_ms"
-        private const val KEY_HUD_HIDE_PEEK_CONTENT = "hud_hide_peek_content"
-        private const val KEY_HUD_SHOW_MEDIA = "hud_show_media"
-        private const val KEY_HUD_SHOW_CHARGING = "hud_show_charging"
-        private const val KEY_HUD_HAPTICS = "hud_haptics"
-        private const val KEY_HUD_DISABLED_TYPES = "hud_disabled_types"
-        private const val KEY_HUD_APP_RULES_JSON = "hud_app_rules_json"
-
         // Fase 3: Smart Stacks e Tempo de Tela
         private const val KEY_SMART_STACK_ROTATE_ENABLED = "smart_stack_rotate_enabled"
         private const val KEY_SCREEN_TIME_WIDGET_ENABLED = "screen_time_widget_enabled"
+
+        // Onboarding
+        private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
+
+        private val BACKUP_EXCLUDED_KEYS = setOf(
+            "groq_api_key",
+            KEY_GEMINI_API_KEY,
+            KEY_HIDDEN_APPS_PIN,
+            KEY_FEED_CACHED_JSON,
+            KEY_CACHED_WEATHER_JSON,
+            KEY_APP_LAUNCH_HISTORY_JSON,
+            KEY_ONBOARDING_COMPLETED,
+            KEY_HOSTED_WIDGET_IDS,
+            KEY_CUSTOM_WALLPAPER_PATH,
+            KEY_CUSTOM_FONT_PATH
+        )
 
     }
 
@@ -283,9 +285,6 @@ class LauncherPreferences(context: Context) {
     fun isContactsSearchEnabled(): Boolean = prefs.getBoolean(KEY_SEARCH_CONTACTS, false)
     fun setContactsSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SEARCH_CONTACTS, enabled).apply()
 
-    fun isMessagesSearchEnabled(): Boolean = prefs.getBoolean(KEY_SEARCH_MESSAGES, false)
-    fun setMessagesSearchEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_SEARCH_MESSAGES, enabled).apply()
-
     fun isCalculatorCardEnabled(): Boolean = prefs.getBoolean(KEY_CALCULATOR_CARD, true)
     fun setCalculatorCardEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_CALCULATOR_CARD, enabled).apply()
 
@@ -390,7 +389,7 @@ class LauncherPreferences(context: Context) {
     fun isDoubleFingerTapEnabled(): Boolean = prefs.getBoolean(KEY_GESTURE_DOUBLE_FINGER_TAP_ENABLED, true)
     fun setDoubleFingerTapEnabled(enabled: Boolean) = prefs.edit().putBoolean(KEY_GESTURE_DOUBLE_FINGER_TAP_ENABLED, enabled).apply()
 
-    fun getDoubleFingerTapAction(): String = prefs.getString(KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION, "ai_search") ?: "ai_search"
+    fun getDoubleFingerTapAction(): String = prefs.getString(KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION, "open_widgets") ?: "open_widgets"
     fun setDoubleFingerTapAction(action: String) = prefs.edit().putString(KEY_GESTURE_DOUBLE_FINGER_TAP_ACTION, action).apply()
 
     // Efeito de Expansão Estilo Gemini na Barra
@@ -645,6 +644,13 @@ class LauncherPreferences(context: Context) {
     fun getGeminiApiKey(): String = prefs.getString(KEY_GEMINI_API_KEY, "") ?: ""
     fun setGeminiApiKey(key: String) = prefs.edit().putString(KEY_GEMINI_API_KEY, key.trim().removeSurrounding("\"").removeSurrounding("'")).apply()
 
+    private fun shouldExcludeFromBackup(key: String): Boolean {
+        return key in BACKUP_EXCLUDED_KEYS ||
+            key.startsWith("linked_widget_") ||
+            key.startsWith("license_") ||
+            key.startsWith("vault_")
+    }
+
     // Backup & Restauração
     fun exportBackupJson(): String {
         val root = org.json.JSONObject()
@@ -655,6 +661,7 @@ class LauncherPreferences(context: Context) {
         val preferencesObj = org.json.JSONObject()
         val allEntries = prefs.all
         for ((key, value) in allEntries) {
+            if (shouldExcludeFromBackup(key)) continue
             when (value) {
                 is Boolean -> preferencesObj.put(key, value)
                 is Int -> preferencesObj.put(key, value)
@@ -683,6 +690,7 @@ class LauncherPreferences(context: Context) {
             val keys = preferencesObj.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
+                if (shouldExcludeFromBackup(key)) continue
                 val value = preferencesObj.get(key)
                 when (value) {
                     is Boolean -> editor.putBoolean(key, value)
@@ -730,70 +738,27 @@ class LauncherPreferences(context: Context) {
         prefs.edit().putBoolean(KEY_BIOMETRIC_UNLOCK_ENABLED, enabled).apply()
     }
 
-    fun isLiveCapsuleEnabled(): Boolean {
-        return prefs.getBoolean(KEY_LIVE_CAPSULE_ENABLED, true)
+    fun isOnboardingCompleted(): Boolean = prefs.getBoolean(KEY_ONBOARDING_COMPLETED, false)
+
+    fun setOnboardingCompleted(completed: Boolean) {
+        prefs.edit().putBoolean(KEY_ONBOARDING_COMPLETED, completed).apply()
     }
 
-    fun setLiveCapsuleEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_LIVE_CAPSULE_ENABLED, enabled).apply()
-    }
+    fun hasAnySavedPreferences(): Boolean = prefs.all.isNotEmpty()
 
-    fun getHudConfig(): com.tessera.launcher.data.model.HudConfig {
-        val enabled = isLiveCapsuleEnabled()
-        val peekEnabled = prefs.getBoolean(KEY_HUD_PEEK_ENABLED, true)
-        val peekDurationMs = prefs.getLong(KEY_HUD_PEEK_DURATION_MS, 4000L)
-        val hideContent = prefs.getBoolean(KEY_HUD_HIDE_PEEK_CONTENT, false)
-        val showMedia = prefs.getBoolean(KEY_HUD_SHOW_MEDIA, true)
-        val showCharging = prefs.getBoolean(KEY_HUD_SHOW_CHARGING, true)
-        val haptics = prefs.getBoolean(KEY_HUD_HAPTICS, true)
-        val disabledTypesStr = prefs.getStringSet(KEY_HUD_DISABLED_TYPES, emptySet()) ?: emptySet()
-        val disabledTypes = disabledTypesStr.mapNotNull { name ->
-            runCatching { com.tessera.launcher.data.model.LiveActivityType.valueOf(name) }.getOrNull()
-        }.toSet()
-
-        val rulesJson = prefs.getString(KEY_HUD_APP_RULES_JSON, null)
-        val appRules = mutableMapOf<String, com.tessera.launcher.data.model.HudAppRule>()
-        if (!rulesJson.isNullOrBlank()) {
-            runCatching {
-                val json = JSONObject(rulesJson)
-                val keys = json.keys()
-                while (keys.hasNext()) {
-                    val k = keys.next()
-                    val v = json.getString(k)
-                    val rule = runCatching { com.tessera.launcher.data.model.HudAppRule.valueOf(v) }.getOrDefault(com.tessera.launcher.data.model.HudAppRule.AUTO)
-                    appRules[k] = rule
-                }
-            }
-        }
-
-        return com.tessera.launcher.data.model.HudConfig(
-            enabled = enabled,
-            peekEnabled = peekEnabled,
-            peekDurationMs = peekDurationMs,
-            hidePeekContent = hideContent,
-            showMedia = showMedia,
-            showCharging = showCharging,
-            haptics = haptics,
-            disabledTypes = disabledTypes,
-            appRules = appRules
-        )
-    }
-
-    fun setHudConfig(config: com.tessera.launcher.data.model.HudConfig) {
-        setLiveCapsuleEnabled(config.enabled)
-        val json = JSONObject()
-        config.appRules.forEach { (pkg, rule) ->
-            json.put(pkg, rule.name)
-        }
+    fun resetAppearanceForSafeMode() {
         prefs.edit()
-            .putBoolean(KEY_HUD_PEEK_ENABLED, config.peekEnabled)
-            .putLong(KEY_HUD_PEEK_DURATION_MS, config.peekDurationMs)
-            .putBoolean(KEY_HUD_HIDE_PEEK_CONTENT, config.hidePeekContent)
-            .putBoolean(KEY_HUD_SHOW_MEDIA, config.showMedia)
-            .putBoolean(KEY_HUD_SHOW_CHARGING, config.showCharging)
-            .putBoolean(KEY_HUD_HAPTICS, config.haptics)
-            .putStringSet(KEY_HUD_DISABLED_TYPES, config.disabledTypes.map { it.name }.toSet())
-            .putString(KEY_HUD_APP_RULES_JSON, json.toString())
+            .putString(KEY_FONT_FAMILY_TYPE, "tessera")
+            .putString(KEY_CUSTOM_FONT_PATH, "")
+            .putBoolean(KEY_SYSTEM_WALLPAPER_ENABLED, false)
+            .remove(KEY_CUSTOM_WALLPAPER_PATH)
+            .remove("selected_icon_pack")
+            .putBoolean(KEY_LIQUID_GLASS_MODE, false)
+            .putBoolean(KEY_DRAWER_GLASS_ENABLED, false)
+            .putInt(KEY_HOME_WALLPAPER_BLUR, 0)
+            .putInt(KEY_HOME_WALLPAPER_DIMMING, 0)
+            .putString(KEY_THEME_MODE, "AMOLED")
+            .putBoolean(KEY_AMOLED_MODE, true)
             .apply()
     }
 
@@ -815,7 +780,7 @@ class LauncherPreferences(context: Context) {
     }
 
     fun getGreetingUserName(): String {
-        return prefs.getString(KEY_GREETING_USER_NAME, "Kenned") ?: "Kenned"
+        return prefs.getString(KEY_GREETING_USER_NAME, "") ?: ""
     }
 
     fun setGreetingUserName(name: String) {

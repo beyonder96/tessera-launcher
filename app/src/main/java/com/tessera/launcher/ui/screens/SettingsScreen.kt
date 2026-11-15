@@ -61,6 +61,7 @@ import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.VpnKey
 import com.tessera.launcher.ui.TesseraLauncherUpdatePill
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -266,8 +267,8 @@ fun SettingsScreen(
             )
             return
         }
-        SettingsSubScreen.LIVE_HUD -> {
-            LiveHudSettingsScreen(
+        SettingsSubScreen.LICENSE -> {
+            LicenseScreen(
                 viewModel = viewModel,
                 uiState = uiState,
                 onBack = { viewModel.navigateBackSettings() },
@@ -281,7 +282,9 @@ fun SettingsScreen(
     }
 
     var searchQuery by remember { mutableStateOf("") }
-    val searchResults = remember(searchQuery) { SettingsCatalog.search(searchQuery) }
+    val searchResults = remember(searchQuery, uiState.isMasterAccess) {
+        SettingsCatalog.search(searchQuery, includeAi = uiState.isMasterAccess)
+    }
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -292,6 +295,7 @@ fun SettingsScreen(
     var aiSuggestedSubScreen by remember { mutableStateOf<SettingsSubScreen?>(null) }
 
     fun requestAiGuidance(prompt: String) {
+        if (!uiState.isMasterAccess) return
         val queryText = prompt.trim()
         if (queryText.isBlank()) return
 
@@ -299,7 +303,7 @@ fun SettingsScreen(
             isAiLoading = true
             aiResponseText = null
 
-            val topMatch = SettingsCatalog.search(queryText).firstOrNull()
+            val topMatch = SettingsCatalog.search(queryText, includeAi = uiState.isMasterAccess).firstOrNull()
             aiSuggestedSubScreen = topMatch?.targetSubScreen ?: SettingsSubScreen.CUSTOMIZATION
 
             try {
@@ -467,7 +471,7 @@ fun SettingsScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         if (searchQuery.isEmpty()) {
                             Text(
-                                text = "Buscar recursos ou perguntar à IA...",
+                                text = if (uiState.isMasterAccess) "Buscar recursos ou perguntar à IA..." else "Buscar configurações e recursos...",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = secondaryTextColor.copy(alpha = 0.70f),
                                 maxLines = 1,
@@ -495,7 +499,7 @@ fun SettingsScreen(
                             keyboardActions = KeyboardActions(
                                 onSearch = {
                                     keyboardController?.hide()
-                                    if (searchQuery.isNotBlank()) {
+                                    if (searchQuery.isNotBlank() && uiState.isMasterAccess) {
                                         requestAiGuidance(searchQuery)
                                     }
                                 }
@@ -532,52 +536,54 @@ fun SettingsScreen(
                         }
                     }
 
-                    // Botão da IA na barra de pesquisa (único ícone de IA na tela)
-                    Box(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (isAiLoading) Color(0xFF67E8F9).copy(alpha = 0.25f)
-                                else if (searchQuery.isNotBlank()) Color(0xFF67E8F9).copy(alpha = 0.16f)
-                                else Color.Transparent
-                            )
-                            .border(
-                                BorderStroke(
-                                    1.dp,
-                                    if (searchQuery.isNotBlank() || isAiLoading) Color(0xFF67E8F9).copy(alpha = 0.40f)
+                    if (uiState.isMasterAccess) {
+                        // Botão da IA na barra de pesquisa (exibido apenas para Master)
+                        Box(
+                            modifier = Modifier
+                                .height(32.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (isAiLoading) Color(0xFF67E8F9).copy(alpha = 0.25f)
+                                    else if (searchQuery.isNotBlank()) Color(0xFF67E8F9).copy(alpha = 0.16f)
                                     else Color.Transparent
-                                ),
-                                CircleShape
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {
-                                    keyboardController?.hide()
-                                    requestAiGuidance(searchQuery.ifBlank { "Como personalizar o launcher?" })
-                                }
-                            )
-                            .padding(horizontal = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = "Consultar IA",
-                                tint = Color(0xFF67E8F9),
-                                modifier = Modifier.size(17.dp)
-                            )
-                            if (searchQuery.isNotBlank() || isAiLoading) {
-                                Text(
-                                    text = "IA",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF67E8F9)
                                 )
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        if (searchQuery.isNotBlank() || isAiLoading) Color(0xFF67E8F9).copy(alpha = 0.40f)
+                                        else Color.Transparent
+                                    ),
+                                    CircleShape
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        keyboardController?.hide()
+                                        requestAiGuidance(searchQuery.ifBlank { "Como personalizar o launcher?" })
+                                    }
+                                )
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AutoAwesome,
+                                    contentDescription = "Consultar IA",
+                                    tint = Color(0xFF67E8F9),
+                                    modifier = Modifier.size(17.dp)
+                                )
+                                if (searchQuery.isNotBlank() || isAiLoading) {
+                                    Text(
+                                        text = "IA",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF67E8F9)
+                                    )
+                                }
                             }
                         }
                     }
@@ -587,7 +593,7 @@ fun SettingsScreen(
             if (searchQuery.isNotEmpty()) {
                 // RESULTADOS DA BUSCA EM PRIMEIRO PLANO
                 AnimatedVisibility(
-                    visible = isAiLoading || aiResponseText != null,
+                    visible = uiState.isMasterAccess && (isAiLoading || aiResponseText != null),
                     enter = fadeIn(tween(250)),
                     exit = fadeOut(tween(150))
                 ) {
@@ -750,45 +756,47 @@ fun SettingsScreen(
                                 color = primaryTextColor
                             )
                             Text(
-                                text = "Não encontramos correspondência para \"$searchQuery\". Você pode perguntar à IA onde encontrar essa opção.",
+                                text = if (uiState.isMasterAccess) "Não encontramos correspondência para \"$searchQuery\". Você pode perguntar à IA onde encontrar essa opção." else "Não encontramos correspondência para \"$searchQuery\". Tente termos mais específicos ou navegue pelas seções.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = secondaryTextColor,
                                 textAlign = TextAlign.Center
                             )
 
-                            Spacer(modifier = Modifier.height(4.dp))
+                            if (uiState.isMasterAccess) {
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                            Box(
-                                modifier = Modifier
-                                    .clip(CircleShape)
-                                    .background(Color(0xFF38BDF8).copy(alpha = 0.18f))
-                                    .border(BorderStroke(1.dp, Color(0xFF38BDF8)), CircleShape)
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = {
-                                            keyboardController?.hide()
-                                            requestAiGuidance(searchQuery)
-                                        }
-                                    )
-                                    .padding(horizontal = 16.dp, vertical = 9.dp)
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF38BDF8).copy(alpha = 0.18f))
+                                        .border(BorderStroke(1.dp, Color(0xFF38BDF8)), CircleShape)
+                                        .clickable(
+                                            interactionSource = remember { MutableInteractionSource() },
+                                            indication = null,
+                                            onClick = {
+                                                keyboardController?.hide()
+                                                requestAiGuidance(searchQuery)
+                                            }
+                                        )
+                                        .padding(horizontal = 16.dp, vertical = 9.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.AutoAwesome,
-                                        contentDescription = null,
-                                        tint = Color(0xFF38BDF8),
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = "Perguntar à IA onde encontrar",
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color(0xFF38BDF8)
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.AutoAwesome,
+                                            contentDescription = null,
+                                            tint = Color(0xFF38BDF8),
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "Perguntar à IA onde encontrar",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color(0xFF38BDF8)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -842,35 +850,127 @@ fun SettingsScreen(
                     }
                 }
 
+                // HERO LICENSE CARD (Tessera Pro / Trial)
+                SectionHeader(title = "ASSINATURA & PRO", color = secondaryTextColor)
+
+                Surface(
+                    shape = SettingsCardShape,
+                    color = cardBg,
+                    border = BorderStroke(1.dp, if (uiState.hasProAccess) uiState.activeAccentColor.copy(alpha = 0.35f) else cardBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.LICENSE) }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(uiState.activeAccentColor.copy(alpha = 0.18f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.VpnKey,
+                                contentDescription = null,
+                                tint = uiState.activeAccentColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(14.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Licença & Tessera Pro",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = primaryTextColor
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            if (uiState.hasProAccess) Color(0xFF10B981).copy(alpha = 0.18f)
+                                            else Color(0xFFEF4444).copy(alpha = 0.18f)
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (uiState.hasProAccess) "ATIVO" else "FREE",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (uiState.hasProAccess) Color(0xFF10B981) else Color(0xFFEF4444)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(2.dp))
+
+                            Text(
+                                text = when {
+                                    uiState.isMasterAccess -> "Acesso Master Ilimitado • IA Groq / Gemini habilitada"
+                                    uiState.hasProAccess -> "Recursos Pro desbloqueados • Toque para ver detalhes"
+                                    else -> "Experimente recursos exclusivos ou ative sua chave"
+                                },
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = secondaryTextColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+
+                        Icon(
+                            imageVector = Icons.Outlined.ChevronRight,
+                            contentDescription = null,
+                            tint = secondaryTextColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // CATEGORIA 1: TELA & EXPERIÊNCIA
-            SectionHeader(title = "TELA & EXPERIÊNCIA", color = secondaryTextColor)
+                SectionHeader(title = "TELA & EXPERIÊNCIA", color = secondaryTextColor)
 
-            Surface(
-                shape = SettingsCardShape,
-                color = cardBg,
-                border = BorderStroke(1.dp, cardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // 1. Central & Feed (Tela −1) — Acesso unificado
-                    SettingsItemRow(
-                        icon = Icons.Outlined.Dashboard,
-                        title = "Central & Feed (Tela −1)",
-                        subtitle = "Central de widgets Bento e Feed de notícias RSS.",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
-                        isLight = isLight
-                    )
+                Surface(
+                    shape = SettingsCardShape,
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // 1. Central & Feed (Tela −1) — Acesso unificado
+                        SettingsItemRow(
+                            icon = Icons.Outlined.Dashboard,
+                            title = "Central & Feed (Tela −1)",
+                            subtitle = "Central de widgets Bento e Feed de notícias RSS.",
+                            onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
+                            isLight = isLight
+                        )
 
-                    ItemDivider(isLight = isLight)
+                        ItemDivider(isLight = isLight)
 
-                    // 2. Busca
-                    SettingsItemRow(
-                        icon = Icons.Outlined.Search,
-                        title = "Busca & IA",
-                        subtitle = "Fontes locais, web e provedor Gemini 3.8 Flash.",
-                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) },
-                        isLight = isLight
-                    )
+                        // 2. Busca
+                        SettingsItemRow(
+                            icon = Icons.Outlined.Search,
+                            title = if (uiState.isMasterAccess) "Busca & IA" else "Busca",
+                            subtitle = if (uiState.isMasterAccess) "Fontes locais, web e provedor Gemini 3.8 Flash." else "Fontes locais do aparelho e busca na web.",
+                            onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.SEARCH) },
+                            isLight = isLight
+                        )
 
                     ItemDivider(isLight = isLight)
 

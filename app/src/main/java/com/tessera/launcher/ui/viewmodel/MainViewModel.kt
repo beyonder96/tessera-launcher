@@ -18,10 +18,12 @@ import com.tessera.launcher.data.helper.CalendarHelper
 import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
+import com.tessera.launcher.data.helper.TesseraCrashHandler
+import com.tessera.launcher.data.license.LicenseActivationResult
+import com.tessera.launcher.data.license.LicenseKeyType
+import com.tessera.launcher.data.license.LicenseManager
+import com.tessera.launcher.data.license.LicenseStatus
 import com.tessera.launcher.data.model.AppInfo
-import com.tessera.launcher.data.hud.LiveHudEngine
-import com.tessera.launcher.data.model.HudAppRule
-import com.tessera.launcher.data.model.HudConfig
 import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
@@ -112,6 +114,28 @@ private fun serializeCustomIcons(map: Map<String, String>): String {
     return map.entries.joinToString("|||") { "${it.key}:::${it.value}" }
 }
 
+private fun sanitizeCommandsForTier(
+    commands: List<CommandItem>,
+    isMaster: Boolean
+): List<CommandItem> {
+    return commands.filter { cmd ->
+        val idLower = cmd.id.lowercase()
+        val prefixLower = cmd.prefix.lowercase()
+        val isLegacySms = idLower == "messages" || prefixLower == "@sms"
+        val isAiCmd = idLower == "ai" || idLower == "groq" ||
+            prefixLower == "@ai" || prefixLower == "@groq" || prefixLower == "@gemini"
+        !isLegacySms && (isMaster || !isAiCmd)
+    }
+}
+
+private fun sanitizeGestureAction(action: String, isMaster: Boolean): String {
+    return when {
+        action == "live_hud" -> "open_widgets"
+        action == "ai_search" && !isMaster -> "open_widgets"
+        else -> action
+    }
+}
+
 class MainViewModel(
     private val appRepository: AppRepository,
     private val systemInfoHelper: SystemInfoHelper,
@@ -119,9 +143,9 @@ class MainViewModel(
     private val preferences: LauncherPreferences,
     private val quickSettingsHelper: QuickSettingsHelper,
     private val contactSearchHelper: ContactSearchHelper,
-    private val messageSearchHelper: com.tessera.launcher.data.helper.MessageSearchHelper,
     private val weatherHelper: com.tessera.launcher.data.helper.WeatherHelper,
     private val feedRepository: FeedRepository,
+    private val licenseManager: LicenseManager,
     private val appContext: Context
 ) : ViewModel() {
 
@@ -130,6 +154,18 @@ class MainViewModel(
     private val categoryClassifier = com.tessera.launcher.data.helper.AppCategoryClassifier(appContext)
     private val aiEngine = com.tessera.launcher.data.helper.AiEngine()
     private val screenTimeHelper = com.tessera.launcher.data.helper.ScreenTimeHelper(appContext)
+
+    private val initialOnboardingCompleted = if (preferences.isOnboardingCompleted()) {
+        true
+    } else if (preferences.hasAnySavedPreferences()) {
+        preferences.setOnboardingCompleted(true)
+        true
+    } else {
+        false
+    }
+    private val initialLicenseStatus = licenseManager.getLicenseStatus()
+    private val initialSafeModePending = TesseraCrashHandler.isSafeModePending(appContext)
+    private val initialCrashSummary = TesseraCrashHandler.getLastCrashSummary(appContext)
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
@@ -149,7 +185,6 @@ class MainViewModel(
             isAppShortcutsEnabled = preferences.isAppShortcutsEnabled(),
             isWebSearchEnabled = preferences.isWebSearchEnabled(),
             isContactsSearchEnabled = preferences.isContactsSearchEnabled(),
-            isMessagesSearchEnabled = preferences.isMessagesSearchEnabled(),
             isCalculatorCardEnabled = preferences.isCalculatorCardEnabled(),
             isDinoWidgetEnabled = preferences.isDinoWidgetEnabled(),
             isNotesWidgetEnabled = preferences.isNotesWidgetEnabled(),
@@ -163,33 +198,36 @@ class MainViewModel(
             selectedIconPack = preferences.getSelectedIconPack(),
             isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
             commandActivationSymbol = preferences.getCommandActivationSymbol(),
-            commandsList = parseCommands(preferences.getCommandsRaw()),
+            commandsList = sanitizeCommandsForTier(
+                parseCommands(preferences.getCommandsRaw()),
+                initialLicenseStatus.isMasterAccess
+            ),
             appFolders = parseFolders(preferences.getFoldersRaw()),
 
             // Gestos
             isDoubleTapEnabled = preferences.isDoubleTapEnabled(),
-            doubleTapAction = preferences.getDoubleTapAction(),
+            doubleTapAction = sanitizeGestureAction(preferences.getDoubleTapAction(), initialLicenseStatus.isMasterAccess),
             isHoldEnabled = preferences.isHoldEnabled(),
-            holdAction = preferences.getHoldAction(),
+            holdAction = sanitizeGestureAction(preferences.getHoldAction(), initialLicenseStatus.isMasterAccess),
             isSwipeDownEnabled = preferences.isSwipeDownEnabled(),
-            swipeDownAction = preferences.getSwipeDownAction(),
+            swipeDownAction = sanitizeGestureAction(preferences.getSwipeDownAction(), initialLicenseStatus.isMasterAccess),
             isSwipeUpEnabled = preferences.isSwipeUpEnabled(),
-            swipeUpAction = preferences.getSwipeUpAction(),
+            swipeUpAction = sanitizeGestureAction(preferences.getSwipeUpAction(), initialLicenseStatus.isMasterAccess),
             isSwipeLeftEnabled = preferences.isSwipeLeftEnabled(),
-            swipeLeftAction = preferences.getSwipeLeftAction(),
+            swipeLeftAction = sanitizeGestureAction(preferences.getSwipeLeftAction(), initialLicenseStatus.isMasterAccess),
             isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
-            swipeRightAction = preferences.getSwipeRightAction(),
+            swipeRightAction = sanitizeGestureAction(preferences.getSwipeRightAction(), initialLicenseStatus.isMasterAccess),
             isSwipeDownTwoFingersEnabled = preferences.isSwipeDownTwoFingersEnabled(),
-            swipeDownTwoFingersAction = preferences.getSwipeDownTwoFingersAction(),
+            swipeDownTwoFingersAction = sanitizeGestureAction(preferences.getSwipeDownTwoFingersAction(), initialLicenseStatus.isMasterAccess),
             isSwipeUpTwoFingersEnabled = preferences.isSwipeUpTwoFingersEnabled(),
-            swipeUpTwoFingersAction = preferences.getSwipeUpTwoFingersAction(),
+            swipeUpTwoFingersAction = sanitizeGestureAction(preferences.getSwipeUpTwoFingersAction(), initialLicenseStatus.isMasterAccess),
             isPinchInEnabled = preferences.isPinchInEnabled(),
-            pinchInAction = preferences.getPinchInAction(),
+            pinchInAction = sanitizeGestureAction(preferences.getPinchInAction(), initialLicenseStatus.isMasterAccess),
             isPinchOutEnabled = preferences.isPinchOutEnabled(),
-            pinchOutAction = preferences.getPinchOutAction(),
+            pinchOutAction = sanitizeGestureAction(preferences.getPinchOutAction(), initialLicenseStatus.isMasterAccess),
             isDoubleFingerTapEnabled = preferences.isDoubleFingerTapEnabled(),
-            doubleFingerTapAction = preferences.getDoubleFingerTapAction(),
-            isGeminiGlowEnabled = preferences.isGeminiGlowEnabled(),
+            doubleFingerTapAction = sanitizeGestureAction(preferences.getDoubleFingerTapAction(), initialLicenseStatus.isMasterAccess),
+            isGeminiGlowEnabled = preferences.isGeminiGlowEnabled() && initialLicenseStatus.isMasterAccess,
 
             // Busca em Apps
             inAppSearchPackages = preferences.getInAppSearchPackages(),
@@ -243,7 +281,7 @@ class MainViewModel(
             customRssSources = preferences.getCustomRssSources(),
             feedEnabledSources = setOf(FeedSource.NEWS),
             hostedWidgetIds = preferences.getHostedWidgetIds(),
-            isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
+            isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled() && initialLicenseStatus.isMasterAccess,
 
             // Smart Dock (Previsão Contextual)
             isSmartDockEnabled = preferences.isSmartDockEnabled(),
@@ -258,8 +296,8 @@ class MainViewModel(
             isAppCategoriesEnabled = preferences.isAppCategoriesEnabled(),
             selectedAppCategory = com.tessera.launcher.data.model.AppCategory.ALL,
 
-            // Prompt Bar na Lupa (Groq / Gemini AI)
-            isAiSearchEnabled = preferences.isAiSearchEnabled(),
+            // Prompt Bar na Lupa (Groq / Gemini AI — exclusivo Master)
+            isAiSearchEnabled = preferences.isAiSearchEnabled() && initialLicenseStatus.isMasterAccess,
             aiProvider = preferences.getAiProvider(),
             groqApiKey = preferences.getGroqApiKey(),
             geminiApiKey = preferences.getGeminiApiKey(),
@@ -268,10 +306,6 @@ class MainViewModel(
             homeClockStyle = preferences.getHomeClockStyle(),
             accentColorName = preferences.getAccentColor(),
             isBiometricUnlockEnabled = preferences.isBiometricUnlockEnabled(),
-
-            // Fase 2: Live Capsule e Live HUD 2.0
-            isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
-            hudConfig = preferences.getHudConfig(),
 
             // Fase 3: Smart Stacks e Tempo de Tela
             isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
@@ -285,7 +319,13 @@ class MainViewModel(
             // Modo Foco Zen & Widgets Vinculados
             isZenModeActive = preferences.isZenModeActive(),
             zenModeEndTime = preferences.getZenModeEndTime(),
-            zenModeAllowedApps = preferences.getZenModeAllowedApps()
+            zenModeAllowedApps = preferences.getZenModeAllowedApps(),
+
+            // Licenciamento Comercial, Onboarding e Safe Mode
+            licenseStatus = initialLicenseStatus,
+            isOnboardingCompleted = initialOnboardingCompleted,
+            isSafeModeRecoveryOpen = initialSafeModePending,
+            lastCrashSummary = initialCrashSummary
         )
     )
     val uiState: StateFlow<LauncherUiState> = _uiState.asStateFlow()
@@ -441,16 +481,6 @@ class MainViewModel(
             }
         }
         viewModelScope.launch {
-            LiveHudEngine.instance.hudState.collect { state ->
-                _uiState.update { it.copy(hudState = state, activeLiveActivity = state.primary) }
-            }
-        }
-        viewModelScope.launch {
-            LiveHudEngine.instance.observedApps.collect { apps ->
-                _uiState.update { it.copy(hudObservedApps = apps) }
-            }
-        }
-        viewModelScope.launch {
             TesseraMediaService.notificationCounts.collect { counts ->
                 _uiState.update { it.copy(notificationCounts = counts) }
             }
@@ -530,6 +560,7 @@ class MainViewModel(
     private var aiSearchJob: Job? = null
 
     private fun scheduleDebouncedAiSearch(prompt: String) {
+        if (!_uiState.value.isMasterAccess) return
         aiSearchJob?.cancel()
         aiSearchJob = viewModelScope.launch {
             delay(600)
@@ -538,6 +569,7 @@ class MainViewModel(
     }
 
     fun executeAiSearch(prompt: String = _uiState.value.searchQuery) {
+        if (!_uiState.value.isMasterAccess) return
         val symbol = _uiState.value.commandActivationSymbol
         val cleanPrompt = prompt
             .replace("@ai", "", ignoreCase = true)
@@ -592,6 +624,7 @@ class MainViewModel(
     }
 
     suspend fun querySettingsAi(prompt: String): String? {
+        if (!_uiState.value.isMasterAccess) return null
         val provider = _uiState.value.aiProvider
         val apiKey = if (provider.equals("GEMINI", ignoreCase = true)) {
             _uiState.value.geminiApiKey
@@ -617,8 +650,8 @@ class MainViewModel(
             return
         }
 
-        // Se não houver apps correspondentes ou for uma pergunta ou se IA estiver habilitada, executa Groq IA
-        if (matchingApps.isEmpty() || trimmed.endsWith("?") || trimmed.startsWith("@") || state.isAiSearchEnabled) {
+        // IA exclusiva para licença Master
+        if (state.isMasterAccess && (matchingApps.isEmpty() || trimmed.endsWith("?") || trimmed.startsWith("@") || state.isAiSearchEnabled)) {
             executeAiSearch(trimmed)
         }
     }
@@ -641,13 +674,15 @@ class MainViewModel(
             return
         }
 
-        // 2. IA / Assistente: Ativado via @ai / @groq / @gemini (no início, fim ou meio)
-        val isAiCommand = query.contains("@ai", ignoreCase = true) ||
+        // 2. IA / Assistente (exclusivo Master): Ativado via @ai / @groq / @gemini
+        val isAiCommand = _uiState.value.isMasterAccess && (
+            query.contains("@ai", ignoreCase = true) ||
                 query.contains("@groq", ignoreCase = true) ||
                 query.contains("@gemini", ignoreCase = true) ||
                 query.contains("${symbol}ai", ignoreCase = true) ||
                 query.contains("${symbol}groq", ignoreCase = true) ||
                 query.contains("${symbol}gemini", ignoreCase = true)
+        )
 
         if (isAiCommand) {
             val aiPrompt = query
@@ -1028,7 +1063,7 @@ class MainViewModel(
                 SettingsSubScreen.WIDGETS_CENTER -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.SEARCH -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.FEED -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
-                SettingsSubScreen.LIVE_HUD -> it.copy(currentSettingsScreen = SettingsSubScreen.CUSTOMIZATION)
+                SettingsSubScreen.LICENSE -> it.copy(currentSettingsScreen = SettingsSubScreen.MAIN)
                 SettingsSubScreen.MAIN -> it.copy(isSettingsOpen = false)
             }
         }
@@ -1068,11 +1103,6 @@ class MainViewModel(
     fun setContactsSearchEnabled(enabled: Boolean) {
         preferences.setContactsSearchEnabled(enabled)
         _uiState.update { it.copy(isContactsSearchEnabled = enabled) }
-    }
-
-    fun setMessagesSearchEnabled(enabled: Boolean) {
-        preferences.setMessagesSearchEnabled(enabled)
-        _uiState.update { it.copy(isMessagesSearchEnabled = enabled) }
     }
 
     fun setCalculatorCardEnabled(enabled: Boolean) {
@@ -1233,6 +1263,20 @@ class MainViewModel(
     fun handleBackPress(): Boolean {
         val state = _uiState.value
         return when {
+            state.isSafeModeRecoveryOpen -> {
+                dismissSafeModeRecovery()
+                true
+            }
+            state.proUpgradeFeatureName != null -> {
+                dismissProUpgradeDialog()
+                true
+            }
+            state.shouldShowOnboarding -> {
+                if (state.isReplayingOnboarding) {
+                    completeOnboarding()
+                }
+                true
+            }
             state.isWidgetPickerOpen -> {
                 closeWidgetPicker()
                 true
@@ -1433,10 +1477,6 @@ class MainViewModel(
         _uiState.update { it.copy(appFolders = current) }
     }
 
-    fun openSms(address: String) {
-        messageSearchHelper.openSmsConversation(address)
-    }
-
     fun executeGestureAction(actionKey: String, context: Context) {
         when {
             actionKey == "launcher_settings" -> openSettings()
@@ -1491,21 +1531,30 @@ class MainViewModel(
                 }
             }
             actionKey == "open_feed" -> {
-                if (_uiState.value.leftScreenMode == "disabled") {
-                    setLeftScreenMode("feed")
+                requirePro("Tela Lateral (−1)") {
+                    if (_uiState.value.leftScreenMode == "disabled") {
+                        setLeftScreenMode("feed")
+                    }
+                    openFeed(initialTab = 1)
                 }
-                openFeed(initialTab = 1)
             }
             actionKey == "open_widgets" -> {
-                if (_uiState.value.leftScreenMode == "disabled") {
-                    setLeftScreenMode("widgets")
+                requirePro("Tela Lateral (−1)") {
+                    if (_uiState.value.leftScreenMode == "disabled") {
+                        setLeftScreenMode("widgets")
+                    }
+                    openFeed(initialTab = 0)
                 }
-                openFeed(initialTab = 0)
             }
             actionKey == "ai_search" -> {
-                expandSearch()
-                openDrawer()
-                onSearchQueryChange("@ai ")
+                if (_uiState.value.isMasterAccess) {
+                    expandSearch()
+                    openDrawer()
+                    onSearchQueryChange("@ai ")
+                } else {
+                    expandSearch()
+                    openDrawer()
+                }
             }
             actionKey.startsWith("app:") -> {
                 val pkg = actionKey.removePrefix("app:")
@@ -1641,6 +1690,7 @@ class MainViewModel(
 
     // Efeito de Expansão Estilo Gemini
     fun setGeminiGlowEnabled(enabled: Boolean) {
+        if (!_uiState.value.isMasterAccess) return
         preferences.setGeminiGlowEnabled(enabled)
         _uiState.update { it.copy(isGeminiGlowEnabled = enabled) }
     }
@@ -1737,37 +1787,6 @@ class MainViewModel(
     fun setBiometricUnlockEnabled(enabled: Boolean) {
         preferences.setBiometricUnlockEnabled(enabled)
         _uiState.update { it.copy(isBiometricUnlockEnabled = enabled) }
-    }
-
-    fun setLiveCapsuleEnabled(enabled: Boolean) {
-        updateHudConfig { it.copy(enabled = enabled) }
-    }
-
-    fun updateHudConfig(transform: (HudConfig) -> HudConfig) {
-        val updated = transform(_uiState.value.hudConfig)
-        preferences.setHudConfig(updated)
-        LiveHudEngine.instance.updateConfig(updated)
-        _uiState.update { it.copy(hudConfig = updated, isLiveCapsuleEnabled = updated.enabled) }
-    }
-
-    fun setHudAppRule(packageName: String, rule: HudAppRule) {
-        updateHudConfig { current ->
-            val rules = current.appRules.toMutableMap()
-            if (rule == HudAppRule.AUTO) {
-                rules.remove(packageName)
-            } else {
-                rules[packageName] = rule
-            }
-            current.copy(appRules = rules)
-        }
-    }
-
-    fun dismissHudActivity(id: String) {
-        LiveHudEngine.instance.dismissActivity(id)
-    }
-
-    fun dismissHudPeek() {
-        LiveHudEngine.instance.dismissPeek()
     }
 
     // Fase 3: Smart Stacks e Tempo de Tela
@@ -2015,10 +2034,6 @@ class MainViewModel(
             resolve?.activityInfo?.packageName == context.packageName
         } catch (_: Exception) { false }
 
-        val hasSms = androidx.core.content.ContextCompat.checkSelfPermission(
-            context, android.Manifest.permission.READ_SMS
-        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-
         val hasMusic = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             androidx.core.content.ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.READ_MEDIA_AUDIO
@@ -2052,7 +2067,6 @@ class MainViewModel(
         _uiState.update {
             it.copy(
                 isDefaultLauncher = isDefault,
-                hasSmsPermission = hasSms,
                 hasMusicPermission = hasMusic,
                 hasMediaImagesPermission = hasImages,
                 hasAccessibilityService = hasA11y,
@@ -2177,7 +2191,7 @@ class MainViewModel(
 
     // Tela Lateral (-1): Central de Widgets e/ou Feed Social
     fun warmUpLateralPanel() {
-        if (_uiState.value.leftScreenMode == "disabled") return
+        if (!_uiState.value.hasProAccess || _uiState.value.leftScreenMode == "disabled") return
         if (_uiState.value.leftScreenMode == "widgets" || _uiState.value.leftScreenMode == "both") {
             refreshPredictedApps()
             refreshWeather()
@@ -2188,6 +2202,10 @@ class MainViewModel(
 
     fun openFeed(initialTab: Int? = null) {
         if (_uiState.value.leftScreenMode == "disabled") return
+        if (!_uiState.value.hasProAccess) {
+            requirePro("Tela Lateral (−1)") {}
+            return
+        }
         _uiState.update { state ->
             state.copy(
                 isFeedOpen = true,
@@ -2304,6 +2322,7 @@ class MainViewModel(
     }
 
     fun setFeedAiSummariesEnabled(enabled: Boolean) {
+        if (!_uiState.value.isMasterAccess) return
         preferences.setFeedAiSummariesEnabled(enabled)
         _uiState.update { it.copy(isFeedAiSummariesEnabled = enabled) }
     }
@@ -2383,6 +2402,7 @@ class MainViewModel(
 
     // Prompt Bar na Lupa (Groq / Gemini AI)
     fun setAiSearchEnabled(enabled: Boolean) {
+        if (!_uiState.value.isMasterAccess) return
         preferences.setAiSearchEnabled(enabled)
         _uiState.update { it.copy(isAiSearchEnabled = enabled) }
     }
@@ -2444,8 +2464,11 @@ class MainViewModel(
     }
 
     fun reloadAllSettings() {
+        val latestLicense = licenseManager.getLicenseStatus()
+        val isMaster = latestLicense.isMasterAccess
         _uiState.update { current ->
             current.copy(
+                licenseStatus = latestLicense,
                 enabledWidgets = preferences.getEnabledWidgets(),
                 defaultMusicApp = preferences.getDefaultMusicPackage(),
                 defaultCalendarApp = preferences.getDefaultCalendarPackage(),
@@ -2462,7 +2485,6 @@ class MainViewModel(
                 isAppShortcutsEnabled = preferences.isAppShortcutsEnabled(),
                 isWebSearchEnabled = preferences.isWebSearchEnabled(),
                 isContactsSearchEnabled = preferences.isContactsSearchEnabled(),
-                isMessagesSearchEnabled = preferences.isMessagesSearchEnabled(),
                 isCalculatorCardEnabled = preferences.isCalculatorCardEnabled(),
                 isDinoWidgetEnabled = preferences.isDinoWidgetEnabled(),
                 isNotesWidgetEnabled = preferences.isNotesWidgetEnabled(),
@@ -2473,33 +2495,35 @@ class MainViewModel(
                 selectedIconPack = preferences.getSelectedIconPack(),
                 isShowStatusBarEnabled = preferences.isShowStatusBarEnabled(),
                 commandActivationSymbol = preferences.getCommandActivationSymbol(),
-                commandsList = parseCommands(preferences.getCommandsRaw()),
+                commandsList = parseCommands(preferences.getCommandsRaw()).let { list ->
+                    if (isMaster) list else list.filterNot { it.title.contains("IA", ignoreCase = true) || it.prefix.contains("ai", ignoreCase = true) }
+                },
                 appFolders = parseFolders(preferences.getFoldersRaw()),
 
                 // Gestos
                 isDoubleTapEnabled = preferences.isDoubleTapEnabled(),
-                doubleTapAction = preferences.getDoubleTapAction(),
+                doubleTapAction = preferences.getDoubleTapAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isHoldEnabled = preferences.isHoldEnabled(),
-                holdAction = preferences.getHoldAction(),
+                holdAction = preferences.getHoldAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeDownEnabled = preferences.isSwipeDownEnabled(),
-                swipeDownAction = preferences.getSwipeDownAction(),
+                swipeDownAction = preferences.getSwipeDownAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeUpEnabled = preferences.isSwipeUpEnabled(),
-                swipeUpAction = preferences.getSwipeUpAction(),
+                swipeUpAction = preferences.getSwipeUpAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeLeftEnabled = preferences.isSwipeLeftEnabled(),
-                swipeLeftAction = preferences.getSwipeLeftAction(),
+                swipeLeftAction = preferences.getSwipeLeftAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeRightEnabled = preferences.isSwipeRightEnabled(),
-                swipeRightAction = preferences.getSwipeRightAction(),
+                swipeRightAction = preferences.getSwipeRightAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeDownTwoFingersEnabled = preferences.isSwipeDownTwoFingersEnabled(),
-                swipeDownTwoFingersAction = preferences.getSwipeDownTwoFingersAction(),
+                swipeDownTwoFingersAction = preferences.getSwipeDownTwoFingersAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isSwipeUpTwoFingersEnabled = preferences.isSwipeUpTwoFingersEnabled(),
-                swipeUpTwoFingersAction = preferences.getSwipeUpTwoFingersAction(),
+                swipeUpTwoFingersAction = preferences.getSwipeUpTwoFingersAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isPinchInEnabled = preferences.isPinchInEnabled(),
-                pinchInAction = preferences.getPinchInAction(),
+                pinchInAction = preferences.getPinchInAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isPinchOutEnabled = preferences.isPinchOutEnabled(),
-                pinchOutAction = preferences.getPinchOutAction(),
+                pinchOutAction = preferences.getPinchOutAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
                 isDoubleFingerTapEnabled = preferences.isDoubleFingerTapEnabled(),
-                doubleFingerTapAction = preferences.getDoubleFingerTapAction(),
-                isGeminiGlowEnabled = preferences.isGeminiGlowEnabled(),
+                doubleFingerTapAction = preferences.getDoubleFingerTapAction().let { if (!isMaster && it == "ai_search") "open_widgets" else it },
+                isGeminiGlowEnabled = preferences.isGeminiGlowEnabled() && isMaster,
 
                 // Busca em Apps
                 inAppSearchPackages = preferences.getInAppSearchPackages(),
@@ -2551,7 +2575,7 @@ class MainViewModel(
                 customRssSources = preferences.getCustomRssSources(),
                 feedEnabledSources = setOf(FeedSource.NEWS),
                 hostedWidgetIds = preferences.getHostedWidgetIds(),
-                isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled(),
+                isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled() && isMaster,
 
                 // Smart Dock (Previsão Contextual)
                 isSmartDockEnabled = preferences.isSmartDockEnabled(),
@@ -2564,7 +2588,7 @@ class MainViewModel(
                 isAppCategoriesEnabled = preferences.isAppCategoriesEnabled(),
 
                 // Prompt Bar na Lupa (Groq / Gemini AI)
-                isAiSearchEnabled = preferences.isAiSearchEnabled(),
+                isAiSearchEnabled = preferences.isAiSearchEnabled() && isMaster,
                 aiProvider = preferences.getAiProvider(),
                 groqApiKey = preferences.getGroqApiKey(),
                 geminiApiKey = preferences.getGeminiApiKey(),
@@ -2573,7 +2597,6 @@ class MainViewModel(
                 homeClockStyle = preferences.getHomeClockStyle(),
                 accentColorName = preferences.getAccentColor(),
                 isBiometricUnlockEnabled = preferences.isBiometricUnlockEnabled(),
-                isLiveCapsuleEnabled = preferences.isLiveCapsuleEnabled(),
                 isSmartStackRotateEnabled = preferences.isSmartStackRotateEnabled(),
                 isScreenTimeWidgetEnabled = preferences.isScreenTimeWidgetEnabled(),
                 hasUsageAccessPermission = screenTimeHelper.hasUsagePermission(),
@@ -2690,5 +2713,120 @@ class MainViewModel(
         dismissAppUpdateDialog()
         com.tessera.launcher.data.helper.TesseraUpdateManager.launchDownload(context, downloadUrl)
     }
+
+    // Licenciamento Comercial, Bloqueio Suave Pro, Onboarding e Modo de Segurança
+    fun refreshLicenseStatus() {
+        val status = licenseManager.getLicenseStatus()
+        _uiState.update { current ->
+            val isMaster = status.isMasterAccess
+            current.copy(
+                licenseStatus = status,
+                commandsList = sanitizeCommandsForTier(
+                    parseCommands(preferences.getCommandsRaw()),
+                    isMaster
+                ),
+                doubleTapAction = sanitizeGestureAction(preferences.getDoubleTapAction(), isMaster),
+                holdAction = sanitizeGestureAction(preferences.getHoldAction(), isMaster),
+                swipeDownAction = sanitizeGestureAction(preferences.getSwipeDownAction(), isMaster),
+                swipeUpAction = sanitizeGestureAction(preferences.getSwipeUpAction(), isMaster),
+                swipeLeftAction = sanitizeGestureAction(preferences.getSwipeLeftAction(), isMaster),
+                swipeRightAction = sanitizeGestureAction(preferences.getSwipeRightAction(), isMaster),
+                swipeDownTwoFingersAction = sanitizeGestureAction(preferences.getSwipeDownTwoFingersAction(), isMaster),
+                swipeUpTwoFingersAction = sanitizeGestureAction(preferences.getSwipeUpTwoFingersAction(), isMaster),
+                pinchInAction = sanitizeGestureAction(preferences.getPinchInAction(), isMaster),
+                pinchOutAction = sanitizeGestureAction(preferences.getPinchOutAction(), isMaster),
+                doubleFingerTapAction = sanitizeGestureAction(preferences.getDoubleFingerTapAction(), isMaster),
+                isGeminiGlowEnabled = preferences.isGeminiGlowEnabled() && isMaster,
+                isFeedAiSummariesEnabled = preferences.isFeedAiSummariesEnabled() && isMaster,
+                isAiSearchEnabled = preferences.isAiSearchEnabled() && isMaster,
+                aiSearchResponse = if (isMaster) current.aiSearchResponse else null,
+                isAiSearchLoading = if (isMaster) current.isAiSearchLoading else false,
+                aiSearchError = if (isMaster) current.aiSearchError else null
+            )
+        }
+    }
+
+    fun activateLicenseKey(rawKey: String): LicenseActivationResult {
+        val result = licenseManager.activateKey(rawKey)
+        if (result is LicenseActivationResult.Success) {
+            refreshLicenseStatus()
+        }
+        return result
+    }
+
+    fun generateLicenseKey(
+        type: LicenseKeyType,
+        giftDays: Int = com.tessera.launcher.data.license.BillingConfig.GIFT_MAX_DAYS
+    ): String? {
+        if (!_uiState.value.isMasterAccess) return null
+        val boundedGiftDays = giftDays.coerceIn(
+            com.tessera.launcher.data.license.BillingConfig.GIFT_MIN_DAYS,
+            com.tessera.launcher.data.license.BillingConfig.GIFT_MAX_DAYS
+        )
+        return LicenseManager.generateKey(type, boundedGiftDays)
+    }
+
+    fun requirePro(featureName: String, onAllowed: () -> Unit) {
+        val latest = licenseManager.getLicenseStatus()
+        if (latest != _uiState.value.licenseStatus) {
+            refreshLicenseStatus()
+        }
+        if (latest.hasProAccess) {
+            onAllowed()
+        } else {
+            _uiState.update { it.copy(proUpgradeFeatureName = featureName) }
+        }
+    }
+
+    fun dismissProUpgradeDialog() {
+        _uiState.update { it.copy(proUpgradeFeatureName = null) }
+    }
+
+    fun openLicenseScreenFromDialog() {
+        _uiState.update {
+            it.copy(
+                proUpgradeFeatureName = null,
+                isFeedOpen = false,
+                isDrawerOpen = false,
+                isSettingsOpen = true,
+                currentSettingsScreen = SettingsSubScreen.LICENSE
+            )
+        }
+    }
+
+    fun completeOnboarding() {
+        preferences.setOnboardingCompleted(true)
+        _uiState.update {
+            it.copy(
+                isOnboardingCompleted = true,
+                isReplayingOnboarding = false
+            )
+        }
+    }
+
+    fun replayOnboarding() {
+        _uiState.update {
+            it.copy(
+                isSettingsOpen = false,
+                isFeedOpen = false,
+                isDrawerOpen = false,
+                isReplayingOnboarding = true
+            )
+        }
+    }
+
+    fun dismissSafeModeRecovery() {
+        TesseraCrashHandler.clearSafeModePending(appContext)
+        _uiState.update { it.copy(isSafeModeRecoveryOpen = false) }
+    }
+
+    fun applySafeModeReset(context: Context = appContext) {
+        preferences.resetAppearanceForSafeMode()
+        TesseraCrashHandler.clearSafeModePending(context)
+        _wallpaperBitmap.value = null
+        _uiState.update { it.copy(isSafeModeRecoveryOpen = false) }
+        reloadAllSettings()
+    }
 }
+
 

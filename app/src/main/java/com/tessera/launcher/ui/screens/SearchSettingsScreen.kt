@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Calculate
-import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.FlashOn
 import androidx.compose.material.icons.outlined.Keyboard
@@ -306,20 +305,6 @@ fun SearchSettingsScreen(
                     HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                     SearchToggleRow(
-                        icon = Icons.Outlined.Chat,
-                        title = "Busca de mensagens",
-                        subtitle = "Busca mensagens recentes das suas notificações.",
-                        checked = uiState.isMessagesSearchEnabled,
-                        onCheckedChange = { viewModel.setMessagesSearchEnabled(it) },
-                        isLight = isLight,
-                        iconBg = iconBg,
-                        primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
-                    )
-
-                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                    SearchToggleRow(
                         icon = Icons.Outlined.Calculate,
                         title = "Cartão de calculadora",
                         subtitle = "Faça contas direto na barra de busca",
@@ -333,242 +318,244 @@ fun SearchSettingsScreen(
                 }
             }
 
-            // Bloco 3: INTELIGÊNCIA ARTIFICIAL (GROQ & GEMINI)
-            Text(
-                text = "INTELIGÊNCIA ARTIFICIAL (GROQ & GEMINI)",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp
-                ),
-                color = tertiaryTextColor,
-                modifier = Modifier.padding(start = 6.dp, top = 20.dp, bottom = 8.dp)
-            )
+            // Bloco 3: INTELIGÊNCIA ARTIFICIAL (EXCLUSIVO MASTER)
+            if (uiState.isMasterAccess) {
+                Text(
+                    text = "INTELIGÊNCIA ARTIFICIAL (GROQ & GEMINI)",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp
+                    ),
+                    color = tertiaryTextColor,
+                    modifier = Modifier.padding(start = 6.dp, top = 20.dp, bottom = 8.dp)
+                )
 
-            Surface(
-                shape = SearchCardShape,
-                color = cardBg,
-                border = BorderStroke(1.dp, cardBorder),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    SearchToggleRow(
-                        icon = Icons.Outlined.AutoAwesome,
-                        title = "Respostas com IA na Busca",
-                        subtitle = "Respostas instantâneas do Groq/Gemini ao pesquisar ou com @groq/@ai",
-                        checked = uiState.isAiSearchEnabled,
-                        onCheckedChange = { viewModel.setAiSearchEnabled(it) },
-                        isLight = isLight,
-                        iconBg = iconBg,
-                        primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
-                    )
-
-                    HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                    SearchToggleRow(
-                        icon = Icons.Outlined.AutoAwesome,
-                        title = "Luz de IA ao Expandir",
-                        subtitle = "Borda de luz animada estilo ativação de IA",
-                        checked = uiState.isGeminiGlowEnabled,
-                        onCheckedChange = { viewModel.setGeminiGlowEnabled(it) },
-                        isLight = isLight,
-                        iconBg = iconBg,
-                        primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
-                    )
-
-                    if (uiState.isAiSearchEnabled) {
-                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                        // Seletor de Provedor de IA
-                        var showProviderDialog by remember { mutableStateOf(false) }
-                        SearchNavRow(
-                            icon = Icons.Outlined.RocketLaunch,
-                            title = "Provedor de IA",
-                            subtitle = if (uiState.aiProvider.equals("GEMINI", true)) "Google Gemini 3.8 Flash" else "Groq Cloud (Gratuito e Ultra-rápido)",
-                            onClick = { showProviderDialog = true },
+                Surface(
+                    shape = SearchCardShape,
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        SearchToggleRow(
+                            icon = Icons.Outlined.AutoAwesome,
+                            title = "Respostas com IA na Busca",
+                            subtitle = "Respostas instantâneas do Groq/Gemini ao pesquisar ou com @groq/@ai",
+                            checked = uiState.isAiSearchEnabled,
+                            onCheckedChange = { viewModel.setAiSearchEnabled(it) },
                             isLight = isLight,
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
-                            secondaryColor = secondaryTextColor,
-                            tertiaryColor = tertiaryTextColor
+                            secondaryColor = secondaryTextColor
                         )
 
-                        if (showProviderDialog) {
-                            androidx.compose.material3.AlertDialog(
-                                onDismissRequest = { showProviderDialog = false },
-                                containerColor = cardBg,
-                                title = {
-                                    Text("Escolha o Provedor de IA", color = primaryTextColor, fontWeight = FontWeight.Bold)
-                                },
-                                text = {
-                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        val groqSelected = uiState.aiProvider.equals("GROQ", true)
-                                        val geminiSelected = uiState.aiProvider.equals("GEMINI", true)
+                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(if (groqSelected) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E26)) else Color.Transparent)
-                                                .clickable {
-                                                    viewModel.setAiProvider("GROQ")
-                                                    showProviderDialog = false
+                        SearchToggleRow(
+                            icon = Icons.Outlined.AutoAwesome,
+                            title = "Luz de IA ao Expandir",
+                            subtitle = "Borda de luz animada estilo ativação de IA",
+                            checked = uiState.isGeminiGlowEnabled,
+                            onCheckedChange = { viewModel.setGeminiGlowEnabled(it) },
+                            isLight = isLight,
+                            iconBg = iconBg,
+                            primaryColor = primaryTextColor,
+                            secondaryColor = secondaryTextColor
+                        )
+
+                        if (uiState.isAiSearchEnabled) {
+                            HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                            // Seletor de Provedor de IA
+                            var showProviderDialog by remember { mutableStateOf(false) }
+                            SearchNavRow(
+                                icon = Icons.Outlined.RocketLaunch,
+                                title = "Provedor de IA",
+                                subtitle = if (uiState.aiProvider.equals("GEMINI", true)) "Google Gemini 3.8 Flash" else "Groq Cloud (Gratuito e Ultra-rápido)",
+                                onClick = { showProviderDialog = true },
+                                isLight = isLight,
+                                iconBg = iconBg,
+                                primaryColor = primaryTextColor,
+                                secondaryColor = secondaryTextColor,
+                                tertiaryColor = tertiaryTextColor
+                            )
+
+                            if (showProviderDialog) {
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showProviderDialog = false },
+                                    containerColor = cardBg,
+                                    title = {
+                                        Text("Escolha o Provedor de IA", color = primaryTextColor, fontWeight = FontWeight.Bold)
+                                    },
+                                    text = {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            val groqSelected = uiState.aiProvider.equals("GROQ", true)
+                                            val geminiSelected = uiState.aiProvider.equals("GEMINI", true)
+
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(if (groqSelected) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E26)) else Color.Transparent)
+                                                    .clickable {
+                                                        viewModel.setAiProvider("GROQ")
+                                                        showProviderDialog = false
+                                                    }
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text("Groq Cloud IA", fontWeight = FontWeight.SemiBold, color = primaryTextColor)
+                                                    Text("Inferência ultra-rápida, tier 100% gratuito (Recomendado)", fontSize = 12.sp, color = secondaryTextColor)
                                                 }
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column {
-                                                Text("Groq Cloud IA", fontWeight = FontWeight.SemiBold, color = primaryTextColor)
-                                                Text("Inferência ultra-rápida, tier 100% gratuito (Recomendado)", fontSize = 12.sp, color = secondaryTextColor)
+                                            }
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .background(if (geminiSelected) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E26)) else Color.Transparent)
+                                                    .clickable {
+                                                        viewModel.setAiProvider("GEMINI")
+                                                        showProviderDialog = false
+                                                    }
+                                                    .padding(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column {
+                                                    Text("Google Gemini 3.8 Flash", fontWeight = FontWeight.SemiBold, color = primaryTextColor)
+                                                    Text("Modelo mais recente do Google via AI Studio", fontSize = 12.sp, color = secondaryTextColor)
+                                                }
                                             }
                                         }
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .background(if (geminiSelected) (if (isLight) Color(0xFFE8E4D8) else Color(0xFF1E1E26)) else Color.Transparent)
-                                                .clickable {
-                                                    viewModel.setAiProvider("GEMINI")
-                                                    showProviderDialog = false
-                                                }
-                                                .padding(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Column {
-                                                Text("Google Gemini 3.8 Flash", fontWeight = FontWeight.SemiBold, color = primaryTextColor)
-                                                Text("Modelo mais recente do Google via AI Studio", fontSize = 12.sp, color = secondaryTextColor)
+                                    },
+                                    confirmButton = {
+                                        TextButton(onClick = { showProviderDialog = false }) {
+                                            Text("Fechar", color = primaryTextColor)
+                                        }
+                                    }
+                                )
+                            }
+
+                            HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                            // Configuração da Chave Groq
+                            var showGroqKeyDialog by remember { mutableStateOf(false) }
+                            SearchNavRow(
+                                icon = Icons.Outlined.VpnKey,
+                                title = "Chave de API Groq (Gratuita)",
+                                subtitle = if (uiState.groqApiKey.isNotBlank()) "Chave configurada (toque para alterar)" else "Toque para inserir sua chave gratuita do Groq",
+                                onClick = { showGroqKeyDialog = true },
+                                isLight = isLight,
+                                iconBg = iconBg,
+                                primaryColor = primaryTextColor,
+                                secondaryColor = secondaryTextColor,
+                                tertiaryColor = tertiaryTextColor
+                            )
+
+                            if (showGroqKeyDialog) {
+                                var tempKey by remember { mutableStateOf(uiState.groqApiKey) }
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showGroqKeyDialog = false },
+                                    containerColor = cardBg,
+                                    title = {
+                                        Text("Chave de API do Groq", color = primaryTextColor, fontWeight = FontWeight.Bold)
+                                    },
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = "Obtenha uma chave gratuita instantaneamente em console.groq.com/keys e cole abaixo:",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                                color = secondaryTextColor
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = tempKey,
+                                                onValueChange = { tempKey = it },
+                                                placeholder = { Text("gsk_...", color = tertiaryTextColor, fontSize = 13.sp) },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
+                                        }
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                viewModel.setGroqApiKey(tempKey)
+                                                showGroqKeyDialog = false
+                                                Toast.makeText(context, "Chave Groq salva", Toast.LENGTH_SHORT).show()
                                             }
+                                        ) {
+                                            Text("Salvar", color = primaryTextColor, fontWeight = FontWeight.Bold)
+                                        }
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showGroqKeyDialog = false }) {
+                                            Text("Cancelar", color = secondaryTextColor)
                                         }
                                     }
-                                },
-                                confirmButton = {
-                                    TextButton(onClick = { showProviderDialog = false }) {
-                                        Text("Fechar", color = primaryTextColor)
-                                    }
-                                }
+                                )
+                            }
+
+                            HorizontalDivider(color = dividerColor, thickness = 1.dp)
+
+                            // Configuração da Chave Gemini
+                            var showGeminiKeyDialog by remember { mutableStateOf(false) }
+                            SearchNavRow(
+                                icon = Icons.Outlined.VpnKey,
+                                title = "Chave de API do Gemini",
+                                subtitle = if (uiState.geminiApiKey.isNotBlank()) "Chave configurada (toque para alterar)" else "Toque para inserir sua chave do Google Gemini",
+                                onClick = { showGeminiKeyDialog = true },
+                                isLight = isLight,
+                                iconBg = iconBg,
+                                primaryColor = primaryTextColor,
+                                secondaryColor = secondaryTextColor,
+                                tertiaryColor = tertiaryTextColor
                             )
-                        }
 
-                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                        // Configuração da Chave Groq
-                        var showGroqKeyDialog by remember { mutableStateOf(false) }
-                        SearchNavRow(
-                            icon = Icons.Outlined.VpnKey,
-                            title = "Chave de API Groq (Gratuita)",
-                            subtitle = if (uiState.groqApiKey.isNotBlank()) "Chave configurada (toque para alterar)" else "Toque para inserir sua chave gratuita do Groq",
-                            onClick = { showGroqKeyDialog = true },
-                            isLight = isLight,
-                            iconBg = iconBg,
-                            primaryColor = primaryTextColor,
-                            secondaryColor = secondaryTextColor,
-                            tertiaryColor = tertiaryTextColor
-                        )
-
-                        if (showGroqKeyDialog) {
-                            var tempKey by remember { mutableStateOf(uiState.groqApiKey) }
-                            androidx.compose.material3.AlertDialog(
-                                onDismissRequest = { showGroqKeyDialog = false },
-                                containerColor = cardBg,
-                                title = {
-                                    Text("Chave de API do Groq", color = primaryTextColor, fontWeight = FontWeight.Bold)
-                                },
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = "Obtenha uma chave gratuita instantaneamente em console.groq.com/keys e cole abaixo:",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                            color = secondaryTextColor
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        OutlinedTextField(
-                                            value = tempKey,
-                                            onValueChange = { tempKey = it },
-                                            placeholder = { Text("gsk_...", color = tertiaryTextColor, fontSize = 13.sp) },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                },
-                                confirmButton = {
-                                    TextButton(
-                                        onClick = {
-                                            viewModel.setGroqApiKey(tempKey)
-                                            showGroqKeyDialog = false
-                                            Toast.makeText(context, "Chave Groq salva", Toast.LENGTH_SHORT).show()
+                            if (showGeminiKeyDialog) {
+                                var tempKey by remember { mutableStateOf(uiState.geminiApiKey) }
+                                androidx.compose.material3.AlertDialog(
+                                    onDismissRequest = { showGeminiKeyDialog = false },
+                                    containerColor = cardBg,
+                                    title = {
+                                        Text("Chave de API do Gemini", color = primaryTextColor, fontWeight = FontWeight.Bold)
+                                    },
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = "Obtenha gratuitamente em aistudio.google.com e cole abaixo:",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                                color = secondaryTextColor
+                                            )
+                                            Spacer(modifier = Modifier.height(12.dp))
+                                            OutlinedTextField(
+                                                value = tempKey,
+                                                onValueChange = { tempKey = it },
+                                                placeholder = { Text("AIzaSy...", color = tertiaryTextColor, fontSize = 13.sp) },
+                                                singleLine = true,
+                                                modifier = Modifier.fillMaxWidth()
+                                            )
                                         }
-                                    ) {
-                                        Text("Salvar", color = primaryTextColor, fontWeight = FontWeight.Bold)
-                                    }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showGroqKeyDialog = false }) {
-                                        Text("Cancelar", color = secondaryTextColor)
-                                    }
-                                }
-                            )
-                        }
-
-                        HorizontalDivider(color = dividerColor, thickness = 1.dp)
-
-                        // Configuração da Chave Gemini
-                        var showGeminiKeyDialog by remember { mutableStateOf(false) }
-                        SearchNavRow(
-                            icon = Icons.Outlined.VpnKey,
-                            title = "Chave de API do Gemini",
-                            subtitle = if (uiState.geminiApiKey.isNotBlank()) "Chave configurada (toque para alterar)" else "Toque para inserir sua chave do Google Gemini",
-                            onClick = { showGeminiKeyDialog = true },
-                            isLight = isLight,
-                            iconBg = iconBg,
-                            primaryColor = primaryTextColor,
-                            secondaryColor = secondaryTextColor,
-                            tertiaryColor = tertiaryTextColor
-                        )
-
-                        if (showGeminiKeyDialog) {
-                            var tempKey by remember { mutableStateOf(uiState.geminiApiKey) }
-                            androidx.compose.material3.AlertDialog(
-                                onDismissRequest = { showGeminiKeyDialog = false },
-                                containerColor = cardBg,
-                                title = {
-                                    Text("Chave de API do Gemini", color = primaryTextColor, fontWeight = FontWeight.Bold)
-                                },
-                                text = {
-                                    Column {
-                                        Text(
-                                            text = "Obtenha gratuitamente em aistudio.google.com e cole abaixo:",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                            color = secondaryTextColor
-                                        )
-                                        Spacer(modifier = Modifier.height(12.dp))
-                                        OutlinedTextField(
-                                            value = tempKey,
-                                            onValueChange = { tempKey = it },
-                                            placeholder = { Text("AIzaSy...", color = tertiaryTextColor, fontSize = 13.sp) },
-                                            singleLine = true,
-                                            modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                },
-                                confirmButton = {
-                                    TextButton(
-                                        onClick = {
-                                            viewModel.setGeminiApiKey(tempKey)
-                                            showGeminiKeyDialog = false
-                                            Toast.makeText(context, "Chave Gemini salva", Toast.LENGTH_SHORT).show()
+                                    },
+                                    confirmButton = {
+                                        TextButton(
+                                            onClick = {
+                                                viewModel.setGeminiApiKey(tempKey)
+                                                showGeminiKeyDialog = false
+                                                Toast.makeText(context, "Chave Gemini salva", Toast.LENGTH_SHORT).show()
+                                            }
+                                        ) {
+                                            Text("Salvar", color = primaryTextColor, fontWeight = FontWeight.Bold)
                                         }
-                                    ) {
-                                        Text("Salvar", color = primaryTextColor, fontWeight = FontWeight.Bold)
+                                    },
+                                    dismissButton = {
+                                        TextButton(onClick = { showGeminiKeyDialog = false }) {
+                                            Text("Cancelar", color = secondaryTextColor)
+                                        }
                                     }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showGeminiKeyDialog = false }) {
-                                        Text("Cancelar", color = secondaryTextColor)
-                                    }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }

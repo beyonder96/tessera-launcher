@@ -237,7 +237,7 @@ fun LateralPanelSettingsScreen(
                         title = "Central de Widgets",
                         subtitle = "Abre diretamente sua página dedicada de widgets e atalhos",
                         isSelected = uiState.leftScreenMode == "widgets",
-                        onClick = { viewModel.setLeftScreenMode("widgets") },
+                        onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("widgets") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
                         secondaryColor = secondaryTextColor
@@ -246,9 +246,9 @@ fun LateralPanelSettingsScreen(
 
                     LateralModeOptionRow(
                         title = "Feed de Notícias (RSS)",
-                        subtitle = "Abre sua linha do tempo de notícias com resumos por IA",
+                        subtitle = "Abre sua linha do tempo de notícias com suas fontes e feeds RSS favoritos",
                         isSelected = uiState.leftScreenMode == "feed",
-                        onClick = { viewModel.setLeftScreenMode("feed") },
+                        onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("feed") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
                         secondaryColor = secondaryTextColor
@@ -259,7 +259,7 @@ fun LateralPanelSettingsScreen(
                         title = "Ambos (com Seletor no topo)",
                         subtitle = "Exibe o seletor estilo iOS no topo da Tela −1 para alternar entre ambos",
                         isSelected = uiState.leftScreenMode == "both",
-                        onClick = { viewModel.setLeftScreenMode("both") },
+                        onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("both") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
                         secondaryColor = secondaryTextColor
@@ -296,7 +296,7 @@ fun LateralPanelSettingsScreen(
                             title = "Palco Apple Music",
                             subtitle = "Player de mídia hero com capa e controles musicais",
                             checked = uiState.enabledWidgets.contains(WidgetType.MEDIA),
-                            onCheckedChange = { viewModel.toggleWidget(WidgetType.MEDIA) },
+                            onCheckedChange = { viewModel.requirePro("Central de Widgets") { viewModel.toggleWidget(WidgetType.MEDIA) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -310,7 +310,7 @@ fun LateralPanelSettingsScreen(
                             title = "Clima e Previsão",
                             subtitle = "Temperatura local e condição meteorológica em tempo real",
                             checked = uiState.enabledWidgets.contains(WidgetType.WEATHER),
-                            onCheckedChange = { viewModel.toggleWidget(WidgetType.WEATHER) },
+                            onCheckedChange = { viewModel.requirePro("Central de Widgets") { viewModel.toggleWidget(WidgetType.WEATHER) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -324,7 +324,7 @@ fun LateralPanelSettingsScreen(
                             title = "Agenda e Calendário",
                             subtitle = "Próximo compromisso e data editorial sincronizada",
                             checked = uiState.enabledWidgets.contains(WidgetType.CALENDAR),
-                            onCheckedChange = { viewModel.toggleWidget(WidgetType.CALENDAR) },
+                            onCheckedChange = { viewModel.requirePro("Central de Widgets") { viewModel.toggleWidget(WidgetType.CALENDAR) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -338,7 +338,7 @@ fun LateralPanelSettingsScreen(
                             title = "Nível de Bateria",
                             subtitle = "Percentual de bateria e status do carregamento",
                             checked = uiState.enabledWidgets.contains(WidgetType.BATTERY),
-                            onCheckedChange = { viewModel.toggleWidget(WidgetType.BATTERY) },
+                            onCheckedChange = { viewModel.requirePro("Central de Widgets") { viewModel.toggleWidget(WidgetType.BATTERY) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -352,7 +352,7 @@ fun LateralPanelSettingsScreen(
                             title = "Jogo do Dino (Chrome Retro)",
                             subtitle = "Minigame retrô autêntico em pixel-art com dinossauro pulando",
                             checked = uiState.isDinoWidgetEnabled,
-                            onCheckedChange = { viewModel.setDinoWidgetEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Central de Widgets") { viewModel.setDinoWidgetEnabled(isChecked) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -366,7 +366,7 @@ fun LateralPanelSettingsScreen(
                             title = "Dock de Apps Sugeridos",
                             subtitle = "Atalhos preditivos para os aplicativos mais utilizados",
                             checked = uiState.isSmartDockEnabled,
-                            onCheckedChange = { viewModel.setSmartDockEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Central de Widgets") { viewModel.setSmartDockEnabled(isChecked) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -380,7 +380,7 @@ fun LateralPanelSettingsScreen(
                             title = "Tempo de Tela (Bem-Estar)",
                             subtitle = "Tempo diário de uso e ranking dos principais aplicativos",
                             checked = uiState.isScreenTimeWidgetEnabled,
-                            onCheckedChange = { viewModel.setScreenTimeWidgetEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Central de Widgets") { viewModel.setScreenTimeWidgetEnabled(isChecked) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
@@ -558,14 +558,14 @@ fun LateralPanelSettingsScreen(
                             title = "Ativar Feed de Notícias",
                             subtitle = "Linha do tempo de notícias dos seus feeds RSS cadastrados",
                             checked = uiState.isFeedEnabled,
-                            onCheckedChange = { viewModel.setFeedEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Feed de Notícias") { viewModel.setFeedEnabled(isChecked) } },
                             isLightMode = isLight,
                             iconBgColor = iconBg,
                             primaryTextColor = primaryTextColor,
                             secondaryTextColor = secondaryTextColor
                         )
 
-                        if (uiState.isFeedEnabled) {
+                        if (uiState.isFeedEnabled && uiState.isMasterAccess) {
                             HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
                             LateralToggleRow(
@@ -645,9 +645,11 @@ fun LateralPanelSettingsScreen(
                             Button(
                                 onClick = {
                                     if (newTitle.isNotBlank() && newUrl.isNotBlank()) {
-                                        viewModel.addCustomRssSource(newTitle.trim(), newUrl.trim())
-                                        newTitle = ""
-                                        newUrl = ""
+                                        viewModel.requirePro("Feed de Notícias") {
+                                            viewModel.addCustomRssSource(newTitle.trim(), newUrl.trim())
+                                            newTitle = ""
+                                            newUrl = ""
+                                        }
                                     }
                                 },
                                 enabled = newTitle.isNotBlank() && newUrl.isNotBlank(),
@@ -755,7 +757,7 @@ fun LateralPanelSettingsScreen(
 
                                         Switch(
                                             checked = source.isEnabled,
-                                            onCheckedChange = { viewModel.toggleCustomRssSource(source.id) },
+                                            onCheckedChange = { viewModel.requirePro("Feed de Notícias") { viewModel.toggleCustomRssSource(source.id) } },
                                             colors = SwitchDefaults.colors(
                                                 checkedThumbColor = if (isLight) LightBackground else Color.Black,
                                                 checkedTrackColor = if (isLight) LightTextPrimary else Color.White,
@@ -768,7 +770,7 @@ fun LateralPanelSettingsScreen(
                                         Spacer(modifier = Modifier.width(4.dp))
 
                                         IconButton(
-                                            onClick = { viewModel.removeCustomRssSource(source.id) },
+                                            onClick = { viewModel.requirePro("Feed de Notícias") { viewModel.removeCustomRssSource(source.id) } },
                                             modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(

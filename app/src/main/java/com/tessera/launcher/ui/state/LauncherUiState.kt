@@ -13,16 +13,13 @@ import com.tessera.launcher.data.model.AppCategory
 import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
-import com.tessera.launcher.data.model.LiveActivityInfo
+import com.tessera.launcher.data.license.LicenseStatus
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
 import com.tessera.launcher.data.helper.AppUpdateInfo
 import com.tessera.launcher.data.helper.OmniResult
 import com.tessera.launcher.data.helper.ScreenTimeInfo
 import com.tessera.launcher.data.model.AppNotificationItem
-import com.tessera.launcher.data.model.HudConfig
-import com.tessera.launcher.data.model.HudState
-import com.tessera.launcher.data.model.ObservedApp
 import com.tessera.launcher.ui.theme.getAccentColor
 
 sealed interface AppsListState {
@@ -51,6 +48,7 @@ enum class WidgetConfigType {
 
 enum class SettingsSubScreen {
     MAIN,
+    LICENSE,
     SEARCH,
     WIDGETS_CENTER,
     EXTRAS,
@@ -63,8 +61,7 @@ enum class SettingsSubScreen {
     PERMISSIONS,
     FEED,
     DEVELOPER,
-    TRANSPARENCY,
-    LIVE_HUD
+    TRANSPARENCY
 }
 
 data class AppFolder(
@@ -101,7 +98,6 @@ val DEFAULT_COMMANDS_LIST = listOf(
     CommandItem("quick_actions", "Ações rápidas", "@s", "quick_actions"),
     CommandItem("send_message", "Enviar mensagem", "@msg", "send_message"),
     CommandItem("keep", "Google Keep", "@kp", "keep"),
-    CommandItem("messages", "Mensagens", "@sms", "messages"),
     CommandItem("whatsapp", "Mensagens do WhatsApp", "@wa", "whatsapp"),
     CommandItem("telegram", "Mensagens do Telegram", "@tg", "telegram"),
     CommandItem("notifications", "Notificações", "@ntf", "notifications"),
@@ -125,7 +121,6 @@ data class LauncherUiState(
     val formattedTime: String = "--:--",
     val formattedDate: String = "---",
     val mediaPlayback: MediaPlaybackInfo = MediaPlaybackInfo(),
-    val activeLiveActivity: LiveActivityInfo? = null,
     val hasNotificationAccess: Boolean = false,
     val hasCalendarPermission: Boolean = false,
     val nextCalendarEvent: CalendarEventInfo? = null,
@@ -147,7 +142,6 @@ data class LauncherUiState(
     val isAppShortcutsEnabled: Boolean = true,
     val isWebSearchEnabled: Boolean = true,
     val isContactsSearchEnabled: Boolean = false,
-    val isMessagesSearchEnabled: Boolean = false,
     val isCalculatorCardEnabled: Boolean = true,
     val isDinoWidgetEnabled: Boolean = false,
     val isNotesWidgetEnabled: Boolean = false,
@@ -157,7 +151,7 @@ data class LauncherUiState(
     val ringerMode: Int = 2,
     val isWifiActive: Boolean = true,
     val isBluetoothActive: Boolean = false,
-    val greetingUserName: String = "Kenned",
+    val greetingUserName: String = "",
     val notesTasks: List<NoteTask> = emptyList(),
     val hasContactsPermission: Boolean = false,
     val matchingContacts: List<ContactInfo> = emptyList(),
@@ -193,9 +187,9 @@ data class LauncherUiState(
     val isPinchOutEnabled: Boolean = true,
     val pinchOutAction: String = "open_keyboard",
     val isDoubleFingerTapEnabled: Boolean = true,
-    val doubleFingerTapAction: String = "ai_search",
+    val doubleFingerTapAction: String = "open_widgets",
 
-    // Efeito de Expansão Estilo Gemini na Barra
+    // Efeito de Expansão Estilo Gemini na Barra (Master-only em runtime)
     val isGeminiGlowEnabled: Boolean = true,
 
     // Busca em Apps
@@ -230,7 +224,6 @@ data class LauncherUiState(
 
     // Permissões
     val isDefaultLauncher: Boolean = false,
-    val hasSmsPermission: Boolean = false,
     val hasMusicPermission: Boolean = false,
     val hasMediaImagesPermission: Boolean = false,
     val hasAccessibilityService: Boolean = false,
@@ -296,7 +289,7 @@ data class LauncherUiState(
     val isAppCategoriesEnabled: Boolean = true,
     val selectedAppCategory: AppCategory = AppCategory.ALL,
 
-    // Prompt Bar na Lupa (AI Engine: Groq / Gemini)
+    // Prompt Bar na Lupa (AI Engine: Groq / Gemini — Master-only)
     val isAiSearchEnabled: Boolean = true,
     val aiProvider: String = "GROQ",
     val groqApiKey: String = "",
@@ -310,18 +303,13 @@ data class LauncherUiState(
     val accentColorName: String = "MONOCHROME",
     val isBiometricUnlockEnabled: Boolean = true,
 
-    // Fase 2: Live Capsule (Mini HUD) e Omni-Search
-    val isLiveCapsuleEnabled: Boolean = true,
-    val hudState: HudState = HudState(),
-    val hudConfig: HudConfig = HudConfig(),
-    val hudObservedApps: List<ObservedApp> = emptyList(),
+    // Omni-Search
     val omniSearchResult: OmniResult? = null,
 
     // Fase 3: Smart Stacks & Tempo de Tela
     val isSmartStackRotateEnabled: Boolean = true,
     val isScreenTimeWidgetEnabled: Boolean = true,
     val screenTimeInfo: ScreenTimeInfo? = null,
-
 
     // Notificações Comuns & Hub
     val notificationCounts: Map<String, Int> = emptyMap(),
@@ -333,8 +321,19 @@ data class LauncherUiState(
     // Atualizações do Launcher via GitHub Releases
     val appUpdateInfo: AppUpdateInfo? = null,
     val isCheckingAppUpdate: Boolean = false,
-    val isAppUpdateDialogOpen: Boolean = false
+    val isAppUpdateDialogOpen: Boolean = false,
+
+    // Licenciamento Comercial, Onboarding e Safe Mode
+    val licenseStatus: LicenseStatus = LicenseStatus(),
+    val proUpgradeFeatureName: String? = null,
+    val isOnboardingCompleted: Boolean = true,
+    val isReplayingOnboarding: Boolean = false,
+    val isSafeModeRecoveryOpen: Boolean = false,
+    val lastCrashSummary: String? = null
 ) {
     val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)
+    val hasProAccess: Boolean get() = licenseStatus.hasProAccess
+    val isMasterAccess: Boolean get() = licenseStatus.isMasterAccess
+    val shouldShowOnboarding: Boolean get() = !isOnboardingCompleted || isReplayingOnboarding
 }

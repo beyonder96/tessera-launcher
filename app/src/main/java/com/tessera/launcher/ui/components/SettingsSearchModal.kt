@@ -40,7 +40,6 @@ import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Language
-import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Opacity
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RssFeed
@@ -48,6 +47,7 @@ import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -103,7 +103,8 @@ data class SettingIndexItem(
     val sectionName: String,
     val targetSubScreen: SettingsSubScreen,
     val icon: ImageVector,
-    val keywords: List<String>
+    val keywords: List<String>,
+    val isAiOnly: Boolean = false
 )
 
 /**
@@ -167,30 +168,31 @@ object SettingsCatalog {
             keywords = listOf("vidro liquido", "liquid glass", "vidro", "glass", "reflexo", "brilho", "especular", "apple glass")
         ),
         SettingIndexItem(
-            id = "live_hud",
-            title = "Live HUD (Ilha Dinâmica)",
-            description = "Atividades ao vivo, entregas, encomendas, peeks de notificação e regras por app.",
-            sectionName = "Personalização",
-            targetSubScreen = SettingsSubScreen.LIVE_HUD,
-            icon = Icons.Outlined.NotificationsActive,
-            keywords = listOf("live hud", "hud", "ilha dinamica", "dynamic island", "capsule", "peek", "notificacao", "notificacoes", "entrega", "ifood", "uber", "encomendas", "correios", "mercado livre")
+            id = "license_pro",
+            title = "Licença & Tessera Pro",
+            description = "Status do período de teste de 72 horas, ativação de chaves offline e benefícios Pro.",
+            sectionName = "Assinatura & Pro",
+            targetSubScreen = SettingsSubScreen.LICENSE,
+            icon = Icons.Outlined.VpnKey,
+            keywords = listOf("licenca", "pro", "ativacao", "chave", "codigo", "assinatura", "trial", "tess", "fundador", "upgrade")
         ),
 
-        // 2. Busca & IA
+        // 2. Busca
         SettingIndexItem(
             id = "search_ai_engine",
             title = "Provedores de Inteligência Artificial",
             description = "Configurar chave de API gratuita do Google Gemini ou Groq (Llama 3.3).",
-            sectionName = "Busca & IA",
+            sectionName = "Busca",
             targetSubScreen = SettingsSubScreen.SEARCH,
             icon = Icons.Outlined.AutoAwesome,
-            keywords = listOf("ia", "ai", "gemini", "groq", "llama", "chave de api", "api key", "inteligencia artificial", "respostas", "consultar ia")
+            keywords = listOf("ia", "ai", "gemini", "groq", "llama", "chave de api", "api key", "inteligencia artificial", "respostas", "consultar ia"),
+            isAiOnly = true
         ),
         SettingIndexItem(
             id = "search_web_providers",
             title = "Motores de Busca na Web",
             description = "Ativar atalhos para Google, YouTube, Play Store e Google Maps na busca.",
-            sectionName = "Busca & IA",
+            sectionName = "Busca",
             targetSubScreen = SettingsSubScreen.SEARCH,
             icon = Icons.Outlined.Tune,
             keywords = listOf("busca web", "motores", "google", "youtube", "maps", "play store", "pesquisar na internet")
@@ -199,7 +201,7 @@ object SettingsCatalog {
             id = "search_omni",
             title = "Omni-Search (Cálculos & Conversões)",
             description = "Cálculo instantâneo de expressões matemáticas e conversão direta no dock.",
-            sectionName = "Busca & IA",
+            sectionName = "Busca",
             targetSubScreen = SettingsSubScreen.SEARCH,
             icon = Icons.Outlined.Code,
             keywords = listOf("omni", "calculadora", "calc", "contas", "conversoes", "matematica", "moedas")
@@ -282,11 +284,11 @@ object SettingsCatalog {
         SettingIndexItem(
             id = "commands_manage",
             title = "Comandos & Atalhos Rápidos",
-            description = "Configurar prefixos para acionar IA, contatos, calculadora e pastas na barra de busca.",
+            description = "Configurar prefixos para acionar contatos, calculadora e pastas na barra de busca.",
             sectionName = "Comandos",
             targetSubScreen = SettingsSubScreen.COMMANDS,
             icon = Icons.Outlined.Code,
-            keywords = listOf("comandos", "atalhos", "prefixos", "@ai", "@calc", "@con", "simbolo de comando")
+            keywords = listOf("comandos", "atalhos", "prefixos", "@calc", "@con", "simbolo de comando")
         ),
 
         // 9. Aplicativos Ocultos
@@ -331,13 +333,14 @@ object SettingsCatalog {
     /**
      * Busca rápida e ranqueada por correspondência de termos e sinônimos.
      */
-    fun search(query: String): List<SettingIndexItem> {
+    fun search(query: String, includeAi: Boolean = false): List<SettingIndexItem> {
+        val pool = if (includeAi) items else items.filter { !it.isAiOnly }
         val clean = removeAccents(query.trim())
-        if (clean.isBlank()) return items
+        if (clean.isBlank()) return pool
 
         val tokens = clean.split(" ").filter { it.length >= 2 }
 
-        return items.mapNotNull { item ->
+        return pool.mapNotNull { item ->
             val normTitle = removeAccents(item.title)
             val normDesc = removeAccents(item.description)
             val normSection = removeAccents(item.sectionName)
@@ -364,7 +367,7 @@ object SettingsCatalog {
 }
 
 /**
- * Modal de Busca e Assistente de Configurações alimentado por IA.
+ * Modal de Busca e Assistente de Configurações.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -375,6 +378,7 @@ fun SettingsSearchModal(
     isAmoled: Boolean = true,
     isLight: Boolean = false,
     accentColor: Color = Color(0xFF67E8F9),
+    showAiAssistant: Boolean = false,
     onAskAi: (suspend (String) -> String?)? = null
 ) {
     if (!isOpen) return
@@ -385,7 +389,9 @@ fun SettingsSearchModal(
     val scope = rememberCoroutineScope()
 
     var searchQuery by remember { mutableStateOf("") }
-    val searchResults = remember(searchQuery) { SettingsCatalog.search(searchQuery) }
+    val searchResults = remember(searchQuery, showAiAssistant) {
+        SettingsCatalog.search(searchQuery, includeAi = showAiAssistant)
+    }
 
     // Estados de resposta da IA
     var isAiLoading by remember { mutableStateOf(false) }
@@ -423,6 +429,7 @@ fun SettingsSearchModal(
 
     // Função de consulta ao Assistente IA
     fun requestAiGuidance(prompt: String) {
+        if (!showAiAssistant) return
         val queryText = prompt.trim()
         if (queryText.isBlank()) return
 
@@ -431,7 +438,7 @@ fun SettingsSearchModal(
             aiResponseText = null
 
             // Análise semântica rápida do destino mais provável
-            val topMatch = SettingsCatalog.search(queryText).firstOrNull()
+            val topMatch = SettingsCatalog.search(queryText, includeAi = showAiAssistant).firstOrNull()
             aiSuggestedSubScreen = topMatch?.targetSubScreen ?: SettingsSubScreen.CUSTOMIZATION
 
             if (onAskAi != null) {
@@ -484,7 +491,7 @@ fun SettingsSearchModal(
                 color = primaryTextColor
             )
             Text(
-                text = "Encontre recursos instantaneamente ou pergunte à IA",
+                text = if (showAiAssistant) "Encontre recursos instantaneamente ou pergunte à IA" else "Encontre recursos e opções instantaneamente",
                 fontSize = 13.sp,
                 color = secondaryTextColor,
                 modifier = Modifier.padding(top = 2.dp, bottom = 14.dp)
@@ -534,7 +541,7 @@ fun SettingsSearchModal(
                             keyboardActions = KeyboardActions(
                                 onSearch = {
                                     keyboardController?.hide()
-                                    if (searchQuery.isNotBlank()) {
+                                    if (searchQuery.isNotBlank() && showAiAssistant) {
                                         requestAiGuidance(searchQuery)
                                     }
                                 }
@@ -569,50 +576,52 @@ fun SettingsSearchModal(
                         }
                     }
 
-                    // Botão Assistente IA (Perguntar)
-                    Box(
-                        modifier = Modifier
-                            .height(34.dp)
-                            .clip(CircleShape)
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        Color(0xFF67E8F9).copy(alpha = 0.22f),
-                                        Color(0xFFA855F7).copy(alpha = 0.22f)
+                    if (showAiAssistant) {
+                        // Botão Assistente IA (Perguntar)
+                        Box(
+                            modifier = Modifier
+                                .height(34.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            Color(0xFF67E8F9).copy(alpha = 0.22f),
+                                            Color(0xFFA855F7).copy(alpha = 0.22f)
+                                        )
                                     )
                                 )
-                            )
-                            .border(
-                                BorderStroke(1.dp, Color(0xFF67E8F9).copy(alpha = 0.45f)),
-                                CircleShape
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = {
-                                    keyboardController?.hide()
-                                    requestAiGuidance(searchQuery.ifBlank { "Como personalizar o launcher?" })
-                                }
-                            )
-                            .padding(horizontal = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                .border(
+                                    BorderStroke(1.dp, Color(0xFF67E8F9).copy(alpha = 0.45f)),
+                                    CircleShape
+                                )
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = {
+                                        keyboardController?.hide()
+                                        requestAiGuidance(searchQuery.ifBlank { "Como personalizar o launcher?" })
+                                    }
+                                )
+                                .padding(horizontal = 10.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoAwesome,
-                                contentDescription = "IA",
-                                tint = Color(0xFF67E8F9),
-                                modifier = Modifier.size(15.dp)
-                            )
-                            Text(
-                                text = "IA",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF67E8F9)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.AutoAwesome,
+                                    contentDescription = "IA",
+                                    tint = Color(0xFF67E8F9),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Text(
+                                    text = "IA",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF67E8F9)
+                                )
+                            }
                         }
                     }
                 }
@@ -620,15 +629,27 @@ fun SettingsSearchModal(
 
             // Chips de Sugestão Rápida quando a busca estiver limpa
             if (searchQuery.isEmpty()) {
-                val suggestions = listOf(
-                    "🎨 Papel de Parede",
-                    "⚡ Gestos de Toque",
-                    "🔒 Ocultar Aplicativos",
-                    "🧩 Widgets do Android",
-                    "🤖 Configurar IA Gemini",
-                    "🌙 Tema AMOLED",
-                    "⏳ Modo Foco Zen"
-                )
+                val suggestions = if (showAiAssistant) {
+                    listOf(
+                        "🎨 Papel de Parede",
+                        "⚡ Gestos de Toque",
+                        "🔒 Ocultar Aplicativos",
+                        "🧩 Widgets do Android",
+                        "🤖 Configurar IA Gemini",
+                        "🌙 Tema AMOLED",
+                        "⏳ Modo Foco Zen"
+                    )
+                } else {
+                    listOf(
+                        "🎨 Papel de Parede",
+                        "⚡ Gestos de Toque",
+                        "🔒 Ocultar Aplicativos",
+                        "🧩 Widgets do Android",
+                        "🔑 Licença & Pro",
+                        "🌙 Tema AMOLED",
+                        "⏳ Modo Foco Zen"
+                    )
+                }
 
                 LazyRow(
                     modifier = Modifier
@@ -649,7 +670,9 @@ fun SettingsSearchModal(
                                     onClick = {
                                         val cleanTag = tag.substringAfter(" ")
                                         searchQuery = cleanTag
-                                        requestAiGuidance(cleanTag)
+                                        if (showAiAssistant) {
+                                            requestAiGuidance(cleanTag)
+                                        }
                                     }
                                 )
                                 .padding(horizontal = 12.dp, vertical = 7.dp)
@@ -667,7 +690,7 @@ fun SettingsSearchModal(
 
             // Card de Resposta / Orientação do Assistente IA
             AnimatedVisibility(
-                visible = isAiLoading || aiResponseText != null,
+                visible = showAiAssistant && (isAiLoading || aiResponseText != null),
                 enter = fadeIn(tween(250)),
                 exit = fadeOut(tween(150))
             ) {

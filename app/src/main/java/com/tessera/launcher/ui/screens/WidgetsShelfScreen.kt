@@ -87,7 +87,7 @@ import com.tessera.launcher.ui.state.WidgetConfigType
  */
 @Composable
 fun WidgetsShelfScreen(
-    userName: String = "Kenned",
+    userName: String = "",
     onSaveUserName: (String) -> Unit = {},
     enabledWidgets: List<WidgetType>,
     batteryPercentage: Int,
@@ -324,14 +324,14 @@ fun WidgetsShelfScreen(
                 }
             }
 
-            // 2. Apps Sugeridos pela IA (Bandeja Contextual em Card Bento)
+            // 2. Apps Sugeridos (Bandeja Contextual em Card Bento)
             if (isPredictedAppsWidgetEnabled && predictedApps.isNotEmpty()) {
                 item(key = "shelf_predicted_apps") {
                     JournalCascadeItem(index = 5) {
                         JournalBentoCard(isLightMode = isLightMode) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "SUGESTÕES DA IA",
+                                    text = "APPS SUGERIDOS",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     letterSpacing = 0.8.sp,

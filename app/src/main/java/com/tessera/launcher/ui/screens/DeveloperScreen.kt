@@ -41,13 +41,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.VpnKey
 import com.tessera.launcher.ui.TesseraLauncherUpdatePill
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,7 +60,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -76,6 +83,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.BuildConfig
 import com.tessera.launcher.R
+import com.tessera.launcher.data.license.BillingConfig
+import com.tessera.launcher.data.license.LicenseKeyType
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.DarkBackground
@@ -403,6 +412,20 @@ fun DeveloperScreen(
                         isLight = isLight
                     )
 
+                    SpecDivider(isLight)
+
+                    DevActionItem(
+                        icon = Icons.Outlined.PlayArrow,
+                        title = "Rever Apresentação de Boas-Vindas",
+                        subtitle = "Reinicia a apresentação e o tour guiado de 4 atos da tela inicial",
+                        onClick = {
+                            viewModel.replayOnboarding()
+                        },
+                        isLight = isLight
+                    )
+
+                    SpecDivider(isLight)
+
                     DevActionItem(
                         icon = Icons.Outlined.SystemUpdate,
                         title = "Verificar Atualizações",
@@ -431,6 +454,204 @@ fun DeveloperScreen(
                         },
                         isLight = isLight
                     )
+                }
+            }
+
+            if (uiState.isMasterAccess) {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text(
+                    text = "ACESSO MASTER • GERADOR OFFLINE DE CHAVES",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textSub.copy(alpha = 0.8f),
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
+                )
+
+                var selectedType by remember { mutableStateOf(LicenseKeyType.GIFT) }
+                var selectedGiftDays by remember { mutableIntStateOf(BillingConfig.GIFT_MAX_DAYS) }
+                var generatedKeyResult by remember { mutableStateOf<String?>(null) }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(cardBg)
+                        .border(BorderStroke(1.dp, cardBorder), RoundedCornerShape(20.dp))
+                        .padding(16.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(
+                            text = "Selecione o Tipo de Licença:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = textSub
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            LicenseKeyType.entries.forEach { type ->
+                                val isSelected = selectedType == type
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (isSelected) {
+                                                if (isLight) Color(0xFF1C1917) else Color.White
+                                            } else {
+                                                if (isLight) Color(0xFFE8E4D8) else Color(0xFF181822)
+                                            }
+                                        )
+                                        .border(
+                                            BorderStroke(
+                                                1.dp,
+                                                if (isSelected) Color.Transparent else if (isLight) Color(0xFFDDD8CB) else Color(0xFF262634)
+                                            ),
+                                            RoundedCornerShape(10.dp)
+                                        )
+                                        .clickable {
+                                            selectedType = type
+                                            generatedKeyResult = null
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = type.code,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = if (isSelected) {
+                                            if (isLight) Color.White else Color.Black
+                                        } else textMain
+                                    )
+                                }
+                            }
+                        }
+
+                        if (selectedType == LicenseKeyType.GIFT) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Duração Cortesia (3 a 7 dias):",
+                                    fontSize = 12.sp,
+                                    color = textSub
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    (BillingConfig.GIFT_MIN_DAYS..BillingConfig.GIFT_MAX_DAYS).forEach { d ->
+                                        val isDaySelected = selectedGiftDays == d
+                                        Box(
+                                            modifier = Modifier
+                                                .size(28.dp)
+                                                .clip(CircleShape)
+                                                .background(
+                                                    if (isDaySelected) (if (isLight) Color(0xFF1C1917) else Color.White)
+                                                    else (if (isLight) Color(0xFFE8E4D8) else Color(0xFF181822))
+                                                )
+                                                .clickable {
+                                                    selectedGiftDays = d
+                                                    generatedKeyResult = null
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "$d",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isDaySelected) (if (isLight) Color.White else Color.Black) else textMain
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isLight) Color(0xFF1C1917) else Color.White)
+                                .clickable {
+                                    val key = viewModel.generateLicenseKey(selectedType, selectedGiftDays)
+                                    generatedKeyResult = key
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "Gerar Código Offline",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isLight) Color.White else Color.Black
+                            )
+                        }
+
+                        generatedKeyResult?.let { key ->
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isLight) Color(0xFFE8E4D8) else Color(0xFF14141B),
+                                border = BorderStroke(1.dp, if (isLight) Color(0xFFD4CEBD) else Color(0xFF2E2E3E)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = key,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace,
+                                        color = textMain
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isLight) Color(0xFFDFDACD) else Color(0xFF22222E))
+                                                .clickable {
+                                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                                    clipboard.setPrimaryClip(ClipData.newPlainText("Tessera License Key", key))
+                                                    Toast.makeText(context, "Chave copiada!", Toast.LENGTH_SHORT).show()
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Outlined.ContentCopy, null, tint = textMain, modifier = Modifier.size(16.dp))
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isLight) Color(0xFFDFDACD) else Color(0xFF22222E))
+                                                .clickable {
+                                                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                                                        putExtra(Intent.EXTRA_TEXT, "Sua chave Tessera Pro: $key")
+                                                        type = "text/plain"
+                                                    }
+                                                    context.startActivity(Intent.createChooser(sendIntent, "Compartilhar chave"))
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Outlined.Share, null, tint = textMain, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 

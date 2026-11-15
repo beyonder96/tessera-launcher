@@ -226,6 +226,14 @@ fun TransparencyScreen(
                         description = "O launcher solicita acesso a contatos, notificações e calendário apenas se você desejar usar os widgets e atalhos correspondentes.",
                         isLight = isLight
                     )
+                    PillarDivider(isLight)
+
+                    PillarItem(
+                        icon = Icons.Outlined.Security,
+                        title = "Licenciamento Offline (HMAC-SHA256)",
+                        description = "A validação do Trial de 3 dias e das chaves de ativação acontece localmente por assinatura criptográfica, sem rastreamento nem envio de dados a servidores.",
+                        isLight = isLight
+                    )
                 }
             }
 

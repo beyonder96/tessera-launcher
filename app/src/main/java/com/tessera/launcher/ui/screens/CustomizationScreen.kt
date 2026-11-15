@@ -43,7 +43,6 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.FontDownload
 import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.TextFields
@@ -279,7 +278,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isSystemWallpaperEnabled,
-                            onCheckedChange = { viewModel.setSystemWallpaperEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Papel de Parede") { viewModel.setSystemWallpaperEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -300,7 +299,7 @@ fun CustomizationScreen(
                             title = "Borrão da Tela Inicial",
                             subtitle = "Desfoque vítreo suave do papel de parede",
                             percent = uiState.homeWallpaperBlur,
-                            onPercentChange = { viewModel.setHomeWallpaperBlur(it) },
+                            onPercentChange = { viewModel.requirePro("Papel de Parede") { viewModel.setHomeWallpaperBlur(it) } },
                             isLight = isLight
                         )
                     }
@@ -314,7 +313,7 @@ fun CustomizationScreen(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = onPickWallpaper
+                                onClick = { viewModel.requirePro("Papel de Parede") { onPickWallpaper() } }
                             )
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -372,12 +371,14 @@ fun CustomizationScreen(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = {
-                                        val success = viewModel.applyCustomWallpaperToSystem(context)
-                                        Toast.makeText(
-                                            context,
-                                            if (success) "Papel de parede aplicado ao sistema e tela de bloqueio!" else "Não foi possível aplicar ao sistema.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        viewModel.requirePro("Papel de Parede") {
+                                            val success = viewModel.applyCustomWallpaperToSystem(context)
+                                            Toast.makeText(
+                                                context,
+                                                if (success) "Papel de parede aplicado ao sistema e tela de bloqueio!" else "Não foi possível aplicar ao sistema.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     }
                                 )
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -428,8 +429,10 @@ fun CustomizationScreen(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = {
-                                        viewModel.clearCustomWallpaper(context)
-                                        Toast.makeText(context, "Imagem de fundo removida.", Toast.LENGTH_SHORT).show()
+                                        viewModel.requirePro("Papel de Parede") {
+                                            viewModel.clearCustomWallpaper(context)
+                                            Toast.makeText(context, "Imagem de fundo removida.", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
                                 )
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -598,7 +601,9 @@ fun CustomizationScreen(
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 indication = null,
                                                 onClick = {
-                                                    viewModel.applySolidWallpaper(hex, uiState.solidWallpaperTarget, context)
+                                                    viewModel.requirePro("Papel de Parede") {
+                                                        viewModel.applySolidWallpaper(hex, uiState.solidWallpaperTarget, context)
+                                                    }
                                                 }
                                             )
                                     )
@@ -643,7 +648,9 @@ fun CustomizationScreen(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
                                             onClick = {
-                                                viewModel.applySolidWallpaper(uiState.solidWallpaperColor, targetKey, context)
+                                                viewModel.requirePro("Papel de Parede") {
+                                                    viewModel.applySolidWallpaper(uiState.solidWallpaperColor, targetKey, context)
+                                                }
                                             }
                                         ),
                                     contentAlignment = Alignment.Center
@@ -699,7 +706,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isDrawerGlassEnabled,
-                            onCheckedChange = { viewModel.setDrawerGlassEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Vidro na Gaveta") { viewModel.setDrawerGlassEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -719,7 +726,7 @@ fun CustomizationScreen(
                             title = "Desfoque do Vidro",
                             subtitle = "Ajuste a intensidade do efeito de blur do fundo",
                             percent = uiState.drawerGlassOpacity,
-                            onPercentChange = { viewModel.setDrawerGlassOpacity(it) },
+                            onPercentChange = { viewModel.requirePro("Vidro na Gaveta") { viewModel.setDrawerGlassOpacity(it) } },
                             isLight = isLight
                         )
                     }
@@ -761,7 +768,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isSmartDockEnabled,
-                            onCheckedChange = { viewModel.setSmartDockEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Smart Dock") { viewModel.setSmartDockEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -812,7 +819,11 @@ fun CustomizationScreen(
                                             .clickable(
                                                 interactionSource = remember { MutableInteractionSource() },
                                                 indication = null,
-                                                onClick = { viewModel.setSmartDockAppCount(count) }
+                                                onClick = {
+                                                    viewModel.requirePro("Smart Dock") {
+                                                        viewModel.setSmartDockAppCount(count)
+                                                    }
+                                                }
                                             )
                                             .padding(horizontal = 12.dp, vertical = 6.dp),
                                         contentAlignment = Alignment.Center
@@ -868,7 +879,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isAppCategoriesEnabled,
-                            onCheckedChange = { viewModel.setAppCategoriesEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Categorias na Gaveta") { viewModel.setAppCategoriesEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -907,7 +918,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isDrawerRightAligned,
-                            onCheckedChange = { viewModel.setDrawerRightAligned(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Alinhamento da Gaveta") { viewModel.setDrawerRightAligned(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -941,7 +952,7 @@ fun CustomizationScreen(
                             "CLEAN_MINIMAL" -> "Clean Minimal"
                             else -> "Nenhum (Área Limpa)"
                         },
-                        onClick = { openModal = "clock_style" },
+                        onClick = { viewModel.requirePro("Relógios Editoriais") { openModal = "clock_style" } },
                         isLight = isLight
                     )
 
@@ -952,23 +963,7 @@ fun CustomizationScreen(
                         icon = Icons.Outlined.Palette,
                         title = "Cor de Destaque (Accent Pop)",
                         subtitle = ACCENT_COLOR_OPTIONS.firstOrNull { it.id.equals(uiState.accentColorName, ignoreCase = true) }?.displayName ?: "Monocromático",
-                        onClick = { openModal = "accent_color" },
-                        isLight = isLight
-                    )
-
-                    CustomDivider(isLight = isLight)
-
-                    // Live HUD 2.0 (Ilha Dinâmica Tessera)
-                    CustomSettingsRow(
-                        icon = Icons.Outlined.NotificationsActive,
-                        title = "Live HUD (Ilha Dinâmica)",
-                        subtitle = if (uiState.isLiveCapsuleEnabled) {
-                            val rulesCount = uiState.hudConfig.appRules.size
-                            if (rulesCount > 0) "Ativo • $rulesCount regras por app" else "Ativo • Ilha Dinâmica com alertas"
-                        } else {
-                            "Desativado"
-                        },
-                        onClick = { viewModel.navigateToSettingsSubScreen(com.tessera.launcher.ui.state.SettingsSubScreen.LIVE_HUD) },
+                        onClick = { viewModel.requirePro("Cores de Destaque") { openModal = "accent_color" } },
                         isLight = isLight
                     )
 
@@ -987,7 +982,7 @@ fun CustomizationScreen(
                             "square" -> "Square"
                             else -> "Split Pill (Separate Gear)"
                         },
-                        onClick = { openModal = "style" },
+                        onClick = { viewModel.requirePro("Barra de Pesquisa") { openModal = "style" } },
                         isLight = isLight
                     )
 
@@ -1004,7 +999,7 @@ fun CustomizationScreen(
                             "custom" -> uiState.searchBarCustomText.ifBlank { "Texto próprio" }
                             else -> "Tessera..."
                         },
-                        onClick = { openModal = "text" },
+                        onClick = { viewModel.requirePro("Barra de Pesquisa") { openModal = "text" } },
                         isLight = isLight
                     )
 
@@ -1020,7 +1015,7 @@ fun CustomizationScreen(
                             title = "Opacidade da Barra de Pesquisa",
                             subtitle = "Transparência do vidro com acabamento Liquid Design",
                             percent = uiState.searchBarOpacity,
-                            onPercentChange = { viewModel.setSearchBarOpacity(it) },
+                            onPercentChange = { viewModel.requirePro("Barra de Pesquisa") { viewModel.setSearchBarOpacity(it) } },
                             isLight = isLight
                         )
                     }
@@ -1037,7 +1032,7 @@ fun CustomizationScreen(
                             "custom" -> "Custom Font"
                             else -> "Tessera"
                         },
-                        onClick = { openModal = "typography" },
+                        onClick = { viewModel.requirePro("Tipografia") { openModal = "typography" } },
                         isLight = isLight
                     )
 
@@ -1048,7 +1043,7 @@ fun CustomizationScreen(
                         icon = Icons.Outlined.GridView,
                         title = "Pacote de ícones",
                         subtitle = uiState.selectedIconPack?.substringAfterLast(".") ?: "Padrão",
-                        onClick = { openModal = "pack" },
+                        onClick = { viewModel.requirePro("Personalização de Ícones") { openModal = "pack" } },
                         isLight = isLight
                     )
 
@@ -1067,7 +1062,7 @@ fun CustomizationScreen(
                             "SQUARE" -> "Quadrado"
                             else -> "Padrão"
                         },
-                        onClick = { openModal = "shape" },
+                        onClick = { viewModel.requirePro("Personalização de Ícones") { openModal = "shape" } },
                         isLight = isLight
                     )
 
@@ -1099,7 +1094,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isThemedIconsEnabled,
-                            onCheckedChange = { viewModel.setThemedIconsEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Personalização de Ícones") { viewModel.setThemedIconsEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -1138,7 +1133,7 @@ fun CustomizationScreen(
 
                         Switch(
                             checked = uiState.isHideAppLabelsEnabled,
-                            onCheckedChange = { viewModel.setHideAppLabelsEnabled(it) },
+                            onCheckedChange = { isChecked -> viewModel.requirePro("Personalização de Ícones") { viewModel.setHideAppLabelsEnabled(isChecked) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                 checkedTrackColor = uiState.activeAccentColor,
@@ -1219,7 +1214,13 @@ fun CustomizationScreen(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
                                             onClick = {
-                                                viewModel.setLeftScreenMode(modeKey)
+                                                if (modeKey == "disabled") {
+                                                    viewModel.setLeftScreenMode("disabled")
+                                                } else {
+                                                    viewModel.requirePro("Tela Lateral (−1)") {
+                                                        viewModel.setLeftScreenMode(modeKey)
+                                                    }
+                                                }
                                             }
                                         ),
                                     contentAlignment = Alignment.Center
@@ -1244,8 +1245,12 @@ fun CustomizationScreen(
                         CustomSettingsRow(
                             icon = Icons.Outlined.GridView,
                             title = "Central de Widgets & Feed Social",
-                            subtitle = "Configure widgets, fontes de feed e opções da tela lateral",
-                            onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
+                            subtitle = "Configure widgets, fontes de feed RSS e opções da tela lateral",
+                            onClick = {
+                                viewModel.requirePro("Tela Lateral (−1)") {
+                                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
+                                }
+                            },
                             isLight = isLight
                         )
                     }

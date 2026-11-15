@@ -2,6 +2,7 @@ package com.tessera.launcher.data.repository
 
 import android.content.Context
 import android.util.Log
+import com.tessera.launcher.data.license.LicenseManager
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.preference.LauncherPreferences
@@ -20,7 +21,8 @@ import java.util.zip.GZIPInputStream
 
 class FeedRepository(
     private val context: Context,
-    private val preferences: LauncherPreferences
+    private val preferences: LauncherPreferences,
+    private val licenseManager: LicenseManager
 ) {
 
     companion object {
@@ -129,13 +131,14 @@ class FeedRepository(
             return FeedResult.Empty
         }
 
+        val allowAiSummary = licenseManager.getLicenseStatus().isMasterAccess && preferences.isFeedAiSummariesEnabled()
         val cachedJson = preferences.getFeedCachedJson()
         val cacheValid = !forceRefresh &&
             cachedJson != null &&
             (System.currentTimeMillis() - lastFetchTime) < CACHE_TTL_MS
 
         if (cacheValid && cachedJson != null) {
-            val cached = parseCachedPosts(cachedJson)
+            val cached = parseCachedPosts(cachedJson, includeAiSummary = allowAiSummary)
             if (cached.isNotEmpty()) return FeedResult.Success(cached)
         }
 
@@ -159,7 +162,7 @@ class FeedRepository(
             }
 
             if (posts.isEmpty()) {
-                val fallback = cachedJson?.let { parseCachedPosts(it) } ?: emptyList()
+                val fallback = cachedJson?.let { parseCachedPosts(it, includeAiSummary = allowAiSummary) } ?: emptyList()
                 if (fallback.isNotEmpty()) {
                     FeedResult.Success(fallback)
                 } else {
@@ -168,7 +171,7 @@ class FeedRepository(
             } else {
                 var sorted = posts.distinctBy { it.id }.sortedByDescending { it.createdAt }
 
-                if (preferences.isFeedAiSummariesEnabled()) {
+                if (allowAiSummary) {
                     val aiHelper = com.tessera.launcher.data.helper.AiSummaryHelper()
                     sorted = sorted.map { post ->
                         val summary = aiHelper.summarizePost(post)
@@ -182,7 +185,7 @@ class FeedRepository(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Feed fetch failed", e)
-            val fallback = cachedJson?.let { parseCachedPosts(it) } ?: emptyList()
+            val fallback = cachedJson?.let { parseCachedPosts(it, includeAiSummary = allowAiSummary) } ?: emptyList()
             if (fallback.isNotEmpty()) {
                 FeedResult.Success(fallback)
             } else {
@@ -321,7 +324,7 @@ class FeedRepository(
         preferences.setFeedCachedJson(arr.toString())
     }
 
-    private fun parseCachedPosts(json: String): List<FeedPost> {
+    private fun parseCachedPosts(json: String, includeAiSummary: Boolean): List<FeedPost> {
         return try {
             val arr = JSONArray(json)
             val posts = mutableListOf<FeedPost>()
@@ -353,7 +356,9 @@ class FeedRepository(
                         url = obj.optString("url", ""),
                         thumbnailUrl = obj.optString("thumbnailUrl").takeIf { it != "null" && it.isNotBlank() },
                         createdAt = obj.optLong("createdAt", 0L),
-                        aiSummary = obj.optString("aiSummary").takeIf { it != "null" && it.isNotBlank() }
+                        aiSummary = if (includeAiSummary) {
+                            obj.optString("aiSummary").takeIf { it != "null" && it.isNotBlank() }
+                        } else null
                     )
                 )
             }

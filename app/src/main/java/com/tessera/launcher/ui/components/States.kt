@@ -119,6 +119,7 @@ fun AppListEmptyState(
     isLightMode: Boolean = false,
     isAmoledMode: Boolean = false,
     provider: String = "GROQ",
+    isAiUnlocked: Boolean = false,
     onAskAi: ((String) -> Unit)? = null
 ) {
     val cardBg = when {
@@ -134,9 +135,11 @@ fun AppListEmptyState(
     val textPrimary = if (isLightMode) Color(0xFF1C1917) else TextPrimary
     val textSecondary = if (isLightMode) Color(0xFF78716C) else TextSecondary
 
-    val isAiMode = query.startsWith("@ai", ignoreCase = true) ||
+    val isAiMode = isAiUnlocked && (
+        query.startsWith("@ai", ignoreCase = true) ||
             query.startsWith("@gemini", ignoreCase = true) ||
             query.startsWith("@groq", ignoreCase = true)
+    )
 
     if (isAiMode) {
         SearchExternalActions(
@@ -145,6 +148,7 @@ fun AppListEmptyState(
             isLightMode = isLightMode,
             isAmoledMode = isAmoledMode,
             provider = provider,
+            isAiUnlocked = isAiUnlocked,
             onAskAi = onAskAi,
             modifier = modifier.fillMaxWidth()
         )
@@ -192,6 +196,7 @@ fun AppListEmptyState(
                     isLightMode = isLightMode,
                     isAmoledMode = isAmoledMode,
                     provider = provider,
+                    isAiUnlocked = isAiUnlocked,
                     onAskAi = onAskAi,
                     modifier = Modifier.fillMaxWidth()
                 )

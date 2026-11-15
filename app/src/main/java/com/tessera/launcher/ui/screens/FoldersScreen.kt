@@ -227,7 +227,7 @@ fun FoldersScreen(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = { isCreatingFolder = true }
+                            onClick = { viewModel.requirePro("Pastas de Apps") { isCreatingFolder = true } }
                         )
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -269,7 +269,7 @@ fun FoldersScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { folderToEdit = folder }
+                                    .clickable { viewModel.requirePro("Pastas de Apps") { folderToEdit = folder } }
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -306,7 +306,7 @@ fun FoldersScreen(
                                     tint = if (isLight) Color(0xFFB91C1C) else Color(0xFFCF6679),
                                     modifier = Modifier
                                         .size(20.dp)
-                                        .clickable { viewModel.removeFolder(folder.id) }
+                                        .clickable { viewModel.requirePro("Pastas de Apps") { viewModel.removeFolder(folder.id) } }
                                 )
                             }
                             if (index < uiState.appFolders.size - 1) {
@@ -326,7 +326,7 @@ fun FoldersScreen(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = { isCreatingFolder = true }
+                            onClick = { viewModel.requirePro("Pastas de Apps") { isCreatingFolder = true } }
                         )
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically

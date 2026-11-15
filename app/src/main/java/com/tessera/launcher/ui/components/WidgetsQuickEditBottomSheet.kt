@@ -175,7 +175,7 @@ fun WidgetsQuickEditBottomSheet(
                                 localName = it
                                 onSaveUserName(it)
                             },
-                            placeholder = { Text("Ex: Kenned", fontSize = 14.sp) },
+                            placeholder = { Text("Ex: Seu nome", fontSize = 14.sp) },
                             singleLine = true,
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp),

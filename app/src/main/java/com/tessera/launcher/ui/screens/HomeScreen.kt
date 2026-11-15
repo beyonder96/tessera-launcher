@@ -57,9 +57,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -114,7 +116,8 @@ import com.tessera.launcher.ui.components.AppListSkeleton
 import com.tessera.launcher.ui.components.CalculatorCard
 import com.tessera.launcher.ui.components.EditorialClockWidget
 import com.tessera.launcher.ui.components.FolderSearchCard
-import com.tessera.launcher.ui.components.hud.TesseraIsland
+import com.tessera.launcher.ui.screens.ProUpgradeDialog
+import com.tessera.launcher.ui.screens.OnboardingScreen
 import com.tessera.launcher.ui.components.OmniResultCard
 import com.tessera.launcher.ui.components.BatteryConfigBottomSheet
 import com.tessera.launcher.ui.components.CalendarConfigBottomSheet
@@ -248,7 +251,10 @@ fun HomeScreen(
         uiState.searchQuery.isEmpty() &&
         folderToView == null &&
         selectedAppForMenu == null &&
-        activePopUpWidgetApp == null
+        activePopUpWidgetApp == null &&
+        !uiState.shouldShowOnboarding &&
+        uiState.proUpgradeFeatureName == null &&
+        !uiState.isSafeModeRecoveryOpen
 
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
@@ -288,9 +294,11 @@ fun HomeScreen(
 
     // Abertura imediata e fluida do teclado ao abrir busca ou drawer (com retry resiliente de montagem de layout)
     LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen, uiState.searchQuery) {
-        val isExplicitAiSearch = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
-                uiState.searchQuery.contains("@groq", ignoreCase = true) ||
-                uiState.searchQuery.contains("@gemini", ignoreCase = true)
+        val isExplicitAiSearch = uiState.isMasterAccess && (
+            uiState.searchQuery.contains("@ai", ignoreCase = true) ||
+            uiState.searchQuery.contains("@groq", ignoreCase = true) ||
+            uiState.searchQuery.contains("@gemini", ignoreCase = true)
+        )
         if ((uiState.isSearchExpanded || uiState.isDrawerOpen) && (uiState.isAutoOpenKeyboard || isExplicitAiSearch)) {
             kotlinx.coroutines.delay(45)
             try {
@@ -572,9 +580,11 @@ fun HomeScreen(
                                 }
                             } else { // Deslizar para a DIREITA
                                 if (uiState.leftScreenMode != "disabled" && !uiState.isZenModeActive) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    viewModel.warmUpLateralPanel()
-                                    viewModel.openFeed()
+                                    viewModel.requirePro("Tela Lateral (−1)") {
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        viewModel.warmUpLateralPanel()
+                                        viewModel.openFeed()
+                                    }
                                 } else if (uiState.isSwipeRightEnabled && !uiState.isZenModeActive) {
                                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     viewModel.executeGestureAction(uiState.swipeRightAction, context)
@@ -620,38 +630,6 @@ fun HomeScreen(
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
-                // Live HUD 2.0 (Ilha Dinâmica Tessera flutuante no topo)
-                if (uiState.isLiveCapsuleEnabled) {
-                    TesseraIsland(
-                        hudState = uiState.hudState,
-                        mediaPlayback = uiState.mediaPlayback,
-                        isCharging = uiState.isCharging,
-                        batteryPercentage = uiState.batteryPercentage,
-                        defaultAccent = uiState.activeAccentColor,
-                        config = uiState.hudConfig,
-                        onOpenApp = { pkg ->
-                            viewModel.launchApp(pkg)
-                        },
-                        onPlayPauseMedia = {
-                            viewModel.togglePlayPauseMedia()
-                        },
-                        onNextMedia = {
-                            viewModel.skipNextMedia()
-                        },
-                        onPreviousMedia = {
-                            viewModel.skipPreviousMedia()
-                        },
-                        onDismissPeek = {
-                            viewModel.dismissHudPeek()
-                        },
-                        onDismissActivity = { id ->
-                            viewModel.dismissHudActivity(id)
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 40.dp)
-                    )
-                }
 
                 // Relógio Tipográfico de Autor (Nothing Dot-Matrix, Stacked, Oversized, Minimal)
                 if (uiState.homeClockStyle != "NONE") {
@@ -772,14 +750,16 @@ fun HomeScreen(
                         when (val state = uiState.appsState) {
                             is AppsListState.Loading -> AppListSkeleton()
                             is AppsListState.Empty -> {
-                                val isAiSearchActive = uiState.isAiSearchEnabled && (
+                                val isAiSearchActive = uiState.isMasterAccess && uiState.isAiSearchEnabled && (
                                     uiState.isAiSearchLoading ||
                                     !uiState.aiSearchResponse.isNullOrBlank() ||
                                     !uiState.aiSearchError.isNullOrBlank()
                                 )
-                                val isAiCommand = uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
-                                        uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
-                                        uiState.searchQuery.startsWith("@groq", ignoreCase = true)
+                                val isAiCommand = uiState.isMasterAccess && (
+                                    uiState.searchQuery.startsWith("@ai", ignoreCase = true) ||
+                                    uiState.searchQuery.startsWith("@gemini", ignoreCase = true) ||
+                                    uiState.searchQuery.startsWith("@groq", ignoreCase = true)
+                                )
 
                                 // Se a busca tiver IA, contatos, arquivos, calculadora ou pasta, exibe esses resultados
                                 if (isAiSearchActive ||
@@ -891,7 +871,8 @@ fun HomeScreen(
                                                     isLightMode = uiState.isLightMode,
                                                     isAmoledMode = uiState.isAmoledMode,
                                                     provider = uiState.aiProvider,
-                                                    onAskAi = { viewModel.executeAiSearch(it) },
+                                                    isAiUnlocked = uiState.isMasterAccess,
+                                                    onAskAi = if (uiState.isMasterAccess) { { viewModel.executeAiSearch(it) } } else null,
                                                     modifier = Modifier.padding(top = 8.dp)
                                                 )
                                             }
@@ -903,7 +884,8 @@ fun HomeScreen(
                                         isLightMode = uiState.isLightMode,
                                         isAmoledMode = uiState.isAmoledMode,
                                         provider = uiState.aiProvider,
-                                        onAskAi = { viewModel.executeAiSearch(it) }
+                                        isAiUnlocked = uiState.isMasterAccess,
+                                        onAskAi = if (uiState.isMasterAccess) { { viewModel.executeAiSearch(it) } } else null
                                     )
                                 }
                             }
@@ -923,12 +905,14 @@ fun HomeScreen(
                                     // Modo Calculadora isolado (@calc)
                                     val isCalcMode = uiState.calculatorResult != null || uiState.searchQuery.startsWith("@calc", ignoreCase = true)
                                     val isContactsMode = uiState.searchQuery.startsWith("@con", ignoreCase = true)
-                                    val isAiCommand = uiState.searchQuery.contains("@ai", ignoreCase = true) ||
-                                            uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
-                                            uiState.searchQuery.contains("@groq", ignoreCase = true)
+                                    val isAiCommand = uiState.isMasterAccess && (
+                                        uiState.searchQuery.contains("@ai", ignoreCase = true) ||
+                                        uiState.searchQuery.contains("@gemini", ignoreCase = true) ||
+                                        uiState.searchQuery.contains("@groq", ignoreCase = true)
+                                    )
 
                                     // Resposta IA (Gemini / Groq) — Exibida exclusivamente quando há consulta em andamento, resposta ou erro
-                                    val isAiSearchActive = uiState.isAiSearchEnabled && (
+                                    val isAiSearchActive = uiState.isMasterAccess && uiState.isAiSearchEnabled && (
                                         uiState.isAiSearchLoading ||
                                         !uiState.aiSearchResponse.isNullOrBlank() ||
                                         !uiState.aiSearchError.isNullOrBlank()
@@ -1058,7 +1042,7 @@ fun HomeScreen(
                                       ) {
                                           item(key = "ai_suggested_header") {
                                               Text(
-                                                  text = "SUGESTÕES DA IA",
+                                                  text = "APPS SUGERIDOS",
                                                   style = MaterialTheme.typography.labelSmall.copy(
                                                       fontSize = 11.sp,
                                                       fontWeight = FontWeight.Bold,
@@ -1136,7 +1120,8 @@ fun HomeScreen(
                                             isAmoledMode = uiState.isAmoledMode,
                                             provider = uiState.aiProvider,
                                             showAiHeroCard = !isAiSearchActive,
-                                            onAskAi = { viewModel.executeAiSearch(it) },
+                                            isAiUnlocked = uiState.isMasterAccess,
+                                            onAskAi = if (uiState.isMasterAccess) { { viewModel.executeAiSearch(it) } } else null,
                                             modifier = Modifier.padding(top = 8.dp)
                                         )
                                     }
@@ -1242,8 +1227,12 @@ fun HomeScreen(
                     isAmoledMode = uiState.isAmoledMode,
                     isLightMode = uiState.isLightMode,
                     searchBarOpacity = uiState.searchBarOpacity,
+                    isGeminiGlowEnabled = uiState.isGeminiGlowEnabled && uiState.isMasterAccess,
+                    showAiAssistant = uiState.isMasterAccess,
                     onAiSearchClick = {
-                        if (uiState.searchQuery.isBlank()) viewModel.onSearchQueryChange("@ai ") else viewModel.executeAiSearch()
+                        if (uiState.isMasterAccess) {
+                            if (uiState.searchQuery.isBlank()) viewModel.onSearchQueryChange("@ai ") else viewModel.executeAiSearch()
+                        }
                     }
                 )
             }
@@ -1262,19 +1251,27 @@ fun HomeScreen(
                     viewModel.launchShortcut(shortcut.packageName, shortcut.id)
                 },
                 onChangeIconPack = { packPkg ->
-                    viewModel.setCustomAppIcon(app.packageName, packPkg)
+                    viewModel.requirePro("Troca de Ícones") {
+                        viewModel.setCustomAppIcon(app.packageName, packPkg)
+                    }
                 },
                 onLinkWidget = {
-                    onPickAndLinkWidget(app.packageName)
+                    viewModel.requirePro("Vincular Widget") {
+                        onPickAndLinkWidget(app.packageName)
+                    }
                 },
                 onUnlinkWidget = {
-                    viewModel.unlinkWidgetFromApp(app.packageName)
-                    Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
+                    viewModel.requirePro("Desvincular Widget") {
+                        viewModel.unlinkWidgetFromApp(app.packageName)
+                        Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 onHideApp = {
-                    viewModel.toggleHiddenApp(app.packageName)
-                    Toast.makeText(context, "${app.label} ocultado", Toast.LENGTH_SHORT).show()
-                    selectedAppForMenu = null
+                    viewModel.requirePro("Apps Ocultos") {
+                        viewModel.toggleHiddenApp(app.packageName)
+                        Toast.makeText(context, "${app.label} ocultado", Toast.LENGTH_SHORT).show()
+                        selectedAppForMenu = null
+                    }
                 },
                 onDismiss = { selectedAppForMenu = null },
                 onOpenAppSettings = {
@@ -1317,9 +1314,11 @@ fun HomeScreen(
                         activePopUpWidgetApp = null
                     },
                     onUnlinkWidget = {
-                        viewModel.unlinkWidgetFromApp(app.packageName)
-                        Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
-                        activePopUpWidgetApp = null
+                        viewModel.requirePro("Widgets de Apps") {
+                            viewModel.unlinkWidgetFromApp(app.packageName)
+                            Toast.makeText(context, "Widget desvinculado de ${app.label}", Toast.LENGTH_SHORT).show()
+                            activePopUpWidgetApp = null
+                        }
                     },
                     isLightMode = uiState.isLightMode,
                     accentColor = uiState.activeAccentColor
@@ -1472,7 +1471,7 @@ fun HomeScreen(
     }
 
     // Tela −1: Palco Espacial Cinematográfico (~650ms, Cascata Suave & Cantos Dinâmicos 32dp ↔ 0dp)
-    val isPanelVisible = (uiState.isFeedOpen || panelProgress.value > 0.001f) && uiState.leftScreenMode != "disabled"
+    val isPanelVisible = uiState.hasProAccess && (uiState.isFeedOpen || panelProgress.value > 0.001f) && uiState.leftScreenMode != "disabled"
     if (isPanelVisible) {
         val p = panelProgress.value
         val translationXPx = -screenWidthPx * (1f - p)
@@ -1768,6 +1767,58 @@ fun HomeScreen(
                     val url = uiState.appUpdateInfo?.downloadUrl ?: ""
                     viewModel.downloadAndInstallUpdate(context, url)
                 }
+            )
+        }
+
+        // Diálogo Freemium de Upgrade Pro
+        uiState.proUpgradeFeatureName?.let { feat ->
+            ProUpgradeDialog(
+                featureName = feat,
+                licenseStatus = uiState.licenseStatus,
+                isLightMode = uiState.isLightMode,
+                onOpenLicenseScreen = {
+                    viewModel.dismissProUpgradeDialog()
+                    viewModel.openSettings()
+                    viewModel.navigateToSettingsSubScreen(SettingsSubScreen.LICENSE)
+                },
+                onDismiss = { viewModel.dismissProUpgradeDialog() }
+            )
+        }
+
+        // Diálogo de Recuperação de Modo de Segurança
+        if (uiState.isSafeModeRecoveryOpen) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissSafeModeRecovery() },
+                title = { Text("Recuperação do Launcher") },
+                text = {
+                    Text("O Tessera Launcher detectou falhas consecutivas e ativou o Modo de Segurança temporário para evitar bloqueios. Deseja redefinir os layouts e configurações para o padrão estável?")
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.applySafeModeReset()
+                        }
+                    ) {
+                        Text("Redefinir Padrões", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissSafeModeRecovery() }) {
+                        Text("Continuar Assim")
+                    }
+                }
+            )
+        }
+
+        // Onboarding de Boas-Vindas Flagship (Apresentação de Luxo & Conversão)
+        androidx.compose.animation.AnimatedVisibility(
+            visible = uiState.shouldShowOnboarding,
+            enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(300)),
+            exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(250))
+        ) {
+            OnboardingScreen(
+                viewModel = viewModel,
+                uiState = uiState
             )
         }
     }

@@ -162,7 +162,7 @@ fun JournalEditorialHeader(
                     color = mutedTextColor
                 )
 
-                // Nome do usuário (ou 'Kenned') com toque para personalizar
+                // Nome do usuário (ou 'você') com toque para personalizar
                 Text(
                     text = if (userName.isNotBlank()) "$userName." else "você.",
                     fontSize = 18.sp,

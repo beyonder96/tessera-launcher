@@ -96,7 +96,7 @@ import com.tessera.launcher.ui.viewmodel.MainViewModel
 
 private val GesturesCardShape = RoundedCornerShape(24.dp)
 
-fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
+fun getActionDisplayName(actionKey: String, apps: List<AppInfo>, isMasterAccess: Boolean = false): String {
     return when {
         actionKey == "launcher_settings" -> "Configurações do launcher"
         actionKey == "system_settings" -> "Configurações do sistema"
@@ -105,8 +105,8 @@ fun getActionDisplayName(actionKey: String, apps: List<AppInfo>): String {
         actionKey == "lock_screen" -> "Bloquear Tela"
         actionKey == "open_keyboard" -> "Abrir teclado"
         actionKey == "open_widgets" -> "Central de Widgets"
-        actionKey == "open_feed" -> "Abrir Feed Social"
-        actionKey == "ai_search" -> "Pesquisa com IA (Groq / Gemini)"
+        actionKey == "open_feed" -> "Feed de Notícias (RSS)"
+        actionKey == "ai_search" -> if (isMasterAccess) "Pesquisa com IA (Groq / Gemini)" else "Central de Widgets"
         actionKey.startsWith("app:") -> {
             val pkg = actionKey.removePrefix("app:")
             apps.firstOrNull { it.packageName == pkg }?.label ?: "Abrir aplicativo"
@@ -309,7 +309,7 @@ fun GesturesScreen(
                         title = "Gesto de toque duplo",
                         subtitle = "Toque duas vezes na tela inicial.",
                         checked = uiState.isDoubleTapEnabled,
-                        onCheckedChange = { viewModel.setDoubleTapEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setDoubleTapEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -319,10 +319,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação de toque duplo",
-                            subtitle = getActionDisplayName(uiState.doubleTapAction, allApps),
+                            subtitle = getActionDisplayName(uiState.doubleTapAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.DOUBLE_TAP
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.DOUBLE_TAP
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -339,7 +341,7 @@ fun GesturesScreen(
                         title = "Gesto de Segurar",
                         subtitle = "Segure na tela inicial.",
                         checked = uiState.isHoldEnabled,
-                        onCheckedChange = { viewModel.setHoldEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setHoldEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -349,10 +351,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao segurar",
-                            subtitle = getActionDisplayName(uiState.holdAction, allApps),
+                            subtitle = getActionDisplayName(uiState.holdAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.HOLD
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.HOLD
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -369,7 +373,7 @@ fun GesturesScreen(
                         title = "Gesto de deslizar para baixo",
                         subtitle = "Deslize para baixo na tela inicial.",
                         checked = uiState.isSwipeDownEnabled,
-                        onCheckedChange = { viewModel.setSwipeDownEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeDownEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -379,10 +383,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação de deslizar para baixo",
-                            subtitle = getActionDisplayName(uiState.swipeDownAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeDownAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_DOWN
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_DOWN
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -399,7 +405,7 @@ fun GesturesScreen(
                         title = "Gesto de deslizar para cima",
                         subtitle = "Deslize de baixo para cima.",
                         checked = uiState.isSwipeUpEnabled,
-                        onCheckedChange = { viewModel.setSwipeUpEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeUpEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -409,10 +415,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para cima",
-                            subtitle = getActionDisplayName(uiState.swipeUpAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeUpAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_UP
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_UP
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -429,7 +437,7 @@ fun GesturesScreen(
                         title = "Gesto de deslizar para a esquerda",
                         subtitle = "Deslize para a esquerda na tela inicial.",
                         checked = uiState.isSwipeLeftEnabled,
-                        onCheckedChange = { viewModel.setSwipeLeftEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeLeftEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -439,10 +447,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para a esquerda",
-                            subtitle = getActionDisplayName(uiState.swipeLeftAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeLeftAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_LEFT
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_LEFT
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -459,7 +469,7 @@ fun GesturesScreen(
                         title = "Gesto de deslizar para a direita",
                         subtitle = "Deslize para a direita na tela inicial.",
                         checked = uiState.isSwipeRightEnabled,
-                        onCheckedChange = { viewModel.setSwipeRightEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeRightEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -469,10 +479,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação ao deslizar para a direita",
-                            subtitle = getActionDisplayName(uiState.swipeRightAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeRightAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_RIGHT
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_RIGHT
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -510,7 +522,7 @@ fun GesturesScreen(
                         title = "Deslizar 2 dedos para baixo",
                         subtitle = "Deslize dois dedos para baixo na tela inicial.",
                         checked = uiState.isSwipeDownTwoFingersEnabled,
-                        onCheckedChange = { viewModel.setSwipeDownTwoFingersEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeDownTwoFingersEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -520,10 +532,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação deslizar 2 dedos para baixo",
-                            subtitle = getActionDisplayName(uiState.swipeDownTwoFingersAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeDownTwoFingersAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_DOWN_TWO_FINGERS
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_DOWN_TWO_FINGERS
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -540,7 +554,7 @@ fun GesturesScreen(
                         title = "Deslizar 2 dedos para cima",
                         subtitle = "Deslize dois dedos para cima na tela inicial.",
                         checked = uiState.isSwipeUpTwoFingersEnabled,
-                        onCheckedChange = { viewModel.setSwipeUpTwoFingersEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setSwipeUpTwoFingersEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -550,10 +564,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação deslizar 2 dedos para cima",
-                            subtitle = getActionDisplayName(uiState.swipeUpTwoFingersAction, allApps),
+                            subtitle = getActionDisplayName(uiState.swipeUpTwoFingersAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.SWIPE_UP_TWO_FINGERS
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.SWIPE_UP_TWO_FINGERS
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -570,7 +586,7 @@ fun GesturesScreen(
                         title = "Pinça para dentro",
                         subtitle = "Gesto de pinça fechando com dois dedos.",
                         checked = uiState.isPinchInEnabled,
-                        onCheckedChange = { viewModel.setPinchInEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setPinchInEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -580,10 +596,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação pinça para dentro",
-                            subtitle = getActionDisplayName(uiState.pinchInAction, allApps),
+                            subtitle = getActionDisplayName(uiState.pinchInAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.PINCH_IN
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.PINCH_IN
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -600,7 +618,7 @@ fun GesturesScreen(
                         title = "Pinça para fora",
                         subtitle = "Gesto de pinça abrindo com dois dedos.",
                         checked = uiState.isPinchOutEnabled,
-                        onCheckedChange = { viewModel.setPinchOutEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setPinchOutEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -610,10 +628,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação pinça para fora",
-                            subtitle = getActionDisplayName(uiState.pinchOutAction, allApps),
+                            subtitle = getActionDisplayName(uiState.pinchOutAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.PINCH_OUT
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.PINCH_OUT
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -630,7 +650,7 @@ fun GesturesScreen(
                         title = "Toque duplo com dois dedos",
                         subtitle = "Toque duplo simultâneo na tela inicial.",
                         checked = uiState.isDoubleFingerTapEnabled,
-                        onCheckedChange = { viewModel.setDoubleFingerTapEnabled(it) },
+                        onCheckedChange = { isChecked -> viewModel.requirePro("Gestos Personalizados") { viewModel.setDoubleFingerTapEnabled(isChecked) } },
                         isLight = isLight,
                         iconBg = iconBg,
                         primaryColor = primaryTextColor,
@@ -640,10 +660,12 @@ fun GesturesScreen(
                         HorizontalDivider(color = dividerColor, thickness = 1.dp)
                         GestureActionRow(
                             title = "Ação toque duplo com dois dedos",
-                            subtitle = getActionDisplayName(uiState.doubleFingerTapAction, allApps),
+                            subtitle = getActionDisplayName(uiState.doubleFingerTapAction, allApps, uiState.isMasterAccess),
                             onClick = {
-                                isBrowsingApps = false
-                                activeGesturePicker = GestureTarget.DOUBLE_FINGER_TAP
+                                viewModel.requirePro("Gestos Personalizados") {
+                                    isBrowsingApps = false
+                                    activeGesturePicker = GestureTarget.DOUBLE_FINGER_TAP
+                                }
                             },
                             iconBg = iconBg,
                             primaryColor = primaryTextColor,
@@ -790,7 +812,7 @@ fun GesturesScreen(
                         )
                         ActionOptionItem(
                             icon = Icons.Outlined.Dashboard,
-                            title = "Abrir Feed Social",
+                            title = "Feed de Notícias (RSS)",
                             isSelected = currentAction == "open_feed",
                             onClick = { onSelectAction("open_feed") },
                             isLight = isLight,
@@ -804,14 +826,16 @@ fun GesturesScreen(
                             isLight = isLight,
                             primaryColor = primaryTextColor
                         )
-                        ActionOptionItem(
-                            icon = Icons.Outlined.AutoAwesome,
-                            title = "Pesquisa com IA (Groq / Gemini)",
-                            isSelected = currentAction == "ai_search",
-                            onClick = { onSelectAction("ai_search") },
-                            isLight = isLight,
-                            primaryColor = primaryTextColor
-                        )
+                        if (uiState.isMasterAccess) {
+                            ActionOptionItem(
+                                icon = Icons.Outlined.AutoAwesome,
+                                title = "Pesquisa com IA (Groq / Gemini)",
+                                isSelected = currentAction == "ai_search",
+                                onClick = { onSelectAction("ai_search") },
+                                isLight = isLight,
+                                primaryColor = primaryTextColor
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 

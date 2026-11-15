@@ -67,6 +67,7 @@ fun SearchExternalActions(
     isAmoledMode: Boolean = false,
     provider: String = "GROQ",
     showAiHeroCard: Boolean = true,
+    isAiUnlocked: Boolean = false,
     onAskAi: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -84,10 +85,12 @@ fun SearchExternalActions(
     val textPrimary = if (isLightMode) Color(0xFF1C1917) else Color(0xFFF7F4EB)
     val textSecondary = if (isLightMode) Color(0xFF78716C) else Color(0xFFA8A29E)
 
-    // Detecção refinada de Modo IA vs Modo Busca Geral
-    val isAiMode = query.startsWith("@ai", ignoreCase = true) ||
+    // Detecção refinada de Modo IA vs Modo Busca Geral (exclusivo Master)
+    val isAiMode = isAiUnlocked && (
+        query.startsWith("@ai", ignoreCase = true) ||
             query.startsWith("@gemini", ignoreCase = true) ||
             query.startsWith("@groq", ignoreCase = true)
+    )
 
     val cleanPrompt = query
         .replaceFirst(Regex("^@(ai|gemini|groq)\\s*", RegexOption.IGNORE_CASE), "")
@@ -376,8 +379,8 @@ fun SearchExternalActions(
             // ==========================================
             // MODO BUSCA GERAL (Busca de Apps / Termos Web)
             // ==========================================
-            // 1. Hero Card de IA Compacto e Opcional
-            if (showAiHeroCard && onAskAi != null) {
+            // 1. Hero Card de IA Compacto e Opcional (exclusivo Master)
+            if (isAiUnlocked && showAiHeroCard && onAskAi != null) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

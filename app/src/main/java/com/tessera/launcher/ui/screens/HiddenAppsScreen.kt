@@ -492,7 +492,11 @@ fun HiddenAppsScreen(
                                                 .size(16.dp)
                                                 .clip(CircleShape)
                                                 .background(Color(0xFFEF5350))
-                                                .clickable { viewModel.toggleHiddenApp(app.packageName) },
+                                                .clickable {
+                                                    viewModel.requirePro("Apps Ocultos") {
+                                                        viewModel.toggleHiddenApp(app.packageName)
+                                                    }
+                                                },
                                             contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
@@ -598,7 +602,7 @@ fun HiddenAppsScreen(
                     color = if (isLight) uiState.activeAccentColor else Color.White,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { showSetPinDialog = true }
+                        .clickable { viewModel.requirePro("Apps Ocultos") { showSetPinDialog = true } }
                         .padding(4.dp)
                 )
             }
@@ -628,7 +632,9 @@ fun HiddenAppsScreen(
                     }
                     Switch(
                         checked = uiState.isBiometricUnlockEnabled,
-                        onCheckedChange = { viewModel.setBiometricUnlockEnabled(it) },
+                        onCheckedChange = { isChecked ->
+                            viewModel.requirePro("Apps Ocultos") { viewModel.setBiometricUnlockEnabled(isChecked) }
+                        },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                             checkedTrackColor = uiState.activeAccentColor,
@@ -657,7 +663,7 @@ fun HiddenAppsScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { viewModel.toggleHiddenApp(app.packageName) }
+                                .clickable { viewModel.requirePro("Apps Ocultos") { viewModel.toggleHiddenApp(app.packageName) } }
                                 .padding(horizontal = 16.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -709,7 +715,9 @@ fun HiddenAppsScreen(
 
                             Switch(
                                 checked = isHidden,
-                                onCheckedChange = { viewModel.toggleHiddenApp(app.packageName) },
+                                onCheckedChange = {
+                                    viewModel.requirePro("Apps Ocultos") { viewModel.toggleHiddenApp(app.packageName) }
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = if (isLight) Color(0xFFF7F4EB) else Color.Black,
                                     checkedTrackColor = uiState.activeAccentColor,

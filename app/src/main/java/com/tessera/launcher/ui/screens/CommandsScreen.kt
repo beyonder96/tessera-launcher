@@ -193,7 +193,7 @@ fun CommandsScreen(
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
-                            onClick = { showSymbolDialog = true }
+                            onClick = { viewModel.requirePro("Comandos Personalizados") { showSymbolDialog = true } }
                         )
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -265,7 +265,7 @@ fun CommandsScreen(
                     uiState.commandsList.forEachIndexed { index, item ->
                         CommandRowItem(
                             item = item,
-                            onDelete = { viewModel.removeCommand(item.id) },
+                            onDelete = { viewModel.requirePro("Comandos Personalizados") { viewModel.removeCommand(item.id) } },
                             isLight = isLight,
                             iconBg = iconBg,
                             chipBg = chipBg,
@@ -283,7 +283,7 @@ fun CommandsScreen(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = { showAddDialog = true }
+                                onClick = { viewModel.requirePro("Comandos Personalizados") { showAddDialog = true } }
                             )
                             .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically

@@ -123,6 +123,7 @@ fun SearchMorphingDock(
     isLightMode: Boolean = false,
     searchBarOpacity: Int = 100,
     isGeminiGlowEnabled: Boolean = true,
+    showAiAssistant: Boolean = false,
     onAiSearchClick: () -> Unit = {},
     onSearchSubmit: (String) -> Unit = {}
 ) {
@@ -130,6 +131,7 @@ fun SearchMorphingDock(
     val screenWidth = configuration.screenWidthDp.dp
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val effectiveGeminiGlow = showAiAssistant && isGeminiGlowEnabled
 
     val isSplit = searchBarStyle.startsWith("split_")
 
@@ -187,7 +189,7 @@ fun SearchMorphingDock(
     )
 
     val geminiExpandProgress by animateFloatAsState(
-        targetValue = if (isExpanded && isGeminiGlowEnabled) 1f else 0f,
+        targetValue = if (isExpanded && effectiveGeminiGlow) 1f else 0f,
         animationSpec = Tessera.motion.springSpatial,
         label = "gemini_expand_progress"
     )
@@ -227,7 +229,7 @@ fun SearchMorphingDock(
         }
     }
 
-    val dockBorder = if (isGeminiGlowEnabled && isExpanded) {
+    val dockBorder = if (effectiveGeminiGlow && isExpanded) {
         BorderStroke(0.8.dp, aiBorderBrush)
     } else if (shouldUseLiquidGlass) {
         BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction))
@@ -584,23 +586,25 @@ fun SearchMorphingDock(
                             }
 
                             if (searchQuery.isEmpty()) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                        .clip(CircleShape)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                            onClick = onAiSearchClick
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.AutoAwesome,
-                                        contentDescription = "IA Assistente",
-                                        tint = dockIconTint.copy(alpha = 0.75f),
-                                        modifier = Modifier.size(19.dp)
-                                    )
+                                if (showAiAssistant) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape)
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                onClick = onAiSearchClick
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.AutoAwesome,
+                                            contentDescription = "IA Assistente",
+                                            tint = dockIconTint.copy(alpha = 0.75f),
+                                            modifier = Modifier.size(19.dp)
+                                        )
+                                    }
                                 }
 
                                 if (!isSplit) {

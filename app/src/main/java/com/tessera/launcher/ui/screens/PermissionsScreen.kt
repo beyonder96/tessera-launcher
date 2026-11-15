@@ -34,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarToday
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.Info
@@ -95,12 +94,6 @@ fun PermissionsScreen(
     }
 
     val contactsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {
-        viewModel.refreshAllPermissions(context)
-    }
-
-    val smsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) {
         viewModel.refreshAllPermissions(context)
@@ -286,27 +279,6 @@ fun PermissionsScreen(
                         primaryTextColor = primaryTextColor,
                         secondaryTextColor = secondaryTextColor
                     )
-
-                    PermissionDivider(dividerColor)
-
-                    // 4. Busca de Mensagens
-                    PermissionRow(
-                        icon = Icons.Outlined.ChatBubbleOutline,
-                        title = "Busca de mensagens",
-                        subtitle = "Encontrar mensagens SMS pela pesquisa do launcher",
-                        isChecked = uiState.hasSmsPermission,
-                        onCheckedChange = {
-                            if (uiState.hasSmsPermission) {
-                                openAppSettings()
-                            } else {
-                                smsLauncher.launch(Manifest.permission.READ_SMS)
-                            }
-                        },
-                        isLightMode = isLight,
-                        iconBoxBg = iconBoxBg,
-                        primaryTextColor = primaryTextColor,
-                        secondaryTextColor = secondaryTextColor
-                    )
                 }
             }
 
@@ -329,6 +301,60 @@ fun PermissionsScreen(
                 color = secondaryTextColor,
                 modifier = Modifier.padding(start = 6.dp, bottom = 10.dp)
             )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (isLight) Color(0xFFEBE4D0) else Color(0xFF14131A),
+                    border = BorderStroke(1.dp, if (isLight) Color(0xFFD6CCAE) else Color(0xFF2D283A)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Outlined.Info,
+                                contentDescription = null,
+                                tint = primaryTextColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Configurações Restritas (Android 13+)",
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                ),
+                                color = primaryTextColor
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Se o sistema bloquear Acessibilidade ou Notificações em APKs instalados fora da Play Store: toque no botão abaixo → menu (⋮) no topo direito → Permitir configurações restritas.",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp, lineHeight = 17.sp),
+                            color = secondaryTextColor
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = iconBoxBg,
+                            border = BorderStroke(1.dp, cardBorder),
+                            modifier = Modifier.clickable { openAppSettings() }
+                        ) {
+                            Text(
+                                text = "Abrir Informações do App",
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                ),
+                                color = primaryTextColor,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
 
             Surface(
                 shape = RoundedCornerShape(24.dp),
