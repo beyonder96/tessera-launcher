@@ -133,6 +133,7 @@ import com.tessera.launcher.ui.components.CommandsChipsRow
 import com.tessera.launcher.ui.components.SmartDockRow
 import com.tessera.launcher.ui.components.WeatherConfigBottomSheet
 import com.tessera.launcher.ui.components.NotificationsHubBottomSheet
+import com.tessera.launcher.ui.components.TesseraCheckoutModal
 import com.tessera.launcher.ui.components.WidgetsPanel
 import com.tessera.launcher.ui.components.TesseraSegmentedControl
 import com.tessera.launcher.ui.state.AppFolder
@@ -1784,6 +1785,29 @@ fun HomeScreen(
                 onDismiss = { viewModel.dismissProUpgradeDialog() }
             )
         }
+
+        // Modal de Planos & Checkout Mercado Pago (Pix / Checkout Pro / Restauração)
+        TesseraCheckoutModal(
+            isOpen = uiState.isCheckoutModalOpen,
+            plans = uiState.availablePlans,
+            preferredPlanId = uiState.preferredCheckoutPlanId,
+            licenseInfo = uiState.licenseInfo,
+            activeSession = uiState.activeCheckoutSession,
+            isCreatingCheckout = uiState.isCreatingCheckout,
+            isRestoringPurchase = uiState.isRestoringPurchase,
+            checkoutMessage = uiState.checkoutMessage,
+            isLightMode = uiState.isLightMode,
+            isAmoledMode = uiState.isAmoledMode,
+            accentColor = uiState.activeAccentColor,
+            onStartCheckout = { planId, email, method, onOpenUrl ->
+                viewModel.startCheckout(planId, email, method, onOpenUrl)
+            },
+            onCheckPaymentNow = { viewModel.checkActivePaymentNow() },
+            onBackToPlans = { viewModel.resetActiveCheckoutSession() },
+            onRestorePurchase = { email -> viewModel.restorePurchaseByEmail(email) },
+            onClearLicense = { viewModel.clearLocalLicense() },
+            onDismiss = { viewModel.closeCheckoutModal() }
+        )
 
         // Diálogo de Recuperação de Modo de Segurança
         if (uiState.isSafeModeRecoveryOpen) {

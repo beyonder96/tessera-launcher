@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.0.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.0.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.1)
+
+### 🆕 Novidades na v4.0.1
+- 💳 **Pagamentos Nativos via Mercado Pago (Pix & Cartão / Checkout Pro):**
+  - **Checkout Completo no App:** Nova experiência de compra integrada à vitrine **Licença & Tessera Pro** para os planos **Mensal** e **Vitalício** (`TesseraCheckoutModal`).
+  - **Pix Dinâmico Instantâneo:** Geração de **QR Code** nativo e botão **Pix Copia e Cola** com verificação automática em tempo real e ativação imediata da licença após confirmação bancária.
+  - **Cartão com Chrome Custom Tabs + Deep Link:** Fluxo Checkout Pro aberto em guia segura (`androidx.browser:browser`) com retorno automático via deep link `tessera://payment/callback`.
+  - **Restauração por E-mail & Backend Cloudflare:** Restauração automática de licenças vinculadas ao e-mail via backend serverless gratuito (Cloudflare Workers + D1 SQLite) com validação de assinatura HMAC-SHA256 (`x-signature`).
 
 ### 🆕 Novidades na v4.0.0
 - 💎 **Motor Comercial & Auto-Trial de 3 Dias (72 horas):**

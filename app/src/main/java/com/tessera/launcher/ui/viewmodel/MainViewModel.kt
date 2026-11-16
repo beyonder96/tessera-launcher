@@ -23,6 +23,7 @@ import com.tessera.launcher.data.license.LicenseActivationResult
 import com.tessera.launcher.data.license.LicenseKeyType
 import com.tessera.launcher.data.license.LicenseManager
 import com.tessera.launcher.data.license.LicenseStatus
+import com.tessera.launcher.data.license.LicenseTier
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.FeedSource
@@ -34,6 +35,7 @@ import com.tessera.launcher.data.repository.FeedResult
 import com.tessera.launcher.data.service.TesseraMediaService
 import com.tessera.launcher.data.service.TesseraAccessibilityService
 import com.tessera.launcher.data.helper.IconPackInfo
+import com.tessera.launcher.data.helper.PaymentServiceClient
 import com.tessera.launcher.ui.components.MathEvaluator
 import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.ui.state.AppFolder
@@ -154,6 +156,7 @@ class MainViewModel(
     private val categoryClassifier = com.tessera.launcher.data.helper.AppCategoryClassifier(appContext)
     private val aiEngine = com.tessera.launcher.data.helper.AiEngine()
     private val screenTimeHelper = com.tessera.launcher.data.helper.ScreenTimeHelper(appContext)
+    private val paymentClient = PaymentServiceClient()
 
     private val initialOnboardingCompleted = if (preferences.isOnboardingCompleted()) {
         true
@@ -163,7 +166,7 @@ class MainViewModel(
     } else {
         false
     }
-    private val initialLicenseStatus = licenseManager.getLicenseStatus()
+    private val initialLicenseStatus = resolveEffectiveLicenseStatus()
     private val initialSafeModePending = TesseraCrashHandler.isSafeModePending(appContext)
     private val initialCrashSummary = TesseraCrashHandler.getLastCrashSummary(appContext)
 
@@ -323,6 +326,7 @@ class MainViewModel(
 
             // Licenciamento Comercial, Onboarding e Safe Mode
             licenseStatus = initialLicenseStatus,
+            licenseInfo = preferences.getLicenseInfo(),
             isOnboardingCompleted = initialOnboardingCompleted,
             isSafeModeRecoveryOpen = initialSafeModePending,
             lastCrashSummary = initialCrashSummary
@@ -335,6 +339,7 @@ class MainViewModel(
 
     private var allApps: List<AppInfo> = emptyList()
     private var autoLaunchJob: Job? = null
+    private var paymentPollingJob: Job? = null
 
     init {
         observeInstalledApps()
@@ -2464,11 +2469,12 @@ class MainViewModel(
     }
 
     fun reloadAllSettings() {
-        val latestLicense = licenseManager.getLicenseStatus()
+        val latestLicense = resolveEffectiveLicenseStatus()
         val isMaster = latestLicense.isMasterAccess
         _uiState.update { current ->
             current.copy(
                 licenseStatus = latestLicense,
+                licenseInfo = preferences.getLicenseInfo(),
                 enabledWidgets = preferences.getEnabledWidgets(),
                 defaultMusicApp = preferences.getDefaultMusicPackage(),
                 defaultCalendarApp = preferences.getDefaultCalendarPackage(),
@@ -2715,12 +2721,43 @@ class MainViewModel(
     }
 
     // Licenciamento Comercial, Bloqueio Suave Pro, Onboarding e Modo de Segurança
+    private fun resolveEffectiveLicenseStatus(): LicenseStatus {
+        val offlineStatus = licenseManager.getLicenseStatus()
+        if (offlineStatus.isMasterAccess) return offlineStatus
+        val hasPaidOfflineKey = offlineStatus.hasProAccess && offlineStatus.tier != LicenseTier.TRIAL
+        if (hasPaidOfflineKey) return offlineStatus
+
+        val online = preferences.getLicenseInfo()
+        if (online.isCurrentlyValid()) {
+            val isLifetime = online.activePlanId == "pro_lifetime" || online.expiresAt <= 0L
+            val remaining = if (isLifetime) Long.MAX_VALUE else (online.expiresAt - System.currentTimeMillis()).coerceAtLeast(0L)
+            val dayMs = 24L * 60L * 60L * 1000L
+            val hourMs = 60L * 60L * 1000L
+            return LicenseStatus(
+                tier = if (isLifetime) LicenseTier.PRO_LIFETIME else LicenseTier.PRO_MONTHLY,
+                hasProAccess = true,
+                isMasterAccess = false,
+                daysRemaining = if (isLifetime) Int.MAX_VALUE else (remaining / dayMs).toInt(),
+                hoursRemaining = if (isLifetime) Int.MAX_VALUE else ((remaining % dayMs) / hourMs).toInt(),
+                remainingMillis = remaining,
+                isClockTampered = false,
+                isVaultTampered = false,
+                expiresAtMs = if (isLifetime) null else online.expiresAt,
+                activeKeyMasked = online.licensedEmail,
+                activationTypeLabel = online.planDisplayName()
+            )
+        }
+        return offlineStatus
+    }
+
     fun refreshLicenseStatus() {
-        val status = licenseManager.getLicenseStatus()
+        val status = resolveEffectiveLicenseStatus()
+        val online = preferences.getLicenseInfo()
         _uiState.update { current ->
             val isMaster = status.isMasterAccess
             current.copy(
                 licenseStatus = status,
+                licenseInfo = online,
                 commandsList = sanitizeCommandsForTier(
                     parseCommands(preferences.getCommandsRaw()),
                     isMaster
@@ -2767,7 +2804,7 @@ class MainViewModel(
     }
 
     fun requirePro(featureName: String, onAllowed: () -> Unit) {
-        val latest = licenseManager.getLicenseStatus()
+        val latest = resolveEffectiveLicenseStatus()
         if (latest != _uiState.value.licenseStatus) {
             refreshLicenseStatus()
         }
@@ -2826,6 +2863,252 @@ class MainViewModel(
         _wallpaperBitmap.value = null
         _uiState.update { it.copy(isSafeModeRecoveryOpen = false) }
         reloadAllSettings()
+    }
+
+    // --- Planos & Checkout Mercado Pago (Pix / Checkout Pro / Restauração por E-mail) ---
+
+    fun openCheckoutModal(initialPlanId: String? = null) {
+        _uiState.update {
+            it.copy(
+                isCheckoutModalOpen = true,
+                preferredCheckoutPlanId = initialPlanId ?: it.preferredCheckoutPlanId,
+                checkoutMessage = null
+            )
+        }
+        viewModelScope.launch {
+            paymentClient.fetchPlans().onSuccess { plans ->
+                _uiState.update { it.copy(availablePlans = plans) }
+            }
+        }
+        val activeSession = _uiState.value.activeCheckoutSession
+        if (activeSession != null && activeSession.status != "approved") {
+            startPaymentPolling(activeSession.paymentId)
+        }
+    }
+
+    fun closeCheckoutModal() {
+        paymentPollingJob?.cancel()
+        paymentPollingJob = null
+        _uiState.update {
+            it.copy(
+                isCheckoutModalOpen = false,
+                checkoutMessage = null
+            )
+        }
+    }
+
+    fun resetActiveCheckoutSession() {
+        paymentPollingJob?.cancel()
+        paymentPollingJob = null
+        _uiState.update {
+            it.copy(
+                activeCheckoutSession = null,
+                checkoutMessage = null,
+                isCreatingCheckout = false
+            )
+        }
+    }
+
+    fun clearCheckoutMessage() {
+        _uiState.update { it.copy(checkoutMessage = null) }
+    }
+
+    fun startCheckout(
+        planId: String,
+        email: String,
+        method: String,
+        onOpenExternalUrl: ((String) -> Unit)? = null
+    ) {
+        val cleanEmail = email.trim().lowercase()
+        if (!EMAIL_REGEX.matches(cleanEmail)) {
+            _uiState.update {
+                it.copy(checkoutMessage = "Informe um e-mail válido para vincular sua licença.")
+            }
+            return
+        }
+
+        paymentPollingJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isCreatingCheckout = true,
+                checkoutMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            paymentClient.createCheckout(planId, cleanEmail, method)
+                .onSuccess { session ->
+                    _uiState.update {
+                        it.copy(
+                            isCreatingCheckout = false,
+                            activeCheckoutSession = session,
+                            checkoutMessage = null
+                        )
+                    }
+                    startPaymentPolling(session.paymentId)
+                    if (method == "card" && !session.checkoutUrl.isNullOrBlank()) {
+                        onOpenExternalUrl?.invoke(session.checkoutUrl)
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isCreatingCheckout = false,
+                            checkoutMessage = error.localizedMessage ?: "Não foi possível iniciar o pagamento."
+                        )
+                    }
+                }
+        }
+    }
+
+    fun checkActivePaymentNow() {
+        val session = _uiState.value.activeCheckoutSession ?: return
+        viewModelScope.launch {
+            verifyPaymentId(session.paymentId, showPendingFeedback = true)
+        }
+    }
+
+    fun restorePurchaseByEmail(email: String) {
+        val cleanEmail = email.trim().lowercase()
+        if (!EMAIL_REGEX.matches(cleanEmail)) {
+            _uiState.update {
+                it.copy(checkoutMessage = "Informe o e-mail usado na compra para restaurar.")
+            }
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                isRestoringPurchase = true,
+                checkoutMessage = null
+            )
+        }
+
+        viewModelScope.launch {
+            paymentClient.restorePurchasesByEmail(cleanEmail)
+                .onSuccess { result ->
+                    val license = result.licenseInfo
+                    if (license != null && license.isCurrentlyValid()) {
+                        preferences.saveLicenseInfo(license)
+                        paymentPollingJob?.cancel()
+                        refreshLicenseStatus()
+                        _uiState.update {
+                            it.copy(
+                                isRestoringPurchase = false,
+                                licenseInfo = license,
+                                activeCheckoutSession = null,
+                                checkoutMessage = "Licença restaurada com sucesso!"
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isRestoringPurchase = false,
+                                checkoutMessage = result.message ?: "Nenhuma licença ativa encontrada para este e-mail."
+                            )
+                        }
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isRestoringPurchase = false,
+                            checkoutMessage = error.localizedMessage ?: "Erro ao consultar licença."
+                        )
+                    }
+                }
+        }
+    }
+
+    fun clearLocalLicense() {
+        preferences.clearLicenseInfo()
+        refreshLicenseStatus()
+        _uiState.update {
+            it.copy(
+                licenseInfo = com.tessera.launcher.data.model.LicenseInfo(),
+                activeCheckoutSession = null,
+                checkoutMessage = "Licença online desvinculada deste dispositivo."
+            )
+        }
+    }
+
+    fun handlePaymentCallbackUri(uri: Uri?) {
+        if (uri == null || uri.scheme != "tessera" || uri.host != "payment") return
+        val callbackStatus = uri.getQueryParameter("status")
+        val targetId = uri.getQueryParameter("payment_id")
+            ?: uri.getQueryParameter("collection_id")
+            ?: uri.getQueryParameter("ref")
+            ?: _uiState.value.activeCheckoutSession?.paymentId
+
+        _uiState.update {
+            it.copy(
+                isCheckoutModalOpen = true,
+                checkoutMessage = when (callbackStatus) {
+                    "failure" -> "O pagamento não foi concluído. Você pode tentar novamente."
+                    "pending" -> "Pagamento em processamento. Verificando confirmação..."
+                    else -> null
+                }
+            )
+        }
+
+        if (!targetId.isNullOrBlank()) {
+            viewModelScope.launch {
+                val approved = verifyPaymentId(targetId, showPendingFeedback = false)
+                if (!approved && callbackStatus != "failure") {
+                    startPaymentPolling(targetId)
+                }
+            }
+        }
+    }
+
+    private fun startPaymentPolling(paymentId: String) {
+        paymentPollingJob?.cancel()
+        paymentPollingJob = viewModelScope.launch {
+            repeat(75) { // ~5 minutos de verificação automática a cada 4 segundos
+                delay(4_000)
+                if (!_uiState.value.isCheckoutModalOpen) return@launch
+                val approved = verifyPaymentId(paymentId, showPendingFeedback = false)
+                if (approved) return@launch
+            }
+        }
+    }
+
+    private suspend fun verifyPaymentId(paymentId: String, showPendingFeedback: Boolean): Boolean {
+        val result = paymentClient.checkPaymentStatus(paymentId).getOrElse { error ->
+            if (showPendingFeedback) {
+                _uiState.update {
+                    it.copy(checkoutMessage = error.localizedMessage ?: "Erro ao verificar pagamento.")
+                }
+            }
+            return false
+        }
+
+        val license = result.licenseInfo
+        if (license != null && license.isCurrentlyValid()) {
+            preferences.saveLicenseInfo(license)
+            paymentPollingJob?.cancel()
+            paymentPollingJob = null
+            refreshLicenseStatus()
+            _uiState.update {
+                it.copy(
+                    licenseInfo = license,
+                    activeCheckoutSession = it.activeCheckoutSession?.copy(status = "approved"),
+                    checkoutMessage = "Pagamento confirmado! Tessera Pro ativado."
+                )
+            }
+            return true
+        }
+
+        if (showPendingFeedback) {
+            _uiState.update {
+                it.copy(checkoutMessage = "Pagamento ainda aguardando confirmação do banco.")
+            }
+        }
+        return false
+    }
+
+    companion object {
+        private val EMAIL_REGEX = Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$")
     }
 }
 

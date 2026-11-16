@@ -28,7 +28,7 @@ object BillingConfig {
     var SEMESTRAL_PRICE_LABEL: String = "R$ 12,90 / 6 meses"
     var ANNUAL_PRICE_LABEL: String = "R$ 19,90 / ano"
     var ANNUAL_MONTHLY_EQUIVALENT: String = "R$ 1,65 / mês"
-    var LIFETIME_PRICE_LABEL: String = "R$ 29,90 único"
+    var LIFETIME_PRICE_LABEL: String = "R$ 24,90"
     var LIFETIME_BADGE: String = "LOTE FUNDADOR"
 
     fun buildWhatsAppPurchaseUrl(planTitle: String, priceLabel: String): String {

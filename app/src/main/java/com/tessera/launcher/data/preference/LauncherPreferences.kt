@@ -3,6 +3,7 @@ package com.tessera.launcher.data.preference
 import android.content.Context
 import android.content.SharedPreferences
 import com.tessera.launcher.data.model.CustomRssSource
+import com.tessera.launcher.data.model.LicenseInfo
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -157,6 +158,14 @@ class LauncherPreferences(context: Context) {
         // Onboarding
         private const val KEY_ONBOARDING_COMPLETED = "onboarding_completed"
 
+        // Planos & Licença Online (Mercado Pago + Cloudflare Workers)
+        private const val KEY_PRO_ACTIVE = "pro_active"
+        private const val KEY_PRO_PLAN_ID = "pro_plan_id"
+        private const val KEY_PRO_EMAIL = "pro_email"
+        private const val KEY_PRO_LICENSE_TOKEN = "pro_license_token"
+        private const val KEY_PRO_ACTIVATED_AT = "pro_activated_at"
+        private const val KEY_PRO_EXPIRES_AT = "pro_expires_at"
+
         private val BACKUP_EXCLUDED_KEYS = setOf(
             "groq_api_key",
             KEY_GEMINI_API_KEY,
@@ -167,7 +176,8 @@ class LauncherPreferences(context: Context) {
             KEY_ONBOARDING_COMPLETED,
             KEY_HOSTED_WIDGET_IDS,
             KEY_CUSTOM_WALLPAPER_PATH,
-            KEY_CUSTOM_FONT_PATH
+            KEY_CUSTOM_FONT_PATH,
+            KEY_PRO_LICENSE_TOKEN
         )
 
     }
@@ -847,5 +857,40 @@ class LauncherPreferences(context: Context) {
             }
         }
         return result
+    }
+
+    // Planos & Licença Online (Mercado Pago + Cloudflare Workers)
+    fun getLicenseInfo(): LicenseInfo {
+        val raw = LicenseInfo(
+            isProActive = prefs.getBoolean(KEY_PRO_ACTIVE, false),
+            activePlanId = prefs.getString(KEY_PRO_PLAN_ID, null),
+            licensedEmail = prefs.getString(KEY_PRO_EMAIL, null),
+            licenseToken = prefs.getString(KEY_PRO_LICENSE_TOKEN, null),
+            activatedAt = prefs.getLong(KEY_PRO_ACTIVATED_AT, 0L),
+            expiresAt = prefs.getLong(KEY_PRO_EXPIRES_AT, 0L)
+        )
+        return if (raw.isCurrentlyValid()) raw else raw.copy(isProActive = false)
+    }
+
+    fun saveLicenseInfo(info: LicenseInfo) {
+        prefs.edit()
+            .putBoolean(KEY_PRO_ACTIVE, info.isProActive)
+            .putString(KEY_PRO_PLAN_ID, info.activePlanId)
+            .putString(KEY_PRO_EMAIL, info.licensedEmail)
+            .putString(KEY_PRO_LICENSE_TOKEN, info.licenseToken)
+            .putLong(KEY_PRO_ACTIVATED_AT, info.activatedAt)
+            .putLong(KEY_PRO_EXPIRES_AT, info.expiresAt)
+            .apply()
+    }
+
+    fun clearLicenseInfo() {
+        prefs.edit()
+            .remove(KEY_PRO_ACTIVE)
+            .remove(KEY_PRO_PLAN_ID)
+            .remove(KEY_PRO_EMAIL)
+            .remove(KEY_PRO_LICENSE_TOKEN)
+            .remove(KEY_PRO_ACTIVATED_AT)
+            .remove(KEY_PRO_EXPIRES_AT)
+            .apply()
     }
 }

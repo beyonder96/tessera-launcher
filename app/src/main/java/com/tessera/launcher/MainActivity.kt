@@ -256,6 +256,7 @@ class MainActivity : ComponentActivity() {
 
         val factory = MainViewModelFactory(this)
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
+        handlePaymentIntent(intent)
 
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -405,5 +406,18 @@ class MainActivity : ComponentActivity() {
             }
         }
         com.tessera.launcher.data.bridge.TesseraCoreBridgeClient.refreshSnapshot()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handlePaymentIntent(intent)
+    }
+
+    private fun handlePaymentIntent(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (::viewModel.isInitialized && data.scheme == "tessera" && data.host == "payment") {
+            viewModel.handlePaymentCallbackUri(data)
+        }
     }
 }

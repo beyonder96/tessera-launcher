@@ -10,9 +10,13 @@ import com.tessera.launcher.data.preference.WidgetType
 import com.tessera.launcher.data.service.MediaPlaybackInfo
 import com.tessera.launcher.ui.components.NoteTask
 import com.tessera.launcher.data.model.AppCategory
+import com.tessera.launcher.data.model.CheckoutSession
 import com.tessera.launcher.data.model.CustomRssSource
+import com.tessera.launcher.data.model.DEFAULT_PRO_PLANS
 import com.tessera.launcher.data.model.FeedPost
 import com.tessera.launcher.data.model.FeedSource
+import com.tessera.launcher.data.model.LicenseInfo
+import com.tessera.launcher.data.model.PlanOption
 import com.tessera.launcher.data.license.LicenseStatus
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
@@ -323,9 +327,17 @@ data class LauncherUiState(
     val isCheckingAppUpdate: Boolean = false,
     val isAppUpdateDialogOpen: Boolean = false,
 
-    // Licenciamento Comercial, Onboarding e Safe Mode
+    // Licenciamento Comercial, Checkout Mercado Pago, Onboarding e Safe Mode
     val licenseStatus: LicenseStatus = LicenseStatus(),
     val proUpgradeFeatureName: String? = null,
+    val licenseInfo: LicenseInfo = LicenseInfo(),
+    val isCheckoutModalOpen: Boolean = false,
+    val preferredCheckoutPlanId: String = "pro_lifetime",
+    val availablePlans: List<PlanOption> = DEFAULT_PRO_PLANS,
+    val activeCheckoutSession: CheckoutSession? = null,
+    val isCreatingCheckout: Boolean = false,
+    val isRestoringPurchase: Boolean = false,
+    val checkoutMessage: String? = null,
     val isOnboardingCompleted: Boolean = true,
     val isReplayingOnboarding: Boolean = false,
     val isSafeModeRecoveryOpen: Boolean = false,

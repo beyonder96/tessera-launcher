@@ -491,12 +491,23 @@ fun LicenseScreen(
                         )
                     } else if (status.activeKeyMasked != null) {
                         Spacer(modifier = Modifier.height(14.dp))
+                        val isEmailLicense = status.activeKeyMasked.contains("@")
                         Text(
-                            text = "Chave ativa: ${status.activeKeyMasked}",
+                            text = if (isEmailLicense) "E-mail vinculado: ${status.activeKeyMasked}" else "Chave ativa: ${status.activeKeyMasked}",
                             fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace,
+                            fontFamily = if (isEmailLicense) FontFamily.Default else FontFamily.Monospace,
                             color = textSecondary
                         )
+                        if (uiState.licenseInfo.isCurrentlyValid()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Gerenciar assinatura online →",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = uiState.activeAccentColor,
+                                modifier = Modifier.clickable { viewModel.openCheckoutModal() }
+                            )
+                        }
                     }
 
                     if (status.isClockTampered) {
@@ -735,10 +746,10 @@ fun LicenseScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ==========================================
-            // 3. VITRINE DE PLANOS COMERCIAIS
+            // 3. VITRINE DE PLANOS COMERCIAIS (MERCADO PAGO)
             // ==========================================
             Text(
-                text = "PLANOS TESSERA PRO",
+                text = "PLANOS TESSERA PRO (PIX OU CARTÃO)",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -748,83 +759,72 @@ fun LicenseScreen(
                 modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
             )
 
-            // Plano 1: Vitalício (Destaque Lote Fundador)
+            val lifetimePlan = uiState.availablePlans.firstOrNull { it.id == "pro_lifetime" }
+            val monthlyPlan = uiState.availablePlans.firstOrNull { it.id == "pro_monthly" }
+
+            // Plano 1: Vitalício (Destaque)
             PlanCard(
-                title = "Vitalício",
-                price = BillingConfig.LIFETIME_PRICE_LABEL,
-                subtitle = "Pagamento único, acesso definitivo para sempre",
-                badge = BillingConfig.LIFETIME_BADGE,
+                title = lifetimePlan?.title ?: "Tessera Pro Vitalício",
+                price = lifetimePlan?.priceFormatted ?: BillingConfig.LIFETIME_PRICE_LABEL,
+                subtitle = lifetimePlan?.subtitle ?: "Pagamento único via Pix ou Cartão, acesso permanente",
+                badge = lifetimePlan?.badge ?: BillingConfig.LIFETIME_BADGE,
                 isHighlighted = true,
                 isLightMode = isLight,
-                onClick = {
-                    val url = BillingConfig.resolveCheckoutUrl(
-                        BillingConfig.LIFETIME_CHECKOUT_URL,
-                        "Vitalício",
-                        BillingConfig.LIFETIME_PRICE_LABEL
-                    )
-                    openBrowserUrl(url)
-                }
+                onClick = { viewModel.openCheckoutModal("pro_lifetime") }
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Plano 2: Anual (Melhor Custo-Benefício)
+            // Plano 2: Mensal
             PlanCard(
-                title = "Anual",
-                price = BillingConfig.ANNUAL_PRICE_LABEL,
-                subtitle = "Equivalente a ${BillingConfig.ANNUAL_MONTHLY_EQUIVALENT} • Economia de 66%",
-                badge = "ECONOMIA",
+                title = monthlyPlan?.title ?: "Tessera Pro Mensal",
+                price = monthlyPlan?.priceFormatted ?: BillingConfig.MONTHLY_PRICE_LABEL,
+                subtitle = monthlyPlan?.subtitle ?: "Acesso completo por 30 dias via Pix ou Cartão",
+                badge = monthlyPlan?.badge,
                 isHighlighted = false,
                 isLightMode = isLight,
-                onClick = {
-                    val url = BillingConfig.resolveCheckoutUrl(
-                        BillingConfig.ANNUAL_CHECKOUT_URL,
-                        "Anual",
-                        BillingConfig.ANNUAL_PRICE_LABEL
-                    )
-                    openBrowserUrl(url)
-                }
+                onClick = { viewModel.openCheckoutModal("pro_monthly") }
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Plano 3: Semestral
-            PlanCard(
-                title = "Semestral",
-                price = BillingConfig.SEMESTRAL_PRICE_LABEL,
-                subtitle = "Acesso completo por 6 meses",
-                badge = null,
-                isHighlighted = false,
-                isLightMode = isLight,
-                onClick = {
-                    val url = BillingConfig.resolveCheckoutUrl(
-                        BillingConfig.SEMESTRAL_CHECKOUT_URL,
-                        "Semestral",
-                        BillingConfig.SEMESTRAL_PRICE_LABEL
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.openCheckoutModal() }
+                    .tesseraPressFeedback()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Já pagou via Pix ou Cartão?",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = textPrimary
+                        )
+                        Text(
+                            text = "Restaurar compra vinculada pelo seu e-mail",
+                            fontSize = 11.5.sp,
+                            color = textSecondary
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                        contentDescription = null,
+                        tint = textSecondary,
+                        modifier = Modifier.size(16.dp)
                     )
-                    openBrowserUrl(url)
                 }
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Plano 4: Mensal
-            PlanCard(
-                title = "Mensal",
-                price = BillingConfig.MONTHLY_PRICE_LABEL,
-                subtitle = "Cobrança mensal flexível",
-                badge = null,
-                isHighlighted = false,
-                isLightMode = isLight,
-                onClick = {
-                    val url = BillingConfig.resolveCheckoutUrl(
-                        BillingConfig.MONTHLY_CHECKOUT_URL,
-                        "Mensal",
-                        BillingConfig.MONTHLY_PRICE_LABEL
-                    )
-                    openBrowserUrl(url)
-                }
-            )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

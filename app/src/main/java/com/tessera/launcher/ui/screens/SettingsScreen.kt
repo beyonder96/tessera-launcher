@@ -921,8 +921,9 @@ fun SettingsScreen(
                             Text(
                                 text = when {
                                     uiState.isMasterAccess -> "Acesso Master Ilimitado • IA Groq / Gemini habilitada"
+                                    uiState.licenseInfo.isCurrentlyValid() -> "${uiState.licenseInfo.planDisplayName()} • ${uiState.licenseInfo.licensedEmail ?: "Ativo"}"
                                     uiState.hasProAccess -> "Recursos Pro desbloqueados • Toque para ver detalhes"
-                                    else -> "Experimente recursos exclusivos ou ative sua chave"
+                                    else -> "Assinar via Pix/Cartão ou ativar chave offline"
                                 },
                                 style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
                                 color = secondaryTextColor,

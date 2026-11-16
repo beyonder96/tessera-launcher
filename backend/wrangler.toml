@@ -1,0 +1,11 @@
+name = "tessera-pay"
+main = "src/index.js"
+compatibility_date = "2026-03-01"
+
+# Banco SQLite gratuito (Cloudflare D1).
+# Substitua `database_id` pelo ID gerado ao rodar:
+#   npx wrangler d1 create tessera-licenses-db
+[[d1_databases]]
+binding = "DB"
+database_name = "tessera-licenses-db"
+database_id = "5da8518c-d835-4656-a1eb-e0003399a2ce"
