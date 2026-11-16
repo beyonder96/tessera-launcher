@@ -19,6 +19,8 @@ import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.helper.TesseraCrashHandler
+import com.tessera.launcher.data.helper.deleteSavedPhotoFiles
+import com.tessera.launcher.data.helper.savePhotoToInternalStorage
 import com.tessera.launcher.data.license.LicenseActivationResult
 import com.tessera.launcher.data.license.LicenseKeyType
 import com.tessera.launcher.data.license.LicenseManager
@@ -1009,6 +1011,22 @@ class MainViewModel(
     fun setPhotoWidgetUri(uriString: String?) {
         preferences.setPhotoWidgetUri(uriString)
         _uiState.update { it.copy(photoWidgetUri = uriString) }
+    }
+
+    fun savePhotoWidgetFromUri(uri: Uri, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val savedPath = savePhotoToInternalStorage(context, uri) ?: uri.toString()
+            preferences.setPhotoWidgetUri(savedPath)
+            _uiState.update { it.copy(photoWidgetUri = savedPath) }
+        }
+    }
+
+    fun clearPhotoWidget(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            deleteSavedPhotoFiles(context)
+            preferences.setPhotoWidgetUri(null)
+            _uiState.update { it.copy(photoWidgetUri = null) }
+        }
     }
 
     fun setPhotoWidgetEnabled(enabled: Boolean) {

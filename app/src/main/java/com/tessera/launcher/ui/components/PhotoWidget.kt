@@ -81,12 +81,11 @@ fun PhotoWidget(
     val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString) {
         value = if (!photoUriString.isNullOrBlank()) {
             withContext(Dispatchers.IO) {
-                runCatching {
-                    val uri = Uri.parse(photoUriString)
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
-                }.getOrNull()
+                com.tessera.launcher.data.helper.loadSampledPhotoBitmap(
+                    context = context,
+                    photoUriOrPath = photoUriString,
+                    maxDimensionPx = 720
+                )
             }
         } else {
             null

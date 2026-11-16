@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             }
-            viewModel.setPhotoWidgetUri(uri.toString())
+            viewModel.savePhotoWidgetFromUri(uri, this)
         }
     }
 

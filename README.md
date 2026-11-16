@@ -61,7 +61,13 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.0.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.0.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.2)
+
+### 🆕 Novidades na v4.0.2
+- 🖼️ **Correção da Foto Salva no Modo Repouso (StandBy) e Moldura:**
+  - **Persistência em Armazenamento Interno:** Fotos selecionadas pelo Photo Picker agora são copiadas para o armazenamento interno do aplicativo (`PhotoLoaderHelper`), evitando falhas após expiração de permissão temporária de URIs `content://`.
+  - **Decodificação Segura & Orientação EXIF:** Carregamento otimizado com downsampling (`inSampleSize`) e correção automática de rotação EXIF para evitar falhas de memória em fotos de alta resolução.
+  - **Recarregamento Automático:** O Modo Repouso agora garante o recarregamento da foto ao ser aberto.
 
 ### 🆕 Novidades na v4.0.1
 - 💳 **Pagamentos Nativos via Mercado Pago (Pix & Cartão / Checkout Pro):**

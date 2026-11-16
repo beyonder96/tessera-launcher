@@ -650,7 +650,7 @@ fun HomeScreen(
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
                         onPickPhoto = { onPickPhoto() },
-                        onRemovePhoto = { viewModel.setPhotoWidgetUri(null) },
+                        onRemovePhoto = { viewModel.clearPhotoWidget(context) },
                         onPhotoClick = { viewModel.openPhotoStandBy() },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier

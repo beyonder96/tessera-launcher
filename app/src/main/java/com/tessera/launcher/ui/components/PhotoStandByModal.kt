@@ -180,16 +180,15 @@ fun PhotoStandByModal(
         }
     }
 
-    // Carrega o bitmap da foto em IO thread
-    val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString) {
-        value = if (!photoUriString.isNullOrBlank()) {
+    // Carrega o bitmap da foto em IO thread com downsampling e suporte a arquivo local / content URI
+    val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString, isOpen) {
+        value = if (isOpen && !photoUriString.isNullOrBlank()) {
             withContext(Dispatchers.IO) {
-                runCatching {
-                    val uri = Uri.parse(photoUriString)
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
-                    }
-                }.getOrNull()
+                com.tessera.launcher.data.helper.loadSampledPhotoBitmap(
+                    context = context,
+                    photoUriOrPath = photoUriString,
+                    maxDimensionPx = 1440
+                )
             }
         } else {
             null
