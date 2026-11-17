@@ -399,7 +399,7 @@ fun ExtrasScreen(
 
                 HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
-                // 5. Modo Repouso ao carregar (Toggle com Switch)
+                // 5. Modo Repouso ao carregar (Toggle com Switch — Exclusivo Pro)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -432,7 +432,7 @@ fun ExtrasScreen(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Modo Repouso ao carregar",
+                            text = "Modo StandBy Pro ao carregar",
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -441,7 +441,7 @@ fun ExtrasScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Abre o relógio com foto e rotação livre ao conectar o carregador.",
+                            text = "Abre relógio, música, Pomodoro, eventos e notificações ao conectar o carregador.",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp
@@ -481,7 +481,7 @@ fun ExtrasScreen(
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
         )
 
-        // Card de Backup & Restauração
+        // Card de Backup & Restauração (Exclusivo Pro)
         Surface(
             shape = ExtrasCardShape,
             color = cardBackground,
@@ -500,8 +500,10 @@ fun ExtrasScreen(
                     secondaryTextColor = secondaryTextColor,
                     iconBackground = iconBackground,
                     onClick = {
-                        val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
-                        exportLauncher.launch("tessera_backup_$timestamp.json")
+                        viewModel.requirePro("Backup e Restauração") {
+                            val timestamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
+                            exportLauncher.launch("tessera_backup_$timestamp.json")
+                        }
                     }
                 )
 
@@ -516,7 +518,9 @@ fun ExtrasScreen(
                     secondaryTextColor = secondaryTextColor,
                     iconBackground = iconBackground,
                     onClick = {
-                        importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                        viewModel.requirePro("Backup e Restauração") {
+                            importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
+                        }
                     }
                 )
             }

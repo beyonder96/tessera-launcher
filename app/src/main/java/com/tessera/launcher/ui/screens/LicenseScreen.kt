@@ -872,6 +872,12 @@ fun LicenseScreen(
                     ComparisonRow("Central de 11 Gestos Personalizados", isFree = false, isPro = true, isLight = isLight)
                     HorizontalDivider(color = cardBorder, thickness = 1.dp)
                     ComparisonRow("Customização Visual (Borrão, Dock, Cores)", isFree = false, isPro = true, isLight = isLight)
+                    HorizontalDivider(color = cardBorder, thickness = 1.dp)
+                    ComparisonRow("Modo StandBy Pro (Música, Eventos, Pomodoro, Notif.)", isFree = false, isPro = true, isLight = isLight)
+                    HorizontalDivider(color = cardBorder, thickness = 1.dp)
+                    ComparisonRow("Personalização e Criação de Comandos (@)", isFree = false, isPro = true, isLight = isLight)
+                    HorizontalDivider(color = cardBorder, thickness = 1.dp)
+                    ComparisonRow("Backup e Restauração Completa (JSON)", isFree = false, isPro = true, isLight = isLight)
                 }
             }
 

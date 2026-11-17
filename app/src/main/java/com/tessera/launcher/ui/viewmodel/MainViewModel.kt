@@ -180,6 +180,10 @@ class MainViewModel(
             photoWidgetUri = preferences.getPhotoWidgetUri(),
             isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
             isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
+            standByViewMode = preferences.getStandByViewMode(),
+            standByClockStyle = preferences.getStandByClockStyle(),
+            standByColorPreset = preferences.getStandByColorPreset(),
+            isStandByNotificationPrivacyEnabled = preferences.isStandByNotificationPrivacyEnabled(),
             isAmoledMode = preferences.isAmoledMode(),
             isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
             isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
@@ -456,7 +460,7 @@ class MainViewModel(
                 }
                 if (!wasCharging && isNowCharging) {
                     val state = _uiState.value
-                    if (state.isPhotoStandByOnChargeEnabled) {
+                    if (state.isPhotoStandByOnChargeEnabled && state.hasProAccess) {
                         _uiState.update { it.copy(isPhotoStandByOpen = true) }
                     }
                 }
@@ -520,11 +524,13 @@ class MainViewModel(
 
     fun refreshCalendarAndPermissions() {
         val hasCalendar = calendarHelper.hasCalendarPermission()
-        val nextEvent = if (hasCalendar) calendarHelper.getNextUpcomingEvent() else null
+        val upcomingEvents = if (hasCalendar) calendarHelper.getUpcomingEvents(5) else emptyList()
+        val nextEvent = upcomingEvents.firstOrNull()
         _uiState.update {
             it.copy(
                 hasCalendarPermission = hasCalendar,
-                nextCalendarEvent = nextEvent
+                nextCalendarEvent = nextEvent,
+                upcomingCalendarEvents = upcomingEvents
             )
         }
         refreshSmartGlance()
@@ -1035,7 +1041,9 @@ class MainViewModel(
     }
 
     fun openPhotoStandBy() {
-        _uiState.update { it.copy(isPhotoStandByOpen = true) }
+        requirePro("Modo StandBy Pro") {
+            _uiState.update { it.copy(isPhotoStandByOpen = true) }
+        }
     }
 
     fun closePhotoStandBy() {
@@ -1043,8 +1051,30 @@ class MainViewModel(
     }
 
     fun setPhotoStandByOnChargeEnabled(enabled: Boolean) {
-        preferences.setPhotoStandByOnChargeEnabled(enabled)
-        _uiState.update { it.copy(isPhotoStandByOnChargeEnabled = enabled) }
+        requirePro("Modo StandBy Pro") {
+            preferences.setPhotoStandByOnChargeEnabled(enabled)
+            _uiState.update { it.copy(isPhotoStandByOnChargeEnabled = enabled) }
+        }
+    }
+
+    fun setStandByViewMode(mode: String) {
+        preferences.setStandByViewMode(mode)
+        _uiState.update { it.copy(standByViewMode = mode) }
+    }
+
+    fun setStandByClockStyle(style: String) {
+        preferences.setStandByClockStyle(style)
+        _uiState.update { it.copy(standByClockStyle = style) }
+    }
+
+    fun setStandByColorPreset(preset: String) {
+        preferences.setStandByColorPreset(preset)
+        _uiState.update { it.copy(standByColorPreset = preset) }
+    }
+
+    fun setStandByNotificationPrivacyEnabled(enabled: Boolean) {
+        preferences.setStandByNotificationPrivacyEnabled(enabled)
+        _uiState.update { it.copy(isStandByNotificationPrivacyEnabled = enabled) }
     }
 
     // Configurações da Launcher e Subtelas
@@ -1610,6 +1640,20 @@ class MainViewModel(
                 iconType = iconType
             )
         )
+        preferences.setCommandsRaw(serializeCommands(current))
+        _uiState.update { it.copy(commandsList = current) }
+    }
+
+    fun editCommand(id: String, newTitle: String, newPrefix: String) {
+        val symbol = _uiState.value.commandActivationSymbol.ifBlank { "@" }
+        val cleanPrefix = if (newPrefix.startsWith(symbol) || newPrefix.startsWith("@") || newPrefix.startsWith("/") || newPrefix.startsWith("#") || newPrefix.startsWith("!")) {
+            newPrefix
+        } else {
+            "$symbol$newPrefix"
+        }
+        val current = _uiState.value.commandsList.map { cmd ->
+            if (cmd.id == id) cmd.copy(title = newTitle, prefix = cleanPrefix) else cmd
+        }
         preferences.setCommandsRaw(serializeCommands(current))
         _uiState.update { it.copy(commandsList = current) }
     }
@@ -2499,6 +2543,10 @@ class MainViewModel(
                 photoWidgetUri = preferences.getPhotoWidgetUri(),
                 isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
                 isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
+                standByViewMode = preferences.getStandByViewMode(),
+                standByClockStyle = preferences.getStandByClockStyle(),
+                standByColorPreset = preferences.getStandByColorPreset(),
+                isStandByNotificationPrivacyEnabled = preferences.isStandByNotificationPrivacyEnabled(),
                 isAmoledMode = preferences.isAmoledMode(),
                 isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
                 isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),

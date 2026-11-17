@@ -1725,7 +1725,7 @@ fun HomeScreen(
             )
         }
 
-        // Modo Repouso com Foto e Relógio de Cabeceira (StandBy / Ambient Mode)
+        // Modo Repouso / StandBy Pro (Ambient Smart Display)
         PhotoStandByModal(
             isOpen = uiState.isPhotoStandByOpen,
             onDismiss = { viewModel.closePhotoStandBy() },
@@ -1739,8 +1739,40 @@ fun HomeScreen(
             weatherCity = uiState.weatherInfo?.cityName,
             accentColor = uiState.activeAccentColor,
             mediaPlayback = uiState.mediaPlayback,
+            recentNotifications = uiState.recentNotifications,
+            upcomingCalendarEvents = uiState.upcomingCalendarEvents,
+            notesTasks = uiState.notesTasks,
+            standByViewMode = uiState.standByViewMode,
+            standByClockStyle = uiState.standByClockStyle,
+            standByColorPreset = uiState.standByColorPreset,
+            isNotificationPrivacyEnabled = uiState.isStandByNotificationPrivacyEnabled,
+            onSelectViewMode = { viewModel.setStandByViewMode(it) },
+            onSelectClockStyle = { viewModel.setStandByClockStyle(it) },
+            onSelectColorPreset = { viewModel.setStandByColorPreset(it) },
+            onToggleNotificationPrivacy = { viewModel.setStandByNotificationPrivacyEnabled(it) },
             onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
-            onOpenMusicApp = { viewModel.launchDefaultMusicApp() }
+            onSkipNext = { viewModel.skipNextMedia() },
+            onSkipPrevious = { viewModel.skipPreviousMedia() },
+            onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
+            onOpenCalendarApp = { viewModel.launchCalendarApp() },
+            onToggleNoteTask = { viewModel.toggleNoteTask(it) },
+            onNotificationClick = { item ->
+                item.contentIntent?.let { pi ->
+                    try {
+                        pi.send()
+                    } catch (_: Exception) {
+                        val launchIntent = context.packageManager.getLaunchIntentForPackage(item.packageName)
+                        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        runCatching { context.startActivity(launchIntent) }
+                    }
+                } ?: run {
+                    val launchIntent = context.packageManager.getLaunchIntentForPackage(item.packageName)
+                    launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    runCatching { context.startActivity(launchIntent) }
+                }
+            },
+            onDismissNotification = { viewModel.dismissNotification(it) },
+            onDismissAllNotifications = { viewModel.dismissAllNotifications() }
         )
 
         // Seletor Moderno de Widgets com Prévia Visual Real (Estilo Pixel Launcher / One UI)

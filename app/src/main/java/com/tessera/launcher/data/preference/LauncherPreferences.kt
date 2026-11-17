@@ -30,6 +30,10 @@ class LauncherPreferences(context: Context) {
         private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
         private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
         private const val KEY_PHOTO_STANDBY_ON_CHARGE = "photo_standby_on_charge"
+        private const val KEY_STANDBY_VIEW_MODE = "standby_view_mode"
+        private const val KEY_STANDBY_CLOCK_STYLE = "standby_clock_style"
+        private const val KEY_STANDBY_COLOR_PRESET = "standby_color_preset"
+        private const val KEY_STANDBY_NOTIF_PRIVACY = "standby_notif_privacy"
         private const val KEY_LIQUID_GLASS_MODE = "liquid_glass_mode"
         private const val KEY_AUTO_OPEN_KEYBOARD = "auto_open_keyboard"
         private const val KEY_AUTO_LAUNCH_APP = "auto_launch_app"
@@ -204,6 +208,38 @@ class LauncherPreferences(context: Context) {
 
     fun setPhotoStandByOnChargeEnabled(enabled: Boolean) {
         prefs.edit().putBoolean(KEY_PHOTO_STANDBY_ON_CHARGE, enabled).apply()
+    }
+
+    fun getStandByViewMode(): String {
+        return prefs.getString(KEY_STANDBY_VIEW_MODE, "DUAL") ?: "DUAL"
+    }
+
+    fun setStandByViewMode(mode: String) {
+        prefs.edit().putString(KEY_STANDBY_VIEW_MODE, mode).apply()
+    }
+
+    fun getStandByClockStyle(): String {
+        return prefs.getString(KEY_STANDBY_CLOCK_STYLE, "FLIP") ?: "FLIP"
+    }
+
+    fun setStandByClockStyle(style: String) {
+        prefs.edit().putString(KEY_STANDBY_CLOCK_STYLE, style).apply()
+    }
+
+    fun getStandByColorPreset(): String {
+        return prefs.getString(KEY_STANDBY_COLOR_PRESET, "WHITE") ?: "WHITE"
+    }
+
+    fun setStandByColorPreset(preset: String) {
+        prefs.edit().putString(KEY_STANDBY_COLOR_PRESET, preset).apply()
+    }
+
+    fun isStandByNotificationPrivacyEnabled(): Boolean {
+        return prefs.getBoolean(KEY_STANDBY_NOTIF_PRIVACY, false)
+    }
+
+    fun setStandByNotificationPrivacyEnabled(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_STANDBY_NOTIF_PRIVACY, enabled).apply()
     }
 
     fun getEnabledWidgets(): List<WidgetType> {

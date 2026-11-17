@@ -97,6 +97,7 @@ fun CommandsScreen(
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var showSymbolDialog by remember { mutableStateOf(false) }
+    var editingCommand by remember { mutableStateOf<CommandItem?>(null) }
     val isLight = uiState.isLightMode
 
     val screenBg = if (isLight) LightBackground else DarkBackground
@@ -265,6 +266,7 @@ fun CommandsScreen(
                     uiState.commandsList.forEachIndexed { index, item ->
                         CommandRowItem(
                             item = item,
+                            onEdit = { viewModel.requirePro("Comandos Personalizados") { editingCommand = item } },
                             onDelete = { viewModel.requirePro("Comandos Personalizados") { viewModel.removeCommand(item.id) } },
                             isLight = isLight,
                             iconBg = iconBg,
@@ -585,11 +587,110 @@ fun CommandsScreen(
             }
         }
     }
+
+    editingCommand?.let { target ->
+        var editTitle by remember(target.id) { mutableStateOf(target.title) }
+        var editPrefix by remember(target.id) { mutableStateOf(target.prefix) }
+        Dialog(onDismissRequest = { editingCommand = null }) {
+            Surface(
+                shape = CardShape,
+                color = cardBg,
+                border = BorderStroke(1.dp, cardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "Editar Comando",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = primaryTextColor
+                    )
+
+                    BasicTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        textStyle = TextStyle(color = primaryTextColor, fontSize = 14.sp),
+                        cursorBrush = SolidColor(primaryTextColor),
+                        singleLine = true,
+                        decorationBox = { inner ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF161820), RoundedCornerShape(10.dp))
+                                    .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF282B36)), RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (editTitle.isEmpty()) Text("Nome do comando", color = tertiaryTextColor, fontSize = 14.sp)
+                                inner()
+                            }
+                        }
+                    )
+
+                    BasicTextField(
+                        value = editPrefix,
+                        onValueChange = { editPrefix = it },
+                        textStyle = TextStyle(color = primaryTextColor, fontSize = 14.sp),
+                        cursorBrush = SolidColor(primaryTextColor),
+                        singleLine = true,
+                        decorationBox = { inner ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp)
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF161820), RoundedCornerShape(10.dp))
+                                    .border(BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF282B36)), RoundedCornerShape(10.dp))
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (editPrefix.isEmpty()) Text("Prefixo (ex: @yt)", color = tertiaryTextColor, fontSize = 14.sp)
+                                inner()
+                            }
+                        }
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            text = "Cancelar",
+                            color = secondaryTextColor,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .clickable { editingCommand = null }
+                                .padding(8.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Salvar",
+                            color = primaryTextColor,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .clickable {
+                                    if (editTitle.isNotBlank() && editPrefix.isNotBlank()) {
+                                        viewModel.editCommand(target.id, editTitle.trim(), editPrefix.trim())
+                                        editingCommand = null
+                                    }
+                                }
+                                .padding(8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
 private fun CommandRowItem(
     item: CommandItem,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     isLight: Boolean,
     iconBg: Color,
@@ -617,6 +718,11 @@ private fun CommandRowItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onEdit
+            )
             .padding(horizontal = 16.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

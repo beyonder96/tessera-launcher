@@ -61,7 +61,17 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.0.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.2)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.0.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.3)
+
+### 🆕 Novidades na v4.0.3
+- 🕰️ **Tessera StandBy Pro 2.0:**
+  - **Logo Segura para Câmera Frontal:** Cápsula superior centralizada com `WindowInsets.displayCutout` em retrato e paisagem, mantendo a logo da Tessera livre de recortes da câmera.
+  - **Notificações em Tempo Real no StandBy:** Card Spotlight animado (6,5s) ao receber notificações com o StandBy aberto, pílula superior com ícones/contador, central interativa (abrir, dispensar, limpar tudo) e **Modo Privacidade** (oculta o conteúdo até tocar).
+  - **4 Modos Dedicados no Dock:** `Dupla` (Relógio + Smart Stack Foto/Agenda/Tarefas + Mídia), `Música` (capa em destaque, barra de progresso e controles), `Eventos` (agenda das próximas 24h + checklist de tarefas) e `Pomodoro` (Foco 25m / Pausa 5m / Longa 15m).
+  - **Personalização & Proteção OLED:** 3 estilos de relógio (`Flip`, `Editorial`, `Minimal`), 5 presets de cor, deslocamento anti-burn-in e tela sempre ativa (`FLAG_KEEP_SCREEN_ON`).
+- 💎 **Nova Divisão Grátis vs. Tessera Pro:**
+  - **StandBy Pro 100% Pro:** Abertura manual e ativação automática ao carregar agora fazem parte do pacote Tessera Pro (incluindo o Trial de 3 dias).
+  - **Backup & Restauração (JSON) e Comandos Personalizados (`@`) no Pro:** Exportar/importar backup e criar, editar, excluir ou alterar o símbolo de comandos requerem Tessera Pro (uso dos comandos padrão na busca segue gratuito).
 
 ### 🆕 Novidades na v4.0.2
 - 🖼️ **Correção da Foto Salva no Modo Repouso (StandBy) e Moldura:**
