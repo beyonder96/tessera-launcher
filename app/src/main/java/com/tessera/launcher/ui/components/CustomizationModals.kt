@@ -557,8 +557,8 @@ fun TypographyBottomSheet(
             FontCard(
                 title = "Tessera",
                 sample = "Aa Bb Cc 0123",
-                subtitle = "Manrope — fonte nativa editorial",
-                fontFamily = com.tessera.launcher.ui.theme.TesseraManrope,
+                subtitle = "Space Grotesk — the built-in face",
+                fontFamily = FontFamily.Monospace,
                 isSelected = currentFontType == "tessera",
                 isLight = isLight,
                 onClick = { onSelectFontType("tessera") }

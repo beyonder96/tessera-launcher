@@ -545,23 +545,22 @@ private fun AiSuggestionPromptChip(
             .background(cardBg)
             .border(0.6.dp, borderColor, RoundedCornerShape(12.dp))
             .tesseraPressable(pressedScale = 0.94f, onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 7.dp),
+            .padding(horizontal = 9.dp, vertical = 7.dp),
         contentAlignment = Alignment.CenterStart
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(14.dp)
+                modifier = Modifier.size(15.dp)
             )
             Text(
                 text = label,
-                fontSize = 10.5.sp,
-                letterSpacing = (-0.2).sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 color = textPrimary,
                 maxLines = 1,

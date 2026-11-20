@@ -4,12 +4,13 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -24,16 +25,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,21 +47,20 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.graphics.Rect
 import com.tessera.launcher.data.model.AppInfo
-import com.tessera.launcher.ui.motion.IconBoundsHolder
-import com.tessera.launcher.ui.motion.MotionMath
-import com.tessera.launcher.ui.motion.captureIconBounds
+import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.IconShape
+import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.tokens.Tessera
-import com.tessera.launcher.ui.theme.tokens.rememberTesseraHaptics
-import kotlinx.coroutines.launch
 
 private fun drawableToBitmap(drawable: Drawable): Bitmap {
     if (drawable is BitmapDrawable && drawable.bitmap != null) {
@@ -77,7 +79,7 @@ private fun drawableToBitmap(drawable: Drawable): Bitmap {
 @Composable
 fun AppListItem(
     app: AppInfo,
-    onClick: () -> Unit = {},
+    onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
     onSwipeRight: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -88,55 +90,41 @@ fun AppListItem(
     hasLinkedWidget: Boolean = false,
     notificationCount: Int = 0,
     accentColor: Color = Color(0xFF3B82F6),
-    isLightMode: Boolean = false,
-    onClickWithBounds: ((Rect?) -> Unit)? = null
+    isLightMode: Boolean = false
 ) {
-    val iconBounds = remember(app.packageName) { IconBoundsHolder() }
-    val motion = Tessera.motion
-    val haptics = rememberTesseraHaptics()
-    val scope = rememberCoroutineScope()
-    val density = LocalDensity.current
-    val swipeThresholdPx = with(density) { 56.dp.toPx() }
-    val swipeOffsetX = remember { Animatable(0f) }
-    val rubberBandFactor = motion.rubberBandFactor
+    var dragOffsetX by remember { mutableFloatStateOf(0f) }
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = dragOffsetX,
+        animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
+        label = "item_swipe_offset"
+    )
+    val haptic = LocalHapticFeedback.current
+    var hasHapticTriggered by remember { mutableStateOf(false) }
 
     val swipeModifier = if (onSwipeRight != null) {
-        Modifier.pointerInput(app.packageName, swipeThresholdPx, rubberBandFactor) {
-            var rawDrag = 0f
-            var hasHapticTriggered = false
+        Modifier.pointerInput(app.packageName) {
             detectHorizontalDragGestures(
                 onDragStart = {
-                    rawDrag = 0f
                     hasHapticTriggered = false
                 },
                 onDragEnd = {
-                    val triggered = rawDrag >= swipeThresholdPx
-                    rawDrag = 0f
-                    hasHapticTriggered = false
-                    if (triggered) {
+                    if (dragOffsetX >= 75f) {
                         onSwipeRight()
                     }
-                    scope.launch {
-                        swipeOffsetX.animateTo(0f, motion.springSpatial)
-                    }
+                    dragOffsetX = 0f
+                    hasHapticTriggered = false
                 },
                 onDragCancel = {
-                    rawDrag = 0f
+                    dragOffsetX = 0f
                     hasHapticTriggered = false
-                    scope.launch {
-                        swipeOffsetX.animateTo(0f, motion.springSpatial)
-                    }
                 },
                 onHorizontalDrag = { change, dragAmount ->
-                    if (dragAmount > 0f || rawDrag > 0f) {
-                        rawDrag = (rawDrag + dragAmount).coerceAtLeast(0f)
-                        val damped = MotionMath.rubberBand(rawDrag, swipeThresholdPx, rubberBandFactor)
-                        scope.launch { swipeOffsetX.snapTo(damped) }
-                        if (rawDrag >= swipeThresholdPx && !hasHapticTriggered) {
-                            haptics.threshold()
+                    if (dragAmount > 0 || dragOffsetX > 0f) {
+                        val next = (dragOffsetX + dragAmount).coerceIn(0f, 130f)
+                        dragOffsetX = next
+                        if (next >= 75f && !hasHapticTriggered) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             hasHapticTriggered = true
-                        } else if (rawDrag < swipeThresholdPx * 0.85f && hasHapticTriggered) {
-                            hasHapticTriggered = false
                         }
                         change.consume()
                     }
@@ -167,9 +155,9 @@ fun AppListItem(
 
     val itemInteractionSource = remember { MutableInteractionSource() }
     val isItemPressed by itemInteractionSource.collectIsPressedAsState()
-    val itemScaleState = animateFloatAsState(
+    val itemScale by animateFloatAsState(
         targetValue = if (isItemPressed) 0.97f else 1f,
-        animationSpec = motion.springPress,
+        animationSpec = Tessera.motion.springPress,
         label = "app_item_press_scale"
     )
 
@@ -177,63 +165,30 @@ fun AppListItem(
         app.bitmap?.asImageBitmap() ?: app.icon?.let { drawableToBitmap(it).asImageBitmap() }
     }
 
-    Box(
-        modifier = modifier.fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        if (onSwipeRight != null) {
-            Box(
-                modifier = Modifier
-                    .padding(start = 24.dp)
-                    .size(28.dp)
-                    .graphicsLayer {
-                        val p = (swipeOffsetX.value / swipeThresholdPx).coerceIn(0f, 1f)
-                        alpha = p
-                        val s = 0.65f + 0.35f * p
-                        scaleX = s
-                        scaleY = s
-                    }
-                    .clip(CircleShape)
-                    .background(Tessera.palette.accentMuted),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = if (hasLinkedWidget) Icons.Outlined.Widgets else Icons.Outlined.MoreHoriz,
-                    contentDescription = null,
-                    tint = Tessera.palette.accent,
-                    modifier = Modifier.size(16.dp)
-                )
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(swipeModifier)
+            .graphicsLayer {
+                translationX = animatedOffsetX
+                scaleX = itemScale
+                scaleY = itemScale
             }
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(swipeModifier)
-                .graphicsLayer {
-                    translationX = swipeOffsetX.value
-                    val s = itemScaleState.value
-                    scaleX = s
-                    scaleY = s
-                }
-                .combinedClickable(
-                    interactionSource = itemInteractionSource,
-                    indication = ripple(color = Tessera.palette.ripple),
-                    onClick = {
-                        if (onClickWithBounds != null) onClickWithBounds(iconBounds.rootRect)
-                        else onClick()
-                    },
-                    onLongClick = onLongClick
-                )
-                .padding(
-                    start = 24.dp,
-                    end = if (isRightAligned && isHideAppLabels) 36.dp else 24.dp,
-                    top = if (isHideAppLabels) 10.dp else 7.dp,
-                    bottom = if (isHideAppLabels) 10.dp else 7.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (isRightAligned) Arrangement.End else Arrangement.Start
-        ) {
+            .combinedClickable(
+                interactionSource = itemInteractionSource,
+                indication = ripple(color = Tessera.palette.ripple),
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .padding(
+                start = 24.dp,
+                end = if (isRightAligned && isHideAppLabels) 36.dp else 24.dp,
+                top = if (isHideAppLabels) 10.dp else 7.dp,
+                bottom = if (isHideAppLabels) 10.dp else 7.dp
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (isRightAligned) Arrangement.End else Arrangement.Start
+    ) {
         val iconComposable: @Composable () -> Unit = {
             val iconModifier = if (iconShape == "LOSANGO") {
                 Modifier
@@ -256,8 +211,7 @@ fun AppListItem(
                     .clip(shape)
             }
 
-            val iconContainerModifier = (if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(42.dp) else Modifier.size(40.dp))
-                .captureIconBounds(iconBounds)
+            val iconContainerModifier = if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(42.dp) else Modifier.size(40.dp)
             Box(
                 modifier = iconContainerModifier,
                 contentAlignment = Alignment.Center
@@ -352,7 +306,6 @@ fun AppListItem(
                 Spacer(modifier = Modifier.width(16.dp))
                 textComposable(Modifier.weight(1f))
             }
-        }
         }
     }
 }

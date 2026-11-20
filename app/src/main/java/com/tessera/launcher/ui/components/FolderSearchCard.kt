@@ -2,7 +2,6 @@ package com.tessera.launcher.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.BorderStroke
@@ -37,11 +36,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.AppInfo
-import com.tessera.launcher.ui.motion.IconBoundsHolder
-import com.tessera.launcher.ui.motion.captureIconBounds
 import com.tessera.launcher.ui.state.AppFolder
-import com.tessera.launcher.ui.theme.tokens.Tessera
-import com.tessera.launcher.ui.theme.tokens.tesseraGlass
+import com.tessera.launcher.ui.theme.DarkSurface
+import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.LiquidGlassBackground
+import com.tessera.launcher.ui.theme.LiquidGlassBorderBrush
+import com.tessera.launcher.ui.theme.TextPrimary
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -72,16 +72,18 @@ fun FolderSearchCard(
     onAppLongClick: (AppInfo) -> Unit,
     onFolderClick: (AppFolder) -> Unit,
     modifier: Modifier = Modifier,
-    isLiquidGlass: Boolean = true,
-    onAppClickWithBounds: ((AppInfo, Rect?) -> Unit)? = null
+    isLiquidGlass: Boolean = true
 ) {
-    val palette = Tessera.palette
-    val cardShape = Tessera.shapes.card
-    val tileShape = Tessera.shapes.medium
-
     val folderApps = remember(folder.packageNames, allApps) {
         folder.packageNames.mapNotNull { pkg -> allApps.find { it.packageName == pkg } }
     }
+
+    val border = if (isLiquidGlass) {
+        BorderStroke(1.dp, LiquidGlassBorderBrush)
+    } else {
+        BorderStroke(1.dp, DarkSurfaceBorder)
+    }
+    val background = if (isLiquidGlass) LiquidGlassBackground else DarkSurface
 
     val monoFilter = remember {
         ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
@@ -91,7 +93,9 @@ fun FolderSearchCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
-            .tesseraGlass(shape = cardShape, isLiquidGlass = isLiquidGlass, elevation = 6.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .border(border, RoundedCornerShape(26.dp))
+            .background(background)
             .padding(16.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -99,7 +103,7 @@ fun FolderSearchCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(tileShape)
+                    .clip(RoundedCornerShape(14.dp))
                     .combinedClickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -111,15 +115,15 @@ fun FolderSearchCard(
                 Box(
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(tileShape)
-                        .background(palette.surfaceSubtle)
-                        .border(BorderStroke(0.75.dp, palette.surfaceBorder), tileShape),
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFF1B1B22))
+                        .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.Folder,
                         contentDescription = folder.name,
-                        tint = palette.textPrimary,
+                        tint = TextPrimary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -133,7 +137,7 @@ fun FolderSearchCard(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold
                         ),
-                        color = palette.textPrimary,
+                        color = TextPrimary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -141,14 +145,14 @@ fun FolderSearchCard(
                     Text(
                         text = if (folderApps.size == 1) "1 aplicativo" else "${folderApps.size} aplicativos",
                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                        color = palette.textSecondary
+                        color = Color(0xFF8E8E98)
                     )
                 }
 
                 Icon(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = "Abrir pasta",
-                    tint = palette.textTertiary,
+                    tint = Color(0xFF6E6E78),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -166,22 +170,17 @@ fun FolderSearchCard(
                         val imageBitmap = remember(app.icon) {
                             app.icon?.let { drawableToBitmap(it).asImageBitmap() }
                         }
-                        val iconBounds = remember(app.packageName) { IconBoundsHolder() }
 
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
-                                .captureIconBounds(iconBounds)
-                                .clip(tileShape)
-                                .background(palette.surfaceSubtle)
-                                .border(BorderStroke(0.75.dp, palette.surfaceBorder), tileShape)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(Color(0xFF1B1B22))
+                                .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(15.dp))
                                 .combinedClickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
-                                    onClick = {
-                                        if (onAppClickWithBounds != null) onAppClickWithBounds(app, iconBounds.rootRect)
-                                        else onAppClick(app)
-                                    },
+                                    onClick = { onAppClick(app) },
                                     onLongClick = { onAppLongClick(app) }
                                 ),
                             contentAlignment = Alignment.Center
@@ -196,7 +195,7 @@ fun FolderSearchCard(
                             } else {
                                 Text(
                                     text = app.firstLetter.toString(),
-                                    color = palette.textPrimary,
+                                    color = TextPrimary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 )
@@ -210,9 +209,9 @@ fun FolderSearchCard(
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
-                                .clip(tileShape)
-                                .background(palette.surface)
-                                .border(BorderStroke(0.75.dp, palette.surfaceBorder), tileShape)
+                                .clip(RoundedCornerShape(15.dp))
+                                .background(Color(0xFF18181E))
+                                .border(BorderStroke(1.dp, Color(0xFF262630)), RoundedCornerShape(15.dp))
                                 .combinedClickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
@@ -226,7 +225,7 @@ fun FolderSearchCard(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 13.sp
                                 ),
-                                color = palette.textPrimary
+                                color = TextPrimary
                             )
                         }
                     }

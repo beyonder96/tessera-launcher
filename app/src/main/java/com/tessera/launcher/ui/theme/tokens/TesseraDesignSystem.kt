@@ -82,9 +82,9 @@ fun Modifier.tesseraPressFeedback(
     val source = interactionSource ?: remember { MutableInteractionSource() }
     val isPressed by source.collectIsPressedAsState()
     val motion = Tessera.motion
-    val haptics = rememberTesseraHaptics()
+    val haptic = LocalHapticFeedback.current
 
-    val scaleState = animateFloatAsState(
+    val scale by animateFloatAsState(
         targetValue = if (isPressed) pressedScale else 1f,
         animationSpec = motion.springPress,
         label = "tessera_press_scale"
@@ -92,13 +92,12 @@ fun Modifier.tesseraPressFeedback(
 
     androidx.compose.runtime.LaunchedEffect(isPressed) {
         if (isPressed && onHaptic) {
-            haptics.tap()
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
     }
 
     this.graphicsLayer {
-        val s = scaleState.value
-        scaleX = s
-        scaleY = s
+        scaleX = scale
+        scaleY = scale
     }
 }

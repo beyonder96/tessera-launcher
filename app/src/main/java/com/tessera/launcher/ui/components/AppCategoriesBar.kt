@@ -1,47 +1,45 @@
 package com.tessera.launcher.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInParent
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.AppCategory
-import com.tessera.launcher.ui.theme.tokens.Tessera
-import com.tessera.launcher.ui.theme.tokens.rememberTesseraHaptics
+import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.DarkSurfaceBorderHover
+import com.tessera.launcher.ui.theme.DarkSurfaceVariant
+import com.tessera.launcher.ui.theme.LightCardBorder
+import com.tessera.launcher.ui.theme.LightSurfaceVariant
+import com.tessera.launcher.ui.theme.LightTextPrimary
+import com.tessera.launcher.ui.theme.LightTextSecondary
+import com.tessera.launcher.ui.theme.PillShape
+import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
 
 /**
  * Barra horizontal de filtros por categorias na gaveta de aplicativos.
- * Utiliza indicador em pílula deslizante único acelerado por mola e háptica de tick.
+ * Estritamente minimalista, monocromática e rápida.
  */
 @Composable
 fun AppCategoriesBar(
@@ -53,132 +51,83 @@ fun AppCategoriesBar(
     accentColor: Color = Color.White,
     leadingContent: (@Composable () -> Unit)? = null
 ) {
-    val motion = Tessera.motion
-    val palette = Tessera.palette
-    val pillShape = Tessera.shapes.pill
-    val haptics = rememberTesseraHaptics()
-    val density = LocalDensity.current
-    val scrollState = rememberScrollState()
-
     val hasCustomAccent = accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155)
-    val chipBounds = remember { mutableStateMapOf<String, Pair<Float, Float>>() }
-    val selectedBounds = chipBounds[selectedCategory.name]
 
-    val indicatorXState = animateFloatAsState(
-        targetValue = selectedBounds?.first ?: 0f,
-        animationSpec = motion.springStandard,
-        label = "cat_pill_x"
-    )
-    val indicatorWidthState = animateFloatAsState(
-        targetValue = selectedBounds?.second ?: 0f,
-        animationSpec = motion.springStandard,
-        label = "cat_pill_w"
-    )
-
-    LaunchedEffect(selectedCategory, selectedBounds) {
-        selectedBounds?.let { (x, w) ->
-            val targetScroll = (x - with(density) { 48.dp.toPx() }).toInt().coerceAtLeast(0)
-            if (x < scrollState.value || x + w > scrollState.value + scrollState.viewportSize) {
-                scrollState.animateScrollTo(targetScroll)
-            }
-        }
-    }
-
-    val pillFill = when {
-        hasCustomAccent -> accentColor.copy(alpha = if (palette.isLight) 0.18f else 0.24f)
-        palette.isLight -> palette.textPrimary
-        else -> Color(0xFF2C2C2E)
-    }
-    val pillBorder = when {
-        hasCustomAccent -> accentColor
-        palette.isLight -> palette.textPrimary
-        else -> Color(0x40FFFFFF)
-    }
-
-    Row(
+    LazyRow(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         if (leadingContent != null) {
-            leadingContent()
+            item(key = "leading_focus_content") {
+                leadingContent()
+            }
         }
 
-        Box(modifier = Modifier.height(32.dp)) {
-            if (selectedBounds != null) {
-                Box(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .graphicsLayer {
-                            translationX = indicatorXState.value
-                        }
-                        .width(with(density) { indicatorWidthState.value.coerceAtLeast(0f).toDp() })
-                        .clip(pillShape)
-                        .background(pillFill, pillShape)
-                        .border(BorderStroke(0.75.dp, pillBorder), pillShape)
-                )
-            }
+        items(categories, key = { it.name }) { category ->
+            val isSelected = category == selectedCategory
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                categories.forEach { category ->
-                    val isSelected = category == selectedCategory
-                    val textColor by animateColorAsState(
-                        targetValue = when {
-                            isSelected && hasCustomAccent -> if (palette.isLight) accentColor else Color.White
-                            isSelected && palette.isLight -> palette.background
-                            isSelected -> palette.textPrimary
-                            else -> palette.textSecondary
-                        },
-                        animationSpec = tween(durationMillis = 150, easing = motion.emphasizedEasing),
-                        label = "cat_text_${category.name}"
+            val bgColor by animateColorAsState(
+                targetValue = when {
+                    isSelected && hasCustomAccent -> accentColor.copy(alpha = if (isLightMode) 0.18f else 0.24f)
+                    isSelected && isLightMode -> Color(0xFF1C1917)
+                    isSelected -> Color(0xFF2C2C2E)
+                    isLightMode -> Color(0xFFE8E4D8)
+                    else -> Color(0x18FFFFFF)
+                },
+                animationSpec = tween(150),
+                label = "cat_bg"
+            )
+
+            val borderColor by animateColorAsState(
+                targetValue = when {
+                    isSelected && hasCustomAccent -> accentColor
+                    isSelected && isLightMode -> Color(0xFF1C1917)
+                    isSelected -> Color(0x40FFFFFF)
+                    isLightMode -> Color(0xFFDDD8CB)
+                    else -> Color(0x18FFFFFF)
+                },
+                animationSpec = tween(150),
+                label = "cat_border"
+            )
+
+            val textColor by animateColorAsState(
+                targetValue = when {
+                    isSelected && hasCustomAccent -> if (isLightMode) accentColor else Color.White
+                    isSelected && isLightMode -> Color(0xFFF7F4EB)
+                    isSelected -> Color(0xFFF2F2F7)
+                    isLightMode -> Color(0xFF57534E)
+                    else -> Color(0xFF8E8E93)
+                },
+                animationSpec = tween(150),
+                label = "cat_text"
+            )
+
+            Surface(
+                shape = PillShape,
+                color = bgColor,
+                border = BorderStroke(0.5.dp, borderColor),
+                modifier = Modifier
+                    .height(32.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(bounded = true),
+                        onClick = { onCategorySelected(category) }
                     )
-
-                    Box(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .onGloballyPositioned { coords ->
-                                val x = coords.positionInParent().x
-                                val w = coords.size.width.toFloat()
-                                val existing = chipBounds[category.name]
-                                if (existing == null || existing.first != x || existing.second != w) {
-                                    chipBounds[category.name] = x to w
-                                }
-                            }
-                            .clip(pillShape)
-                            .then(
-                                if (!isSelected) {
-                                    val unselectedFill = if (palette.isLight) palette.surfaceSubtle else Color(0x18FFFFFF)
-                                    Modifier
-                                        .background(unselectedFill, pillShape)
-                                        .border(BorderStroke(0.5.dp, palette.surfaceBorder), pillShape)
-                                } else Modifier
-                            )
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = ripple(bounded = true, color = palette.ripple),
-                                onClick = {
-                                    if (!isSelected) {
-                                        haptics.tick()
-                                        onCategorySelected(category)
-                                    }
-                                }
-                            )
-                            .padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = category.displayName,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            color = textColor
-                        )
-                    }
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = category.displayName,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = textColor
+                    )
                 }
             }
         }

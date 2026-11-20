@@ -37,15 +37,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.CardShape
+import com.tessera.launcher.ui.theme.DarkSurface
+import com.tessera.launcher.ui.theme.DarkSurfaceBorder
+import com.tessera.launcher.ui.theme.IconShape
+import com.tessera.launcher.ui.theme.ItemShape
+import com.tessera.launcher.ui.theme.PillShape
+import com.tessera.launcher.ui.theme.SkeletonBase
+import com.tessera.launcher.ui.theme.SkeletonHighlight
+import com.tessera.launcher.ui.theme.TextPrimary
+import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.TextTertiary
 
 @Composable
 fun AppListSkeleton(
     modifier: Modifier = Modifier,
     itemCount: Int = 8
 ) {
-    val palette = Tessera.palette
-    val shapes = Tessera.shapes
     val transition = rememberInfiniteTransition(label = "skeleton_shimmer")
     val translateAnim by transition.animateFloat(
         initialValue = 0f,
@@ -58,7 +66,7 @@ fun AppListSkeleton(
     )
 
     val shimmerBrush = Brush.linearGradient(
-        colors = listOf(palette.surface, palette.surfaceSubtle, palette.surface),
+        colors = listOf(SkeletonBase, SkeletonHighlight, SkeletonBase),
         start = androidx.compose.ui.geometry.Offset(translateAnim - 500f, translateAnim - 500f),
         end = androidx.compose.ui.geometry.Offset(translateAnim, translateAnim)
     )
@@ -79,7 +87,7 @@ fun AppListSkeleton(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(shapes.small)
+                        .clip(IconShape)
                         .background(shimmerBrush)
                 )
                 Spacer(modifier = Modifier.width(16.dp))
@@ -88,14 +96,14 @@ fun AppListSkeleton(
                         modifier = Modifier
                             .width(140.dp)
                             .height(14.dp)
-                            .clip(shapes.small)
+                            .clip(ItemShape)
                             .background(shimmerBrush)
                     )
                     Box(
                         modifier = Modifier
                             .width(80.dp)
                             .height(10.dp)
-                            .clip(shapes.small)
+                            .clip(ItemShape)
                             .background(shimmerBrush)
                     )
                 }
@@ -114,8 +122,18 @@ fun AppListEmptyState(
     isAiUnlocked: Boolean = false,
     onAskAi: ((String) -> Unit)? = null
 ) {
-    val palette = Tessera.palette
-    val shapes = Tessera.shapes
+    val cardBg = when {
+        isLightMode -> Color(0xFFEFECE2)
+        isAmoledMode -> Color(0xFF10121A)
+        else -> DarkSurface
+    }
+    val borderCol = when {
+        isLightMode -> Color(0xFFDDD8CB)
+        isAmoledMode -> Color(0x25FFFFFF)
+        else -> DarkSurfaceBorder
+    }
+    val textPrimary = if (isLightMode) Color(0xFF1C1917) else TextPrimary
+    val textSecondary = if (isLightMode) Color(0xFF78716C) else TextSecondary
 
     val isAiMode = isAiUnlocked && (
         query.startsWith("@ai", ignoreCase = true) ||
@@ -141,9 +159,9 @@ fun AppListEmptyState(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 24.dp),
-        color = palette.surface,
-        shape = shapes.large,
-        border = BorderStroke(0.5.dp, palette.surfaceBorder)
+        color = cardBg,
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(0.5.dp, borderCol)
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -153,21 +171,21 @@ fun AppListEmptyState(
             Icon(
                 imageVector = Icons.Outlined.SearchOff,
                 contentDescription = null,
-                tint = palette.textSecondary,
+                tint = textSecondary,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "Nenhum aplicativo encontrado",
                 style = MaterialTheme.typography.titleSmall,
-                color = palette.textPrimary,
+                color = textPrimary,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = if (query.isNotBlank()) "Sem correspondência para \"$query\"" else "Nenhum aplicativo inicializável",
                 style = MaterialTheme.typography.bodyMedium,
-                color = palette.textSecondary
+                color = textSecondary
             )
 
             if (query.isNotBlank()) {
@@ -193,15 +211,13 @@ fun AppListErrorState(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val palette = Tessera.palette
-    val shapes = Tessera.shapes
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 32.dp),
-        color = palette.surface,
-        shape = shapes.card,
-        border = BorderStroke(1.dp, palette.surfaceBorder)
+        color = DarkSurface,
+        shape = CardShape,
+        border = BorderStroke(1.dp, DarkSurfaceBorder)
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -211,32 +227,32 @@ fun AppListErrorState(
             Icon(
                 imageVector = Icons.Outlined.ErrorOutline,
                 contentDescription = null,
-                tint = palette.textSecondary,
+                tint = TextSecondary,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Falha ao listar aplicativos",
                 style = MaterialTheme.typography.titleSmall,
-                color = palette.textPrimary
+                color = TextPrimary
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = errorMessage,
                 style = MaterialTheme.typography.bodyMedium,
-                color = palette.textSecondary
+                color = TextSecondary
             )
             Spacer(modifier = Modifier.height(16.dp))
             Surface(
-                shape = shapes.pill,
+                shape = PillShape,
                 color = Color.Transparent,
-                border = BorderStroke(1.dp, palette.surfaceBorder),
+                border = BorderStroke(1.dp, DarkSurfaceBorder),
                 modifier = Modifier.clickable(onClick = onRetry)
             ) {
                 Text(
                     text = "Recarregar",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = palette.textPrimary,
+                    color = TextPrimary,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
                 )
             }

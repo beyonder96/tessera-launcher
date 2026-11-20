@@ -122,34 +122,18 @@ private fun createMotion(
     bouncyStiffness: Float, bouncyDamping: Float,
     fadeQuickMillis: Int,
     fadeStandardMillis: Int,
-    emphasizedEasing: androidx.compose.animation.core.Easing,
-    staggerStepMillis: Int,
-    staggerMaxItems: Int,
-    enterOffsetDp: Float,
-    depthScale: Float,
-    depthDimAlpha: Float,
-    rubberBandFactor: Float,
-    backMinScale: Float
+    emphasizedEasing: androidx.compose.animation.core.Easing
 ): TesseraMotion = TesseraMotion(
     springPress = spring(stiffness = pressStiffness, dampingRatio = pressDamping),
     springQuick = spring(stiffness = quickStiffness, dampingRatio = quickDamping),
     springStandard = spring(stiffness = standardStiffness, dampingRatio = standardDamping),
     springSpatial = spring(stiffness = spatialStiffness, dampingRatio = spatialDamping),
-    springQuickDp = spring(stiffness = quickStiffness, dampingRatio = quickDamping),
-    springStandardDp = spring(stiffness = standardStiffness, dampingRatio = standardDamping),
     springSpatialDp = spring(stiffness = spatialStiffness, dampingRatio = spatialDamping),
     springSpatialOffset = spring(stiffness = spatialStiffness, dampingRatio = spatialDamping),
     springBouncy = spring(stiffness = bouncyStiffness, dampingRatio = bouncyDamping),
     fadeQuick = tween(fadeQuickMillis, easing = FastOutSlowInEasing),
     fadeStandard = tween(fadeStandardMillis, easing = FastOutSlowInEasing),
-    emphasizedEasing = emphasizedEasing,
-    staggerStepMillis = staggerStepMillis,
-    staggerMaxItems = staggerMaxItems,
-    enterOffsetDp = enterOffsetDp,
-    depthScale = depthScale,
-    depthDimAlpha = depthDimAlpha,
-    rubberBandFactor = rubberBandFactor,
-    backMinScale = backMinScale
+    emphasizedEasing = emphasizedEasing
 )
 
 /**
@@ -165,14 +149,7 @@ fun resolveVisagismMotion(profile: VisagismProfile): TesseraMotion {
             bouncyStiffness = 350f, bouncyDamping = 0.82f,
             fadeQuickMillis = 180,
             fadeStandardMillis = 260,
-            emphasizedEasing = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f),
-            staggerStepMillis = 18,
-            staggerMaxItems = 12,
-            enterOffsetDp = 16f,
-            depthScale = 0.94f,
-            depthDimAlpha = 0.36f,
-            rubberBandFactor = 0.55f,
-            backMinScale = 0.90f
+            emphasizedEasing = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
         )
         VisagismProfile.PRECISE -> createMotion(
             pressStiffness = 1800f, pressDamping = 1.0f,
@@ -182,14 +159,7 @@ fun resolveVisagismMotion(profile: VisagismProfile): TesseraMotion {
             bouncyStiffness = 600f, bouncyDamping = 0.95f,
             fadeQuickMillis = 120,
             fadeStandardMillis = 180,
-            emphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f),
-            staggerStepMillis = 0,
-            staggerMaxItems = 0,
-            enterOffsetDp = 8f,
-            depthScale = 0.97f,
-            depthDimAlpha = 0.24f,
-            rubberBandFactor = 0.40f,
-            backMinScale = 0.93f
+            emphasizedEasing = CubicBezierEasing(0.05f, 0.7f, 0.1f, 1f)
         )
         VisagismProfile.VIBRANT -> createMotion(
             pressStiffness = 1300f, pressDamping = 0.85f,
@@ -199,14 +169,7 @@ fun resolveVisagismMotion(profile: VisagismProfile): TesseraMotion {
             bouncyStiffness = 420f, bouncyDamping = 0.68f,
             fadeQuickMillis = 150,
             fadeStandardMillis = 220,
-            emphasizedEasing = CubicBezierEasing(0.34f, 1.3f, 0.64f, 1f),
-            staggerStepMillis = 22,
-            staggerMaxItems = 14,
-            enterOffsetDp = 22f,
-            depthScale = 0.93f,
-            depthDimAlpha = 0.40f,
-            rubberBandFactor = 0.65f,
-            backMinScale = 0.88f
+            emphasizedEasing = CubicBezierEasing(0.34f, 1.3f, 0.64f, 1f)
         )
         VisagismProfile.BOLD -> createMotion(
             pressStiffness = 2000f, pressDamping = 0.95f,
@@ -216,14 +179,7 @@ fun resolveVisagismMotion(profile: VisagismProfile): TesseraMotion {
             bouncyStiffness = 580f, bouncyDamping = 0.78f,
             fadeQuickMillis = 100,
             fadeStandardMillis = 160,
-            emphasizedEasing = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f),
-            staggerStepMillis = 8,
-            staggerMaxItems = 8,
-            enterOffsetDp = 12f,
-            depthScale = 0.96f,
-            depthDimAlpha = 0.32f,
-            rubberBandFactor = 0.45f,
-            backMinScale = 0.91f
+            emphasizedEasing = CubicBezierEasing(0.1f, 0.9f, 0.2f, 1f)
         )
     }
 }

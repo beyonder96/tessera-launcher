@@ -61,20 +61,7 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.1)
-
-### 🆕 Novidades na v4.1.1
-- ✨ **Coreografia Espacial, Física 1:1 & Predictive Back:**
-  - **Profundidade na Home & Cascata GPU:** Ao abrir a gaveta de aplicativos, a Home recua suavemente em profundidade (calibrado por perfil de visagismo) enquanto a lista surge com animação escalonada em GPU e `Modifier.animateItem()`.
-  - **Abertura Contextual pelo Ícone:** Lançamento de apps com expansão a partir dos limites reais do ícone (`makeClipRevealAnimation`) e assentamento suave ao retornar à Home.
-  - **Predictive Back Contínuo:** Gesto de voltar nativo do Android com prévia contínua de escala e deslocamento na gaveta, busca e painel lateral (-1).
-  - **Gestos 1:1 & Háptica Semântica:** Deslize horizontal nos itens com amortecimento *rubber-band*, pílula deslizante com mola nas categorias e háptica calibrada por perfil (`TesseraHaptics`).
-- 🎨 **Tipografia Manrope, Vidro Unificado & Grão Editorial:**
-  - **Fonte Tessera (Manrope):** Nova família estática Manrope com seletor em Personalização e numerais tabulares (`tnum`) no relógio editorial.
-  - **Tessera Glass & Performance:** `RenderEffect` blur em GPU (API 31+), remoção de animações contínuas em repouso na Home e textura editorial sutil de grão.
-- 🖼️ **Widget de Foto: Boot Instantâneo & Galeria de até 6 Fotos:**
-  - **Pré-processamento & Cache em Memória:** Miniaturas rápidas e versões full orientadas geradas ao salvar + pré-aquecimento prioritário no boot (`PhotoBitmapCache`).
-  - **Até 6 Fotos com Pager Fluido:** Suporte a seleção múltipla, `HorizontalPager` com paralaxe sutil, indicador em pílula animada, gerenciamento individual no menu de toque longo e integração com o StandBy Pro.
+- 🏷️ **Página de Releases:** [Baixar na Release v4.0.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.3)
 
 ### 🆕 Novidades na v4.0.3
 - 🕰️ **Tessera StandBy Pro 2.0:**

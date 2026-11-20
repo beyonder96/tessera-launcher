@@ -2,7 +2,6 @@ package com.tessera.launcher.data.preference
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.tessera.launcher.data.helper.PhotoWidgetGalleryHelper
 import com.tessera.launcher.data.model.CustomRssSource
 import com.tessera.launcher.data.model.LicenseInfo
 import org.json.JSONArray
@@ -29,8 +28,6 @@ class LauncherPreferences(context: Context) {
         private const val KEY_HOSTED_WIDGET_IDS = "hosted_widget_ids"
         private const val KEY_AMOLED_MODE = "amoled_mode"
         private const val KEY_PHOTO_WIDGET_URI = "photo_widget_uri"
-        private const val KEY_PHOTO_WIDGET_URIS = "photo_widget_uris_json"
-        private const val KEY_PHOTO_WIDGET_ACTIVE_INDEX = "photo_widget_active_index"
         private const val KEY_PHOTO_WIDGET_ENABLED = "photo_widget_enabled"
         private const val KEY_PHOTO_STANDBY_ON_CHARGE = "photo_standby_on_charge"
         private const val KEY_STANDBY_VIEW_MODE = "standby_view_mode"
@@ -195,44 +192,6 @@ class LauncherPreferences(context: Context) {
 
     fun setPhotoWidgetUri(uri: String?) {
         prefs.edit().putString(KEY_PHOTO_WIDGET_URI, uri).apply()
-    }
-
-    fun getPhotoWidgetUris(): List<String> {
-        val raw = prefs.getString(KEY_PHOTO_WIDGET_URIS, null)
-        if (!raw.isNullOrBlank()) {
-            val parsed = runCatching {
-                val arr = JSONArray(raw)
-                buildList {
-                    for (i in 0 until arr.length()) {
-                        val item = arr.optString(i, "").trim()
-                        if (item.isNotEmpty()) add(item)
-                    }
-                }
-            }.getOrDefault(emptyList())
-            if (parsed.isNotEmpty()) {
-                return PhotoWidgetGalleryHelper.normalizeGallery(parsed)
-            }
-        }
-        val legacy = getPhotoWidgetUri()
-        return if (!legacy.isNullOrBlank()) listOf(legacy) else emptyList()
-    }
-
-    fun setPhotoWidgetUris(uris: List<String>) {
-        val normalized = PhotoWidgetGalleryHelper.normalizeGallery(uris)
-        val arr = JSONArray()
-        normalized.forEach { arr.put(it) }
-        prefs.edit()
-            .putString(KEY_PHOTO_WIDGET_URIS, arr.toString())
-            .putString(KEY_PHOTO_WIDGET_URI, normalized.firstOrNull())
-            .apply()
-    }
-
-    fun getPhotoWidgetActiveIndex(): Int {
-        return prefs.getInt(KEY_PHOTO_WIDGET_ACTIVE_INDEX, 0)
-    }
-
-    fun setPhotoWidgetActiveIndex(index: Int) {
-        prefs.edit().putInt(KEY_PHOTO_WIDGET_ACTIVE_INDEX, index.coerceAtLeast(0)).apply()
     }
 
     fun isPhotoWidgetEnabled(): Boolean {

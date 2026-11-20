@@ -219,9 +219,6 @@ fun PhotoStandByModal(
     isOpen: Boolean,
     onDismiss: () -> Unit,
     photoUriString: String?,
-    photoUris: List<String> = emptyList(),
-    activePhotoIndex: Int = 0,
-    onSelectPhotoIndex: (Int) -> Unit = {},
     formattedTime: String,
     formattedDate: String,
     batteryPercentage: Int,
@@ -411,33 +408,14 @@ fun PhotoStandByModal(
         }
     }
 
-    val effectivePhotoUri = remember(photoUris, activePhotoIndex, photoUriString) {
-        if (photoUris.isNotEmpty()) {
-            photoUris.getOrNull(activePhotoIndex.coerceIn(0, photoUris.lastIndex)) ?: photoUriString
-        } else {
-            photoUriString
-        }
-    }
-
-    val initialFullBitmap = remember(effectivePhotoUri, isOpen) {
-        if (isOpen && !effectivePhotoUri.isNullOrBlank()) {
-            com.tessera.launcher.data.helper.PhotoBitmapCache.getFull(effectivePhotoUri)
-        } else {
-            null
-        }
-    }
-
-    // Carrega o bitmap da foto em IO thread (instantâneo quando pré-processado em disco/RAM)
-    val bitmap by produceState<Bitmap?>(
-        initialValue = initialFullBitmap,
-        key1 = effectivePhotoUri,
-        key2 = isOpen
-    ) {
-        value = if (isOpen && !effectivePhotoUri.isNullOrBlank()) {
-            value ?: withContext(Dispatchers.IO) {
-                com.tessera.launcher.data.helper.loadStandByPhotoFast(
+    // Carrega o bitmap da foto em IO thread
+    val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString, isOpen) {
+        value = if (isOpen && !photoUriString.isNullOrBlank()) {
+            withContext(Dispatchers.IO) {
+                com.tessera.launcher.data.helper.loadSampledPhotoBitmap(
                     context = context,
-                    photoUriOrPath = effectivePhotoUri
+                    photoUriOrPath = photoUriString,
+                    maxDimensionPx = 1440
                 )
             }
         } else {
@@ -817,16 +795,14 @@ private fun StandByTopHeaderBar(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StandByWeatherChip(
                     weatherTemp = weatherTemp,
                     weatherCondition = weatherCondition,
                     weatherCity = weatherCity,
-                    formattedTime = formattedTime,
-                    modifier = Modifier.weight(1f, fill = false)
+                    formattedTime = formattedTime
                 )
                 StandByBatteryChip(
                     batteryPercentage = batteryPercentage,
@@ -2718,8 +2694,7 @@ private fun StandByWeatherChip(
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFA0A0A8),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 1
             )
         }
     }

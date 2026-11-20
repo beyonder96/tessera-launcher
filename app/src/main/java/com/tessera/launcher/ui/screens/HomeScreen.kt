@@ -7,16 +7,14 @@ import com.tessera.launcher.ui.components.ModernWidgetPickerBottomSheet
 import com.tessera.launcher.ui.TesseraLauncherUpdateDialog
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
-import androidx.activity.BackEventCompat
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -52,9 +50,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import com.tessera.launcher.ui.theme.tokens.Tessera
-import com.tessera.launcher.ui.theme.tokens.tesseraGrain
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,26 +65,22 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -167,8 +159,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import com.tessera.launcher.ui.components.LocalLateralPanelProgress
-import com.tessera.launcher.ui.motion.MotionMath
-import com.tessera.launcher.ui.motion.rememberAppLauncher
 import com.tessera.launcher.ui.theme.tokens.LateralSpatialMath
 import com.tessera.launcher.ui.state.FeedState
 
@@ -215,6 +205,12 @@ fun HomeScreen(
         }
     }
 
+    val animatedBlurDp by animateDpAsState(
+        targetValue = targetBlurDp,
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        label = "wallpaperBlurAnimation"
+    )
+
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -223,13 +219,6 @@ fun HomeScreen(
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
-    val motion = Tessera.motion
-
-    val targetBlurPx = with(density) { targetBlurDp.toPx() }
-    val blurRadiusPx = remember { Animatable(targetBlurPx) }
-    LaunchedEffect(targetBlurPx) {
-        blurRadiusPx.animateTo(targetBlurPx, animationSpec = motion.fadeStandard)
-    }
 
     val panelProgress = remember { Animatable(if (uiState.isFeedOpen) 1f else 0f) }
 
@@ -247,16 +236,6 @@ fun HomeScreen(
         }
     }
 
-    val isDrawerContentVisible = uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty()
-    val drawerProgress = remember { Animatable(if (isDrawerContentVisible) 1f else 0f) }
-
-    LaunchedEffect(isDrawerContentVisible) {
-        drawerProgress.animateTo(
-            targetValue = if (isDrawerContentVisible) 1f else 0f,
-            animationSpec = motion.springSpatial
-        )
-    }
-
     val listState = rememberLazyListState()
     val lifecycleOwner = LocalLifecycleOwner.current
     var selectedAppForMenu by remember { mutableStateOf<AppInfo?>(null) }
@@ -265,16 +244,10 @@ fun HomeScreen(
     var folderToView by remember { mutableStateOf<AppFolder?>(null) }
     val haptic = LocalHapticFeedback.current
 
-    val isPanelResting by remember { derivedStateOf { panelProgress.value <= 0.01f } }
-    val isDrawerResting by remember { derivedStateOf { drawerProgress.value <= 0.01f } }
-    val isDrawerMounted by remember(isDrawerContentVisible) {
-        derivedStateOf { isDrawerContentVisible || drawerProgress.value > 0.005f }
-    }
     val isRestingHomeScreen = !uiState.isDrawerOpen &&
         !uiState.isSettingsOpen &&
         !uiState.isFeedOpen &&
-        isPanelResting &&
-        isDrawerResting &&
+        panelProgress.value <= 0.01f &&
         !uiState.isSearchExpanded &&
         uiState.searchQuery.isEmpty() &&
         folderToView == null &&
@@ -284,24 +257,11 @@ fun HomeScreen(
         uiState.proUpgradeFeatureName == null &&
         !uiState.isSafeModeRecoveryOpen
 
-    val returnSettlePending = remember { booleanArrayOf(false) }
-    val returnSettleAnim = remember { Animatable(1f) }
-    val launchAppWithBounds = rememberAppLauncher(viewModel) {
-        returnSettlePending[0] = true
-    }
-
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                if (returnSettlePending[0]) {
-                    returnSettlePending[0] = false
-                    scope.launch {
-                        returnSettleAnim.snapTo(0f)
-                        returnSettleAnim.animateTo(1f, motion.springStandard)
-                    }
-                }
                 viewModel.checkNotificationAccess(context)
                 viewModel.refreshCalendarAndPermissions()
                 viewModel.refreshWeather()
@@ -330,52 +290,6 @@ fun HomeScreen(
         if (handled) {
             focusManager.clearFocus()
             keyboardController?.hide()
-        }
-    }
-
-    val backPreviewProgress = remember { Animatable(0f) }
-    var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
-    val hasNoModalOverlays = !uiState.isSettingsOpen &&
-        !uiState.isNotificationsHubOpen &&
-        !uiState.isPhotoStandByOpen &&
-        !uiState.isWidgetPickerOpen &&
-        !uiState.shouldShowOnboarding &&
-        uiState.proUpgradeFeatureName == null &&
-        !uiState.isSafeModeRecoveryOpen &&
-        activePopUpWidgetApp == null &&
-        selectedAppForMenu == null &&
-        folderToView == null &&
-        !isNotesTasksOpen &&
-        uiState.activeWidgetConfigModal == null
-
-    PredictiveBackHandler(enabled = isDrawerContentVisible && hasNoModalOverlays) { events ->
-        try {
-            events.collect { event ->
-                backSwipeEdge = event.swipeEdge
-                backPreviewProgress.snapTo(event.progress)
-            }
-            val currentBack = backPreviewProgress.value
-            if (currentBack > 0f) {
-                drawerProgress.snapTo((1f - currentBack * 0.25f).coerceIn(0.6f, 1f))
-                backPreviewProgress.snapTo(0f)
-            }
-            focusManager.clearFocus()
-            keyboardController?.hide()
-            viewModel.collapseSearch()
-        } catch (_: CancellationException) {
-            backPreviewProgress.animateTo(0f, motion.springQuick)
-        }
-    }
-
-    PredictiveBackHandler(enabled = uiState.isFeedOpen && !isDrawerContentVisible && hasNoModalOverlays) { events ->
-        try {
-            events.collect { event ->
-                panelProgress.snapTo((1f - event.progress * 0.45f).coerceIn(0.45f, 1f))
-            }
-            panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
-            viewModel.closeFeed()
-        } catch (_: CancellationException) {
-            panelProgress.animateTo(1f, LateralSpatialMath.springSpatialCinematic)
         }
     }
 
@@ -460,33 +374,28 @@ fun HomeScreen(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .graphicsLayer {
-                            val r = blurRadiusPx.value
-                            if (r > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                renderEffect = BlurEffect(r, r, TileMode.Decal)
-                                scaleX = 1.10f
-                                scaleY = 1.10f
+                        .then(
+                            if (animatedBlurDp > 0.dp) {
+                                Modifier
+                                    .graphicsLayer {
+                                        scaleX = 1.10f
+                                        scaleY = 1.10f
+                                    }
+                                    .blur(radius = animatedBlurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                             } else {
-                                renderEffect = null
-                                scaleX = 1f
-                                scaleY = 1f
+                                Modifier
                             }
-                        },
+                        ),
                     contentScale = ContentScale.Crop
                 )
             }
 
             // Camada de Escurecimento / Tint Suave para Legibilidade dos Widgets e Textos
             val restingDimAlpha = ((uiState.homeWallpaperBlur / 100f) * 0.40f).coerceIn(0f, 0.45f)
-            val preAndroid12BlurFallback = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && targetBlurDp > 0.dp) {
-                (targetBlurDp.value / 40f).coerceIn(0f, 1f) * 0.28f
-            } else {
-                0f
-            }
             val effectiveAlpha = if (wallpaperBitmap != null) {
-                (restingDimAlpha + preAndroid12BlurFallback).coerceIn(0f, 0.65f)
+                restingDimAlpha
             } else {
-                (((uiState.homeWallpaperBlur / 100f) * 0.20f) + preAndroid12BlurFallback).coerceIn(0f, 0.45f)
+                ((uiState.homeWallpaperBlur / 100f) * 0.20f).coerceIn(0f, 0.25f)
             }
             if (effectiveAlpha > 0f) {
                 Box(
@@ -506,24 +415,11 @@ fun HomeScreen(
                 .fillMaxSize()
                 .graphicsLayer {
                     val p = panelProgress.value
-                    val bp = backPreviewProgress.value
-                    val d = drawerProgress.value * (1f - bp * 0.65f)
-                    val panelScale = if (p > 0.001f) LateralSpatialMath.homeScale(p) else 1f
-                    val panelAlpha = if (p > 0.001f) LateralSpatialMath.homeAlpha(p) else 1f
-                    val drawerScale = if (d > 0.001f) MotionMath.lerp(1f, motion.depthScale, d) else 1f
-                    val drawerAlpha = if (d > 0.001f) MotionMath.lerp(1f, 1f - motion.depthDimAlpha, d) else 1f
-                    var s = minOf(panelScale, drawerScale)
-                    var a = minOf(panelAlpha, drawerAlpha)
-                    val rs = returnSettleAnim.value
-                    if (rs < 0.999f) {
-                        s *= MotionMath.lerp(0.972f, 1f, rs)
-                        a *= MotionMath.lerp(0.78f, 1f, rs)
-                    }
-                    scaleX = s
-                    scaleY = s
-                    alpha = a
                     if (p > 0.001f) {
+                        scaleX = LateralSpatialMath.homeScale(p)
+                        scaleY = LateralSpatialMath.homeScale(p)
                         translationX = LateralSpatialMath.homeParallaxX(p, screenWidthPx)
+                        alpha = LateralSpatialMath.homeAlpha(p)
                     }
                 }
                 .padding(top = statusBarTopPadding)
@@ -728,18 +624,10 @@ fun HomeScreen(
         }
 
         // Centro da Tela Inicial: Relógio Tipográfico de Autor & Moldura de Foto Minimalista
-        if (!uiState.isSearchExpanded && (!uiState.isDrawerOpen || !isDrawerResting) && uiState.searchQuery.isEmpty()) {
+        if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .graphicsLayer {
-                        val bp = backPreviewProgress.value
-                        val d = (drawerProgress.value * (1f - bp * 0.65f)).coerceIn(0f, 1f)
-                        val s = MotionMath.lerp(1f, motion.depthScale, d)
-                        scaleX = s
-                        scaleY = s
-                        alpha = (1f - d * 1.15f).coerceIn(0f, 1f)
-                    }
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
@@ -761,12 +649,8 @@ fun HomeScreen(
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
-                        photoUris = uiState.photoWidgetUris,
-                        activeIndex = uiState.photoWidgetActiveIndex,
-                        onActiveIndexChange = { viewModel.setActivePhotoWidgetIndex(it) },
                         onPickPhoto = { onPickPhoto() },
                         onRemovePhoto = { viewModel.clearPhotoWidget(context) },
-                        onRemovePhotoAt = { index -> viewModel.removePhotoWidgetAt(index, context) },
                         onPhotoClick = { viewModel.openPhotoStandBy() },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier
@@ -777,7 +661,7 @@ fun HomeScreen(
             }
         }
 
-        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim em tela cheia)
+        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
             val baseMin = if (uiState.isLightMode) 0.45f else (if (uiState.isSystemWallpaperEnabled) 0.48f else 0.68f)
             val baseMax = if (uiState.isLightMode) 0.75f else (if (uiState.isSystemWallpaperEnabled) 0.74f else 0.88f)
@@ -789,20 +673,28 @@ fun HomeScreen(
             if (uiState.isLightMode) 0.76f else 0.82f
         }
 
-        val palette = Tessera.palette
-        val drawerBackdropBrush = remember(palette, drawerBackdropAlpha) {
-            Brush.verticalGradient(
-                colors = listOf(
-                    palette.background.copy(alpha = (drawerBackdropAlpha * 0.94f).coerceAtMost(1f)),
-                    palette.background.copy(alpha = drawerBackdropAlpha)
+        val drawerBackdropBrush = remember(uiState.isLightMode, drawerBackdropAlpha) {
+            if (uiState.isLightMode) {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFFF7F4EB).copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
+                        Color(0xFFE8E4D8).copy(alpha = drawerBackdropAlpha)
+                    )
                 )
-            )
+            } else {
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF0F0F14).copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
+                        Color.Black.copy(alpha = drawerBackdropAlpha)
+                    )
+                )
+            }
         }
 
         AnimatedVisibility(
             visible = uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-            enter = fadeIn(animationSpec = motion.fadeStandard),
-            exit = fadeOut(animationSpec = motion.fadeQuick)
+            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
+            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
         ) {
             Box(
                 modifier = Modifier
@@ -820,71 +712,36 @@ fun HomeScreen(
             )
         }
 
-        // Gaveta Vertical de Aplicativos & Resultados com entrada espacial e cascata acelerada por GPU
-        if (isDrawerMounted) {
-            val enterOffsetPx = with(density) { motion.enterOffsetDp.dp.toPx() }
-            val backShiftPx = with(density) { 10.dp.toPx() }
-            val backClipShape = Tessera.shapes.card
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer {
-                        val p = drawerProgress.value
-                        val bp = backPreviewProgress.value
-                        alpha = (p * 1.15f).coerceIn(0f, 1f)
-                        val s = MotionMath.lerp(0.96f, 1f, p) * MotionMath.backProgressToScale(bp, motion.backMinScale)
-                        scaleX = s
-                        scaleY = s
-                        transformOrigin = TransformOrigin(0.5f, 1f)
-                        translationY = (1f - p) * (size.height / 14f)
-                        translationX = if (bp > 0.001f) {
-                            val dir = if (backSwipeEdge == BackEventCompat.EDGE_LEFT) 1f else -1f
-                            dir * bp * backShiftPx
-                        } else 0f
-                        if (bp > 0.01f) {
-                            clip = true
-                            shape = backClipShape
-                        } else {
-                            clip = false
-                        }
-                    }
-            ) {
+        // Gaveta Vertical de Aplicativos & Resultados
+        AnimatedVisibility(
+            visible = uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
+            enter = fadeIn(animationSpec = Tessera.motion.springSpatial) +
+                    slideInVertically(
+                        initialOffsetY = { it / 8 },
+                        animationSpec = Tessera.motion.springSpatialOffset
+                    ),
+            exit = fadeOut(animationSpec = Tessera.motion.springSpatial) +
+                    slideOutVertically(
+                        targetOffsetY = { it / 8 },
+                        animationSpec = Tessera.motion.springSpatialOffset
+                    ),
+            modifier = Modifier.fillMaxSize()
+        ) {
             val isCategoriesVisible = uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled
             val drawerBottomPadding = if (isCategoriesVisible) 136.dp else 88.dp
-            val bottomFadeTopPx = with(density) { (drawerBottomPadding + 20.dp).toPx() }
-            val bottomFadeEndPx = with(density) { (drawerBottomPadding - 18.dp).coerceAtLeast(56.dp).toPx() }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
             ) {
-                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 16.dp else statusBarTopPadding + 8.dp
+                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 8.dp else 32.dp
                 Spacer(modifier = Modifier.height(drawerTopPadding))
 
                 Row(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .graphicsLayer {
-                            compositingStrategy = CompositingStrategy.Offscreen
-                        }
-                        .drawWithContent {
-                            drawContent()
-                            if (size.height > bottomFadeTopPx) {
-                                val fadeStartFraction = ((size.height - bottomFadeTopPx) / size.height).coerceIn(0f, 0.95f)
-                                val fadeEndFraction = ((size.height - bottomFadeEndPx) / size.height).coerceIn(fadeStartFraction + 0.01f, 0.99f)
-                                drawRect(
-                                    brush = Brush.verticalGradient(
-                                        0f to Color.Black,
-                                        fadeStartFraction to Color.Black,
-                                        fadeEndFraction to Color.Transparent,
-                                        1f to Color.Transparent
-                                    ),
-                                    blendMode = BlendMode.DstIn
-                                )
-                            }
-                        }
                 ) {
                     Box(
                         modifier = Modifier
@@ -935,13 +792,7 @@ fun HomeScreen(
                                                     },
                                                     isLightMode = uiState.isLightMode,
                                                     isAmoledMode = uiState.isAmoledMode,
-                                                    modifier = Modifier
-                                                        .animateItem(
-                                                            fadeInSpec = motion.fadeQuick,
-                                                            fadeOutSpec = motion.fadeQuick,
-                                                            placementSpec = motion.springSpatialOffset
-                                                        )
-                                                        .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
                                         }
@@ -953,13 +804,7 @@ fun HomeScreen(
                                                     query = uiState.searchQuery,
                                                     result = result,
                                                     isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                                    modifier = Modifier
-                                                        .animateItem(
-                                                            fadeInSpec = motion.fadeQuick,
-                                                            fadeOutSpec = motion.fadeQuick,
-                                                            placementSpec = motion.springSpatialOffset
-                                                        )
-                                                        .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
                                         }
@@ -973,13 +818,7 @@ fun HomeScreen(
                                                     isLightMode = uiState.isLightMode,
                                                     isAmoledMode = uiState.isAmoledMode,
                                                     onStartZenMode = { minutes -> viewModel.startZenMode(minutes) },
-                                                    modifier = Modifier
-                                                        .animateItem(
-                                                            fadeInSpec = motion.fadeQuick,
-                                                            fadeOutSpec = motion.fadeQuick,
-                                                            placementSpec = motion.springSpatialOffset
-                                                        )
-                                                        .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
                                         }
@@ -995,13 +834,7 @@ fun HomeScreen(
                                                         letterSpacing = 1.sp
                                                     ),
                                                     color = TextSecondary,
-                                                    modifier = Modifier
-                                                        .animateItem(
-                                                            fadeInSpec = motion.fadeQuick,
-                                                            fadeOutSpec = motion.fadeQuick,
-                                                            placementSpec = motion.springSpatialOffset
-                                                        )
-                                                        .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                                 )
                                             }
                                             items(
@@ -1010,12 +843,7 @@ fun HomeScreen(
                                             ) { contact ->
                                                 ContactListItem(
                                                     contact = contact,
-                                                    onClick = { viewModel.callContact(contact.phoneNumber) },
-                                                    modifier = Modifier.animateItem(
-                                                        fadeInSpec = motion.fadeQuick,
-                                                        fadeOutSpec = motion.fadeQuick,
-                                                        placementSpec = motion.springSpatialOffset
-                                                    )
+                                                    onClick = { viewModel.callContact(contact.phoneNumber) }
                                                 )
                                             }
                                         }
@@ -1026,23 +854,17 @@ fun HomeScreen(
                                                 FolderSearchCard(
                                                     folder = folder,
                                                     allApps = allApps,
-                                                    onAppClick = { app -> launchAppWithBounds(app, null) },
+                                                    onAppClick = { app -> viewModel.launchApp(app) },
                                                     onAppLongClick = { app -> selectedAppForMenu = app },
                                                     onFolderClick = { f -> folderToView = f },
-                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                                    onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) },
-                                                    modifier = Modifier.animateItem(
-                                                        fadeInSpec = motion.fadeQuick,
-                                                        fadeOutSpec = motion.fadeQuick,
-                                                        placementSpec = motion.springSpatialOffset
-                                                    )
+                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
                                                 )
                                             }
                                         }
 
                                         // Barra externa de busca / Central de IA
                                         if (uiState.searchQuery.isNotEmpty() && (uiState.isWebSearchEnabled || isAiCommand) && !isAiSearchActive) {
-                                            item(key = "search_external_empty") {
+                                            item {
                                                 SearchExternalActions(
                                                     query = uiState.searchQuery,
                                                     inAppSearchPackages = uiState.inAppSearchPackages,
@@ -1052,13 +874,7 @@ fun HomeScreen(
                                                     provider = uiState.aiProvider,
                                                     isAiUnlocked = uiState.isMasterAccess,
                                                     onAskAi = if (uiState.isMasterAccess) { { viewModel.executeAiSearch(it) } } else null,
-                                                    modifier = Modifier
-                                                        .animateItem(
-                                                            fadeInSpec = motion.fadeQuick,
-                                                            fadeOutSpec = motion.fadeQuick,
-                                                            placementSpec = motion.springSpatialOffset
-                                                        )
-                                                        .padding(top = 8.dp)
+                                                    modifier = Modifier.padding(top = 8.dp)
                                                 )
                                             }
                                         }
@@ -1118,13 +934,7 @@ fun HomeScreen(
                                                 },
                                                 isLightMode = uiState.isLightMode,
                                                 isAmoledMode = uiState.isAmoledMode,
-                                                modifier = Modifier
-                                                    .animateItem(
-                                                        fadeInSpec = motion.fadeQuick,
-                                                        fadeOutSpec = motion.fadeQuick,
-                                                        placementSpec = motion.springSpatialOffset
-                                                    )
-                                                    .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                             )
                                         }
                                     }
@@ -1139,12 +949,7 @@ fun HomeScreen(
                                                 commandsList = uiState.commandsList,
                                                 onChipClick = { prefix ->
                                                     viewModel.onSearchQueryChange(prefix)
-                                                },
-                                                modifier = Modifier.animateItem(
-                                                    fadeInSpec = motion.fadeQuick,
-                                                    fadeOutSpec = motion.fadeQuick,
-                                                    placementSpec = motion.springSpatialOffset
-                                                )
+                                                }
                                             )
                                         }
                                     }
@@ -1156,13 +961,7 @@ fun HomeScreen(
                                                 query = uiState.searchQuery,
                                                 result = result,
                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                                modifier = Modifier
-                                                    .animateItem(
-                                                        fadeInSpec = motion.fadeQuick,
-                                                        fadeOutSpec = motion.fadeQuick,
-                                                        placementSpec = motion.springSpatialOffset
-                                                    )
-                                                    .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                             )
                                         }
                                     }
@@ -1176,13 +975,7 @@ fun HomeScreen(
                                                 isLightMode = uiState.isLightMode,
                                                 isAmoledMode = uiState.isAmoledMode,
                                                 onStartZenMode = { minutes -> viewModel.startZenMode(minutes) },
-                                                modifier = Modifier
-                                                    .animateItem(
-                                                        fadeInSpec = motion.fadeQuick,
-                                                        fadeOutSpec = motion.fadeQuick,
-                                                        placementSpec = motion.springSpatialOffset
-                                                    )
-                                                    .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                             )
                                         }
                                     }
@@ -1198,13 +991,7 @@ fun HomeScreen(
                                                 letterSpacing = 1.sp
                                             ),
                                             color = TextSecondary,
-                                            modifier = Modifier
-                                                .animateItem(
-                                                    fadeInSpec = motion.fadeQuick,
-                                                    fadeOutSpec = motion.fadeQuick,
-                                                    placementSpec = motion.springSpatialOffset
-                                                )
-                                                .padding(horizontal = 24.dp, vertical = 6.dp)
+                                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                         )
                                     }
                                     items(
@@ -1213,12 +1000,7 @@ fun HomeScreen(
                                     ) { contact ->
                                         ContactListItem(
                                             contact = contact,
-                                            onClick = { viewModel.callContact(contact.phoneNumber) },
-                                            modifier = Modifier.animateItem(
-                                                fadeInSpec = motion.fadeQuick,
-                                                fadeOutSpec = motion.fadeQuick,
-                                                placementSpec = motion.springSpatialOffset
-                                            )
+                                            onClick = { viewModel.callContact(contact.phoneNumber) }
                                         )
                                     }
                                 }
@@ -1230,16 +1012,10 @@ fun HomeScreen(
                                              FolderSearchCard(
                                                  folder = folder,
                                                  allApps = allApps,
-                                                 onAppClick = { app -> launchAppWithBounds(app, null) },
+                                                 onAppClick = { app -> viewModel.launchApp(app) },
                                                  onAppLongClick = { app -> selectedAppForMenu = app },
                                                  onFolderClick = { f -> folderToView = f },
-                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
-                                                 onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) },
-                                                 modifier = Modifier.animateItem(
-                                                     fadeInSpec = motion.fadeQuick,
-                                                     fadeOutSpec = motion.fadeQuick,
-                                                     placementSpec = motion.springSpatialOffset
-                                                 )
+                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
                                              )
                                          }
                                      }
@@ -1255,13 +1031,7 @@ fun HomeScreen(
                                                   onFinishEarly = { viewModel.stopZenMode() },
                                                   isLightMode = uiState.isLightMode,
                                                   accentColor = uiState.activeAccentColor,
-                                                  modifier = Modifier
-                                                      .animateItem(
-                                                          fadeInSpec = motion.fadeQuick,
-                                                          fadeOutSpec = motion.fadeQuick,
-                                                          placementSpec = motion.springSpatialOffset
-                                                      )
-                                                      .padding(horizontal = 20.dp, vertical = 6.dp)
+                                                  modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
                                               )
                                           }
                                       }
@@ -1280,19 +1050,13 @@ fun HomeScreen(
                                                       letterSpacing = 1.sp
                                                   ),
                                                   color = TextSecondary,
-                                                  modifier = Modifier
-                                                      .animateItem(
-                                                          fadeInSpec = motion.fadeQuick,
-                                                          fadeOutSpec = motion.fadeQuick,
-                                                          placementSpec = motion.springSpatialOffset
-                                                      )
-                                                      .padding(horizontal = 24.dp, vertical = 6.dp)
+                                                  modifier = Modifier.padding(horizontal = 24.dp, vertical = 6.dp)
                                               )
                                           }
                                           item(key = "ai_suggested_row") {
                                               SmartDockRow(
                                                   apps = uiState.predictedApps,
-                                                  onAppClick = { app -> launchAppWithBounds(app, null) },
+                                                  onAppClick = { app -> viewModel.launchApp(app) },
                                                   onAppLongClick = { app -> selectedAppForMenu = app },
                                                   iconShape = uiState.iconShape,
                                                   isThemedIcons = uiState.isThemedIconsEnabled,
@@ -1301,14 +1065,7 @@ fun HomeScreen(
                                                   isEmbedded = true,
                                                   notificationCounts = uiState.notificationCounts,
                                                   accentColor = uiState.activeAccentColor,
-                                                  modifier = Modifier
-                                                      .animateItem(
-                                                          fadeInSpec = motion.fadeQuick,
-                                                          fadeOutSpec = motion.fadeQuick,
-                                                          placementSpec = motion.springSpatialOffset
-                                                      )
-                                                      .padding(horizontal = 16.dp, vertical = 2.dp),
-                                                  onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) }
+                                                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                                               )
                                           }
                                           item(key = "ai_suggested_divider") {
@@ -1316,29 +1073,10 @@ fun HomeScreen(
                                           }
                                       }
 
-                                      itemsIndexed(
+                                      items(
                                          items = uiState.filteredApps,
-                                         key = { _, app -> if (app.isShortcut) "shortcut_${app.packageName}_${app.shortcutId ?: app.label}" else "app_${app.packageName}" }
-                                     ) { index, app ->
-                                     val cascadeModifier = if (uiState.searchQuery.isEmpty() && index < motion.staggerMaxItems) {
-                                         Modifier.graphicsLayer {
-                                             val dp = drawerProgress.value
-                                             if (dp < 0.999f) {
-                                                 val cp = MotionMath.drawerCascadeProgress(
-                                                     drawerProgress = dp,
-                                                     index = index,
-                                                     staggerStepMillis = motion.staggerStepMillis,
-                                                     staggerMaxItems = motion.staggerMaxItems
-                                                 )
-                                                 alpha = cp
-                                                 translationY = (1f - cp) * enterOffsetPx
-                                                 val cs = MotionMath.lerp(0.97f, 1f, cp)
-                                                 scaleX = cs
-                                                 scaleY = cs
-                                             }
-                                         }
-                                     } else Modifier
-
+                                         key = { if (it.isShortcut) "shortcut_${it.packageName}_${it.shortcutId ?: it.label}" else "app_${it.packageName}" }
+                                     ) { app ->
                                      AppListItem(
                                          app = app,
                                          iconShape = uiState.iconShape,
@@ -1349,15 +1087,8 @@ fun HomeScreen(
                                          notificationCount = uiState.notificationCounts[app.packageName] ?: 0,
                                          accentColor = uiState.activeAccentColor,
                                          isLightMode = uiState.isLightMode,
-                                         modifier = Modifier
-                                             .animateItem(
-                                                 fadeInSpec = motion.fadeQuick,
-                                                 fadeOutSpec = motion.fadeQuick,
-                                                 placementSpec = motion.springSpatialOffset
-                                             )
-                                             .then(cascadeModifier),
-                                         onClickWithBounds = { bounds ->
-                                             launchAppWithBounds(app, bounds).onFailure { error ->
+                                         onClick = {
+                                             viewModel.launchApp(app).onFailure { error ->
                                                  Toast.makeText(
                                                      context,
                                                      error.message ?: "Erro ao abrir aplicativo",
@@ -1381,7 +1112,7 @@ fun HomeScreen(
 
                             // Pílula externa de pesquisa (Google + Apps)
                                 if (uiState.searchQuery.isNotEmpty() && uiState.isWebSearchEnabled) {
-                                    item(key = "search_external_success") {
+                                    item {
                                         SearchExternalActions(
                                             query = uiState.searchQuery,
                                             inAppSearchPackages = uiState.inAppSearchPackages,
@@ -1392,13 +1123,7 @@ fun HomeScreen(
                                             showAiHeroCard = !isAiSearchActive,
                                             isAiUnlocked = uiState.isMasterAccess,
                                             onAskAi = if (uiState.isMasterAccess) { { viewModel.executeAiSearch(it) } } else null,
-                                            modifier = Modifier
-                                                .animateItem(
-                                                    fadeInSpec = motion.fadeQuick,
-                                                    fadeOutSpec = motion.fadeQuick,
-                                                    placementSpec = motion.springSpatialOffset
-                                                )
-                                                .padding(top = 8.dp)
+                                            modifier = Modifier.padding(top = 8.dp)
                                         )
                                     }
                                 }
@@ -1440,7 +1165,6 @@ fun HomeScreen(
                 }
             }
         }
-        }
     }
 
         // Doca Inferior de Pesquisa & Controles Unificada
@@ -1458,8 +1182,8 @@ fun HomeScreen(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    palette.background.copy(alpha = 0.35f),
-                                    palette.background.copy(alpha = 0.75f)
+                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.35f),
+                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.75f)
                                 )
                             )
                         )
@@ -1710,7 +1434,7 @@ fun HomeScreen(
             FolderViewBottomSheet(
                 folder = folder,
                 allApps = allApps,
-                onAppClick = { app -> launchAppWithBounds(app, null) },
+                onAppClick = { app -> viewModel.launchApp(app) },
                 onAppLongClick = { app -> selectedAppForMenu = app },
                 onDismiss = { folderToView = null },
                 isAmoledMode = uiState.isAmoledMode
@@ -1911,7 +1635,7 @@ fun HomeScreen(
                                         predictedApps = uiState.predictedApps,
                                         isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
                                         onTogglePredictedApps = { viewModel.setSmartDockEnabled(it) },
-                                        onAppClick = { app -> launchAppWithBounds(app, null) },
+                                        onAppClick = { app -> viewModel.launchApp(app) },
                                         onAppLongClick = { app -> selectedAppForMenu = app },
                                         iconShape = uiState.iconShape,
                                         isThemedIcons = uiState.isThemedIconsEnabled,
@@ -2006,9 +1730,6 @@ fun HomeScreen(
             isOpen = uiState.isPhotoStandByOpen,
             onDismiss = { viewModel.closePhotoStandBy() },
             photoUriString = uiState.photoWidgetUri,
-            photoUris = uiState.photoWidgetUris,
-            activePhotoIndex = uiState.photoWidgetActiveIndex,
-            onSelectPhotoIndex = { viewModel.setActivePhotoWidgetIndex(it) },
             formattedTime = uiState.formattedTime,
             formattedDate = uiState.formattedDate,
             batteryPercentage = uiState.batteryPercentage,

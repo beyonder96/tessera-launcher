@@ -46,12 +46,9 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import com.tessera.launcher.ui.theme.tokens.tesseraGrain
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -61,20 +58,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -172,58 +165,148 @@ fun SearchMorphingDock(
 
     val dockShape = Tessera.shapes.pill
     val buttonShape = Tessera.shapes.full
-    val motion = Tessera.motion
-    val palette = Tessera.palette
+
+    // Animação Contínua da Luz Branca Pura Especular de IA (Estilo Ativação Nativa de Celular)
+    val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
+    val aiGlowAngle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ai_glow_rotation"
+    )
+
+    val aiPulse by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ai_glow_pulse"
+    )
+
+    val geminiExpandProgress by animateFloatAsState(
+        targetValue = if (isExpanded && effectiveGeminiGlow) 1f else 0f,
+        animationSpec = Tessera.motion.springSpatial,
+        label = "gemini_expand_progress"
+    )
+
+    val rad = Math.toRadians(aiGlowAngle.toDouble())
+    val cosVal = Math.cos(rad).toFloat()
+    val sinVal = Math.sin(rad).toFloat()
+
+    val aiBorderBrush = remember(aiGlowAngle, isLightMode) {
+        Brush.linearGradient(
+            colors = if (isLightMode) com.tessera.launcher.ui.theme.PhoneAiLightGlowColors
+                     else com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors,
+            start = Offset(x = 500f * (1f - cosVal), y = 200f * (1f - sinVal)),
+            end = Offset(x = 500f * (1f + cosVal), y = 200f * (1f + sinVal))
+        )
+    }
 
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
     val shouldUseLiquidGlass = isLiquidGlass || opacityFraction < 0.98f
 
-    val modernSpecularBorder = remember(palette, opacityFraction) {
-        Brush.verticalGradient(
-            listOf(
-                palette.glassStrokeTop.copy(alpha = (palette.glassStrokeTop.alpha * opacityFraction).coerceIn(0.10f, 0.95f)),
-                palette.glassStrokeBottom.copy(alpha = (palette.glassStrokeBottom.alpha * opacityFraction).coerceIn(0.03f, 0.35f))
+    // Borda moderna com gradiente sutil de luz física especular
+    val modernSpecularBorder = remember(isLightMode, opacityFraction) {
+        if (isLightMode) {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.80f * opacityFraction).coerceIn(0.20f, 0.95f)),
+                    Color(0x22000000).copy(alpha = (0.25f * opacityFraction).coerceIn(0.05f, 0.35f))
+                )
             )
-        )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = (0.32f * opacityFraction).coerceIn(0.10f, 0.40f)),
+                    Color.White.copy(alpha = (0.06f * opacityFraction).coerceIn(0.02f, 0.12f))
+                )
+            )
+        }
     }
 
-    val dockBorder = if (shouldUseLiquidGlass) {
-        BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = palette.isLight, alphaFactor = opacityFraction))
+    val dockBorder = if (effectiveGeminiGlow && isExpanded) {
+        BorderStroke(0.8.dp, aiBorderBrush)
+    } else if (shouldUseLiquidGlass) {
+        BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction))
     } else {
         BorderStroke(0.5.dp, modernSpecularBorder)
     }
 
     val dockBgModifier = if (shouldUseLiquidGlass) {
-        Modifier
-            .background(
-                appleLiquidGlassSurfaceBrush(
-                    isLightMode = palette.isLight,
-                    isAmoledMode = isAmoledMode,
-                    alphaFactor = opacityFraction
+        Modifier.background(
+            appleLiquidGlassSurfaceBrush(
+                isLightMode = isLightMode,
+                isAmoledMode = isAmoledMode,
+                alphaFactor = opacityFraction
+            )
+        )
+    } else if (isAmoledMode) {
+        Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    AmoledCardBackground,
+                    Color(0xFF070709)
                 )
             )
-            .tesseraGrain(0.025f)
+        )
+    } else if (isLightMode) {
+        Modifier.background(
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFFFAF8F2),
+                    Color(0xFFEFECE2)
+                )
+            )
+        )
     } else {
         Modifier.background(
             Brush.verticalGradient(
-                listOf(palette.surface, palette.background)
+                listOf(
+                    Color(0xFF16161D),
+                    Color(0xFF0F0F14)
+                )
             )
         )
     }
 
     val shadowElevation = (10.dp * opacityFraction)
-    val shadowAmbientColor = palette.shadowAmbient.copy(alpha = palette.shadowAmbient.alpha * opacityFraction)
-    val shadowSpotColor = if (opacityFraction < 0.95f) Color.Transparent else palette.shadowSpot
-
-    val dockTextPrimary = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.textPrimary
-    val dockPlaceholderColor = if (palette.isLight && opacityFraction < 0.35f) {
-        Color.White.copy(alpha = 0.8f)
+    val shadowAmbientColor = if (isLightMode) {
+        Color(0x14000000)
     } else {
-        palette.textSecondary
+        Color.Black.copy(alpha = 0.25f * opacityFraction)
     }
-    val dockIconTint = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.iconTint
-    val dockGearTint = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.iconTint
-    val dockCursorBrush = SolidColor(if (palette.isLight && opacityFraction >= 0.35f) palette.textPrimary else Color.White)
+    val shadowSpotColor = if (opacityFraction < 0.95f) {
+        Color.Transparent
+    } else {
+        if (isLightMode) Color(0x22000000) else Color.Black.copy(alpha = 0.45f)
+    }
+
+    val dockTextPrimary = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else LightTextPrimary
+    } else {
+        TextPrimary
+    }
+    val dockPlaceholderColor = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color(0xCCFFFFFF) else Color(0xFF6B7280)
+    } else {
+        Color(0xFF70707C)
+    }
+    val dockIconTint = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
+    } else {
+        Color(0xFF82828E)
+    }
+    val dockGearTint = if (isLightMode) {
+        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
+    } else {
+        Color(0xFFA0A0AA)
+    }
+    val dockCursorBrush = SolidColor(if (isLightMode && opacityFraction >= 0.35f) Color.Black else Color.White)
 
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -246,24 +329,20 @@ fun SearchMorphingDock(
     val targetWidth = if (isExpanded) maxExpandedWidth else 56.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
-        animationSpec = motion.springSpatialDp,
+        animationSpec = Tessera.motion.springSpatialDp,
         label = "dock_width"
     )
-    val expandProgressState = animateFloatAsState(
+    val expandProgress by animateFloatAsState(
         targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = motion.springSpatial,
+        animationSpec = Tessera.motion.springSpatial,
         label = "expand_progress"
     )
-    val showCollapsedLens by remember { derivedStateOf { expandProgressState.value < 0.25f } }
-    val showExpandedContent by remember(isExpanded) {
-        derivedStateOf { isExpanded || expandProgressState.value > 0.05f }
-    }
 
     val dockInteractionSource = remember { MutableInteractionSource() }
     val isDockPressed by dockInteractionSource.collectIsPressedAsState()
-    val dockScaleState = animateFloatAsState(
+    val dockScale by animateFloatAsState(
         targetValue = if (isDockPressed) 0.94f else 1f,
-        animationSpec = motion.springPress,
+        animationSpec = Tessera.motion.springPress,
         label = "dock_press_scale"
     )
 
@@ -287,9 +366,8 @@ fun SearchMorphingDock(
                         .width(animatedWidth + 8.dp)
                         .height(58.dp)
                         .graphicsLayer {
-                            val s = dockScaleState.value
-                            scaleX = s
-                            scaleY = s
+                            scaleX = dockScale
+                            scaleY = dockScale
                         }
                         .blur(radius = 16.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                         .background(
@@ -307,9 +385,8 @@ fun SearchMorphingDock(
                         .width(animatedWidth)
                         .height(54.dp)
                     .graphicsLayer {
-                        val s = dockScaleState.value
-                        scaleX = s
-                        scaleY = s
+                        scaleX = dockScale
+                        scaleY = dockScale
                     }
                     .shadow(
                         elevation = shadowElevation,
@@ -372,22 +449,13 @@ fun SearchMorphingDock(
                     )
                 }
 
-                // Borda rotativa de IA composta apenas quando a doca está expandida com brilho ativo
-                if (effectiveGeminiGlow && isExpanded) {
-                    AiGlowBorderOverlay(
-                        shape = dockShape,
-                        isLightMode = isLightMode,
-                        modifier = Modifier.matchParentSize()
-                    )
-                }
-
                 // 1. Modo Lupa Inativa: Ícone Moderno sem círculo interior redundante
-                if (showCollapsedLens) {
+                if (expandProgress < 0.25f) {
                     val lensInteraction = remember { MutableInteractionSource() }
                     val isLensPressed by lensInteraction.collectIsPressedAsState()
-                    val lensScaleState = animateFloatAsState(
+                    val lensScale by animateFloatAsState(
                         targetValue = if (isLensPressed) 0.90f else 1f,
-                        animationSpec = motion.springPress,
+                        animationSpec = Tessera.motion.springPress,
                         label = "lens_press_scale"
                     )
 
@@ -395,10 +463,9 @@ fun SearchMorphingDock(
                         modifier = Modifier
                             .size(54.dp)
                             .graphicsLayer {
-                                alpha = 1f - (expandProgressState.value * 4f).coerceIn(0f, 1f)
-                                val s = lensScaleState.value
-                                scaleX = s
-                                scaleY = s
+                                alpha = 1f - (expandProgress * 4f).coerceIn(0f, 1f)
+                                scaleX = lensScale
+                                scaleY = lensScale
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -410,14 +477,14 @@ fun SearchMorphingDock(
                 }
 
                 // 2. Modo Expandido: Linha de Busca Completa com Lupa
-                if (showExpandedContent) {
+                if (isExpanded || expandProgress > 0.05f) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                             .graphicsLayer {
-                                alpha = ((expandProgressState.value - 0.05f) / 0.95f).coerceIn(0f, 1f)
+                                alpha = ((expandProgress - 0.05f) / 0.95f).coerceIn(0f, 1f)
                             }
                     ) {
                         // Lupa Moderna sem cápsula interior
@@ -447,9 +514,10 @@ fun SearchMorphingDock(
                                     onQueryChange(newTfv.text)
                                 }
                             },
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            textStyle = TextStyle(
                                 color = dockTextPrimary,
-                                fontSize = 16.sp
+                                fontSize = 16.sp,
+                                fontFamily = FontFamily.SansSerif
                             ),
                             cursorBrush = dockCursorBrush,
                             singleLine = true,
@@ -469,10 +537,9 @@ fun SearchMorphingDock(
                                     if (searchQuery.isEmpty()) {
                                         Text(
                                             text = placeholderText,
-                                            style = MaterialTheme.typography.bodyLarge.copy(
-                                                color = dockPlaceholderColor,
-                                                fontSize = 15.sp
-                                            )
+                                            color = dockPlaceholderColor,
+                                            fontSize = 15.sp,
+                                            fontFamily = FontFamily.SansSerif
                                         )
                                     }
                                     innerTextField()
@@ -491,14 +558,17 @@ fun SearchMorphingDock(
                         ) {
                             AnimatedVisibility(
                                 visible = searchQuery.isNotEmpty(),
-                                enter = fadeIn(motion.fadeQuick) + scaleIn(animationSpec = motion.springQuick),
-                                exit = fadeOut(motion.fadeQuick) + scaleOut(animationSpec = motion.fadeQuick)
+                                enter = fadeIn(animationSpec = tween(150)) + scaleIn(),
+                                exit = fadeOut(animationSpec = tween(120)) + scaleOut()
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
                                         .clip(CircleShape)
-                                        .background(palette.ripple)
+                                        .background(
+                                            if (isLightMode) Color(0x12000000)
+                                            else Color(0x1FFFFFFF)
+                                        )
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,
@@ -573,17 +643,20 @@ fun SearchMorphingDock(
             if (isSplit) {
                 AnimatedVisibility(
                     visible = isExpanded,
-                    enter = fadeIn(motion.fadeStandard) + scaleIn(animationSpec = motion.springQuick),
-                    exit = fadeOut(motion.fadeQuick) + scaleOut(animationSpec = motion.springQuick)
+                    enter = fadeIn(tween(180)) + scaleIn(),
+                    exit = fadeOut(tween(120)) + scaleOut()
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Spacer(modifier = Modifier.width(10.dp))
 
                         val settingsInteractionSource = remember { MutableInteractionSource() }
                         val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
-                        val settingsScaleState = animateFloatAsState(
+                        val settingsScale by animateFloatAsState(
                             targetValue = if (isSettingsPressed) 0.94f else 1f,
-                            animationSpec = motion.springPress,
+                            animationSpec = spring(
+                                dampingRatio = 0.82f,
+                                stiffness = 380f
+                            ),
                             label = "settings_press_scale"
                         )
 
@@ -595,9 +668,8 @@ fun SearchMorphingDock(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .graphicsLayer {
-                                        val s = settingsScaleState.value
-                                        scaleX = s
-                                        scaleY = s
+                                        scaleX = settingsScale
+                                        scaleY = settingsScale
                                     }
                                     .blur(radius = 12.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                                     .background(
@@ -614,9 +686,8 @@ fun SearchMorphingDock(
                                 modifier = Modifier
                                     .size(50.dp)
                                 .graphicsLayer {
-                                    val s = settingsScaleState.value
-                                    scaleX = s
-                                    scaleY = s
+                                    scaleX = settingsScale
+                                    scaleY = settingsScale
                                 }
                                 .shadow(
                                     elevation = shadowElevation,
@@ -657,14 +728,6 @@ fun SearchMorphingDock(
                                     )
                             )
 
-                            if (effectiveGeminiGlow && isExpanded) {
-                                AiGlowBorderOverlay(
-                                    shape = buttonShape,
-                                    isLightMode = isLightMode,
-                                    modifier = Modifier.matchParentSize()
-                                )
-                            }
-
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Configurações",
@@ -678,57 +741,6 @@ fun SearchMorphingDock(
         }
     }
 }
-}
-
-/**
- * Borda especular animada para IA composta sob demanda (apenas quando a doca está expandida)
- * e com rotação em GPU via `drawWithCache`, evitando alocação de Brush ou recomposições por frame.
- */
-@Composable
-private fun AiGlowBorderOverlay(
-    shape: Shape,
-    isLightMode: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
-    val angleState = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ai_glow_rotation"
-    )
-
-    Box(
-        modifier = modifier
-            .clip(shape)
-            .drawWithCache {
-                val colors = if (isLightMode) {
-                    com.tessera.launcher.ui.theme.PhoneAiLightGlowColors
-                } else {
-                    com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors
-                }
-                val outline = shape.createOutline(size, layoutDirection, this)
-                val stroke = Stroke(width = 0.85.dp.toPx())
-                onDrawBehind {
-                    val rad = Math.toRadians(angleState.value.toDouble())
-                    val cosVal = Math.cos(rad).toFloat()
-                    val sinVal = Math.sin(rad).toFloat()
-                    val brush = Brush.linearGradient(
-                        colors = colors,
-                        start = Offset(x = 500f * (1f - cosVal), y = 200f * (1f - sinVal)),
-                        end = Offset(x = 500f * (1f + cosVal), y = 200f * (1f + sinVal))
-                    )
-                    drawOutline(
-                        outline = outline,
-                        brush = brush,
-                        style = stroke
-                    )
-                }
-            }
-    )
 }
 
 /**

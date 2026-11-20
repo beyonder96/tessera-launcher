@@ -8,12 +8,10 @@ import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Rect
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
-import android.os.Bundle
 import android.os.Process
 import android.os.UserManager
 import com.tessera.launcher.data.helper.IconPackHelper
@@ -401,42 +399,19 @@ class AppRepository(
         getHiddenPackages = { hiddenPackages }
     )
 
-    fun launchApp(
-        packageName: String,
-        options: Bundle? = null,
-        sourceBounds: Rect? = null
-    ): Result<Unit> = runCatching {
+    fun launchApp(packageName: String): Result<Unit> = runCatching {
         val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)?.apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            if (sourceBounds != null) {
-                this.sourceBounds = sourceBounds
-            }
         } ?: throw IllegalStateException("Não foi possível inicializar o aplicativo: $packageName")
 
-        val component = launchIntent.component
-        val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
-        if (component != null && launcherApps != null) {
-            val started = runCatching {
-                launcherApps.startMainActivity(component, Process.myUserHandle(), sourceBounds, options)
-            }.isSuccess
-            if (started) return@runCatching
-        }
-
-        context.startActivity(launchIntent, options)
+        context.startActivity(launchIntent)
     }
 
-    fun launchShortcutIntent(
-        intentUri: String,
-        options: Bundle? = null,
-        sourceBounds: Rect? = null
-    ): Result<Unit> = runCatching {
+    fun launchShortcutIntent(intentUri: String): Result<Unit> = runCatching {
         val intent = Intent.parseUri(intentUri, Intent.URI_INTENT_SCHEME).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (sourceBounds != null) {
-                this.sourceBounds = sourceBounds
-            }
         }
-        context.startActivity(intent, options)
+        context.startActivity(intent)
     }
 
     /**
@@ -476,16 +451,11 @@ class AppRepository(
         }
     }
 
-    fun launchShortcut(
-        packageName: String,
-        shortcutId: String,
-        options: Bundle? = null,
-        sourceBounds: Rect? = null
-    ): Result<Unit> = runCatching {
+    fun launchShortcut(packageName: String, shortcutId: String): Result<Unit> = runCatching {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
                 ?: throw IllegalStateException("LauncherApps não disponível")
-            launcherApps.startShortcut(packageName, shortcutId, sourceBounds, options, Process.myUserHandle())
+            launcherApps.startShortcut(packageName, shortcutId, null, null, Process.myUserHandle())
         } else {
             throw UnsupportedOperationException("Atalhos requerem Android 7.1+")
         }

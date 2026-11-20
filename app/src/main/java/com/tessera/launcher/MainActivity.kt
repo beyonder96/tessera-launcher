@@ -32,22 +32,18 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: MainViewModel
 
-    // Seletor Moderno de Imagens (até 6 fotos para o Widget de Fotos)
+    // Seletor Moderno de Imagens (Photo Picker Nativo do Android)
     private val photoPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(
-            maxItems = com.tessera.launcher.data.helper.MAX_PHOTO_WIDGET_COUNT
-        )
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            uris.forEach { uri ->
-                runCatching {
-                    contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                }
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
             }
-            viewModel.addPhotoWidgetUris(uris, this)
+            viewModel.savePhotoWidgetFromUri(uri, this)
         }
     }
 
@@ -339,9 +335,7 @@ class MainActivity : ComponentActivity() {
 
             TesseraTheme(
                 themeMode = uiState.themeMode,
-                accentColor = uiState.activeAccentColor,
-                fontFamilyType = uiState.fontFamilyType,
-                customFontPath = uiState.customFontPath
+                accentColor = uiState.activeAccentColor
             ) {
                 HomeScreen(
                     viewModel = viewModel,
