@@ -3,7 +3,6 @@ package com.tessera.launcher.ui.components
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -22,10 +21,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.tessera.launcher.ui.theme.tokens.LateralSpatialMath
+import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.tokens.rememberTesseraHaptics
 import kotlinx.coroutines.delay
 
 /**
@@ -47,33 +46,36 @@ fun Modifier.tesseraPressable(
     enabled: Boolean = true,
     showPressSheen: Boolean = true
 ): Modifier = composed {
-    val haptic = LocalHapticFeedback.current
+    val haptics = rememberTesseraHaptics()
+    val motion = Tessera.motion
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val scale by animateFloatAsState(
+    val scaleState = animateFloatAsState(
         targetValue = if (isPressed && enabled) pressedScale else 1f,
-        animationSpec = spring(dampingRatio = 0.62f, stiffness = 480f),
+        animationSpec = motion.springPress,
         label = "tesseraPressScale"
     )
 
-    val sheenAlpha by animateFloatAsState(
+    val sheenAlphaState = animateFloatAsState(
         targetValue = if (isPressed && enabled && showPressSheen) 0.12f else 0f,
-        animationSpec = tween(durationMillis = 120),
+        animationSpec = motion.fadeQuick,
         label = "tesseraPressSheen"
     )
 
     val baseModifier = this
         .graphicsLayer {
-            scaleX = scale
-            scaleY = scale
+            val s = scaleState.value
+            scaleX = s
+            scaleY = s
         }
         .drawWithContent {
             drawContent()
-            if (sheenAlpha > 0f) {
+            val alpha = sheenAlphaState.value
+            if (alpha > 0f) {
                 drawRect(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color.White.copy(alpha = sheenAlpha), Color.Transparent),
+                        colors = listOf(Color.White.copy(alpha = alpha), Color.Transparent),
                         center = Offset(size.width / 2f, size.height / 2f),
                         radius = size.width.coerceAtLeast(size.height)
                     )
@@ -87,12 +89,12 @@ fun Modifier.tesseraPressable(
             indication = null,
             enabled = enabled,
             onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                haptics.tap()
                 onClick?.invoke()
             },
             onLongClick = if (onLongClick != null) {
                 {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    haptics.longPress()
                     onLongClick.invoke()
                 }
             } else null

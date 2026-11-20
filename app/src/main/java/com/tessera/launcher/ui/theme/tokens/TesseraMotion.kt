@@ -38,6 +38,14 @@ data class TesseraMotion(
         stiffness = 380f,
         dampingRatio = 0.82f
     ),
+    val springQuickDp: SpringSpec<Dp> = spring(
+        stiffness = 900f,
+        dampingRatio = 0.88f
+    ),
+    val springStandardDp: SpringSpec<Dp> = spring(
+        stiffness = 600f,
+        dampingRatio = 0.85f
+    ),
     val springSpatialDp: SpringSpec<Dp> = spring(
         stiffness = 380f,
         dampingRatio = 0.82f
@@ -67,6 +75,17 @@ data class TesseraMotion(
     ),
     // Easing de desaceleração enfatizada (material curve para entradas suaves)
     val emphasizedEasing: Easing = CubicBezierEasing(0.16f, 1f, 0.3f, 1f),
+    // Cascata de entrada da gaveta e listas
+    val staggerStepMillis: Int = 18,
+    val staggerMaxItems: Int = 12,
+    val enterOffsetDp: Float = 16f,
+    // Profundidade espacial da Home quando gaveta/painel abre por cima
+    val depthScale: Float = 0.94f,
+    val depthDimAlpha: Float = 0.36f,
+    // Fator de resistência elástica pós-limiar em swipes de itens
+    val rubberBandFactor: Float = 0.55f,
+    // Escala mínima da prévia de Predictive Back
+    val backMinScale: Float = 0.90f,
     // Transição Espacial Cinematográfica para a Tela Lateral (-1): ~650ms de desaceleração aveludada sem quique
     val springSpatialCinematic: SpringSpec<Float> = LateralSpatialMath.springSpatialCinematic,
     // Curva espacial para troca entre abas da Tela Lateral (Central <-> Feed)
