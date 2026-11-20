@@ -10,7 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.BackEventCompat
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
@@ -68,10 +70,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -328,6 +332,52 @@ fun HomeScreen(
         }
     }
 
+    val backPreviewProgress = remember { Animatable(0f) }
+    var backSwipeEdge by remember { mutableIntStateOf(BackEventCompat.EDGE_LEFT) }
+    val hasNoModalOverlays = !uiState.isSettingsOpen &&
+        !uiState.isNotificationsHubOpen &&
+        !uiState.isPhotoStandByOpen &&
+        !uiState.isWidgetPickerOpen &&
+        !uiState.shouldShowOnboarding &&
+        uiState.proUpgradeFeatureName == null &&
+        !uiState.isSafeModeRecoveryOpen &&
+        activePopUpWidgetApp == null &&
+        selectedAppForMenu == null &&
+        folderToView == null &&
+        !isNotesTasksOpen &&
+        uiState.activeWidgetConfigModal == null
+
+    PredictiveBackHandler(enabled = isDrawerContentVisible && hasNoModalOverlays) { events ->
+        try {
+            events.collect { event ->
+                backSwipeEdge = event.swipeEdge
+                backPreviewProgress.snapTo(event.progress)
+            }
+            val currentBack = backPreviewProgress.value
+            if (currentBack > 0f) {
+                drawerProgress.snapTo((1f - currentBack * 0.25f).coerceIn(0.6f, 1f))
+                backPreviewProgress.snapTo(0f)
+            }
+            focusManager.clearFocus()
+            keyboardController?.hide()
+            viewModel.collapseSearch()
+        } catch (_: CancellationException) {
+            backPreviewProgress.animateTo(0f, motion.springQuick)
+        }
+    }
+
+    PredictiveBackHandler(enabled = uiState.isFeedOpen && !isDrawerContentVisible && hasNoModalOverlays) { events ->
+        try {
+            events.collect { event ->
+                panelProgress.snapTo((1f - event.progress * 0.45f).coerceIn(0.45f, 1f))
+            }
+            panelProgress.animateTo(0f, LateralSpatialMath.springSpatialCinematic)
+            viewModel.closeFeed()
+        } catch (_: CancellationException) {
+            panelProgress.animateTo(1f, LateralSpatialMath.springSpatialCinematic)
+        }
+    }
+
     // Abertura imediata e fluida do teclado ao abrir busca ou drawer (com retry resiliente de montagem de layout)
     LaunchedEffect(uiState.isSearchExpanded, uiState.isDrawerOpen, uiState.searchQuery) {
         val isExplicitAiSearch = uiState.isMasterAccess && (
@@ -455,7 +505,8 @@ fun HomeScreen(
                 .fillMaxSize()
                 .graphicsLayer {
                     val p = panelProgress.value
-                    val d = drawerProgress.value
+                    val bp = backPreviewProgress.value
+                    val d = drawerProgress.value * (1f - bp * 0.65f)
                     val panelScale = if (p > 0.001f) LateralSpatialMath.homeScale(p) else 1f
                     val panelAlpha = if (p > 0.001f) LateralSpatialMath.homeAlpha(p) else 1f
                     val drawerScale = if (d > 0.001f) MotionMath.lerp(1f, motion.depthScale, d) else 1f
@@ -767,17 +818,30 @@ fun HomeScreen(
         // Gaveta Vertical de Aplicativos & Resultados com entrada espacial e cascata acelerada por GPU
         if (isDrawerMounted) {
             val enterOffsetPx = with(density) { motion.enterOffsetDp.dp.toPx() }
+            val backShiftPx = with(density) { 10.dp.toPx() }
+            val backClipShape = Tessera.shapes.card
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
                         val p = drawerProgress.value
+                        val bp = backPreviewProgress.value
                         alpha = (p * 1.15f).coerceIn(0f, 1f)
-                        val s = MotionMath.lerp(0.96f, 1f, p)
+                        val s = MotionMath.lerp(0.96f, 1f, p) * MotionMath.backProgressToScale(bp, motion.backMinScale)
                         scaleX = s
                         scaleY = s
                         transformOrigin = TransformOrigin(0.5f, 1f)
                         translationY = (1f - p) * (size.height / 14f)
+                        translationX = if (bp > 0.001f) {
+                            val dir = if (backSwipeEdge == BackEventCompat.EDGE_LEFT) 1f else -1f
+                            dir * bp * backShiftPx
+                        } else 0f
+                        if (bp > 0.01f) {
+                            clip = true
+                            shape = backClipShape
+                        } else {
+                            clip = false
+                        }
                     }
             ) {
             val isCategoriesVisible = uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled
