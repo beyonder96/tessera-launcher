@@ -4,6 +4,10 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -66,6 +70,22 @@ import com.tessera.launcher.ui.theme.IconShape
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
 import com.tessera.launcher.ui.theme.TextTertiary
+import com.tessera.launcher.ui.theme.tokens.Tessera
+
+@Composable
+private fun AnimatedDialogContent(content: @Composable () -> Unit) {
+    val motion = Tessera.motion
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = fadeIn(motion.fadeStandard) + scaleIn(
+            initialScale = 0.92f,
+            animationSpec = motion.springStandard
+        )
+    ) {
+        content()
+    }
+}
 
 private fun drawableToBitmap(drawable: Drawable): Bitmap {
     if (drawable is BitmapDrawable && drawable.bitmap != null) {
@@ -109,6 +129,7 @@ fun AppContextMenu(
     }
 
     Dialog(onDismissRequest = onDismiss) {
+        AnimatedDialogContent {
         Surface(
             shape = RoundedCornerShape(26.dp),
             color = Color(0xFF141416),
@@ -475,11 +496,13 @@ fun AppContextMenu(
                 }
             }
         }
+        }
     }
 
     // Sub-diálogo seletor de Pacote de Ícones para este App
     if (showIconPicker) {
         Dialog(onDismissRequest = { showIconPicker = false }) {
+            AnimatedDialogContent {
             Surface(
                 shape = RoundedCornerShape(22.dp),
                 color = Color(0xFF0F0F13),
@@ -644,12 +667,14 @@ fun AppContextMenu(
                     }
                 }
             }
+            }
         }
     }
 
     // Modal minimalista de Confirmação de Desinstalação
     if (showUninstallConfirmDialog) {
         Dialog(onDismissRequest = { showUninstallConfirmDialog = false }) {
+            AnimatedDialogContent {
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = Color(0xFF14141A),
@@ -740,6 +765,7 @@ fun AppContextMenu(
                         }
                     }
                 }
+            }
             }
         }
     }

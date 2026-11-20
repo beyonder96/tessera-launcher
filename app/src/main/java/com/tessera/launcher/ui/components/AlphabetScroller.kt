@@ -1,7 +1,11 @@
 package com.tessera.launcher.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,6 +21,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,18 +36,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tessera.launcher.ui.theme.TextPrimary
-import com.tessera.launcher.ui.theme.TextTertiary
+import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.tokens.rememberTesseraHaptics
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -61,7 +63,9 @@ fun AlphabetScroller(
     var isDragging by remember { mutableStateOf(false) }
     var touchY by remember { mutableFloatStateOf(-1f) }
 
-    val haptic = LocalHapticFeedback.current
+    val motion = Tessera.motion
+    val palette = Tessera.palette
+    val haptics = rememberTesseraHaptics()
     val density = LocalDensity.current
     val maxOffsetPx = with(density) { 28.dp.toPx() }
     val bubbleSize = 48.dp
@@ -86,7 +90,7 @@ fun AlphabetScroller(
                         val index = (offset.y / itemHeight).toInt().coerceIn(0, Alphabet.size - 1)
                         val letter = Alphabet[index]
                         selectedLetter = letter
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        haptics.tick()
                         onLetterSelected(letter)
                     },
                     onDragEnd = {
@@ -107,7 +111,7 @@ fun AlphabetScroller(
                         val letter = Alphabet[index]
                         if (letter != selectedLetter) {
                             selectedLetter = letter
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            haptics.tick()
                             onLetterSelected(letter)
                         }
                     }
@@ -141,69 +145,77 @@ fun AlphabetScroller(
                 val targetOffsetX = if (isDragging) -maxOffsetPx * curveFactor else 0f
                 val targetScale = 1.0f + 0.35f * curveFactor
 
-                val animatedOffsetX by animateFloatAsState(
+                val animatedOffsetXState = animateFloatAsState(
                     targetValue = targetOffsetX,
-                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
+                    animationSpec = motion.springQuick,
                     label = "wave_offset_${char}"
                 )
-                val animatedScale by animateFloatAsState(
+                val animatedScaleState = animateFloatAsState(
                     targetValue = targetScale,
-                    animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
+                    animationSpec = motion.springQuick,
                     label = "wave_scale_${char}"
                 )
 
                 Text(
                     text = char.toString(),
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = if (isCurrentChar || curveFactor > 0.6f) FontWeight.SemiBold else FontWeight.Normal,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 10.sp,
+                        fontWeight = if (isCurrentChar || curveFactor > 0.6f) FontWeight.SemiBold else FontWeight.Normal
+                    ),
                     color = when {
                         isCurrentChar -> accentColor
-                        curveFactor > 0.3f -> TextPrimary
-                        isAvailable -> TextPrimary.copy(alpha = 0.7f)
-                        else -> TextTertiary.copy(alpha = 0.45f)
+                        curveFactor > 0.3f -> palette.textPrimary
+                        isAvailable -> palette.textPrimary.copy(alpha = 0.72f)
+                        else -> palette.textTertiary.copy(alpha = 0.45f)
                     },
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .width(22.dp)
                         .graphicsLayer {
-                            translationX = animatedOffsetX
-                            scaleX = animatedScale
-                            scaleY = animatedScale
+                            translationX = animatedOffsetXState.value
+                            val s = animatedScaleState.value
+                            scaleX = s
+                            scaleY = s
                         }
                 )
             }
         }
 
-        // Balão Flutuante (Magnifier Bubble) estilo Cupertino ao arrastar
-        if (isDragging && selectedLetter != null && touchY >= 0f) {
-            val clampedY = (touchY - bubbleSizePx / 2f).coerceIn(0f, (columnHeightPx - bubbleSizePx).coerceAtLeast(0f))
-
+        // Balão Flutuante (Magnifier Bubble) estilo Cupertino com entrada elástica
+        val clampedY = (touchY - bubbleSizePx / 2f).coerceIn(0f, (columnHeightPx - bubbleSizePx).coerceAtLeast(0f))
+        AnimatedVisibility(
+            visible = isDragging && selectedLetter != null && touchY >= 0f,
+            enter = fadeIn(motion.fadeQuick) + scaleIn(initialScale = 0.65f, animationSpec = motion.springBouncy),
+            exit = fadeOut(motion.fadeQuick) + scaleOut(targetScale = 0.75f, animationSpec = motion.fadeQuick),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .graphicsLayer {
+                    translationX = with(density) { (-64).dp.toPx() }
+                    translationY = clampedY
+                }
+        ) {
             Box(
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .graphicsLayer {
-                        translationX = with(density) { (-64).dp.toPx() }
-                        translationY = clampedY
-                    }
                     .size(bubbleSize)
                     .shadow(elevation = 12.dp, shape = CircleShape)
                     .clip(CircleShape)
-                    .background(Color(0xF01C1C1E))
+                    .background(palette.surface.copy(alpha = 0.94f))
                     .border(
                         BorderStroke(
-                            0.5.dp,
-                            if (accentColor != Color.White) accentColor.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.20f)
+                            0.75.dp,
+                            if (accentColor != Color.White) accentColor.copy(alpha = 0.5f) else palette.surfaceBorderHighlight
                         ),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = selectedLetter.toString(),
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (accentColor != Color.White) accentColor else Color.White
+                    text = (selectedLetter ?: ' ').toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = if (accentColor != Color.White) accentColor else palette.textPrimary
                 )
             }
         }
