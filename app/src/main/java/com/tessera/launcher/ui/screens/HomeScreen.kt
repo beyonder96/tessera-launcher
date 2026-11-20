@@ -753,8 +753,12 @@ fun HomeScreen(
                 if (uiState.isPhotoWidgetEnabled) {
                     PhotoWidget(
                         photoUriString = uiState.photoWidgetUri,
+                        photoUris = uiState.photoWidgetUris,
+                        activeIndex = uiState.photoWidgetActiveIndex,
+                        onActiveIndexChange = { viewModel.setActivePhotoWidgetIndex(it) },
                         onPickPhoto = { onPickPhoto() },
                         onRemovePhoto = { viewModel.clearPhotoWidget(context) },
+                        onRemovePhotoAt = { index -> viewModel.removePhotoWidgetAt(index, context) },
                         onPhotoClick = { viewModel.openPhotoStandBy() },
                         isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
                         modifier = Modifier
@@ -1974,6 +1978,9 @@ fun HomeScreen(
             isOpen = uiState.isPhotoStandByOpen,
             onDismiss = { viewModel.closePhotoStandBy() },
             photoUriString = uiState.photoWidgetUri,
+            photoUris = uiState.photoWidgetUris,
+            activePhotoIndex = uiState.photoWidgetActiveIndex,
+            onSelectPhotoIndex = { viewModel.setActivePhotoWidgetIndex(it) },
             formattedTime = uiState.formattedTime,
             formattedDate = uiState.formattedDate,
             batteryPercentage = uiState.batteryPercentage,

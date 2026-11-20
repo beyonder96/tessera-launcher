@@ -219,6 +219,9 @@ fun PhotoStandByModal(
     isOpen: Boolean,
     onDismiss: () -> Unit,
     photoUriString: String?,
+    photoUris: List<String> = emptyList(),
+    activePhotoIndex: Int = 0,
+    onSelectPhotoIndex: (Int) -> Unit = {},
     formattedTime: String,
     formattedDate: String,
     batteryPercentage: Int,
@@ -408,14 +411,33 @@ fun PhotoStandByModal(
         }
     }
 
-    // Carrega o bitmap da foto em IO thread
-    val bitmap by produceState<Bitmap?>(initialValue = null, photoUriString, isOpen) {
-        value = if (isOpen && !photoUriString.isNullOrBlank()) {
-            withContext(Dispatchers.IO) {
-                com.tessera.launcher.data.helper.loadSampledPhotoBitmap(
+    val effectivePhotoUri = remember(photoUris, activePhotoIndex, photoUriString) {
+        if (photoUris.isNotEmpty()) {
+            photoUris.getOrNull(activePhotoIndex.coerceIn(0, photoUris.lastIndex)) ?: photoUriString
+        } else {
+            photoUriString
+        }
+    }
+
+    val initialFullBitmap = remember(effectivePhotoUri, isOpen) {
+        if (isOpen && !effectivePhotoUri.isNullOrBlank()) {
+            com.tessera.launcher.data.helper.PhotoBitmapCache.getFull(effectivePhotoUri)
+        } else {
+            null
+        }
+    }
+
+    // Carrega o bitmap da foto em IO thread (instantâneo quando pré-processado em disco/RAM)
+    val bitmap by produceState<Bitmap?>(
+        initialValue = initialFullBitmap,
+        key1 = effectivePhotoUri,
+        key2 = isOpen
+    ) {
+        value = if (isOpen && !effectivePhotoUri.isNullOrBlank()) {
+            value ?: withContext(Dispatchers.IO) {
+                com.tessera.launcher.data.helper.loadStandByPhotoFast(
                     context = context,
-                    photoUriOrPath = photoUriString,
-                    maxDimensionPx = 1440
+                    photoUriOrPath = effectivePhotoUri
                 )
             }
         } else {

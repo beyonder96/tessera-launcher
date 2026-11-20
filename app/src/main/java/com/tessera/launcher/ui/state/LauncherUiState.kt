@@ -133,6 +133,8 @@ data class LauncherUiState(
     val defaultMusicApp: String? = null,
     val defaultCalendarApp: String? = null,
     val photoWidgetUri: String? = null,
+    val photoWidgetUris: List<String> = emptyList(),
+    val photoWidgetActiveIndex: Int = 0,
     val isPhotoWidgetEnabled: Boolean = true,
     val isPhotoStandByOpen: Boolean = false,
     val isPhotoStandByOnChargeEnabled: Boolean = false,

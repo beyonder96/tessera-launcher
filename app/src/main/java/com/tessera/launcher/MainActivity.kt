@@ -32,18 +32,22 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var viewModel: MainViewModel
 
-    // Seletor Moderno de Imagens (Photo Picker Nativo do Android)
+    // Seletor Moderno de Imagens (até 6 fotos para o Widget de Fotos)
     private val photoPickerLauncher = registerForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            runCatching {
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
+        ActivityResultContracts.PickMultipleVisualMedia(
+            maxItems = com.tessera.launcher.data.helper.MAX_PHOTO_WIDGET_COUNT
+        )
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            uris.forEach { uri ->
+                runCatching {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
             }
-            viewModel.savePhotoWidgetFromUri(uri, this)
+            viewModel.addPhotoWidgetUris(uris, this)
         }
     }
 

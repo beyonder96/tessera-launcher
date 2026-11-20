@@ -21,8 +21,11 @@ import com.tessera.launcher.data.helper.ContactSearchHelper
 import com.tessera.launcher.data.helper.QuickSettingsHelper
 import com.tessera.launcher.data.helper.SystemInfoHelper
 import com.tessera.launcher.data.helper.TesseraCrashHandler
+import com.tessera.launcher.data.helper.PhotoWidgetGalleryHelper
 import com.tessera.launcher.data.helper.deleteSavedPhotoFiles
-import com.tessera.launcher.data.helper.savePhotoToInternalStorage
+import com.tessera.launcher.data.helper.deleteSinglePhotoFiles
+import com.tessera.launcher.data.helper.preloadWidgetThumbs
+import com.tessera.launcher.data.helper.savePhotosToInternalStorage
 import com.tessera.launcher.data.license.LicenseActivationResult
 import com.tessera.launcher.data.license.LicenseKeyType
 import com.tessera.launcher.data.license.LicenseManager
@@ -173,13 +176,20 @@ class MainViewModel(
     private val initialLicenseStatus = resolveEffectiveLicenseStatus()
     private val initialSafeModePending = TesseraCrashHandler.isSafeModePending(appContext)
     private val initialCrashSummary = TesseraCrashHandler.getLastCrashSummary(appContext)
+    private val initialPhotoUris = preferences.getPhotoWidgetUris()
+    private val initialPhotoActiveIndex = PhotoWidgetGalleryHelper.clampActiveIndex(
+        preferences.getPhotoWidgetActiveIndex(),
+        initialPhotoUris.size
+    )
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
             enabledWidgets = preferences.getEnabledWidgets(),
             defaultMusicApp = preferences.getDefaultMusicPackage(),
             defaultCalendarApp = preferences.getDefaultCalendarPackage(),
-            photoWidgetUri = preferences.getPhotoWidgetUri(),
+            photoWidgetUri = initialPhotoUris.getOrNull(initialPhotoActiveIndex),
+            photoWidgetUris = initialPhotoUris,
+            photoWidgetActiveIndex = initialPhotoActiveIndex,
             isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
             isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
             standByViewMode = preferences.getStandByViewMode(),
@@ -350,6 +360,11 @@ class MainViewModel(
     private var paymentPollingJob: Job? = null
 
     init {
+        if (initialPhotoUris.isNotEmpty()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                preloadWidgetThumbs(appContext, initialPhotoUris, initialPhotoActiveIndex)
+            }
+        }
         observeInstalledApps()
         observeSystemInfo()
         observeMediaService()
@@ -1015,25 +1030,111 @@ class MainViewModel(
         }
     }
 
-    // Moldura de Foto & Modo Repouso
+    // Moldura de Foto & Modo Repouso (até 6 fotos + pré-aquecimento)
     fun setPhotoWidgetUri(uriString: String?) {
-        preferences.setPhotoWidgetUri(uriString)
-        _uiState.update { it.copy(photoWidgetUri = uriString) }
+        val updated = if (uriString.isNullOrBlank()) emptyList() else listOf(uriString)
+        preferences.setPhotoWidgetUris(updated)
+        preferences.setPhotoWidgetActiveIndex(0)
+        _uiState.update {
+            it.copy(
+                photoWidgetUri = updated.firstOrNull(),
+                photoWidgetUris = updated,
+                photoWidgetActiveIndex = 0
+            )
+        }
     }
 
     fun savePhotoWidgetFromUri(uri: Uri, context: Context) {
+        addPhotoWidgetUris(listOf(uri), context)
+    }
+
+    fun addPhotoWidgetUris(uris: List<Uri>, context: Context) {
+        if (uris.isEmpty()) return
         viewModelScope.launch(Dispatchers.IO) {
-            val savedPath = savePhotoToInternalStorage(context, uri) ?: uri.toString()
-            preferences.setPhotoWidgetUri(savedPath)
-            _uiState.update { it.copy(photoWidgetUri = savedPath) }
+            val currentList = _uiState.value.photoWidgetUris
+            val remaining = PhotoWidgetGalleryHelper.remainingSlots(currentList.size)
+            val updatedList: List<String>
+            val newActiveIndex: Int
+
+            if (remaining > 0) {
+                val savedPaths = savePhotosToInternalStorage(context, uris, maxCount = remaining)
+                    .ifEmpty { uris.take(remaining).map { it.toString() } }
+                updatedList = PhotoWidgetGalleryHelper.mergePhotos(currentList, savedPaths)
+                newActiveIndex = if (savedPaths.isNotEmpty()) {
+                    val idx = updatedList.indexOf(savedPaths.first())
+                    PhotoWidgetGalleryHelper.clampActiveIndex(if (idx >= 0) idx else currentList.size, updatedList.size)
+                } else {
+                    PhotoWidgetGalleryHelper.clampActiveIndex(_uiState.value.photoWidgetActiveIndex, updatedList.size)
+                }
+            } else {
+                // Galeria cheia (6/6): substitui a foto ativa atual pela primeira selecionada
+                val activeIdx = PhotoWidgetGalleryHelper.clampActiveIndex(_uiState.value.photoWidgetActiveIndex, currentList.size)
+                val oldPath = currentList.getOrNull(activeIdx)
+                val savedPaths = savePhotosToInternalStorage(context, listOf(uris.first()), maxCount = 1)
+                val replacement = savedPaths.firstOrNull() ?: uris.first().toString()
+                deleteSinglePhotoFiles(context, oldPath)
+                updatedList = currentList.toMutableList().apply { set(activeIdx, replacement) }.toList()
+                newActiveIndex = activeIdx
+            }
+
+            preferences.setPhotoWidgetUris(updatedList)
+            preferences.setPhotoWidgetActiveIndex(newActiveIndex)
+            _uiState.update {
+                it.copy(
+                    photoWidgetUris = updatedList,
+                    photoWidgetActiveIndex = newActiveIndex,
+                    photoWidgetUri = updatedList.getOrNull(newActiveIndex)
+                )
+            }
+        }
+    }
+
+    fun removePhotoWidgetAt(index: Int, context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentList = _uiState.value.photoWidgetUris
+            val targetPath = currentList.getOrNull(index)
+            deleteSinglePhotoFiles(context, targetPath)
+            val (updatedList, nextActive) = PhotoWidgetGalleryHelper.removePhotoAt(
+                existing = currentList,
+                index = index,
+                currentActiveIndex = _uiState.value.photoWidgetActiveIndex
+            )
+            preferences.setPhotoWidgetUris(updatedList)
+            preferences.setPhotoWidgetActiveIndex(nextActive)
+            _uiState.update {
+                it.copy(
+                    photoWidgetUris = updatedList,
+                    photoWidgetActiveIndex = nextActive,
+                    photoWidgetUri = updatedList.getOrNull(nextActive)
+                )
+            }
+        }
+    }
+
+    fun setActivePhotoWidgetIndex(index: Int) {
+        val currentList = _uiState.value.photoWidgetUris
+        val clamped = PhotoWidgetGalleryHelper.clampActiveIndex(index, currentList.size)
+        preferences.setPhotoWidgetActiveIndex(clamped)
+        _uiState.update {
+            it.copy(
+                photoWidgetActiveIndex = clamped,
+                photoWidgetUri = currentList.getOrNull(clamped)
+            )
         }
     }
 
     fun clearPhotoWidget(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
             deleteSavedPhotoFiles(context)
-            preferences.setPhotoWidgetUri(null)
-            _uiState.update { it.copy(photoWidgetUri = null) }
+            preferences.setPhotoWidgetUris(emptyList())
+            preferences.setPhotoWidgetActiveIndex(0)
+            _uiState.update {
+                it.copy(
+                    photoWidgetUri = null,
+                    photoWidgetUris = emptyList(),
+                    photoWidgetActiveIndex = 0
+                )
+            }
         }
     }
 
@@ -2543,6 +2644,11 @@ class MainViewModel(
     fun reloadAllSettings() {
         val latestLicense = resolveEffectiveLicenseStatus()
         val isMaster = latestLicense.isMasterAccess
+        val reloadedPhotos = preferences.getPhotoWidgetUris()
+        val reloadedPhotoIndex = PhotoWidgetGalleryHelper.clampActiveIndex(
+            preferences.getPhotoWidgetActiveIndex(),
+            reloadedPhotos.size
+        )
         _uiState.update { current ->
             current.copy(
                 licenseStatus = latestLicense,
@@ -2550,7 +2656,9 @@ class MainViewModel(
                 enabledWidgets = preferences.getEnabledWidgets(),
                 defaultMusicApp = preferences.getDefaultMusicPackage(),
                 defaultCalendarApp = preferences.getDefaultCalendarPackage(),
-                photoWidgetUri = preferences.getPhotoWidgetUri(),
+                photoWidgetUri = reloadedPhotos.getOrNull(reloadedPhotoIndex),
+                photoWidgetUris = reloadedPhotos,
+                photoWidgetActiveIndex = reloadedPhotoIndex,
                 isPhotoWidgetEnabled = preferences.isPhotoWidgetEnabled(),
                 isPhotoStandByOnChargeEnabled = preferences.isPhotoStandByOnChargeEnabled(),
                 standByViewMode = preferences.getStandByViewMode(),
