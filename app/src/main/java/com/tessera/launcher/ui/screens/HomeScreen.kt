@@ -7,6 +7,7 @@ import com.tessera.launcher.ui.components.ModernWidgetPickerBottomSheet
 import com.tessera.launcher.ui.TesseraLauncherUpdateDialog
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -14,7 +15,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -65,6 +65,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,15 +73,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -205,12 +206,6 @@ fun HomeScreen(
         }
     }
 
-    val animatedBlurDp by animateDpAsState(
-        targetValue = targetBlurDp,
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        label = "wallpaperBlurAnimation"
-    )
-
     val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
@@ -219,6 +214,13 @@ fun HomeScreen(
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val motion = Tessera.motion
+
+    val targetBlurPx = with(density) { targetBlurDp.toPx() }
+    val blurRadiusPx = remember { Animatable(targetBlurPx) }
+    LaunchedEffect(targetBlurPx) {
+        blurRadiusPx.animateTo(targetBlurPx, animationSpec = motion.fadeStandard)
+    }
 
     val panelProgress = remember { Animatable(if (uiState.isFeedOpen) 1f else 0f) }
 
@@ -244,10 +246,11 @@ fun HomeScreen(
     var folderToView by remember { mutableStateOf<AppFolder?>(null) }
     val haptic = LocalHapticFeedback.current
 
+    val isPanelResting by remember { derivedStateOf { panelProgress.value <= 0.01f } }
     val isRestingHomeScreen = !uiState.isDrawerOpen &&
         !uiState.isSettingsOpen &&
         !uiState.isFeedOpen &&
-        panelProgress.value <= 0.01f &&
+        isPanelResting &&
         !uiState.isSearchExpanded &&
         uiState.searchQuery.isEmpty() &&
         folderToView == null &&
@@ -374,28 +377,33 @@ fun HomeScreen(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
-                        .then(
-                            if (animatedBlurDp > 0.dp) {
-                                Modifier
-                                    .graphicsLayer {
-                                        scaleX = 1.10f
-                                        scaleY = 1.10f
-                                    }
-                                    .blur(radius = animatedBlurDp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                        .graphicsLayer {
+                            val r = blurRadiusPx.value
+                            if (r > 0.5f && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                renderEffect = BlurEffect(r, r, TileMode.Decal)
+                                scaleX = 1.10f
+                                scaleY = 1.10f
                             } else {
-                                Modifier
+                                renderEffect = null
+                                scaleX = 1f
+                                scaleY = 1f
                             }
-                        ),
+                        },
                     contentScale = ContentScale.Crop
                 )
             }
 
             // Camada de Escurecimento / Tint Suave para Legibilidade dos Widgets e Textos
             val restingDimAlpha = ((uiState.homeWallpaperBlur / 100f) * 0.40f).coerceIn(0f, 0.45f)
-            val effectiveAlpha = if (wallpaperBitmap != null) {
-                restingDimAlpha
+            val preAndroid12BlurFallback = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && targetBlurDp > 0.dp) {
+                (targetBlurDp.value / 40f).coerceIn(0f, 1f) * 0.28f
             } else {
-                ((uiState.homeWallpaperBlur / 100f) * 0.20f).coerceIn(0f, 0.25f)
+                0f
+            }
+            val effectiveAlpha = if (wallpaperBitmap != null) {
+                (restingDimAlpha + preAndroid12BlurFallback).coerceIn(0f, 0.65f)
+            } else {
+                (((uiState.homeWallpaperBlur / 100f) * 0.20f) + preAndroid12BlurFallback).coerceIn(0f, 0.45f)
             }
             if (effectiveAlpha > 0f) {
                 Box(

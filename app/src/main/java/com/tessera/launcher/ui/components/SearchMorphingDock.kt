@@ -49,6 +49,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,16 +59,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
@@ -165,47 +170,7 @@ fun SearchMorphingDock(
 
     val dockShape = Tessera.shapes.pill
     val buttonShape = Tessera.shapes.full
-
-    // Animação Contínua da Luz Branca Pura Especular de IA (Estilo Ativação Nativa de Celular)
-    val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
-    val aiGlowAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 3500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ai_glow_rotation"
-    )
-
-    val aiPulse by infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "ai_glow_pulse"
-    )
-
-    val geminiExpandProgress by animateFloatAsState(
-        targetValue = if (isExpanded && effectiveGeminiGlow) 1f else 0f,
-        animationSpec = Tessera.motion.springSpatial,
-        label = "gemini_expand_progress"
-    )
-
-    val rad = Math.toRadians(aiGlowAngle.toDouble())
-    val cosVal = Math.cos(rad).toFloat()
-    val sinVal = Math.sin(rad).toFloat()
-
-    val aiBorderBrush = remember(aiGlowAngle, isLightMode) {
-        Brush.linearGradient(
-            colors = if (isLightMode) com.tessera.launcher.ui.theme.PhoneAiLightGlowColors
-                     else com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors,
-            start = Offset(x = 500f * (1f - cosVal), y = 200f * (1f - sinVal)),
-            end = Offset(x = 500f * (1f + cosVal), y = 200f * (1f + sinVal))
-        )
-    }
+    val motion = Tessera.motion
 
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
     val shouldUseLiquidGlass = isLiquidGlass || opacityFraction < 0.98f
@@ -229,9 +194,7 @@ fun SearchMorphingDock(
         }
     }
 
-    val dockBorder = if (effectiveGeminiGlow && isExpanded) {
-        BorderStroke(0.8.dp, aiBorderBrush)
-    } else if (shouldUseLiquidGlass) {
+    val dockBorder = if (shouldUseLiquidGlass) {
         BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction))
     } else {
         BorderStroke(0.5.dp, modernSpecularBorder)
@@ -329,20 +292,24 @@ fun SearchMorphingDock(
     val targetWidth = if (isExpanded) maxExpandedWidth else 56.dp
     val animatedWidth by animateDpAsState(
         targetValue = targetWidth,
-        animationSpec = Tessera.motion.springSpatialDp,
+        animationSpec = motion.springSpatialDp,
         label = "dock_width"
     )
-    val expandProgress by animateFloatAsState(
+    val expandProgressState = animateFloatAsState(
         targetValue = if (isExpanded) 1f else 0f,
-        animationSpec = Tessera.motion.springSpatial,
+        animationSpec = motion.springSpatial,
         label = "expand_progress"
     )
+    val showCollapsedLens by remember { derivedStateOf { expandProgressState.value < 0.25f } }
+    val showExpandedContent by remember(isExpanded) {
+        derivedStateOf { isExpanded || expandProgressState.value > 0.05f }
+    }
 
     val dockInteractionSource = remember { MutableInteractionSource() }
     val isDockPressed by dockInteractionSource.collectIsPressedAsState()
-    val dockScale by animateFloatAsState(
+    val dockScaleState = animateFloatAsState(
         targetValue = if (isDockPressed) 0.94f else 1f,
-        animationSpec = Tessera.motion.springPress,
+        animationSpec = motion.springPress,
         label = "dock_press_scale"
     )
 
@@ -366,8 +333,9 @@ fun SearchMorphingDock(
                         .width(animatedWidth + 8.dp)
                         .height(58.dp)
                         .graphicsLayer {
-                            scaleX = dockScale
-                            scaleY = dockScale
+                            val s = dockScaleState.value
+                            scaleX = s
+                            scaleY = s
                         }
                         .blur(radius = 16.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                         .background(
@@ -385,8 +353,9 @@ fun SearchMorphingDock(
                         .width(animatedWidth)
                         .height(54.dp)
                     .graphicsLayer {
-                        scaleX = dockScale
-                        scaleY = dockScale
+                        val s = dockScaleState.value
+                        scaleX = s
+                        scaleY = s
                     }
                     .shadow(
                         elevation = shadowElevation,
@@ -449,13 +418,22 @@ fun SearchMorphingDock(
                     )
                 }
 
+                // Borda rotativa de IA composta apenas quando a doca está expandida com brilho ativo
+                if (effectiveGeminiGlow && isExpanded) {
+                    AiGlowBorderOverlay(
+                        shape = dockShape,
+                        isLightMode = isLightMode,
+                        modifier = Modifier.matchParentSize()
+                    )
+                }
+
                 // 1. Modo Lupa Inativa: Ícone Moderno sem círculo interior redundante
-                if (expandProgress < 0.25f) {
+                if (showCollapsedLens) {
                     val lensInteraction = remember { MutableInteractionSource() }
                     val isLensPressed by lensInteraction.collectIsPressedAsState()
-                    val lensScale by animateFloatAsState(
+                    val lensScaleState = animateFloatAsState(
                         targetValue = if (isLensPressed) 0.90f else 1f,
-                        animationSpec = Tessera.motion.springPress,
+                        animationSpec = motion.springPress,
                         label = "lens_press_scale"
                     )
 
@@ -463,9 +441,10 @@ fun SearchMorphingDock(
                         modifier = Modifier
                             .size(54.dp)
                             .graphicsLayer {
-                                alpha = 1f - (expandProgress * 4f).coerceIn(0f, 1f)
-                                scaleX = lensScale
-                                scaleY = lensScale
+                                alpha = 1f - (expandProgressState.value * 4f).coerceIn(0f, 1f)
+                                val s = lensScaleState.value
+                                scaleX = s
+                                scaleY = s
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -477,14 +456,14 @@ fun SearchMorphingDock(
                 }
 
                 // 2. Modo Expandido: Linha de Busca Completa com Lupa
-                if (isExpanded || expandProgress > 0.05f) {
+                if (showExpandedContent) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = 16.dp)
                             .graphicsLayer {
-                                alpha = ((expandProgress - 0.05f) / 0.95f).coerceIn(0f, 1f)
+                                alpha = ((expandProgressState.value - 0.05f) / 0.95f).coerceIn(0f, 1f)
                             }
                     ) {
                         // Lupa Moderna sem cápsula interior
@@ -643,20 +622,17 @@ fun SearchMorphingDock(
             if (isSplit) {
                 AnimatedVisibility(
                     visible = isExpanded,
-                    enter = fadeIn(tween(180)) + scaleIn(),
-                    exit = fadeOut(tween(120)) + scaleOut()
+                    enter = fadeIn(motion.fadeStandard) + scaleIn(animationSpec = motion.springQuick),
+                    exit = fadeOut(motion.fadeQuick) + scaleOut(animationSpec = motion.springQuick)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Spacer(modifier = Modifier.width(10.dp))
 
                         val settingsInteractionSource = remember { MutableInteractionSource() }
                         val isSettingsPressed by settingsInteractionSource.collectIsPressedAsState()
-                        val settingsScale by animateFloatAsState(
+                        val settingsScaleState = animateFloatAsState(
                             targetValue = if (isSettingsPressed) 0.94f else 1f,
-                            animationSpec = spring(
-                                dampingRatio = 0.82f,
-                                stiffness = 380f
-                            ),
+                            animationSpec = motion.springPress,
                             label = "settings_press_scale"
                         )
 
@@ -668,8 +644,9 @@ fun SearchMorphingDock(
                                 modifier = Modifier
                                     .size(54.dp)
                                     .graphicsLayer {
-                                        scaleX = settingsScale
-                                        scaleY = settingsScale
+                                        val s = settingsScaleState.value
+                                        scaleX = s
+                                        scaleY = s
                                     }
                                     .blur(radius = 12.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                                     .background(
@@ -686,8 +663,9 @@ fun SearchMorphingDock(
                                 modifier = Modifier
                                     .size(50.dp)
                                 .graphicsLayer {
-                                    scaleX = settingsScale
-                                    scaleY = settingsScale
+                                    val s = settingsScaleState.value
+                                    scaleX = s
+                                    scaleY = s
                                 }
                                 .shadow(
                                     elevation = shadowElevation,
@@ -728,6 +706,14 @@ fun SearchMorphingDock(
                                     )
                             )
 
+                            if (effectiveGeminiGlow && isExpanded) {
+                                AiGlowBorderOverlay(
+                                    shape = buttonShape,
+                                    isLightMode = isLightMode,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+
                             Icon(
                                 imageVector = Icons.Outlined.Settings,
                                 contentDescription = "Configurações",
@@ -741,6 +727,52 @@ fun SearchMorphingDock(
         }
     }
 }
+}
+
+/**
+ * Borda especular animada para IA composta sob demanda (apenas quando a doca está expandida)
+ * e com rotação em GPU via `drawWithCache`, evitando alocação de Brush ou recomposições por frame.
+ */
+@Composable
+private fun AiGlowBorderOverlay(
+    shape: Shape,
+    isLightMode: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "phone_ai_glow")
+    val angleState = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ai_glow_rotation"
+    )
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .drawWithCache {
+                val colors = if (isLightMode) {
+                    com.tessera.launcher.ui.theme.PhoneAiLightGlowColors
+                } else {
+                    com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors
+                }
+                val brush = Brush.sweepGradient(colors)
+                val outline = shape.createOutline(size, layoutDirection, this)
+                val stroke = Stroke(width = 1.1.dp.toPx())
+                onDrawBehind {
+                    rotate(degrees = angleState.value, pivot = center) {
+                        drawOutline(
+                            outline = outline,
+                            brush = brush,
+                            style = stroke
+                        )
+                    }
+                }
+            }
+    )
 }
 
 /**
