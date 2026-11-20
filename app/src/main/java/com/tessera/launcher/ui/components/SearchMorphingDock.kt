@@ -710,17 +710,22 @@ private fun AiGlowBorderOverlay(
                 } else {
                     com.tessera.launcher.ui.theme.PhoneAiWhiteGlowColors
                 }
-                val brush = Brush.sweepGradient(colors)
                 val outline = shape.createOutline(size, layoutDirection, this)
-                val stroke = Stroke(width = 1.1.dp.toPx())
+                val stroke = Stroke(width = 0.85.dp.toPx())
                 onDrawBehind {
-                    rotate(degrees = angleState.value, pivot = center) {
-                        drawOutline(
-                            outline = outline,
-                            brush = brush,
-                            style = stroke
-                        )
-                    }
+                    val rad = Math.toRadians(angleState.value.toDouble())
+                    val cosVal = Math.cos(rad).toFloat()
+                    val sinVal = Math.sin(rad).toFloat()
+                    val brush = Brush.linearGradient(
+                        colors = colors,
+                        start = Offset(x = 500f * (1f - cosVal), y = 200f * (1f - sinVal)),
+                        end = Offset(x = 500f * (1f + cosVal), y = 200f * (1f + sinVal))
+                    )
+                    drawOutline(
+                        outline = outline,
+                        brush = brush,
+                        style = stroke
+                    )
                 }
             }
     )

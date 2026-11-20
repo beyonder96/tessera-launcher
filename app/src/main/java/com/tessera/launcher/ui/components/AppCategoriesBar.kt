@@ -87,12 +87,12 @@ fun AppCategoriesBar(
     val pillFill = when {
         hasCustomAccent -> accentColor.copy(alpha = if (palette.isLight) 0.18f else 0.24f)
         palette.isLight -> palette.textPrimary
-        else -> palette.surfaceSubtle
+        else -> Color(0xFF2C2C2E)
     }
     val pillBorder = when {
         hasCustomAccent -> accentColor
         palette.isLight -> palette.textPrimary
-        else -> palette.surfaceBorderHighlight
+        else -> Color(0x40FFFFFF)
     }
 
     Row(
@@ -153,8 +153,9 @@ fun AppCategoriesBar(
                             .clip(pillShape)
                             .then(
                                 if (!isSelected) {
+                                    val unselectedFill = if (palette.isLight) palette.surfaceSubtle else Color(0x18FFFFFF)
                                     Modifier
-                                        .background(palette.surface.copy(alpha = 0.55f), pillShape)
+                                        .background(unselectedFill, pillShape)
                                         .border(BorderStroke(0.5.dp, palette.surfaceBorder), pillShape)
                                 } else Modifier
                             )

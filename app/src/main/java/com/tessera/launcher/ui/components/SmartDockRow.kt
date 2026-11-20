@@ -185,7 +185,7 @@ private fun SmartDockItem(
 
     Column(
         modifier = modifier
-            .width(52.dp)
+            .width(62.dp)
             .clip(Tessera.shapes.medium)
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },

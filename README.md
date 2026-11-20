@@ -61,9 +61,9 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.1)
 
-### 🆕 Novidades na v4.1.0
+### 🆕 Novidades na v4.1.1
 - ✨ **Coreografia Espacial, Física 1:1 & Predictive Back:**
   - **Profundidade na Home & Cascata GPU:** Ao abrir a gaveta de aplicativos, a Home recua suavemente em profundidade (calibrado por perfil de visagismo) enquanto a lista surge com animação escalonada em GPU e `Modifier.animateItem()`.
   - **Abertura Contextual pelo Ícone:** Lançamento de apps com expansão a partir dos limites reais do ícone (`makeClipRevealAnimation`) e assentamento suave ao retornar à Home.

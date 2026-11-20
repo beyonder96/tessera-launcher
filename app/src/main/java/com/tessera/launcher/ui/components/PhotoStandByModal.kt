@@ -817,14 +817,16 @@ private fun StandByTopHeaderBar(
             }
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StandByWeatherChip(
                     weatherTemp = weatherTemp,
                     weatherCondition = weatherCondition,
                     weatherCity = weatherCity,
-                    formattedTime = formattedTime
+                    formattedTime = formattedTime,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
                 StandByBatteryChip(
                     batteryPercentage = batteryPercentage,
@@ -2716,7 +2718,8 @@ private fun StandByWeatherChip(
                 fontSize = 11.5.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFA0A0A8),
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

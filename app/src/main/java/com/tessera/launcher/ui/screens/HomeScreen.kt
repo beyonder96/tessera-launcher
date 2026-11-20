@@ -728,10 +728,18 @@ fun HomeScreen(
         }
 
         // Centro da Tela Inicial: Relógio Tipográfico de Autor & Moldura de Foto Minimalista
-        if (!uiState.isSearchExpanded && !uiState.isDrawerOpen && uiState.searchQuery.isEmpty()) {
+        if (!uiState.isSearchExpanded && (!uiState.isDrawerOpen || !isDrawerResting) && uiState.searchQuery.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .graphicsLayer {
+                        val bp = backPreviewProgress.value
+                        val d = (drawerProgress.value * (1f - bp * 0.65f)).coerceIn(0f, 1f)
+                        val s = MotionMath.lerp(1f, motion.depthScale, d)
+                        scaleX = s
+                        scaleY = s
+                        alpha = (1f - d * 1.15f).coerceIn(0f, 1f)
+                    }
                     .windowInsetsPadding(WindowInsets.statusBars)
                     .windowInsetsPadding(WindowInsets.navigationBars)
             ) {
@@ -769,7 +777,7 @@ fun HomeScreen(
             }
         }
 
-        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim)
+        // Camada de Foco e Desfoque de Fundo da Gaveta (Frosted Glass / Atmospheric Scrim em tela cheia)
         val drawerBackdropAlpha = if (uiState.isDrawerGlassEnabled) {
             val baseMin = if (uiState.isLightMode) 0.45f else (if (uiState.isSystemWallpaperEnabled) 0.48f else 0.68f)
             val baseMax = if (uiState.isLightMode) 0.75f else (if (uiState.isSystemWallpaperEnabled) 0.74f else 0.88f)
@@ -785,7 +793,7 @@ fun HomeScreen(
         val drawerBackdropBrush = remember(palette, drawerBackdropAlpha) {
             Brush.verticalGradient(
                 colors = listOf(
-                    palette.scrim.copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
+                    palette.background.copy(alpha = (drawerBackdropAlpha * 0.94f).coerceAtMost(1f)),
                     palette.background.copy(alpha = drawerBackdropAlpha)
                 )
             )
@@ -800,7 +808,6 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(drawerBackdropBrush)
-                    .tesseraGrain(0.03f)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -844,19 +851,40 @@ fun HomeScreen(
             ) {
             val isCategoriesVisible = uiState.isDrawerOpen && uiState.searchQuery.isEmpty() && uiState.isAppCategoriesEnabled
             val drawerBottomPadding = if (isCategoriesVisible) 136.dp else 88.dp
+            val bottomFadeTopPx = with(density) { (drawerBottomPadding + 20.dp).toPx() }
+            val bottomFadeEndPx = with(density) { (drawerBottomPadding - 18.dp).coerceAtLeast(56.dp).toPx() }
 
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
             ) {
-                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 8.dp else 32.dp
+                val drawerTopPadding = if (uiState.isShowStatusBarEnabled) statusBarTopPadding + 16.dp else statusBarTopPadding + 8.dp
                 Spacer(modifier = Modifier.height(drawerTopPadding))
 
                 Row(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
+                        .graphicsLayer {
+                            compositingStrategy = CompositingStrategy.Offscreen
+                        }
+                        .drawWithContent {
+                            drawContent()
+                            if (size.height > bottomFadeTopPx) {
+                                val fadeStartFraction = ((size.height - bottomFadeTopPx) / size.height).coerceIn(0f, 0.95f)
+                                val fadeEndFraction = ((size.height - bottomFadeEndPx) / size.height).coerceIn(fadeStartFraction + 0.01f, 0.99f)
+                                drawRect(
+                                    brush = Brush.verticalGradient(
+                                        0f to Color.Black,
+                                        fadeStartFraction to Color.Black,
+                                        fadeEndFraction to Color.Transparent,
+                                        1f to Color.Transparent
+                                    ),
+                                    blendMode = BlendMode.DstIn
+                                )
+                            }
+                        }
                 ) {
                     Box(
                         modifier = Modifier
