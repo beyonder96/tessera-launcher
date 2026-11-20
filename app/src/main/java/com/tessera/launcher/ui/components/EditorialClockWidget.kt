@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.ui.theme.TextPrimary
 import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.tabularNumerals
+import com.tessera.launcher.ui.theme.tokens.Tessera
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -252,8 +254,14 @@ fun EditorialClockWidget(
         }
     }
 
-    val primaryTextColor = if (isLightMode) Color(0xFF1C1917) else TextPrimary
-    val secondaryTextColor = if (isLightMode) Color(0xFF57534E) else TextSecondary
+    val palette = Tessera.palette
+    val primaryTextColor = palette.textPrimary
+    val secondaryTextColor = palette.textSecondary
+    val hasCustomAccent = accentColor != Color.White &&
+        accentColor != Color(0xFF111827) &&
+        accentColor != Color(0xFF334155) &&
+        accentColor != Color(0xFF1C1917)
+    val resolvedAccent = if (hasCustomAccent) accentColor else secondaryTextColor
 
     Box(
         modifier = modifier
@@ -274,12 +282,12 @@ fun EditorialClockWidget(
                 ) {
                     Text(
                         text = formattedTime.ifBlank { "12:00" },
-                        style = androidx.compose.ui.text.TextStyle(
+                        style = androidx.compose.material3.MaterialTheme.typography.displayLarge.copy(
                             fontSize = 46.sp,
                             fontWeight = FontWeight.Light,
                             letterSpacing = (-1.2).sp,
                             lineHeight = 48.sp
-                        ),
+                        ).tabularNumerals(),
                         color = primaryTextColor
                     )
                     Spacer(modifier = Modifier.height(6.dp))
@@ -291,12 +299,12 @@ fun EditorialClockWidget(
                             modifier = Modifier
                                 .size(4.dp)
                                 .clip(CircleShape)
-                                .background(if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor.copy(alpha = 0.6f))
+                                .background(if (hasCustomAccent) accentColor else secondaryTextColor.copy(alpha = 0.6f))
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = dateFormatted.uppercase(Locale.getDefault()),
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 letterSpacing = 1.2.sp
@@ -322,31 +330,31 @@ fun EditorialClockWidget(
                     ) {
                         Text(
                             text = hour,
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.displayLarge.copy(
                                 fontSize = 52.sp,
                                 fontWeight = FontWeight.Normal,
                                 letterSpacing = (-2).sp,
                                 lineHeight = 54.sp
-                            ),
+                            ).tabularNumerals(),
                             color = primaryTextColor
                         )
                         Text(
                             text = ":",
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.displayLarge.copy(
                                 fontSize = 46.sp,
                                 fontWeight = FontWeight.Light
                             ),
-                            color = if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor,
+                            color = resolvedAccent,
                             modifier = Modifier.padding(start = 2.dp, end = 2.dp, bottom = 4.dp)
                         )
                         Text(
                             text = min,
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.displayLarge.copy(
                                 fontSize = 52.sp,
                                 fontWeight = FontWeight.Normal,
                                 letterSpacing = (-2).sp,
                                 lineHeight = 54.sp
-                            ),
+                            ).tabularNumerals(),
                             color = primaryTextColor
                         )
                     }
@@ -354,12 +362,12 @@ fun EditorialClockWidget(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
-                            .background(if (isLightMode) Color(0x10000000) else Color(0x14FFFFFF))
+                            .background(palette.surfaceSubtle.copy(alpha = 0.72f))
                             .padding(horizontal = 12.dp, vertical = 4.dp)
                     ) {
                         Text(
                             text = dateFormatted,
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium,
                                 letterSpacing = 0.4.sp
@@ -376,31 +384,31 @@ fun EditorialClockWidget(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
-                        .background(if (isLightMode) Color(0x0C000000) else Color(0x12FFFFFF))
+                        .background(palette.surfaceSubtle.copy(alpha = 0.65f))
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = formattedTime,
-                        style = androidx.compose.ui.text.TextStyle(
+                        style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = (-0.5).sp
-                        ),
+                        ).tabularNumerals(),
                         color = primaryTextColor
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "•",
-                        style = androidx.compose.ui.text.TextStyle(
+                        style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         ),
-                        color = if (accentColor != Color.White && accentColor != Color(0xFF111827) && accentColor != Color(0xFF334155) && accentColor != Color(0xFF1C1917)) accentColor else secondaryTextColor
+                        color = resolvedAccent
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = dateFormatted,
-                        style = androidx.compose.ui.text.TextStyle(
+                        style = androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Normal,
                             letterSpacing = 0.sp
@@ -436,7 +444,7 @@ fun EditorialClockWidget(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = dateFormatted.uppercase(Locale.getDefault()),
-                            style = androidx.compose.ui.text.TextStyle(
+                            style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 2.sp

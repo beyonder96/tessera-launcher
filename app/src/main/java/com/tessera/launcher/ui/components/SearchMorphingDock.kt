@@ -46,7 +46,9 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import com.tessera.launcher.ui.theme.tokens.tesseraGrain
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -171,105 +173,57 @@ fun SearchMorphingDock(
     val dockShape = Tessera.shapes.pill
     val buttonShape = Tessera.shapes.full
     val motion = Tessera.motion
+    val palette = Tessera.palette
 
     val opacityFraction = (searchBarOpacity.coerceIn(0, 100) / 100f)
     val shouldUseLiquidGlass = isLiquidGlass || opacityFraction < 0.98f
 
-    // Borda moderna com gradiente sutil de luz física especular
-    val modernSpecularBorder = remember(isLightMode, opacityFraction) {
-        if (isLightMode) {
-            Brush.verticalGradient(
-                listOf(
-                    Color.White.copy(alpha = (0.80f * opacityFraction).coerceIn(0.20f, 0.95f)),
-                    Color(0x22000000).copy(alpha = (0.25f * opacityFraction).coerceIn(0.05f, 0.35f))
-                )
+    val modernSpecularBorder = remember(palette, opacityFraction) {
+        Brush.verticalGradient(
+            listOf(
+                palette.glassStrokeTop.copy(alpha = (palette.glassStrokeTop.alpha * opacityFraction).coerceIn(0.10f, 0.95f)),
+                palette.glassStrokeBottom.copy(alpha = (palette.glassStrokeBottom.alpha * opacityFraction).coerceIn(0.03f, 0.35f))
             )
-        } else {
-            Brush.verticalGradient(
-                listOf(
-                    Color.White.copy(alpha = (0.32f * opacityFraction).coerceIn(0.10f, 0.40f)),
-                    Color.White.copy(alpha = (0.06f * opacityFraction).coerceIn(0.02f, 0.12f))
-                )
-            )
-        }
+        )
     }
 
     val dockBorder = if (shouldUseLiquidGlass) {
-        BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = isLightMode, alphaFactor = opacityFraction))
+        BorderStroke(0.75.dp, appleLiquidGlassBorderBrush(isLightMode = palette.isLight, alphaFactor = opacityFraction))
     } else {
         BorderStroke(0.5.dp, modernSpecularBorder)
     }
 
     val dockBgModifier = if (shouldUseLiquidGlass) {
-        Modifier.background(
-            appleLiquidGlassSurfaceBrush(
-                isLightMode = isLightMode,
-                isAmoledMode = isAmoledMode,
-                alphaFactor = opacityFraction
-            )
-        )
-    } else if (isAmoledMode) {
-        Modifier.background(
-            Brush.verticalGradient(
-                listOf(
-                    AmoledCardBackground,
-                    Color(0xFF070709)
+        Modifier
+            .background(
+                appleLiquidGlassSurfaceBrush(
+                    isLightMode = palette.isLight,
+                    isAmoledMode = isAmoledMode,
+                    alphaFactor = opacityFraction
                 )
             )
-        )
-    } else if (isLightMode) {
-        Modifier.background(
-            Brush.verticalGradient(
-                listOf(
-                    Color(0xFFFAF8F2),
-                    Color(0xFFEFECE2)
-                )
-            )
-        )
+            .tesseraGrain(0.025f)
     } else {
         Modifier.background(
             Brush.verticalGradient(
-                listOf(
-                    Color(0xFF16161D),
-                    Color(0xFF0F0F14)
-                )
+                listOf(palette.surface, palette.background)
             )
         )
     }
 
     val shadowElevation = (10.dp * opacityFraction)
-    val shadowAmbientColor = if (isLightMode) {
-        Color(0x14000000)
-    } else {
-        Color.Black.copy(alpha = 0.25f * opacityFraction)
-    }
-    val shadowSpotColor = if (opacityFraction < 0.95f) {
-        Color.Transparent
-    } else {
-        if (isLightMode) Color(0x22000000) else Color.Black.copy(alpha = 0.45f)
-    }
+    val shadowAmbientColor = palette.shadowAmbient.copy(alpha = palette.shadowAmbient.alpha * opacityFraction)
+    val shadowSpotColor = if (opacityFraction < 0.95f) Color.Transparent else palette.shadowSpot
 
-    val dockTextPrimary = if (isLightMode) {
-        if (opacityFraction < 0.35f) Color.White else LightTextPrimary
+    val dockTextPrimary = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.textPrimary
+    val dockPlaceholderColor = if (palette.isLight && opacityFraction < 0.35f) {
+        Color.White.copy(alpha = 0.8f)
     } else {
-        TextPrimary
+        palette.textSecondary
     }
-    val dockPlaceholderColor = if (isLightMode) {
-        if (opacityFraction < 0.35f) Color(0xCCFFFFFF) else Color(0xFF6B7280)
-    } else {
-        Color(0xFF70707C)
-    }
-    val dockIconTint = if (isLightMode) {
-        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
-    } else {
-        Color(0xFF82828E)
-    }
-    val dockGearTint = if (isLightMode) {
-        if (opacityFraction < 0.35f) Color.White else Color(0xFF374151)
-    } else {
-        Color(0xFFA0A0AA)
-    }
-    val dockCursorBrush = SolidColor(if (isLightMode && opacityFraction >= 0.35f) Color.Black else Color.White)
+    val dockIconTint = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.iconTint
+    val dockGearTint = if (palette.isLight && opacityFraction < 0.35f) Color.White else palette.iconTint
+    val dockCursorBrush = SolidColor(if (palette.isLight && opacityFraction >= 0.35f) palette.textPrimary else Color.White)
 
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -493,10 +447,9 @@ fun SearchMorphingDock(
                                     onQueryChange(newTfv.text)
                                 }
                             },
-                            textStyle = TextStyle(
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
                                 color = dockTextPrimary,
-                                fontSize = 16.sp,
-                                fontFamily = FontFamily.SansSerif
+                                fontSize = 16.sp
                             ),
                             cursorBrush = dockCursorBrush,
                             singleLine = true,
@@ -516,9 +469,10 @@ fun SearchMorphingDock(
                                     if (searchQuery.isEmpty()) {
                                         Text(
                                             text = placeholderText,
-                                            color = dockPlaceholderColor,
-                                            fontSize = 15.sp,
-                                            fontFamily = FontFamily.SansSerif
+                                            style = MaterialTheme.typography.bodyLarge.copy(
+                                                color = dockPlaceholderColor,
+                                                fontSize = 15.sp
+                                            )
                                         )
                                     }
                                     innerTextField()
@@ -537,17 +491,14 @@ fun SearchMorphingDock(
                         ) {
                             AnimatedVisibility(
                                 visible = searchQuery.isNotEmpty(),
-                                enter = fadeIn(animationSpec = tween(150)) + scaleIn(),
-                                exit = fadeOut(animationSpec = tween(120)) + scaleOut()
+                                enter = fadeIn(motion.fadeQuick) + scaleIn(animationSpec = motion.springQuick),
+                                exit = fadeOut(motion.fadeQuick) + scaleOut(animationSpec = motion.fadeQuick)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .size(30.dp)
                                         .clip(CircleShape)
-                                        .background(
-                                            if (isLightMode) Color(0x12000000)
-                                            else Color(0x1FFFFFFF)
-                                        )
+                                        .background(palette.ripple)
                                         .clickable(
                                             interactionSource = remember { MutableInteractionSource() },
                                             indication = null,

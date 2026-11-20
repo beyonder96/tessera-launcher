@@ -47,15 +47,9 @@ import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.ui.motion.IconBoundsHolder
 import com.tessera.launcher.ui.motion.captureIconBounds
-import com.tessera.launcher.ui.theme.AmoledCardBackground
-import com.tessera.launcher.ui.theme.AmoledCardBorder
-import com.tessera.launcher.ui.theme.DarkSurface
-import com.tessera.launcher.ui.theme.DarkSurfaceBorder
 import com.tessera.launcher.ui.theme.IconShape
-import com.tessera.launcher.ui.theme.LightCardBackground
-import com.tessera.launcher.ui.theme.LightCardBorder
-import com.tessera.launcher.ui.theme.LightTextSecondary
-import com.tessera.launcher.ui.theme.TextSecondary
+import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.tokens.tesseraGlass
 
 private fun safeDrawableToBitmap(drawable: Drawable): Bitmap {
     if (drawable is BitmapDrawable && drawable.bitmap != null) {
@@ -118,23 +112,10 @@ fun SmartDockRow(
             }
         }
     } else {
-        val surfaceColor = when {
-            isLightMode -> LightCardBackground
-            isAmoledMode -> AmoledCardBackground
-            else -> DarkSurface.copy(alpha = 0.85f)
-        }
-
-        val borderColor = when {
-            isLightMode -> LightCardBorder
-            isAmoledMode -> AmoledCardBorder
-            else -> DarkSurfaceBorder
-        }
-
-        Surface(
-            modifier = modifier.wrapContentWidth(),
-            shape = RoundedCornerShape(22.dp),
-            color = surfaceColor,
-            border = BorderStroke(1.dp, borderColor)
+        Box(
+            modifier = modifier
+                .wrapContentWidth()
+                .tesseraGlass(shape = Tessera.shapes.large, isLiquidGlass = !isAmoledMode, elevation = 6.dp)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -174,6 +155,7 @@ private fun SmartDockItem(
     notificationCount: Int = 0,
     accentColor: Color = Color(0xFF3B82F6)
 ) {
+    val palette = Tessera.palette
     val iconBounds = remember(app.packageName) { IconBoundsHolder() }
     val shape = remember(iconShape) {
         when (iconShape) {
@@ -199,15 +181,15 @@ private fun SmartDockItem(
         app.bitmap?.asImageBitmap() ?: app.icon?.let { safeDrawableToBitmap(it).asImageBitmap() }
     }
 
-    val labelColor = if (isLightMode) LightTextSecondary else TextSecondary
+    val labelColor = palette.textSecondary
 
     Column(
         modifier = modifier
             .width(52.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(Tessera.shapes.medium)
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(color = if (isLightMode) Color(0x22000000) else Color(0x22FFFFFF)),
+                indication = ripple(color = palette.ripple),
                 onClick = { onClick(iconBounds.rootRect) },
                 onLongClick = onLongClick
             )
@@ -250,7 +232,7 @@ private fun SmartDockItem(
                 )
             } else {
                 Box(
-                    modifier = iconModifier.background(Color(0xFF222228)),
+                    modifier = iconModifier.background(palette.surfaceSubtle),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -276,9 +258,12 @@ private fun SmartDockItem(
 
         Text(
             text = app.label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Normal,
+                letterSpacing = 0.sp
+            ),
             color = labelColor,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Normal,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,

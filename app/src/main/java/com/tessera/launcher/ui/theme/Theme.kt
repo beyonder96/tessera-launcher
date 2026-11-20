@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -26,6 +27,8 @@ fun TesseraTheme(
     themeMode: String = "AMOLED",
     accentColor: Color = AccentMonochrome,
     visagismProfileId: String = "SERENE",
+    fontFamilyType: String = "tessera",
+    customFontPath: String = "",
     content: @Composable () -> Unit
 ) {
     val palette = when (themeMode.uppercase()) {
@@ -39,6 +42,10 @@ fun TesseraTheme(
     val shapes = resolveVisagismShapes(profile)
     val motion = resolveVisagismMotion(profile)
     val spacing = TesseraSpacing()
+    val fontFamily = remember(fontFamilyType, customFontPath) {
+        resolveTesseraFontFamily(fontFamilyType, customFontPath)
+    }
+    val typography = remember(fontFamily) { tesseraTypography(fontFamily) }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -94,7 +101,7 @@ fun TesseraTheme(
     ) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = Typography,
+            typography = typography,
             content = content
         )
     }

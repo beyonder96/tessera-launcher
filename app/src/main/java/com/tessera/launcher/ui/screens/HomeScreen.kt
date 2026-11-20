@@ -54,6 +54,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.tokens.tesseraGrain
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -776,33 +777,26 @@ fun HomeScreen(
             if (uiState.isLightMode) 0.76f else 0.82f
         }
 
-        val drawerBackdropBrush = remember(uiState.isLightMode, drawerBackdropAlpha) {
-            if (uiState.isLightMode) {
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF7F4EB).copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
-                        Color(0xFFE8E4D8).copy(alpha = drawerBackdropAlpha)
-                    )
+        val palette = Tessera.palette
+        val drawerBackdropBrush = remember(palette, drawerBackdropAlpha) {
+            Brush.verticalGradient(
+                colors = listOf(
+                    palette.scrim.copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
+                    palette.background.copy(alpha = drawerBackdropAlpha)
                 )
-            } else {
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0F0F14).copy(alpha = (drawerBackdropAlpha * 0.92f).coerceAtMost(1f)),
-                        Color.Black.copy(alpha = drawerBackdropAlpha)
-                    )
-                )
-            }
+            )
         }
 
         AnimatedVisibility(
             visible = uiState.isSearchExpanded || uiState.isDrawerOpen || uiState.searchQuery.isNotEmpty(),
-            enter = fadeIn(animationSpec = Tessera.motion.fadeStandard),
-            exit = fadeOut(animationSpec = Tessera.motion.fadeQuick)
+            enter = fadeIn(animationSpec = motion.fadeStandard),
+            exit = fadeOut(animationSpec = motion.fadeQuick)
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(drawerBackdropBrush)
+                    .tesseraGrain(0.03f)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -1432,8 +1426,8 @@ fun HomeScreen(
                             Brush.verticalGradient(
                                 colors = listOf(
                                     Color.Transparent,
-                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.35f),
-                                    if (uiState.isLightMode) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.75f)
+                                    palette.background.copy(alpha = 0.35f),
+                                    palette.background.copy(alpha = 0.75f)
                                 )
                             )
                         )

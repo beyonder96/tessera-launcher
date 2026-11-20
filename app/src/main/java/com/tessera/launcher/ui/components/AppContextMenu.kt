@@ -63,14 +63,9 @@ import androidx.compose.ui.window.Dialog
 import com.tessera.launcher.data.helper.IconPackInfo
 import com.tessera.launcher.data.model.AppInfo
 import com.tessera.launcher.ui.state.AppShortcutItem
-import com.tessera.launcher.ui.theme.DarkSurface
-import com.tessera.launcher.ui.theme.DarkSurfaceBorder
-import com.tessera.launcher.ui.theme.DarkSurfaceVariant
 import com.tessera.launcher.ui.theme.IconShape
-import com.tessera.launcher.ui.theme.TextPrimary
-import com.tessera.launcher.ui.theme.TextSecondary
-import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.theme.tokens.Tessera
+import com.tessera.launcher.ui.theme.tokens.tesseraGlass
 
 @Composable
 private fun AnimatedDialogContent(content: @Composable () -> Unit) {
@@ -117,6 +112,8 @@ fun AppContextMenu(
     onUninstallApp: () -> Unit,
     onRemoveShortcut: () -> Unit = {}
 ) {
+    val palette = Tessera.palette
+    val shapes = Tessera.shapes
     var showIconPicker by remember { mutableStateOf(false) }
     var showUninstallConfirmDialog by remember { mutableStateOf(false) }
 
@@ -130,12 +127,10 @@ fun AppContextMenu(
 
     Dialog(onDismissRequest = onDismiss) {
         AnimatedDialogContent {
-        Surface(
-            shape = RoundedCornerShape(26.dp),
-            color = Color(0xFF141416),
-            border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.14f)),
-            shadowElevation = 20.dp,
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .tesseraGlass(shape = shapes.card, isLiquidGlass = true, elevation = 18.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -150,7 +145,7 @@ fun AppContextMenu(
                     if (imageBitmap != null) {
                         Surface(
                             shape = IconShape,
-                            color = DarkSurfaceVariant,
+                            color = palette.surfaceSubtle,
                             modifier = Modifier.size(48.dp)
                         ) {
                             Image(
@@ -167,13 +162,13 @@ fun AppContextMenu(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(IconShape)
-                                .background(DarkSurfaceVariant),
+                                .background(palette.surfaceSubtle),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = app.firstLetter.toString(),
                                 style = MaterialTheme.typography.titleMedium,
-                                color = TextSecondary
+                                color = palette.textSecondary
                             )
                         }
                     }
@@ -187,7 +182,7 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 16.sp
                             ),
-                            color = TextPrimary,
+                            color = palette.textPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -197,7 +192,7 @@ fun AppContextMenu(
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -207,7 +202,7 @@ fun AppContextMenu(
                 // Seção de Atalhos de Apps do Android (LauncherApps Shortcuts)
                 if (shortcuts.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 0.5.dp)
+                    HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
@@ -217,7 +212,7 @@ fun AppContextMenu(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.sp
                         ),
-                        color = TextTertiary,
+                        color = palette.textTertiary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
 
@@ -230,10 +225,10 @@ fun AppContextMenu(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
+                                .clip(shapes.medium)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
-                                    indication = ripple(color = Color(0x22FFFFFF)),
+                                    indication = ripple(color = palette.ripple),
                                     onClick = {
                                         onDismiss()
                                         onShortcutClick(shortcut)
@@ -245,7 +240,7 @@ fun AppContextMenu(
                                 modifier = Modifier
                                     .size(34.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF191922)),
+                                    .background(palette.surfaceSubtle),
                                 contentAlignment = Alignment.Center
                             ) {
                                 if (shortcutBitmap != null) {
@@ -259,7 +254,7 @@ fun AppContextMenu(
                                     Icon(
                                         imageVector = Icons.Outlined.Shortcut,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = palette.textPrimary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -271,7 +266,7 @@ fun AppContextMenu(
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 14.sp
                                 ),
-                                color = TextPrimary,
+                                color = palette.textPrimary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -280,7 +275,7 @@ fun AppContextMenu(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.08f), thickness = 0.5.dp)
+                HorizontalDivider(color = palette.divider, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Ação: Trocar Ícone Individual
@@ -288,10 +283,10 @@ fun AppContextMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = Color(0x22FFFFFF)),
+                            indication = ripple(color = palette.ripple),
                             onClick = { showIconPicker = true }
                         )
                         .padding(horizontal = 12.dp, vertical = 11.dp)
@@ -299,7 +294,7 @@ fun AppContextMenu(
                     Icon(
                         imageVector = Icons.Outlined.Palette,
                         contentDescription = "Trocar ícone",
-                        tint = TextPrimary,
+                        tint = palette.textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
@@ -310,14 +305,14 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Personalizar ícone deste aplicativo",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -329,10 +324,10 @@ fun AppContextMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = Color(0x22FFFFFF)),
+                            indication = ripple(color = palette.ripple),
                             onClick = {
                                 onDismiss()
                                 if (hasLinkedWidget) onUnlinkWidget() else onLinkWidget()
@@ -343,7 +338,7 @@ fun AppContextMenu(
                     Icon(
                         imageVector = Icons.Outlined.Widgets,
                         contentDescription = "Widget Pop-up",
-                        tint = TextPrimary,
+                        tint = palette.textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
@@ -354,14 +349,14 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = if (hasLinkedWidget) "Toque para desvincular o widget deste app" else "Deslize o app para a direita para abrir",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -373,10 +368,10 @@ fun AppContextMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = Color(0x22FFFFFF)),
+                            indication = ripple(color = palette.ripple),
                             onClick = {
                                 onDismiss()
                                 onOpenAppSettings()
@@ -387,7 +382,7 @@ fun AppContextMenu(
                     Icon(
                         imageVector = Icons.Outlined.Info,
                         contentDescription = "Informações do aplicativo",
-                        tint = TextPrimary,
+                        tint = palette.textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
@@ -398,14 +393,14 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Permissões, dados e detalhes",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -415,10 +410,10 @@ fun AppContextMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = Color(0x22FFFFFF)),
+                            indication = ripple(color = palette.ripple),
                             onClick = {
                                 onDismiss()
                                 onHideApp()
@@ -429,7 +424,7 @@ fun AppContextMenu(
                     Icon(
                         imageVector = Icons.Outlined.VisibilityOff,
                         contentDescription = "Ocultar app",
-                        tint = TextPrimary,
+                        tint = palette.textPrimary,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
@@ -440,14 +435,14 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextPrimary
+                            color = palette.textPrimary
                         )
                         Text(
                             text = "Remover da lista e proteger com PIN",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -459,10 +454,10 @@ fun AppContextMenu(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(shapes.medium)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = ripple(color = Color(0x22FFFFFF)),
+                            indication = ripple(color = palette.ripple),
                             onClick = {
                                 showUninstallConfirmDialog = true
                             }
@@ -472,7 +467,7 @@ fun AppContextMenu(
                     Icon(
                         imageVector = Icons.Outlined.DeleteOutline,
                         contentDescription = if (app.isShortcut) "Remover atalho" else "Desinstalar",
-                        tint = Color(0xFFEF5350),
+                        tint = palette.destructive,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(14.dp))
@@ -483,14 +478,14 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = Color(0xFFEF5350)
+                            color = palette.destructive
                         )
                         Text(
                             text = if (app.isShortcut) "Remover da gaveta de apps" else "Remover este app do dispositivo",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 fontSize = 12.sp
                             ),
-                            color = TextSecondary
+                            color = palette.textSecondary
                         )
                     }
                 }
@@ -503,14 +498,11 @@ fun AppContextMenu(
     if (showIconPicker) {
         Dialog(onDismissRequest = { showIconPicker = false }) {
             AnimatedDialogContent {
-            Surface(
-                shape = RoundedCornerShape(22.dp),
-                color = Color(0xFF0F0F13),
-                border = BorderStroke(1.dp, Color(0xFF22222A)),
-                shadowElevation = 18.dp,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 24.dp)
+                    .tesseraGlass(shape = shapes.large, isLiquidGlass = true, elevation = 18.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -523,7 +515,7 @@ fun AppContextMenu(
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         ),
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
@@ -531,7 +523,7 @@ fun AppContextMenu(
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 13.sp
                         ),
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -548,7 +540,7 @@ fun AppContextMenu(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(shapes.medium)
                                     .clickable {
                                         onChangeIconPack(null)
                                         showIconPicker = false
@@ -560,13 +552,13 @@ fun AppContextMenu(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF1E1E28)),
+                                        .background(palette.surfaceSubtle),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = Icons.Outlined.Palette,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = palette.textPrimary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -578,19 +570,19 @@ fun AppContextMenu(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = 14.sp
                                         ),
-                                        color = TextPrimary
+                                        color = palette.textPrimary
                                     )
                                     Text(
                                         text = "Ícone original do aplicativo",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
                                 }
                                 if (isDefault) {
                                     Icon(
                                         imageVector = Icons.Outlined.Check,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = palette.textPrimary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -608,7 +600,7 @@ fun AppContextMenu(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(shapes.medium)
                                     .clickable {
                                         onChangeIconPack(pack.packageName)
                                         showIconPicker = false
@@ -620,7 +612,7 @@ fun AppContextMenu(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(CircleShape)
-                                        .background(Color(0xFF1E1E28)),
+                                        .background(palette.surfaceSubtle),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     if (packBitmap != null) {
@@ -633,7 +625,7 @@ fun AppContextMenu(
                                         Icon(
                                             imageVector = Icons.Outlined.Palette,
                                             contentDescription = null,
-                                            tint = TextPrimary,
+                                            tint = palette.textPrimary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -646,19 +638,19 @@ fun AppContextMenu(
                                             fontWeight = FontWeight.Medium,
                                             fontSize = 14.sp
                                         ),
-                                        color = TextPrimary
+                                        color = palette.textPrimary
                                     )
                                     Text(
                                         text = pack.packageName,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary
+                                        color = palette.textSecondary
                                     )
                                 }
                                 if (isSelected) {
                                     Icon(
                                         imageVector = Icons.Outlined.Check,
                                         contentDescription = null,
-                                        tint = TextPrimary,
+                                        tint = palette.textPrimary,
                                         modifier = Modifier.size(18.dp)
                                     )
                                 }
@@ -675,14 +667,11 @@ fun AppContextMenu(
     if (showUninstallConfirmDialog) {
         Dialog(onDismissRequest = { showUninstallConfirmDialog = false }) {
             AnimatedDialogContent {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF14141A),
-                border = BorderStroke(1.dp, Color(0xFF282834)),
-                shadowElevation = 24.dp,
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
+                    .tesseraGlass(shape = shapes.large, isLiquidGlass = true, elevation = 24.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -695,7 +684,7 @@ fun AppContextMenu(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 17.sp
                         ),
-                        color = TextPrimary
+                        color = palette.textPrimary
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -710,7 +699,7 @@ fun AppContextMenu(
                             fontSize = 14.sp,
                             lineHeight = 20.sp
                         ),
-                        color = TextSecondary
+                        color = palette.textSecondary
                     )
 
                     Spacer(modifier = Modifier.height(22.dp))
@@ -726,9 +715,9 @@ fun AppContextMenu(
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 14.sp
                             ),
-                            color = TextSecondary,
+                            color = palette.textSecondary,
                             modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(shapes.small)
                                 .clickable {
                                     showUninstallConfirmDialog = false
                                 }
@@ -738,11 +727,11 @@ fun AppContextMenu(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color(0xFFEF5350).copy(alpha = 0.15f),
-                            border = BorderStroke(1.dp, Color(0xFFEF5350).copy(alpha = 0.4f)),
+                            shape = shapes.small,
+                            color = palette.destructiveMuted,
+                            border = BorderStroke(1.dp, palette.destructive.copy(alpha = 0.4f)),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(shapes.small)
                                 .clickable {
                                     showUninstallConfirmDialog = false
                                     onDismiss()
@@ -759,7 +748,7 @@ fun AppContextMenu(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp
                                 ),
-                                color = Color(0xFFEF5350),
+                                color = palette.destructive,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
                         }

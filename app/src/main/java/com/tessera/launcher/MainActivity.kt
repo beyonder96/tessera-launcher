@@ -335,7 +335,9 @@ class MainActivity : ComponentActivity() {
 
             TesseraTheme(
                 themeMode = uiState.themeMode,
-                accentColor = uiState.activeAccentColor
+                accentColor = uiState.activeAccentColor,
+                fontFamilyType = uiState.fontFamilyType,
+                customFontPath = uiState.customFontPath
             ) {
                 HomeScreen(
                     viewModel = viewModel,

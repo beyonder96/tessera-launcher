@@ -1,33 +1,71 @@
 package com.tessera.launcher.ui.theme
 
+import android.graphics.Typeface
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.R
+import java.io.File
 
-val Typography = Typography(
-    // Display Large — Relógio de Autor Cupertino em Destaque
+val TesseraManrope = FontFamily(
+    Font(R.font.manrope_light, FontWeight.Light),
+    Font(R.font.manrope_regular, FontWeight.Normal),
+    Font(R.font.manrope_medium, FontWeight.Medium),
+    Font(R.font.manrope_semibold, FontWeight.SemiBold),
+    Font(R.font.manrope_bold, FontWeight.Bold)
+)
+
+fun resolveTesseraFontFamily(
+    fontFamilyType: String,
+    customFontPath: String = ""
+): FontFamily {
+    return when (fontFamilyType.lowercase()) {
+        "system" -> FontFamily.SansSerif
+        "custom" -> {
+            if (customFontPath.isNotBlank()) {
+                runCatching {
+                    val file = File(customFontPath)
+                    if (file.exists() && file.canRead()) {
+                        FontFamily(Typeface.createFromFile(file))
+                    } else {
+                        TesseraManrope
+                    }
+                }.getOrDefault(TesseraManrope)
+            } else {
+                TesseraManrope
+            }
+        }
+        else -> TesseraManrope
+    }
+}
+
+fun TextStyle.tabularNumerals(): TextStyle = copy(fontFeatureSettings = "tnum")
+
+fun tesseraTypography(fontFamily: FontFamily = TesseraManrope): Typography = Typography(
+    // Display Large — Relógio de Autor em Destaque
     displayLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.Light,
         fontSize = 42.sp,
         lineHeight = 46.sp,
-        letterSpacing = (-1.0).sp,
+        letterSpacing = (-1.1).sp,
         color = TextPrimary
     ),
     // Display Medium — Relógio Numérico Secundário
     displayMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 34.sp,
         lineHeight = 40.sp,
-        letterSpacing = (-0.8).sp,
+        letterSpacing = (-0.9).sp,
         color = TextPrimary
     ),
     // Headline Medium — Títulos de Cartão & Modais
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 28.sp,
@@ -36,7 +74,7 @@ val Typography = Typography(
     ),
     // Título 1 — Cabeçalho Principal / Seções
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 26.sp,
@@ -45,7 +83,7 @@ val Typography = Typography(
     ),
     // Título 2 — Nomes de App / Títulos de Item
     titleMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 15.sp,
         lineHeight = 20.sp,
@@ -54,7 +92,7 @@ val Typography = Typography(
     ),
     // Título 3 — Subtítulos de Widgets / Seções Secundárias
     titleSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 13.sp,
         lineHeight = 18.sp,
@@ -63,16 +101,16 @@ val Typography = Typography(
     ),
     // Corpo 1 — Texto Principal / Input da Busca
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 15.sp,
         lineHeight = 22.sp,
-        letterSpacing = (-0.15).sp,
+        letterSpacing = (-0.1).sp,
         color = TextPrimary
     ),
     // Corpo 2 — Rótulos Secundários / Status
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 13.sp,
         lineHeight = 18.sp,
@@ -81,11 +119,13 @@ val Typography = Typography(
     ),
     // Label Small — Letras A-Z / Chips / Badges
     labelSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = fontFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 14.sp,
-        letterSpacing = 0.5.sp,
+        letterSpacing = 0.4.sp,
         color = TextTertiary
     )
 )
+
+val Typography = tesseraTypography(TesseraManrope)
