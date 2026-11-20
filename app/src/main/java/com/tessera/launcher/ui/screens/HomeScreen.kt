@@ -160,6 +160,8 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import com.tessera.launcher.ui.components.LocalLateralPanelProgress
+import com.tessera.launcher.ui.motion.MotionMath
+import com.tessera.launcher.ui.motion.rememberAppLauncher
 import com.tessera.launcher.ui.theme.tokens.LateralSpatialMath
 import com.tessera.launcher.ui.state.FeedState
 
@@ -260,11 +262,24 @@ fun HomeScreen(
         uiState.proUpgradeFeatureName == null &&
         !uiState.isSafeModeRecoveryOpen
 
+    val returnSettlePending = remember { booleanArrayOf(false) }
+    val returnSettleAnim = remember { Animatable(1f) }
+    val launchAppWithBounds = rememberAppLauncher(viewModel) {
+        returnSettlePending[0] = true
+    }
+
     val allApps = (uiState.appsState as? AppsListState.Success)?.apps ?: emptyList()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                if (returnSettlePending[0]) {
+                    returnSettlePending[0] = false
+                    scope.launch {
+                        returnSettleAnim.snapTo(0f)
+                        returnSettleAnim.animateTo(1f, motion.springStandard)
+                    }
+                }
                 viewModel.checkNotificationAccess(context)
                 viewModel.refreshCalendarAndPermissions()
                 viewModel.refreshWeather()
@@ -423,11 +438,18 @@ fun HomeScreen(
                 .fillMaxSize()
                 .graphicsLayer {
                     val p = panelProgress.value
+                    var s = if (p > 0.001f) LateralSpatialMath.homeScale(p) else 1f
+                    var a = if (p > 0.001f) LateralSpatialMath.homeAlpha(p) else 1f
+                    val rs = returnSettleAnim.value
+                    if (rs < 0.999f) {
+                        s *= MotionMath.lerp(0.972f, 1f, rs)
+                        a *= MotionMath.lerp(0.78f, 1f, rs)
+                    }
+                    scaleX = s
+                    scaleY = s
+                    alpha = a
                     if (p > 0.001f) {
-                        scaleX = LateralSpatialMath.homeScale(p)
-                        scaleY = LateralSpatialMath.homeScale(p)
                         translationX = LateralSpatialMath.homeParallaxX(p, screenWidthPx)
-                        alpha = LateralSpatialMath.homeAlpha(p)
                     }
                 }
                 .padding(top = statusBarTopPadding)
@@ -862,10 +884,11 @@ fun HomeScreen(
                                                 FolderSearchCard(
                                                     folder = folder,
                                                     allApps = allApps,
-                                                    onAppClick = { app -> viewModel.launchApp(app) },
+                                                    onAppClick = { app -> launchAppWithBounds(app, null) },
                                                     onAppLongClick = { app -> selectedAppForMenu = app },
                                                     onFolderClick = { f -> folderToView = f },
-                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                                                    isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                    onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) }
                                                 )
                                             }
                                         }
@@ -1020,10 +1043,11 @@ fun HomeScreen(
                                              FolderSearchCard(
                                                  folder = folder,
                                                  allApps = allApps,
-                                                 onAppClick = { app -> viewModel.launchApp(app) },
+                                                 onAppClick = { app -> launchAppWithBounds(app, null) },
                                                  onAppLongClick = { app -> selectedAppForMenu = app },
                                                  onFolderClick = { f -> folderToView = f },
-                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode
+                                                 isLiquidGlass = uiState.isLiquidGlassEnabled && !uiState.isAmoledMode,
+                                                 onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) }
                                              )
                                          }
                                      }
@@ -1064,7 +1088,7 @@ fun HomeScreen(
                                           item(key = "ai_suggested_row") {
                                               SmartDockRow(
                                                   apps = uiState.predictedApps,
-                                                  onAppClick = { app -> viewModel.launchApp(app) },
+                                                  onAppClick = { app -> launchAppWithBounds(app, null) },
                                                   onAppLongClick = { app -> selectedAppForMenu = app },
                                                   iconShape = uiState.iconShape,
                                                   isThemedIcons = uiState.isThemedIconsEnabled,
@@ -1073,7 +1097,8 @@ fun HomeScreen(
                                                   isEmbedded = true,
                                                   notificationCounts = uiState.notificationCounts,
                                                   accentColor = uiState.activeAccentColor,
-                                                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                                                  modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+                                                  onAppClickWithBounds = { app, bounds -> launchAppWithBounds(app, bounds) }
                                               )
                                           }
                                           item(key = "ai_suggested_divider") {
@@ -1095,8 +1120,8 @@ fun HomeScreen(
                                          notificationCount = uiState.notificationCounts[app.packageName] ?: 0,
                                          accentColor = uiState.activeAccentColor,
                                          isLightMode = uiState.isLightMode,
-                                         onClick = {
-                                             viewModel.launchApp(app).onFailure { error ->
+                                         onClickWithBounds = { bounds ->
+                                             launchAppWithBounds(app, bounds).onFailure { error ->
                                                  Toast.makeText(
                                                      context,
                                                      error.message ?: "Erro ao abrir aplicativo",
@@ -1442,7 +1467,7 @@ fun HomeScreen(
             FolderViewBottomSheet(
                 folder = folder,
                 allApps = allApps,
-                onAppClick = { app -> viewModel.launchApp(app) },
+                onAppClick = { app -> launchAppWithBounds(app, null) },
                 onAppLongClick = { app -> selectedAppForMenu = app },
                 onDismiss = { folderToView = null },
                 isAmoledMode = uiState.isAmoledMode
@@ -1643,7 +1668,7 @@ fun HomeScreen(
                                         predictedApps = uiState.predictedApps,
                                         isPredictedAppsWidgetEnabled = uiState.isSmartDockEnabled,
                                         onTogglePredictedApps = { viewModel.setSmartDockEnabled(it) },
-                                        onAppClick = { app -> viewModel.launchApp(app) },
+                                        onAppClick = { app -> launchAppWithBounds(app, null) },
                                         onAppLongClick = { app -> selectedAppForMenu = app },
                                         iconShape = uiState.iconShape,
                                         isThemedIcons = uiState.isThemedIconsEnabled,

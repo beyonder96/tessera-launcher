@@ -50,8 +50,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.graphics.Rect
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.motion.IconBoundsHolder
 import com.tessera.launcher.ui.motion.MotionMath
+import com.tessera.launcher.ui.motion.captureIconBounds
 import com.tessera.launcher.ui.theme.IconShape
 import com.tessera.launcher.ui.theme.tokens.Tessera
 import com.tessera.launcher.ui.theme.tokens.rememberTesseraHaptics
@@ -74,7 +77,7 @@ private fun drawableToBitmap(drawable: Drawable): Bitmap {
 @Composable
 fun AppListItem(
     app: AppInfo,
-    onClick: () -> Unit,
+    onClick: () -> Unit = {},
     onLongClick: (() -> Unit)? = null,
     onSwipeRight: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -85,8 +88,10 @@ fun AppListItem(
     hasLinkedWidget: Boolean = false,
     notificationCount: Int = 0,
     accentColor: Color = Color(0xFF3B82F6),
-    isLightMode: Boolean = false
+    isLightMode: Boolean = false,
+    onClickWithBounds: ((Rect?) -> Unit)? = null
 ) {
+    val iconBounds = remember(app.packageName) { IconBoundsHolder() }
     val motion = Tessera.motion
     val haptics = rememberTesseraHaptics()
     val scope = rememberCoroutineScope()
@@ -214,7 +219,10 @@ fun AppListItem(
                 .combinedClickable(
                     interactionSource = itemInteractionSource,
                     indication = ripple(color = Tessera.palette.ripple),
-                    onClick = onClick,
+                    onClick = {
+                        if (onClickWithBounds != null) onClickWithBounds(iconBounds.rootRect)
+                        else onClick()
+                    },
                     onLongClick = onLongClick
                 )
                 .padding(
@@ -248,7 +256,8 @@ fun AppListItem(
                     .clip(shape)
             }
 
-            val iconContainerModifier = if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(42.dp) else Modifier.size(40.dp)
+            val iconContainerModifier = (if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(42.dp) else Modifier.size(40.dp))
+                .captureIconBounds(iconBounds)
             Box(
                 modifier = iconContainerModifier,
                 contentAlignment = Alignment.Center

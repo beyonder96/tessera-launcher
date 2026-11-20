@@ -5,9 +5,11 @@ import android.net.Uri
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.app.WallpaperManager
 import android.os.Build
+import android.os.Bundle
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -1362,17 +1364,21 @@ class MainViewModel(
         }
     }
 
-    fun launchApp(app: AppInfo): Result<Unit> {
+    fun launchApp(
+        app: AppInfo,
+        launchOptions: Bundle? = null,
+        sourceBounds: Rect? = null
+    ): Result<Unit> {
         val result = if (app.isShortcut) {
             if (!app.shortcutId.isNullOrBlank()) {
-                appRepository.launchShortcut(app.packageName, app.shortcutId)
+                appRepository.launchShortcut(app.packageName, app.shortcutId, launchOptions, sourceBounds)
             } else if (!app.shortcutIntentUri.isNullOrBlank()) {
-                appRepository.launchShortcutIntent(app.shortcutIntentUri)
+                appRepository.launchShortcutIntent(app.shortcutIntentUri, launchOptions, sourceBounds)
             } else {
-                appRepository.launchApp(app.packageName)
+                appRepository.launchApp(app.packageName, launchOptions, sourceBounds)
             }
         } else {
-            appRepository.launchApp(app.packageName)
+            appRepository.launchApp(app.packageName, launchOptions, sourceBounds)
         }
         if (result.isSuccess) {
             collapseSearch()
@@ -1382,12 +1388,16 @@ class MainViewModel(
         return result
     }
 
-    fun launchApp(packageName: String): Result<Unit> {
+    fun launchApp(
+        packageName: String,
+        launchOptions: Bundle? = null,
+        sourceBounds: Rect? = null
+    ): Result<Unit> {
         val matchingApp = allApps.firstOrNull { it.packageName == packageName }
         return if (matchingApp != null) {
-            launchApp(matchingApp)
+            launchApp(matchingApp, launchOptions, sourceBounds)
         } else {
-            val result = appRepository.launchApp(packageName)
+            val result = appRepository.launchApp(packageName, launchOptions, sourceBounds)
             if (result.isSuccess) {
                 collapseSearch()
                 contextualPredictor.recordAppLaunch(packageName, appContext)

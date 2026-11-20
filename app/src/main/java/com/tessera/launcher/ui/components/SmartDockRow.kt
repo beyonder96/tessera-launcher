@@ -2,6 +2,7 @@ package com.tessera.launcher.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.BorderStroke
@@ -44,6 +45,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.motion.IconBoundsHolder
+import com.tessera.launcher.ui.motion.captureIconBounds
 import com.tessera.launcher.ui.theme.AmoledCardBackground
 import com.tessera.launcher.ui.theme.AmoledCardBorder
 import com.tessera.launcher.ui.theme.DarkSurface
@@ -52,7 +55,6 @@ import com.tessera.launcher.ui.theme.IconShape
 import com.tessera.launcher.ui.theme.LightCardBackground
 import com.tessera.launcher.ui.theme.LightCardBorder
 import com.tessera.launcher.ui.theme.LightTextSecondary
-import com.tessera.launcher.ui.theme.PillShape
 import com.tessera.launcher.ui.theme.TextSecondary
 
 private fun safeDrawableToBitmap(drawable: Drawable): Bitmap {
@@ -86,7 +88,8 @@ fun SmartDockRow(
     isAmoledMode: Boolean = false,
     isEmbedded: Boolean = false,
     notificationCounts: Map<String, Int> = emptyMap(),
-    accentColor: Color = Color(0xFF3B82F6)
+    accentColor: Color = Color(0xFF3B82F6),
+    onAppClickWithBounds: ((AppInfo, Rect?) -> Unit)? = null
 ) {
     if (apps.isEmpty()) return
 
@@ -101,7 +104,10 @@ fun SmartDockRow(
             apps.forEach { app ->
                 SmartDockItem(
                     app = app,
-                    onClick = { onAppClick(app) },
+                    onClick = { bounds ->
+                        if (onAppClickWithBounds != null) onAppClickWithBounds(app, bounds)
+                        else onAppClick(app)
+                    },
                     onLongClick = onAppLongClick?.let { { it(app) } },
                     iconShape = iconShape,
                     isThemedIcons = isThemedIcons,
@@ -138,7 +144,10 @@ fun SmartDockRow(
                 apps.forEach { app ->
                     SmartDockItem(
                         app = app,
-                        onClick = { onAppClick(app) },
+                        onClick = { bounds ->
+                            if (onAppClickWithBounds != null) onAppClickWithBounds(app, bounds)
+                            else onAppClick(app)
+                        },
                         onLongClick = onAppLongClick?.let { { it(app) } },
                         iconShape = iconShape,
                         isThemedIcons = isThemedIcons,
@@ -156,7 +165,7 @@ fun SmartDockRow(
 @Composable
 private fun SmartDockItem(
     app: AppInfo,
-    onClick: () -> Unit,
+    onClick: (Rect?) -> Unit,
     onLongClick: (() -> Unit)?,
     iconShape: String,
     isThemedIcons: Boolean,
@@ -165,6 +174,7 @@ private fun SmartDockItem(
     notificationCount: Int = 0,
     accentColor: Color = Color(0xFF3B82F6)
 ) {
+    val iconBounds = remember(app.packageName) { IconBoundsHolder() }
     val shape = remember(iconShape) {
         when (iconShape) {
             "CIRCLE" -> CircleShape
@@ -198,7 +208,7 @@ private fun SmartDockItem(
             .combinedClickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(color = if (isLightMode) Color(0x22000000) else Color(0x22FFFFFF)),
-                onClick = onClick,
+                onClick = { onClick(iconBounds.rootRect) },
                 onLongClick = onLongClick
             )
             .padding(vertical = 4.dp),
@@ -225,7 +235,8 @@ private fun SmartDockItem(
                 .clip(shape)
         }
 
-        val iconContainerModifier = if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(width = 30.dp, height = 38.dp) else Modifier.size(38.dp)
+        val iconContainerModifier = (if (iconShape == "CYLINDER" || iconShape == "RECTANGLE") Modifier.size(width = 30.dp, height = 38.dp) else Modifier.size(38.dp))
+            .captureIconBounds(iconBounds)
         Box(
             modifier = iconContainerModifier,
             contentAlignment = Alignment.Center

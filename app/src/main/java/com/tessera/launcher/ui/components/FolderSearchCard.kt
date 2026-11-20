@@ -2,6 +2,7 @@ package com.tessera.launcher.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Rect
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.BorderStroke
@@ -36,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.model.AppInfo
+import com.tessera.launcher.ui.motion.IconBoundsHolder
+import com.tessera.launcher.ui.motion.captureIconBounds
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.theme.DarkSurface
 import com.tessera.launcher.ui.theme.DarkSurfaceBorder
@@ -72,7 +75,8 @@ fun FolderSearchCard(
     onAppLongClick: (AppInfo) -> Unit,
     onFolderClick: (AppFolder) -> Unit,
     modifier: Modifier = Modifier,
-    isLiquidGlass: Boolean = true
+    isLiquidGlass: Boolean = true,
+    onAppClickWithBounds: ((AppInfo, Rect?) -> Unit)? = null
 ) {
     val folderApps = remember(folder.packageNames, allApps) {
         folder.packageNames.mapNotNull { pkg -> allApps.find { it.packageName == pkg } }
@@ -170,17 +174,22 @@ fun FolderSearchCard(
                         val imageBitmap = remember(app.icon) {
                             app.icon?.let { drawableToBitmap(it).asImageBitmap() }
                         }
+                        val iconBounds = remember(app.packageName) { IconBoundsHolder() }
 
                         Box(
                             modifier = Modifier
                                 .size(50.dp)
+                                .captureIconBounds(iconBounds)
                                 .clip(RoundedCornerShape(15.dp))
                                 .background(Color(0xFF1B1B22))
                                 .border(BorderStroke(1.dp, Color(0xFF282834)), RoundedCornerShape(15.dp))
                                 .combinedClickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
-                                    onClick = { onAppClick(app) },
+                                    onClick = {
+                                        if (onAppClickWithBounds != null) onAppClickWithBounds(app, iconBounds.rootRect)
+                                        else onAppClick(app)
+                                    },
                                     onLongClick = { onAppLongClick(app) }
                                 ),
                             contentAlignment = Alignment.Center
