@@ -97,6 +97,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.tessera.launcher.R
+import com.tessera.launcher.ui.components.AppleProSettingsBanner
 import com.tessera.launcher.ui.components.LanguageBottomSheet
 import com.tessera.launcher.ui.components.ModernSearchIcon
 import com.tessera.launcher.ui.components.SettingsCatalog
@@ -854,105 +855,117 @@ fun SettingsScreen(
                 // HERO LICENSE CARD (Tessera Pro / Trial)
                 SectionHeader(title = "ASSINATURA & PRO", color = secondaryTextColor)
 
-                Surface(
-                    shape = SettingsCardShape,
-                    color = cardBg,
-                    border = BorderStroke(1.dp, if (uiState.hasProAccess) uiState.activeAccentColor.copy(alpha = 0.35f) else cardBorder),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.LICENSE) }
-                ) {
-                    Row(
+                if (uiState.isSubscribedPro) {
+                    AppleProSettingsBanner(
+                        status = uiState.licenseStatus,
+                        licenseInfo = uiState.licenseInfo,
+                        greetingUserName = uiState.greetingUserName,
+                        accentColor = uiState.activeAccentColor,
+                        isLight = isLight,
+                        isAmoled = isAmoled && !isCharcoal,
+                        onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.LICENSE) }
+                    )
+                } else {
+                    Surface(
+                        shape = SettingsCardShape,
+                        color = cardBg,
+                        border = BorderStroke(1.dp, if (uiState.hasProAccess) uiState.activeAccentColor.copy(alpha = 0.35f) else cardBorder),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .clickable { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.LICENSE) }
                     ) {
-                        Box(
+                        Row(
                             modifier = Modifier
-                                .size(38.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(uiState.activeAccentColor.copy(alpha = 0.18f)),
-                            contentAlignment = Alignment.Center
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Outlined.VpnKey,
-                                contentDescription = null,
-                                tint = uiState.activeAccentColor,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(14.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(uiState.activeAccentColor.copy(alpha = 0.18f)),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "Licença & Tessera Pro",
-                                    style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp
-                                    ),
-                                    color = primaryTextColor
+                                Icon(
+                                    imageVector = Icons.Outlined.VpnKey,
+                                    contentDescription = null,
+                                    tint = uiState.activeAccentColor,
+                                    modifier = Modifier.size(20.dp)
                                 )
-
-                                val isTrialMode = uiState.licenseStatus.isTrialActive
-                                val heroBadgeBg = when {
-                                    isTrialMode -> Color(0xFFE2B714).copy(alpha = 0.18f)
-                                    uiState.hasProAccess -> Color(0xFF10B981).copy(alpha = 0.18f)
-                                    else -> Color(0xFFEF4444).copy(alpha = 0.18f)
-                                }
-                                val heroBadgeTint = when {
-                                    isTrialMode -> if (isLight) Color(0xFFB45309) else Color(0xFFE2B714)
-                                    uiState.hasProAccess -> Color(0xFF10B981)
-                                    else -> Color(0xFFEF4444)
-                                }
-                                val heroBadgeText = when {
-                                    isTrialMode -> "TESTE"
-                                    uiState.hasProAccess -> "ATIVO"
-                                    else -> "FREE"
-                                }
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(heroBadgeBg)
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                ) {
-                                    Text(
-                                        text = heroBadgeText,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = heroBadgeTint
-                                    )
-                                }
                             }
 
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Spacer(modifier = Modifier.width(14.dp))
 
-                            Text(
-                                text = when {
-                                    uiState.isMasterAccess -> "Acesso Master Ilimitado • IA Groq / Gemini habilitada"
-                                    uiState.licenseInfo.isCurrentlyValid() -> "${uiState.licenseInfo.planDisplayName()} • ${uiState.licenseInfo.licensedEmail ?: "Ativo"}"
-                                    uiState.licenseStatus.isTrialActive -> "Modo Teste ativo (${uiState.licenseStatus.daysRemaining}d ${uiState.licenseStatus.hoursRemaining}h restantes) • Toque para assinar"
-                                    uiState.hasProAccess -> "Recursos Pro desbloqueados • Toque para ver detalhes"
-                                    else -> "Assinar via Pix/Cartão ou ativar chave offline"
-                                },
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = secondaryTextColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Licença & Tessera Pro",
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp
+                                        ),
+                                        color = primaryTextColor
+                                    )
+
+                                    val isTrialMode = uiState.licenseStatus.isTrialActive
+                                    val heroBadgeBg = when {
+                                        isTrialMode -> Color(0xFFE2B714).copy(alpha = 0.18f)
+                                        uiState.hasProAccess -> Color(0xFF10B981).copy(alpha = 0.18f)
+                                        else -> Color(0xFFEF4444).copy(alpha = 0.18f)
+                                    }
+                                    val heroBadgeTint = when {
+                                        isTrialMode -> if (isLight) Color(0xFFB45309) else Color(0xFFE2B714)
+                                        uiState.hasProAccess -> Color(0xFF10B981)
+                                        else -> Color(0xFFEF4444)
+                                    }
+                                    val heroBadgeText = when {
+                                        isTrialMode -> "TESTE"
+                                        uiState.hasProAccess -> "ATIVO"
+                                        else -> "FREE"
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .background(heroBadgeBg)
+                                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = heroBadgeText,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = heroBadgeTint
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                Text(
+                                    text = when {
+                                        uiState.isMasterAccess -> "Acesso Master Ilimitado • IA Groq / Gemini habilitada"
+                                        uiState.licenseInfo.isCurrentlyValid() -> "${uiState.licenseInfo.planDisplayName()} • ${uiState.licenseInfo.licensedEmail ?: "Ativo"}"
+                                        uiState.licenseStatus.isTrialActive -> "Modo Teste ativo (${uiState.licenseStatus.daysRemaining}d ${uiState.licenseStatus.hoursRemaining}h restantes) • Toque para assinar"
+                                        uiState.hasProAccess -> "Recursos Pro desbloqueados • Toque para ver detalhes"
+                                        else -> "Assinar via Pix/Cartão ou ativar chave offline"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                    color = secondaryTextColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.Outlined.ChevronRight,
+                                contentDescription = null,
+                                tint = secondaryTextColor,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-
-                        Icon(
-                            imageVector = Icons.Outlined.ChevronRight,
-                            contentDescription = null,
-                            tint = secondaryTextColor,
-                            modifier = Modifier.size(18.dp)
-                        )
                     }
                 }
 

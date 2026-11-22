@@ -52,6 +52,8 @@ data class LicenseStatus(
 ) {
     val isTrialActive: Boolean get() = tier == LicenseTier.TRIAL && hasProAccess
     val isTrialExpired: Boolean get() = tier == LicenseTier.FREE && !hasProAccess
+    val isSubscribedPro: Boolean get() = hasProAccess && tier != LicenseTier.TRIAL && tier != LicenseTier.FREE
+    val isPermanentPro: Boolean get() = isSubscribedPro && (tier == LicenseTier.PRO_LIFETIME || tier == LicenseTier.MASTER)
 }
 
 sealed interface LicenseActivationResult {

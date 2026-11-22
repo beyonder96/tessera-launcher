@@ -364,6 +364,8 @@ data class LauncherUiState(
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)
     val hasProAccess: Boolean get() = licenseStatus.hasProAccess
     val isMasterAccess: Boolean get() = licenseStatus.isMasterAccess
+    val isSubscribedPro: Boolean get() = licenseStatus.isSubscribedPro
+    val isPermanentPro: Boolean get() = licenseStatus.isPermanentPro
     val shouldShowOnboarding: Boolean get() = !isOnboardingCompleted || isReplayingOnboarding
     val subscriptionTagLabel: String?
         get() = when {
