@@ -184,5 +184,95 @@ class LicenseManagerTest {
         assertFalse(tampered.hasProAccess)
         assertTrue(tampered.isVaultTampered)
         assertEquals(LicenseTier.FREE, tampered.tier)
+        assertFalse(tampered.isSubscribedPro)
+        assertFalse(tampered.isPermanentPro)
+    }
+
+    @Test
+    fun `isSubscribedPro excludes trial and free while covering all paid gift and master tiers`() {
+        val time = FakeTimeProvider(nowMs = 1_700_000_000_000L)
+        val storage = FakeLicenseStorage()
+        val manager = LicenseManager(storage, time)
+
+        // Trial 72h: hasProAccess=true, mas ainda não é assinante
+        val trialStatus = manager.getLicenseStatus()
+        assertEquals(LicenseTier.TRIAL, trialStatus.tier)
+        assertTrue(trialStatus.hasProAccess)
+        assertFalse(trialStatus.isSubscribedPro)
+        assertFalse(trialStatus.isPermanentPro)
+
+        // Expirado -> Free
+        time.nowMs += BillingConfig.TRIAL_DURATION_MS + 1_000L
+        time.elapsedMs += BillingConfig.TRIAL_DURATION_MS + 1_000L
+        val freeStatus = manager.getLicenseStatus()
+        assertEquals(LicenseTier.FREE, freeStatus.tier)
+        assertFalse(freeStatus.isSubscribedPro)
+        assertFalse(freeStatus.isPermanentPro)
+
+        // Tiers temporários -> isSubscribedPro = true, isPermanentPro = false
+        val temporaryTypes = listOf(
+            LicenseKeyType.GIFT,
+            LicenseKeyType.MENS,
+            LicenseKeyType.SEMS,
+            LicenseKeyType.ANUL
+        )
+        for (type in temporaryTypes) {
+            val freshManager = LicenseManager(FakeLicenseStorage(), FakeTimeProvider(1_700_000_000_000L))
+            val key = LicenseManager.generateKey(type)
+            assertTrue(freshManager.activateKey(key) is LicenseActivationResult.Success)
+            val status = freshManager.getLicenseStatus()
+            assertTrue("Expected isSubscribedPro for $type", status.isSubscribedPro)
+            assertFalse("Expected isPermanentPro=false for $type", status.isPermanentPro)
+        }
+
+        // Tiers permanentes (Vitalício e Master) -> isSubscribedPro = true, isPermanentPro = true
+        for (type in listOf(LicenseKeyType.LIFE, LicenseKeyType.MSTR)) {
+            val freshManager = LicenseManager(FakeLicenseStorage(), FakeTimeProvider(1_700_000_000_000L))
+            val key = LicenseManager.generateKey(type)
+            assertTrue(freshManager.activateKey(key) is LicenseActivationResult.Success)
+            val status = freshManager.getLicenseStatus()
+            assertTrue("Expected isSubscribedPro for $type", status.isSubscribedPro)
+            assertTrue("Expected isPermanentPro for $type", status.isPermanentPro)
+        }
+    }
+
+    @Test
+    fun `extractCleanFirstName and resolveAppleProVisuals format greeting and plan details properly`() {
+        assertEquals("Lucas", com.tessera.launcher.ui.components.extractCleanFirstName("  Lucas   Mendes "))
+        assertEquals(null, com.tessera.launcher.ui.components.extractCleanFirstName("   "))
+
+        val lifetimeStatus = com.tessera.launcher.data.license.LicenseStatus(
+            tier = LicenseTier.PRO_LIFETIME,
+            hasProAccess = true,
+            isMasterAccess = false,
+            activationTypeLabel = "Tessera Pro Vitalício"
+        )
+        val lifetimeVisuals = com.tessera.launcher.ui.components.resolveAppleProVisuals(
+            status = lifetimeStatus,
+            licenseInfo = com.tessera.launcher.data.model.LicenseInfo()
+        )
+        assertEquals(BillingConfig.LIFETIME_BADGE, lifetimeVisuals.tierBadge)
+        assertEquals("Tessera Pro.", lifetimeVisuals.heroAccentWord)
+        assertEquals("Acesso permanente • Sem expiração", lifetimeVisuals.validitySummary)
+        assertEquals(null, lifetimeVisuals.progressFraction)
+        assertFalse(lifetimeVisuals.isMaster)
+
+        val monthlyStatus = com.tessera.launcher.data.license.LicenseStatus(
+            tier = LicenseTier.PRO_MONTHLY,
+            hasProAccess = true,
+            isMasterAccess = false,
+            daysRemaining = 15,
+            hoursRemaining = 4,
+            remainingMillis = 15L * dayMs,
+            expiresAtMs = 1_800_000_000_000L,
+            activationTypeLabel = "Pro Mensal"
+        )
+        val monthlyVisuals = com.tessera.launcher.ui.components.resolveAppleProVisuals(
+            status = monthlyStatus,
+            licenseInfo = com.tessera.launcher.data.model.LicenseInfo()
+        )
+        assertEquals("MENSAL", monthlyVisuals.tierBadge)
+        assertTrue(monthlyVisuals.validitySummary.contains("15 dias restantes"))
+        assertTrue((monthlyVisuals.progressFraction ?: 0f) in 0.45f..0.55f)
     }
 }

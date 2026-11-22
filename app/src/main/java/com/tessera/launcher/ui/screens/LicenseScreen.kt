@@ -1,16 +1,21 @@
 package com.tessera.launcher.ui.screens
 
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,7 +24,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,18 +47,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
-import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SupportAgent
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material.icons.outlined.WarningAmber
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -62,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +77,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
@@ -79,8 +86,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -90,11 +96,18 @@ import com.tessera.launcher.data.license.LicenseActivationResult
 import com.tessera.launcher.data.license.LicenseManager
 import com.tessera.launcher.data.license.LicenseStatus
 import com.tessera.launcher.data.license.LicenseTier
+import com.tessera.launcher.ui.components.AppleProAmbientMeshBackdrop
+import com.tessera.launcher.ui.components.AppleProLifetimeUpgradeCard
+import com.tessera.launcher.ui.components.AppleProMedallion
+import com.tessera.launcher.ui.components.AppleProMembershipCard
+import com.tessera.launcher.ui.components.AppleProPrivilegesBento
+import com.tessera.launcher.ui.components.extractCleanFirstName
+import com.tessera.launcher.ui.components.resolveAppleProVisuals
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.AmoledBlack
-import com.tessera.launcher.ui.theme.AmoledCardBackground
-import com.tessera.launcher.ui.theme.AmoledCardBorder
-import com.tessera.launcher.ui.theme.DarkBackground
+import com.tessera.launcher.ui.theme.CharcoalBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBackground
+import com.tessera.launcher.ui.theme.CharcoalCardBorder
 import com.tessera.launcher.ui.theme.LightBackground
 import com.tessera.launcher.ui.theme.LightCardBackground
 import com.tessera.launcher.ui.theme.LightCardBorder
@@ -106,6 +119,8 @@ import com.tessera.launcher.ui.theme.TextTertiary
 import com.tessera.launcher.ui.theme.tokens.Tessera
 import com.tessera.launcher.ui.theme.tokens.tesseraPressFeedback
 import com.tessera.launcher.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Diálogo suave de bloqueio comercial (Freemium Soft Lock) ao acessar recurso Tessera Pro.
@@ -273,7 +288,8 @@ fun ProUpgradeDialog(
 }
 
 /**
- * Tela de Gerenciamento da Licença, Status do Trial e Vitrine de Planos do Tessera Launcher.
+ * Tela de Gerenciamento da Licença, Experiência de Agradecimento Pro (Estilo Apple)
+ * e Vitrine de Planos do Tessera Launcher.
  */
 @Composable
 fun LicenseScreen(
@@ -283,24 +299,34 @@ fun LicenseScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val keyboardController = LocalSoftwareKeyboardController.current
     val status = uiState.licenseStatus
     val isLight = uiState.isLightMode
+    val isCharcoal = uiState.themeMode == "DARK"
+    val isAmoled = (uiState.themeMode == "AMOLED" || uiState.isAmoledMode) && !isCharcoal && !isLight
 
-    val bg = if (isLight) LightBackground else DarkBackground
-    val cardBg = if (isLight) LightCardBackground else Color(0xFF0F0F14)
-    val cardBorder = if (isLight) LightCardBorder else Color(0xFF1E1E26)
+    val bg = when {
+        isLight -> LightBackground
+        isCharcoal -> CharcoalBackground
+        else -> AmoledBlack
+    }
+    val cardBg = when {
+        isLight -> LightCardBackground
+        isCharcoal -> CharcoalCardBackground
+        else -> Color(0xFF0E0E13)
+    }
+    val cardBorder = when {
+        isLight -> LightCardBorder
+        isCharcoal -> CharcoalCardBorder
+        else -> Color(0xFF1F1F29)
+    }
     val textPrimary = if (isLight) LightTextPrimary else TextPrimary
     val textSecondary = if (isLight) LightTextSecondary else TextSecondary
     val textTertiary = if (isLight) Color(0xFF625B55) else TextTertiary
 
-    var inputKey by remember { mutableStateOf("") }
-    var activationFeedback by remember { mutableStateOf<String?>(null) }
-    var isActivationSuccess by remember { mutableStateOf(false) }
-
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val cutoutTop = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
     val safeTopPadding = maxOf(statusBarTop, cutoutTop).coerceAtLeast(36.dp) + 8.dp
+    val safeBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     fun openBrowserUrl(rawUrl: String) {
         runCatching {
@@ -313,12 +339,812 @@ fun LicenseScreen(
         }
     }
 
+    fun openSupportEmail(subject: String) {
+        runCatching {
+            val intent = Intent(Intent.ACTION_SENDTO).apply {
+                data = Uri.parse("mailto:${BillingConfig.SUPPORT_EMAIL}")
+                putExtra(Intent.EXTRA_SUBJECT, subject)
+            }
+            context.startActivity(intent)
+        }.onFailure {
+            Toast.makeText(context, "Nenhum aplicativo de e-mail encontrado.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(bg)
-            .padding(top = safeTopPadding)
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding())
+    ) {
+        AnimatedContent(
+            targetState = status.isSubscribedPro,
+            transitionSpec = {
+                (fadeIn(tween(380, easing = FastOutSlowInEasing)) +
+                    scaleIn(initialScale = 0.965f, animationSpec = tween(380, easing = FastOutSlowInEasing)))
+                    .togetherWith(fadeOut(tween(220, easing = FastOutSlowInEasing)))
+            },
+            label = "license_screen_mode_transition"
+        ) { isSubscribedPro ->
+            if (isSubscribedPro) {
+                AppleProThankYouExperience(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    bg = bg,
+                    cardBg = cardBg,
+                    cardBorder = cardBorder,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    textTertiary = textTertiary,
+                    isLight = isLight,
+                    isAmoled = isAmoled,
+                    safeTopPadding = safeTopPadding,
+                    safeBottomPadding = safeBottomPadding,
+                    onBack = onBack,
+                    onOpenBrowserUrl = ::openBrowserUrl,
+                    onOpenSupportEmail = { openSupportEmail("Tessera Pro — Suporte Prioritário") }
+                )
+            } else {
+                StandardLicenseStorefront(
+                    viewModel = viewModel,
+                    uiState = uiState,
+                    bg = bg,
+                    cardBg = cardBg,
+                    cardBorder = cardBorder,
+                    textPrimary = textPrimary,
+                    textSecondary = textSecondary,
+                    textTertiary = textTertiary,
+                    isLight = isLight,
+                    safeTopPadding = safeTopPadding,
+                    safeBottomPadding = safeBottomPadding,
+                    onBack = onBack,
+                    openBrowserUrl = ::openBrowserUrl
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Palco de Agradecimento & Assinatura Ativa (Estilo Apple One / Apple Card / iCloud+).
+ * Exibido exclusivamente para assinantes e licenças ativas (Vitalício, Anual, Semestral, Mensal, Cortesia e Master).
+ */
+@Composable
+private fun AppleProThankYouExperience(
+    viewModel: MainViewModel,
+    uiState: LauncherUiState,
+    bg: Color,
+    cardBg: Color,
+    cardBorder: Color,
+    textPrimary: Color,
+    textSecondary: Color,
+    textTertiary: Color,
+    isLight: Boolean,
+    isAmoled: Boolean,
+    safeTopPadding: Dp,
+    safeBottomPadding: Dp,
+    onBack: () -> Unit,
+    onOpenBrowserUrl: (String) -> Unit,
+    onOpenSupportEmail: () -> Unit
+) {
+    val status = uiState.licenseStatus
+    val visuals = remember(status, uiState.licenseInfo) {
+        resolveAppleProVisuals(status, uiState.licenseInfo)
+    }
+    val firstName = remember(uiState.greetingUserName) {
+        extractCleanFirstName(uiState.greetingUserName)
+    }
+    val lifetimePlan = remember(uiState.availablePlans) {
+        uiState.availablePlans.firstOrNull { it.id == "pro_lifetime" }
+    }
+
+    var isKeyDrawerExpanded by remember { mutableStateOf(false) }
+
+    // Coreografia de entrada em cascata (120Hz via graphicsLayer, zero recomposição)
+    val motion = Tessera.motion
+    val stage0 = remember { Animatable(0f) }
+    val stage1 = remember { Animatable(0f) }
+    val stage2 = remember { Animatable(0f) }
+    val stage3 = remember { Animatable(0f) }
+    val stage4 = remember { Animatable(0f) }
+
+    LaunchedEffect(status.tier) {
+        stage0.snapTo(0f)
+        stage1.snapTo(0f)
+        stage2.snapTo(0f)
+        stage3.snapTo(0f)
+        stage4.snapTo(0f)
+        launch { stage0.animateTo(1f, motion.springSpatial) }
+        launch { delay(75L); stage1.animateTo(1f, motion.springSpatial) }
+        launch { delay(150L); stage2.animateTo(1f, motion.springSpatial) }
+        launch { delay(225L); stage3.animateTo(1f, motion.springSpatial) }
+        launch { delay(300L); stage4.animateTo(1f, motion.springSpatial) }
+    }
+
+    val headlineMetalBrush = remember(isLight, visuals.isMaster) {
+        when {
+            visuals.isMaster && isLight -> Brush.linearGradient(
+                colors = listOf(Color(0xFF3730A3), Color(0xFF4F46E5), Color(0xFF0284C7))
+            )
+            visuals.isMaster -> Brush.linearGradient(
+                colors = listOf(Color(0xFFFFFFFF), Color(0xFFA5B4FC), Color(0xFF7DD3FC))
+            )
+            isLight -> Brush.linearGradient(
+                colors = listOf(Color(0xFF9A6F1F), Color(0xFFC89B3C), Color(0xFF7C5616))
+            )
+            else -> Brush.linearGradient(
+                colors = listOf(Color(0xFFFFFDF5), Color(0xFFF3D58D), Color(0xFFD6AD54))
+            )
+        }
+    }
+
+    val eyebrowAccent = when {
+        visuals.isMaster -> Color(0xFF6E6BF0)
+        isLight -> Color(0xFFC89B3C)
+        else -> Color(0xFFE5C068)
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Fundo atmosférico Apple Mesh Gradient (edge-to-edge atrás da barra de status)
+        AppleProAmbientMeshBackdrop(
+            screenBg = bg,
+            accentColor = uiState.activeAccentColor,
+            isMaster = visuals.isMaster,
+            isLight = isLight
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = safeTopPadding, bottom = safeBottomPadding)
+                .padding(horizontal = 20.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Top Bar Cupertino Minimalista
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(if (isLight) Color(0xCCEFECE2) else Color(0x991C1C24))
+                        .border(
+                            BorderStroke(1.dp, if (isLight) Color(0x221C1917) else Color(0x22FFFFFF)),
+                            CircleShape
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onBack
+                        )
+                        .tesseraPressFeedback(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = "Voltar",
+                        tint = textPrimary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Text(
+                    text = if (visuals.isMaster) "TESSERA MASTER" else "TESSERA PRO",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.4.sp
+                    ),
+                    color = textSecondary,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+
+                Spacer(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .align(Alignment.CenterEnd)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ==========================================
+            // 1. HERO MEDALHÃO & PÍLULA EYEBROW
+            // ==========================================
+            Column(
+                modifier = Modifier.appleCascadeReveal(stage0.value),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AppleProMedallion(
+                    isMaster = visuals.isMaster,
+                    isLight = isLight,
+                    isAmoled = isAmoled
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(if (isLight) Color(0xD9EFECE2) else Color(0xB316161E))
+                        .border(
+                            BorderStroke(1.dp, eyebrowAccent.copy(alpha = if (isLight) 0.35f else 0.32f)),
+                            CircleShape
+                        )
+                        .padding(horizontal = 13.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(if (isLight) Color(0xFF15803D) else Color(0xFF30D158))
+                    )
+                    Text(
+                        text = visuals.eyebrowLabel,
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        color = textPrimary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // ==========================================
+            // 2. TIPOGRAFIA EDITORIAL CUPERTINO (AGRADECIMENTO)
+            // ==========================================
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .appleCascadeReveal(stage1.value),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (firstName != null) {
+                    Text(
+                        text = "Obrigado, $firstName.",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 35.sp,
+                            letterSpacing = (-1.0).sp,
+                            color = textPrimary
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = if (visuals.isMaster) "Você tem acesso Master." else "Você já é Tessera Pro.",
+                        style = TextStyle(
+                            brush = headlineMetalBrush,
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 36.sp,
+                            letterSpacing = (-1.1).sp
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                } else {
+                    Text(
+                        text = "Você já é",
+                        style = TextStyle(
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 31.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            lineHeight = 36.sp,
+                            letterSpacing = (-1.0).sp,
+                            color = textPrimary
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = visuals.heroAccentWord,
+                        style = TextStyle(
+                            brush = headlineMetalBrush,
+                            fontFamily = FontFamily.SansSerif,
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineHeight = 41.sp,
+                            letterSpacing = (-1.2).sp
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = visuals.thankYouBody,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        fontSize = 14.5.sp,
+                        lineHeight = 22.sp,
+                        letterSpacing = (-0.1).sp
+                    ),
+                    color = textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // ==========================================
+            // 3. CARTÃO "APPLE CARD TITANIUM" DA ASSINATURA
+            // ==========================================
+            AppleProMembershipCard(
+                status = status,
+                licenseInfo = uiState.licenseInfo,
+                visuals = visuals,
+                greetingUserName = uiState.greetingUserName,
+                isLight = isLight,
+                isAmoled = isAmoled,
+                modifier = Modifier.appleCascadeReveal(stage2.value)
+            )
+
+            Spacer(modifier = Modifier.height(26.dp))
+
+            // ==========================================
+            // 4. BENTO GRID COMPACTO DE PRIVILÉGIOS PRO
+            // ==========================================
+            AppleProPrivilegesBento(
+                isMaster = visuals.isMaster,
+                isLight = isLight,
+                cardBg = cardBg,
+                cardBorder = cardBorder,
+                modifier = Modifier.appleCascadeReveal(stage3.value)
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // ==========================================
+            // 5. RODAPÉ DISCRETO: UPGRADE, GERENCIAMENTO & SUPORTE VIP
+            // ==========================================
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .appleCascadeReveal(stage4.value)
+            ) {
+                if (!status.isPermanentPro) {
+                    AppleProLifetimeUpgradeCard(
+                        lifetimePriceLabel = lifetimePlan?.priceFormatted ?: BillingConfig.LIFETIME_PRICE_LABEL,
+                        isLight = isLight,
+                        cardBg = cardBg,
+                        onClick = { viewModel.openCheckoutModal("pro_lifetime") }
+                    )
+                    Spacer(modifier = Modifier.height(18.dp))
+                }
+
+                Text(
+                    text = "GERENCIAR & SUPORTE",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.4.sp
+                    ),
+                    color = textTertiary,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(22.dp),
+                    color = cardBg,
+                    border = BorderStroke(1.dp, cardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        if (uiState.licenseInfo.isCurrentlyValid()) {
+                            AppleProGroupedActionRow(
+                                icon = Icons.AutoMirrored.Outlined.ReceiptLong,
+                                title = "Recibo e assinatura online",
+                                subtitle = "Ver detalhes da compra ou desvincular aparelho",
+                                isLight = isLight,
+                                textPrimary = textPrimary,
+                                textSecondary = textSecondary,
+                                onClick = { viewModel.openCheckoutModal() }
+                            )
+                            HorizontalDivider(
+                                color = cardBorder,
+                                thickness = 1.dp,
+                                modifier = Modifier.padding(start = 66.dp, end = 16.dp)
+                            )
+                        }
+
+                        // Gaveta expansível discreta para troca de código offline
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                    onClick = { isKeyDrawerExpanded = !isKeyDrawerExpanded }
+                                )
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF181822)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.VpnKey,
+                                    contentDescription = null,
+                                    tint = textPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Trocar chave ou ativar código",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = textPrimary
+                                )
+                                Text(
+                                    text = "Inserir nova chave TESS-XXXX ou licença vitalícia",
+                                    fontSize = 11.5.sp,
+                                    color = textSecondary
+                                )
+                            }
+                            Icon(
+                                imageVector = if (isKeyDrawerExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
+                                contentDescription = null,
+                                tint = textSecondary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = isKeyDrawerExpanded,
+                            enter = expandVertically(tween(240, easing = FastOutSlowInEasing)) + fadeIn(tween(220)),
+                            exit = shrinkVertically(tween(200, easing = FastOutSlowInEasing)) + fadeOut(tween(150))
+                        ) {
+                            CompactKeyActivationForm(
+                                viewModel = viewModel,
+                                isLight = isLight,
+                                textPrimary = textPrimary,
+                                textSecondary = textSecondary,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(bottom = 16.dp)
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = cardBorder,
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(start = 66.dp, end = 16.dp)
+                        )
+
+                        AppleProGroupedActionRow(
+                            icon = Icons.Outlined.SupportAgent,
+                            title = "Suporte prioritário via WhatsApp",
+                            subtitle = "Atendimento direto para assinantes Pro",
+                            isLight = isLight,
+                            textPrimary = textPrimary,
+                            textSecondary = textSecondary,
+                            onClick = {
+                                val waUrl = BillingConfig.buildWhatsAppPurchaseUrl(
+                                    planTitle = "Suporte Pro (${status.activationTypeLabel})",
+                                    priceLabel = "Assinante Ativo"
+                                )
+                                onOpenBrowserUrl(waUrl)
+                            }
+                        )
+
+                        HorizontalDivider(
+                            color = cardBorder,
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(start = 66.dp, end = 16.dp)
+                        )
+
+                        AppleProGroupedActionRow(
+                            icon = Icons.Outlined.Email,
+                            title = "Suporte por E-mail",
+                            subtitle = BillingConfig.SUPPORT_EMAIL,
+                            isLight = isLight,
+                            textPrimary = textPrimary,
+                            textSecondary = textSecondary,
+                            onClick = onOpenSupportEmail
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                // Assinatura silenciosa estilo Apple
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Obrigado por apoiar o software independente.",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = textSecondary.copy(alpha = 0.80f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = "Sem anúncios • Sem rastreio • 100% privado",
+                        fontSize = 11.sp,
+                        color = textTertiary.copy(alpha = 0.78f),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(36.dp))
+        }
+    }
+}
+
+private fun Modifier.appleCascadeReveal(progress: Float): Modifier = this.graphicsLayer {
+    val p = progress.coerceIn(0f, 1f)
+    alpha = p
+    translationY = (1f - p) * 26.dp.toPx()
+    val s = 0.965f + 0.035f * p
+    scaleX = s
+    scaleY = s
+}
+
+@Composable
+private fun AppleProGroupedActionRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    isLight: Boolean,
+    textPrimary: Color,
+    textSecondary: Color,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF181822)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = textPrimary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = textPrimary
+            )
+            Text(
+                text = subtitle,
+                fontSize = 11.5.sp,
+                color = textSecondary
+            )
+        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+            contentDescription = null,
+            tint = textSecondary,
+            modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+@Composable
+private fun CompactKeyActivationForm(
+    viewModel: MainViewModel,
+    isLight: Boolean,
+    textPrimary: Color,
+    textSecondary: Color,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    var inputKey by remember { mutableStateOf("") }
+    var activationFeedback by remember { mutableStateOf<String?>(null) }
+    var isActivationSuccess by remember { mutableStateOf(false) }
+
+    fun submitKey() {
+        keyboardController?.hide()
+        if (inputKey.isBlank()) return
+        when (val res = viewModel.activateLicenseKey(inputKey)) {
+            is LicenseActivationResult.Success -> {
+                activationFeedback = res.message
+                isActivationSuccess = true
+                inputKey = ""
+            }
+            is LicenseActivationResult.InvalidKey -> {
+                activationFeedback = res.message
+                isActivationSuccess = false
+            }
+            is LicenseActivationResult.ExpiredKey -> {
+                activationFeedback = res.message
+                isActivationSuccess = false
+            }
+        }
+    }
+
+    Column(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(if (isLight) Color(0xFFE8E4D8) else Color(0xFF14141C))
+                .border(
+                    BorderStroke(1.dp, if (isLight) Color(0xFFDDD8CB) else Color(0xFF262634)),
+                    RoundedCornerShape(14.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    if (inputKey.isEmpty()) {
+                        Text(
+                            text = "TESS-XXXX-XXXX-XXXX",
+                            style = TextStyle(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.5.sp,
+                                color = textSecondary.copy(alpha = 0.50f)
+                            )
+                        )
+                    }
+                    BasicTextField(
+                        value = inputKey,
+                        onValueChange = { raw ->
+                            inputKey = LicenseManager.normalizeKeyInput(raw)
+                        },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = textPrimary
+                        ),
+                        cursorBrush = SolidColor(if (isLight) Color.Black else Color.White),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { submitKey() }),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(if (isLight) Color(0xFFDFDACD) else Color(0xFF222230))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                                val clip = clipboard?.primaryClip?.getItemAt(0)?.text?.toString().orEmpty()
+                                if (clip.isNotBlank()) {
+                                    inputKey = LicenseManager.normalizeKeyInput(clip)
+                                }
+                            }
+                        )
+                        .tesseraPressFeedback(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.ContentPaste,
+                        contentDescription = "Colar",
+                        tint = textPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(42.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(if (isLight) Color(0xFF1C1917) else Color.White)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { submitKey() }
+                )
+                .tesseraPressFeedback(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Validar e Ativar Código",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isLight) Color.White else Color.Black
+            )
+        }
+
+        activationFeedback?.let { msg ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = if (isActivationSuccess) Icons.Outlined.CheckCircle else Icons.Outlined.ErrorOutline,
+                    contentDescription = null,
+                    tint = if (isActivationSuccess) Color(0xFF10B981) else Color(0xFFEF4444),
+                    modifier = Modifier.size(15.dp)
+                )
+                Text(
+                    text = msg,
+                    fontSize = 11.5.sp,
+                    color = if (isActivationSuccess) Color(0xFF10B981) else Color(0xFFEF4444),
+                    lineHeight = 15.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Vitrine comercial padrão (exibida para usuários Free ou durante o período de Trial de 72h).
+ */
+@Composable
+private fun StandardLicenseStorefront(
+    viewModel: MainViewModel,
+    uiState: LauncherUiState,
+    bg: Color,
+    cardBg: Color,
+    cardBorder: Color,
+    textPrimary: Color,
+    textSecondary: Color,
+    textTertiary: Color,
+    isLight: Boolean,
+    safeTopPadding: Dp,
+    safeBottomPadding: Dp,
+    onBack: () -> Unit,
+    openBrowserUrl: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val status = uiState.licenseStatus
+
+    var inputKey by remember { mutableStateOf("") }
+    var activationFeedback by remember { mutableStateOf<String?>(null) }
+    var isActivationSuccess by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bg)
+            .padding(top = safeTopPadding, bottom = safeBottomPadding)
     ) {
         Column(
             modifier = Modifier
