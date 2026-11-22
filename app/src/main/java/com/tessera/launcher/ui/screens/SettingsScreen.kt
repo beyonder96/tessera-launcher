@@ -341,8 +341,8 @@ fun SettingsScreen(
     }
 
     val isLight = uiState.isLightMode
-    val isCharcoal = uiState.themeMode == "DARK"
-    val isAmoled = uiState.themeMode == "AMOLED" || uiState.isAmoledMode
+    val isCharcoal = uiState.effectiveThemeMode == "DARK"
+    val isAmoled = uiState.effectiveThemeMode == "AMOLED" || uiState.isAmoledMode
 
     val screenBg = when {
         isLight -> LightBackground

@@ -301,8 +301,8 @@ fun LicenseScreen(
     val context = LocalContext.current
     val status = uiState.licenseStatus
     val isLight = uiState.isLightMode
-    val isCharcoal = uiState.themeMode == "DARK"
-    val isAmoled = (uiState.themeMode == "AMOLED" || uiState.isAmoledMode) && !isCharcoal && !isLight
+    val isCharcoal = uiState.effectiveThemeMode == "DARK"
+    val isAmoled = (uiState.effectiveThemeMode == "AMOLED" || uiState.isAmoledMode) && !isCharcoal && !isLight
 
     val bg = when {
         isLight -> LightBackground
