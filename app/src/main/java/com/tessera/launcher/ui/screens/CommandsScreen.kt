@@ -65,6 +65,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.tessera.launcher.ui.components.SubscriptionMicroTag
 import com.tessera.launcher.ui.state.CommandItem
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.CardShape
@@ -152,16 +153,22 @@ fun CommandsScreen(
                 )
             }
 
-            Text(
-                text = "COMANDOS",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = secondaryTextColor,
-                textAlign = TextAlign.Center
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "COMANDOS",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = secondaryTextColor,
+                    textAlign = TextAlign.Center
+                )
+                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+            }
         }
 
         Column(

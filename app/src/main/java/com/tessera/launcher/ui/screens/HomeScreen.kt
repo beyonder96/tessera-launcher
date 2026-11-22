@@ -1248,6 +1248,8 @@ fun HomeScreen(
                 installedIconPacks = viewModel.getInstalledIconPacks(),
                 currentCustomIconPack = uiState.customAppIcons[app.packageName],
                 hasLinkedWidget = uiState.linkedAppWidgets.containsKey(app.packageName),
+                subscriptionTagLabel = uiState.subscriptionTagLabel,
+                isTrialTag = uiState.licenseStatus.isTrialActive,
                 onShortcutClick = { shortcut ->
                     viewModel.launchShortcut(shortcut.packageName, shortcut.id)
                 },

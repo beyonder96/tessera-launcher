@@ -75,6 +75,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tessera.launcher.data.preference.WidgetType
+import com.tessera.launcher.ui.components.SubscriptionMicroTag
+import com.tessera.launcher.ui.components.SubscriptionMicroTagLabel
 import com.tessera.launcher.ui.components.TesseraSegmentedControl
 import com.tessera.launcher.ui.state.LauncherUiState
 import com.tessera.launcher.ui.theme.AmoledBlack
@@ -167,16 +169,22 @@ fun LateralPanelSettingsScreen(
                 )
             }
 
-            Text(
-                text = "TELA LATERAL (−1)",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = secondaryTextColor,
-                textAlign = TextAlign.Center
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "TELA LATERAL (−1)",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = secondaryTextColor,
+                    textAlign = TextAlign.Center
+                )
+                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+            }
         }
 
         // Seletor Segmentado Estilo iOS no Topo: [ Central de Widgets | Feed de Notícias ]
@@ -221,6 +229,8 @@ fun LateralPanelSettingsScreen(
                 border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val subTag = uiState.subscriptionTagLabel
+                val isTrialTag = uiState.licenseStatus.isTrialActive
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
                     LateralModeOptionRow(
                         title = "Desativada",
@@ -240,7 +250,9 @@ fun LateralPanelSettingsScreen(
                         onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("widgets") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
+                        secondaryColor = secondaryTextColor,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
                     HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
@@ -251,7 +263,9 @@ fun LateralPanelSettingsScreen(
                         onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("feed") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
+                        secondaryColor = secondaryTextColor,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
                     HorizontalDivider(color = dividerColor, thickness = 1.dp)
 
@@ -262,7 +276,9 @@ fun LateralPanelSettingsScreen(
                         onClick = { viewModel.requirePro("Tela Lateral (−1)") { viewModel.setLeftScreenMode("both") } },
                         isLight = isLight,
                         primaryColor = primaryTextColor,
-                        secondaryColor = secondaryTextColor
+                        secondaryColor = secondaryTextColor,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
                 }
             }
@@ -805,7 +821,9 @@ private fun LateralModeOptionRow(
     onClick: () -> Unit,
     isLight: Boolean,
     primaryColor: Color,
-    secondaryColor: Color
+    secondaryColor: Color,
+    badgeTag: String? = null,
+    isTrialTag: Boolean = true
 ) {
     Row(
         modifier = Modifier
@@ -819,14 +837,24 @@ private fun LateralModeOptionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 15.sp,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-                ),
-                color = primaryColor
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 15.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                    ),
+                    color = primaryColor
+                )
+                SubscriptionMicroTagLabel(
+                    label = badgeTag,
+                    isTrial = isTrialTag,
+                    isLightMode = isLight
+                )
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,

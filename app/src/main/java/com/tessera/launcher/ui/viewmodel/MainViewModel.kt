@@ -160,7 +160,12 @@ class MainViewModel(
     private val screenTimeHelper = com.tessera.launcher.data.helper.ScreenTimeHelper(appContext)
     private val paymentClient = PaymentServiceClient()
 
-    private val initialOnboardingCompleted = if (preferences.isOnboardingCompleted()) {
+    private val hadExistingVaultBeforeInit = licenseManager.hasExistingVault()
+    private val initialReinstallDetected = !hadExistingVaultBeforeInit && preferences.hasAnySavedPreferences()
+    private val initialOnboardingCompleted = if (!hadExistingVaultBeforeInit) {
+        // Primeira instalação ou reinstalação (mesmo com backup restaurado): exibir introdução e passo a passo de permissões
+        false
+    } else if (preferences.isOnboardingCompleted()) {
         true
     } else if (preferences.hasAnySavedPreferences()) {
         preferences.setOnboardingCompleted(true)
@@ -171,6 +176,8 @@ class MainViewModel(
     private val initialLicenseStatus = resolveEffectiveLicenseStatus()
     private val initialSafeModePending = TesseraCrashHandler.isSafeModePending(appContext)
     private val initialCrashSummary = TesseraCrashHandler.getLastCrashSummary(appContext)
+    private val initialAutoNightNow = computeAutoNightNow(appContext)
+    private val initialSavedThemeMode = preferences.getThemeMode()
 
     private val _uiState = MutableStateFlow(
         LauncherUiState(
@@ -184,7 +191,7 @@ class MainViewModel(
             standByClockStyle = preferences.getStandByClockStyle(),
             standByColorPreset = preferences.getStandByColorPreset(),
             isStandByNotificationPrivacyEnabled = preferences.isStandByNotificationPrivacyEnabled(),
-            isAmoledMode = preferences.isAmoledMode(),
+            isAmoledMode = if (initialSavedThemeMode.equals("AUTO", ignoreCase = true)) initialAutoNightNow else preferences.isAmoledMode(),
             isLiquidGlassEnabled = preferences.isLiquidGlassEnabled(),
             isAutoOpenKeyboard = preferences.isAutoOpenKeyboard(),
             isAutoLaunchEnabled = preferences.isAutoLaunchEnabled(),
@@ -334,6 +341,8 @@ class MainViewModel(
             licenseStatus = initialLicenseStatus,
             licenseInfo = preferences.getLicenseInfo(),
             isOnboardingCompleted = initialOnboardingCompleted,
+            isReinstallDetected = initialReinstallDetected,
+            isAutoNightNow = initialAutoNightNow,
             isSafeModeRecoveryOpen = initialSafeModePending,
             lastCrashSummary = initialCrashSummary
         )
@@ -359,6 +368,7 @@ class MainViewModel(
         loadWallpaper()
         observeZenModeExpiration()
         observeTesseraEcosystem()
+        autoValidateSavedSubscriptionIfNeeded()
         checkUpdatesOnStartup()
     }
 
@@ -469,10 +479,18 @@ class MainViewModel(
 
         viewModelScope.launch {
             systemInfoHelper.observeTime().collect { (time, date) ->
-                _uiState.update {
-                    it.copy(
+                val isNightNow = computeAutoNightNow(appContext)
+                _uiState.update { current ->
+                    val isAmoled = if (current.themeMode.equals("AUTO", ignoreCase = true)) {
+                        isNightNow
+                    } else {
+                        current.isAmoledMode
+                    }
+                    current.copy(
                         formattedTime = time,
-                        formattedDate = date
+                        formattedDate = date,
+                        isAutoNightNow = isNightNow,
+                        isAmoledMode = isAmoled
                     )
                 }
             }
@@ -1206,9 +1224,42 @@ class MainViewModel(
 
     fun setThemeMode(mode: String) {
         preferences.setThemeMode(mode)
-        val isAmoled = mode == "AMOLED"
+        val isNightNow = computeAutoNightNow(appContext)
+        val isAmoled = mode.equals("AMOLED", ignoreCase = true) ||
+            (mode.equals("AUTO", ignoreCase = true) && isNightNow)
         preferences.setAmoledMode(isAmoled)
-        _uiState.update { it.copy(themeMode = mode, isAmoledMode = isAmoled) }
+        _uiState.update {
+            it.copy(
+                themeMode = mode,
+                isAutoNightNow = isNightNow,
+                isAmoledMode = isAmoled
+            )
+        }
+    }
+
+    fun refreshAutoTheme() {
+        val isNightNow = computeAutoNightNow(appContext)
+        _uiState.update { current ->
+            val isAmoled = if (current.themeMode.equals("AUTO", ignoreCase = true)) {
+                isNightNow
+            } else {
+                current.isAmoledMode
+            }
+            current.copy(
+                isAutoNightNow = isNightNow,
+                isAmoledMode = isAmoled
+            )
+        }
+    }
+
+    private fun computeAutoNightNow(context: Context): Boolean {
+        val hour = runCatching {
+            java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        }.getOrDefault(12)
+        val isNightByClock = hour < 6 || hour >= 18
+        val nightModeFlags = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+        val isSystemDark = nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        return isNightByClock || isSystemDark
     }
 
     fun setHomeWallpaperBlur(percent: Int) {
@@ -3084,6 +3135,112 @@ class MainViewModel(
                         it.copy(
                             isRestoringPurchase = false,
                             checkoutMessage = error.localizedMessage ?: "Erro ao consultar licença."
+                        )
+                    }
+                }
+        }
+    }
+
+    fun autoValidateSavedSubscriptionIfNeeded() {
+        val currentStatus = _uiState.value.licenseStatus
+        if (currentStatus.isMasterAccess ||
+            currentStatus.tier == com.tessera.launcher.data.license.LicenseTier.PRO_LIFETIME ||
+            currentStatus.tier == com.tessera.launcher.data.license.LicenseTier.PRO_ANNUAL ||
+            currentStatus.tier == com.tessera.launcher.data.license.LicenseTier.PRO_SEMESTRAL ||
+            currentStatus.tier == com.tessera.launcher.data.license.LicenseTier.PRO_MONTHLY ||
+            currentStatus.tier == com.tessera.launcher.data.license.LicenseTier.PRO_GIFT
+        ) {
+            return
+        }
+
+        val savedEmail = preferences.getLicenseInfo().licensedEmail?.trim()?.lowercase().orEmpty()
+        if (savedEmail.isBlank() || !EMAIL_REGEX.matches(savedEmail)) return
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isAutoValidatingSubscription = true,
+                    autoValidationFeedback = "Verificando assinatura vinculada a $savedEmail..."
+                )
+            }
+            paymentClient.restorePurchasesByEmail(savedEmail)
+                .onSuccess { result ->
+                    val license = result.licenseInfo
+                    if (license != null && license.isCurrentlyValid()) {
+                        preferences.saveLicenseInfo(license)
+                        refreshLicenseStatus()
+                        _uiState.update {
+                            it.copy(
+                                isAutoValidatingSubscription = false,
+                                licenseInfo = license,
+                                autoValidationFeedback = "Assinatura ${license.planDisplayName()} validada automaticamente!"
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isAutoValidatingSubscription = false,
+                                autoValidationFeedback = null
+                            )
+                        }
+                    }
+                }
+                .onFailure {
+                    _uiState.update {
+                        it.copy(
+                            isAutoValidatingSubscription = false,
+                            autoValidationFeedback = null
+                        )
+                    }
+                }
+        }
+    }
+
+    fun validateSubscriptionByEmailForOnboarding(email: String) {
+        val cleanEmail = email.trim().lowercase()
+        if (!EMAIL_REGEX.matches(cleanEmail)) {
+            _uiState.update {
+                it.copy(autoValidationFeedback = "Digite um e-mail válido para verificar sua assinatura.")
+            }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isAutoValidatingSubscription = true,
+                    autoValidationFeedback = "Consultando assinatura de $cleanEmail..."
+                )
+            }
+            paymentClient.restorePurchasesByEmail(cleanEmail)
+                .onSuccess { result ->
+                    val license = result.licenseInfo
+                    if (license != null && license.isCurrentlyValid()) {
+                        preferences.saveLicenseInfo(license)
+                        refreshLicenseStatus()
+                        _uiState.update {
+                            it.copy(
+                                isAutoValidatingSubscription = false,
+                                licenseInfo = license,
+                                autoValidationFeedback = "Assinatura ${license.planDisplayName()} reconhecida e ativada!"
+                            )
+                        }
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isAutoValidatingSubscription = false,
+                                autoValidationFeedback = result.message
+                                    ?: "Nenhuma assinatura ativa para $cleanEmail. Modo Teste de 72h permanece ativo."
+                            )
+                        }
+                    }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isAutoValidatingSubscription = false,
+                            autoValidationFeedback = error.localizedMessage
+                                ?: "Sem conexão para validar agora. Você pode usar o Modo Teste de 72h."
                         )
                     }
                 }

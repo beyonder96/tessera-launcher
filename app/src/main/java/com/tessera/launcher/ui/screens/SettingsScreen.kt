@@ -100,6 +100,7 @@ import com.tessera.launcher.R
 import com.tessera.launcher.ui.components.LanguageBottomSheet
 import com.tessera.launcher.ui.components.ModernSearchIcon
 import com.tessera.launcher.ui.components.SettingsCatalog
+import com.tessera.launcher.ui.components.SubscriptionMicroTagLabel
 import com.tessera.launcher.ui.state.SettingsSubScreen
 import com.tessera.launcher.ui.theme.AmoledBlack
 import com.tessera.launcher.ui.theme.AmoledCardBorder
@@ -898,20 +899,33 @@ fun SettingsScreen(
                                     color = primaryTextColor
                                 )
 
+                                val isTrialMode = uiState.licenseStatus.isTrialActive
+                                val heroBadgeBg = when {
+                                    isTrialMode -> Color(0xFFE2B714).copy(alpha = 0.18f)
+                                    uiState.hasProAccess -> Color(0xFF10B981).copy(alpha = 0.18f)
+                                    else -> Color(0xFFEF4444).copy(alpha = 0.18f)
+                                }
+                                val heroBadgeTint = when {
+                                    isTrialMode -> if (isLight) Color(0xFFB45309) else Color(0xFFE2B714)
+                                    uiState.hasProAccess -> Color(0xFF10B981)
+                                    else -> Color(0xFFEF4444)
+                                }
+                                val heroBadgeText = when {
+                                    isTrialMode -> "TESTE"
+                                    uiState.hasProAccess -> "ATIVO"
+                                    else -> "FREE"
+                                }
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(6.dp))
-                                        .background(
-                                            if (uiState.hasProAccess) Color(0xFF10B981).copy(alpha = 0.18f)
-                                            else Color(0xFFEF4444).copy(alpha = 0.18f)
-                                        )
+                                        .background(heroBadgeBg)
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
                                     Text(
-                                        text = if (uiState.hasProAccess) "ATIVO" else "FREE",
+                                        text = heroBadgeText,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = if (uiState.hasProAccess) Color(0xFF10B981) else Color(0xFFEF4444)
+                                        color = heroBadgeTint
                                     )
                                 }
                             }
@@ -922,6 +936,7 @@ fun SettingsScreen(
                                 text = when {
                                     uiState.isMasterAccess -> "Acesso Master Ilimitado • IA Groq / Gemini habilitada"
                                     uiState.licenseInfo.isCurrentlyValid() -> "${uiState.licenseInfo.planDisplayName()} • ${uiState.licenseInfo.licensedEmail ?: "Ativo"}"
+                                    uiState.licenseStatus.isTrialActive -> "Modo Teste ativo (${uiState.licenseStatus.daysRemaining}d ${uiState.licenseStatus.hoursRemaining}h restantes) • Toque para assinar"
                                     uiState.hasProAccess -> "Recursos Pro desbloqueados • Toque para ver detalhes"
                                     else -> "Assinar via Pix/Cartão ou ativar chave offline"
                                 },
@@ -953,13 +968,18 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        val subTag = uiState.subscriptionTagLabel
+                        val isTrialTag = uiState.licenseStatus.isTrialActive
+
                         // 1. Central & Feed (Tela −1) — Acesso unificado
                         SettingsItemRow(
                             icon = Icons.Outlined.Dashboard,
                             title = "Central & Feed (Tela −1)",
                             subtitle = "Central de widgets Bento e Feed de notícias RSS.",
                             onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER) },
-                            isLight = isLight
+                            isLight = isLight,
+                            badgeTag = subTag,
+                            isTrialTag = isTrialTag
                         )
 
                         ItemDivider(isLight = isLight)
@@ -981,7 +1001,9 @@ fun SettingsScreen(
                         title = "Personalização",
                         subtitle = "Ícones, papel de parede, relógios e acentos.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.CUSTOMIZATION) },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     ItemDivider(isLight = isLight)
@@ -992,7 +1014,9 @@ fun SettingsScreen(
                         title = "Gestos",
                         subtitle = "Ações de deslizar e toque duplo na home.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.GESTURES) },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     ItemDivider(isLight = isLight)
@@ -1018,13 +1042,18 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.fillMaxWidth()) {
+                    val subTag = uiState.subscriptionTagLabel
+                    val isTrialTag = uiState.licenseStatus.isTrialActive
+
                     // 1. Pastas
                     SettingsItemRow(
                         icon = Icons.Outlined.Folder,
                         title = "Pastas",
                         subtitle = "Agrupe aplicativos sob uma mesma palavra.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.FOLDERS) },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     ItemDivider(isLight = isLight)
@@ -1035,7 +1064,9 @@ fun SettingsScreen(
                         title = "Comandos Rápidos",
                         subtitle = "Prefixos dinâmicos como @con, @calc e atalhos.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.COMMANDS) },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     ItemDivider(isLight = isLight)
@@ -1046,7 +1077,9 @@ fun SettingsScreen(
                         title = "Apps Ocultos",
                         subtitle = "Oculte apps protegidos com PIN e Biometria.",
                         onClick = { viewModel.navigateToSettingsSubScreen(SettingsSubScreen.HIDDEN_APPS) },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
                 }
             }
@@ -1181,7 +1214,9 @@ private fun SettingsItemRow(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    isLight: Boolean = false
+    isLight: Boolean = false,
+    badgeTag: String? = null,
+    isTrialTag: Boolean = true
 ) {
     val iconCircleBackground = if (isLight) Color(0xFFE8E4D8) else IconCircleBackground
     val iconTint = if (isLight) Color(0xFF1C1917) else TextPrimary
@@ -1218,12 +1253,25 @@ private fun SettingsItemRow(
         Spacer(modifier = Modifier.width(16.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = titleColor
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = titleColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                SubscriptionMicroTagLabel(
+                    label = badgeTag,
+                    isTrial = isTrialTag,
+                    isLightMode = isLight
+                )
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,

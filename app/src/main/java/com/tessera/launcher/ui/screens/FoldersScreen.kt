@@ -71,6 +71,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tessera.launcher.ui.components.SubscriptionMicroTag
 import com.tessera.launcher.ui.state.AppFolder
 import com.tessera.launcher.ui.state.AppsListState
 import com.tessera.launcher.ui.state.LauncherUiState
@@ -166,16 +167,22 @@ fun FoldersScreen(
                 )
             }
 
-            Text(
-                text = "PASTAS",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp
-                ),
-                color = secondaryTextColor,
-                textAlign = TextAlign.Center
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "PASTAS",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.sp
+                    ),
+                    color = secondaryTextColor,
+                    textAlign = TextAlign.Center
+                )
+                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))

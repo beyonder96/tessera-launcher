@@ -334,7 +334,7 @@ class MainActivity : ComponentActivity() {
             }
 
             TesseraTheme(
-                themeMode = uiState.themeMode,
+                themeMode = uiState.effectiveThemeMode,
                 accentColor = uiState.activeAccentColor
             ) {
                 HomeScreen(
@@ -396,6 +396,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::viewModel.isInitialized) {
+            viewModel.refreshAutoTheme()
             viewModel.refreshLicenseStatus()
             viewModel.refreshCalendarAndPermissions()
             viewModel.refreshWeather()
