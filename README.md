@@ -61,7 +61,16 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.0)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.1)
+
+### 🆕 Novidades na v4.1.1
+- 🎬 **Onboarding Flagship em 5 Atos & Guia Animado de Permissões:**
+  - **Fluxo Expandido para 5 Atos:** Novo **Ato 4 (Permissões & Padrão)** com animação demonstrativa para definir o Tessera como Lançador Padrão, explicação clara do papel de cada permissão e guia visual interativo para **Configurações Restritas do Android 13+** (`PermissionGuideComponents`), além de **Ato 5 (Assinatura & Modo Teste)** com auto-validação de conta/chave e detecção de reinstalação.
+  - **Tema Automático (Dia/Noite):** Novo modo `AUTO` que alterna automaticamente entre **Claro (Journal)** durante o dia e **AMOLED** à noite, com preview ao vivo no Onboarding e na tela de Personalização.
+  - **Micro-tag Contextual `TESTE` / `PRO`:** Indicador sutil nos itens Pro das Configurações, Pastas, Comandos, Gestos, Personalização, Apps Ocultos, Tela Lateral e Menu de Contexto — exibindo `TESTE` durante o trial de 72h, `PRO` no modo gratuito e ocultando-se automaticamente para assinantes ativos.
+- 💎 **Experiência de Agradecimento Estilo Apple para Assinantes Tessera Pro:**
+  - **Tela Dedicada para Assinantes (`LicenseScreen`):** Usuários com plano ativo (Mensal, Semestral, Anual, Vitalício, Cortesia ou Master) agora veem uma vitrine editorial de agradecimento em estética Liquid Glass / Cupertino com saudação personalizada, resumo da licença, privilégios Bento desbloqueados e gerenciamento discreto.
+  - **Banner Premium nas Configurações (`AppleProSettingsBanner`):** O card de assinatura em Configurações agora se transforma em um banner comemorativo exclusivo para assinantes Pro, mantendo a badge `TESTE` com contador de tempo restante para usuários no período de avaliação.
 
 ### 🆕 Novidades na v4.1.0
 - 🕰️ **Reformulação Completa do Modo StandBy Pro (6 Telas via Swipe Horizontal):**
