@@ -1753,6 +1753,7 @@ fun HomeScreen(
             onTogglePlayPause = { viewModel.togglePlayPauseMedia() },
             onSkipNext = { viewModel.skipNextMedia() },
             onSkipPrevious = { viewModel.skipPreviousMedia() },
+            onSeekTo = { viewModel.seekToMedia(it) },
             onOpenMusicApp = { viewModel.launchDefaultMusicApp() },
             onOpenCalendarApp = { viewModel.launchCalendarApp() },
             onToggleNoteTask = { viewModel.toggleNoteTask(it) },

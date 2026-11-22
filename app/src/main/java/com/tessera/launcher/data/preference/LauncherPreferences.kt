@@ -211,7 +211,7 @@ class LauncherPreferences(context: Context) {
     }
 
     fun getStandByViewMode(): String {
-        return prefs.getString(KEY_STANDBY_VIEW_MODE, "DUAL") ?: "DUAL"
+        return prefs.getString(KEY_STANDBY_VIEW_MODE, "CLOCK_TALL") ?: "CLOCK_TALL"
     }
 
     fun setStandByViewMode(mode: String) {

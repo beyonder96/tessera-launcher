@@ -524,8 +524,9 @@ class MainViewModel(
 
     fun refreshCalendarAndPermissions() {
         val hasCalendar = calendarHelper.hasCalendarPermission()
-        val upcomingEvents = if (hasCalendar) calendarHelper.getUpcomingEvents(5) else emptyList()
-        val nextEvent = upcomingEvents.firstOrNull()
+        val todayEvents = if (hasCalendar) calendarHelper.getUpcomingEvents(limit = 5, daysAhead = 1) else emptyList()
+        val upcomingEvents = if (hasCalendar) calendarHelper.getUpcomingEvents(limit = 10, daysAhead = 14) else emptyList()
+        val nextEvent = todayEvents.firstOrNull()
         _uiState.update {
             it.copy(
                 hasCalendarPermission = hasCalendar,
@@ -1043,6 +1044,9 @@ class MainViewModel(
     fun openPhotoStandBy() {
         requirePro("Modo StandBy Pro") {
             _uiState.update { it.copy(isPhotoStandByOpen = true) }
+            viewModelScope.launch(Dispatchers.IO) {
+                refreshCalendarAndPermissions()
+            }
         }
     }
 

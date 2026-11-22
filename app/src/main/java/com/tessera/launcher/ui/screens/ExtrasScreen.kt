@@ -441,7 +441,7 @@ fun ExtrasScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Abre relógio, música, Pomodoro, eventos e notificações ao conectar o carregador.",
+                            text = "Abre telas via swipe (relógios, painel, música, agenda, foto) e notificações em tela cheia ao carregar.",
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontSize = 12.sp,
                                 lineHeight = 16.sp

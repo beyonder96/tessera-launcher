@@ -154,9 +154,16 @@ class TesseraMediaService : NotificationListenerService() {
             val isGroupSummary = (notification.flags and Notification.FLAG_GROUP_SUMMARY) != 0
 
             val rawTitle = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim() ?: ""
-            val rawText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim()
-                ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim()
-                ?: ""
+            val normalText = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim().orEmpty()
+            val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()?.trim().orEmpty()
+            val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+                ?.mapNotNull { it?.toString()?.trim()?.takeIf { line -> line.isNotEmpty() } }
+                ?.takeLast(4)
+                ?.joinToString("\n")
+                .orEmpty()
+            val rawText = listOf(bigText, textLines, normalText)
+                .maxByOrNull { it.length }
+                .orEmpty()
 
             if (rawTitle.isBlank() && rawText.isBlank()) return null
             if (isGroupSummary && rawText.isBlank()) return null

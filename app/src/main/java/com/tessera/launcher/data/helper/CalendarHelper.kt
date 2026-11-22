@@ -43,15 +43,24 @@ class CalendarHelper(private val context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun getUpcomingEvents(limit: Int = 5): List<CalendarEventInfo> {
+    fun getUpcomingEvents(limit: Int = 5, daysAhead: Int = 1): List<CalendarEventInfo> {
         if (!hasCalendarPermission()) return emptyList()
 
         val now = System.currentTimeMillis()
-        val endOfDay = now + 24 * 60 * 60 * 1000L
+        val localTodayStart = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.HOUR_OF_DAY, 0)
+            set(java.util.Calendar.MINUTE, 0)
+            set(java.util.Calendar.SECOND, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }.timeInMillis
+
+        // Inclui margem de fuso horário para capturar eventos de dia inteiro armazenados em UTC
+        val queryStart = localTodayStart - 12 * 60 * 60 * 1000L
+        val queryEnd = localTodayStart + (daysAhead.coerceAtLeast(1) + 1) * 24 * 60 * 60 * 1000L
 
         val builder = CalendarContract.Instances.CONTENT_URI.buildUpon()
-        ContentUris.appendId(builder, now)
-        ContentUris.appendId(builder, endOfDay)
+        ContentUris.appendId(builder, queryStart)
+        ContentUris.appendId(builder, queryEnd)
 
         val projection = arrayOf(
             CalendarContract.Instances.TITLE,
@@ -61,6 +70,9 @@ class CalendarHelper(private val context: Context) {
         )
 
         val events = mutableListOf<CalendarEventInfo>()
+        val seenKeys = mutableSetOf<String>()
+        val maxWindowEnd = now + daysAhead.coerceAtLeast(1) * 24 * 60 * 60 * 1000L
+
         try {
             val cursor = context.contentResolver.query(
                 builder.build(),
@@ -77,29 +89,66 @@ class CalendarHelper(private val context: Context) {
                 val allDayIdx = it.getColumnIndex(CalendarContract.Instances.ALL_DAY)
 
                 val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val utcCal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                val localCal = java.util.Calendar.getInstance()
 
-                while (it.moveToNext() && events.size < limit) {
+                while (it.moveToNext()) {
                     val title = if (titleIdx >= 0) it.getString(titleIdx) ?: "Compromisso" else "Compromisso"
-                    val begin = if (beginIdx >= 0) it.getLong(beginIdx) else now
-                    val end = if (endIdx >= 0) it.getLong(endIdx) else (begin + 3600_000L)
+                    val rawBegin = if (beginIdx >= 0) it.getLong(beginIdx) else now
+                    val rawEnd = if (endIdx >= 0) it.getLong(endIdx) else (rawBegin + 3600_000L)
                     val isAllDay = if (allDayIdx >= 0) it.getInt(allDayIdx) == 1 else false
+
+                    val normalizedBegin: Long
+                    val normalizedEnd: Long
+                    if (isAllDay) {
+                        utcCal.timeInMillis = rawBegin
+                        localCal.set(
+                            utcCal.get(java.util.Calendar.YEAR),
+                            utcCal.get(java.util.Calendar.MONTH),
+                            utcCal.get(java.util.Calendar.DAY_OF_MONTH),
+                            0,
+                            0,
+                            0
+                        )
+                        localCal.set(java.util.Calendar.MILLISECOND, 0)
+                        normalizedBegin = localCal.timeInMillis
+                        normalizedEnd = normalizedBegin + 24 * 60 * 60 * 1000L - 1L
+                        if (normalizedBegin < localTodayStart || normalizedBegin > maxWindowEnd) continue
+                    } else {
+                        normalizedBegin = rawBegin
+                        normalizedEnd = rawEnd
+                        if (normalizedEnd <= now || normalizedBegin > maxWindowEnd) continue
+                    }
+
+                    val dedupKey = "$title|$normalizedBegin|$isAllDay"
+                    if (!seenKeys.add(dedupKey)) continue
 
                     val timeFormatted = if (isAllDay) {
                         "O dia todo"
                     } else {
-                        timeFormat.format(Date(begin))
+                        timeFormat.format(Date(normalizedBegin))
                     }
 
-                    events.add(CalendarEventInfo(title, timeFormatted, isAllDay, begin, end))
+                    events.add(
+                        CalendarEventInfo(
+                            title = title,
+                            timeFormatted = timeFormatted,
+                            isAllDay = isAllDay,
+                            beginTimestamp = normalizedBegin,
+                            endTimestamp = normalizedEnd
+                        )
+                    )
                 }
             }
         } catch (_: Exception) {}
 
         return events
+            .sortedBy { it.beginTimestamp }
+            .take(limit)
     }
 
     fun getNextUpcomingEvent(): CalendarEventInfo? {
-        return getUpcomingEvents(1).firstOrNull()
+        return getUpcomingEvents(limit = 1, daysAhead = 1).firstOrNull()
     }
 
     /**

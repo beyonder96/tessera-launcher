@@ -12,12 +12,28 @@ import org.junit.Test
 class StandByProTest {
 
     @Test
-    fun testStandByViewModeResolution() {
-        assertEquals(StandByViewMode.DUAL, StandByViewMode.fromKey("DUAL"))
-        assertEquals(StandByViewMode.MUSIC, StandByViewMode.fromKey("music"))
-        assertEquals(StandByViewMode.EVENTS, StandByViewMode.fromKey("EVENTS"))
-        assertEquals(StandByViewMode.POMODORO, StandByViewMode.fromKey("pomodoro"))
-        assertEquals(StandByViewMode.DUAL, StandByViewMode.fromKey("UNKNOWN"))
+    fun testStandByViewModeResolutionAndOrder() {
+        assertEquals(6, StandByViewMode.entries.size)
+        assertEquals(StandByViewMode.CLOCK_TALL, StandByViewMode.entries[0])
+        assertEquals(StandByViewMode.DASHBOARD, StandByViewMode.entries[1])
+        assertEquals(StandByViewMode.PASTEL_MUSIC, StandByViewMode.entries[2])
+        assertEquals(StandByViewMode.FULL_MUSIC, StandByViewMode.entries[3])
+        assertEquals(StandByViewMode.AGENDA, StandByViewMode.entries[4])
+        assertEquals(StandByViewMode.PHOTO, StandByViewMode.entries[5])
+
+        assertEquals(StandByViewMode.CLOCK_TALL, StandByViewMode.fromKey("CLOCK_TALL"))
+        assertEquals(StandByViewMode.DASHBOARD, StandByViewMode.fromKey("dashboard"))
+        assertEquals(StandByViewMode.PASTEL_MUSIC, StandByViewMode.fromKey("PASTEL_MUSIC"))
+        assertEquals(StandByViewMode.FULL_MUSIC, StandByViewMode.fromKey("full_music"))
+        assertEquals(StandByViewMode.AGENDA, StandByViewMode.fromKey("AGENDA"))
+        assertEquals(StandByViewMode.PHOTO, StandByViewMode.fromKey("photo"))
+
+        // Retrocompatibilidade com chaves de versões anteriores
+        assertEquals(StandByViewMode.DASHBOARD, StandByViewMode.fromKey("DUAL"))
+        assertEquals(StandByViewMode.FULL_MUSIC, StandByViewMode.fromKey("music"))
+        assertEquals(StandByViewMode.AGENDA, StandByViewMode.fromKey("EVENTS"))
+        assertEquals(StandByViewMode.CLOCK_TALL, StandByViewMode.fromKey("pomodoro"))
+        assertEquals(StandByViewMode.CLOCK_TALL, StandByViewMode.fromKey("UNKNOWN"))
     }
 
     @Test
@@ -45,7 +61,7 @@ class StandByProTest {
     @Test
     fun testLauncherUiStateStandByDefaults() {
         val state = LauncherUiState()
-        assertEquals("DUAL", state.standByViewMode)
+        assertEquals("CLOCK_TALL", state.standByViewMode)
         assertEquals("FLIP", state.standByClockStyle)
         assertEquals("WHITE", state.standByColorPreset)
         assertFalse(state.isStandByNotificationPrivacyEnabled)

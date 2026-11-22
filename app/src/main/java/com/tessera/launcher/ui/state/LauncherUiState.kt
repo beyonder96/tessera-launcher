@@ -136,7 +136,7 @@ data class LauncherUiState(
     val isPhotoWidgetEnabled: Boolean = true,
     val isPhotoStandByOpen: Boolean = false,
     val isPhotoStandByOnChargeEnabled: Boolean = false,
-    val standByViewMode: String = "DUAL",
+    val standByViewMode: String = "CLOCK_TALL",
     val standByClockStyle: String = "FLIP",
     val standByColorPreset: String = "WHITE",
     val isStandByNotificationPrivacyEnabled: Boolean = false,
