@@ -74,6 +74,8 @@ import com.tessera.launcher.ui.components.IconPackBottomSheet
 import com.tessera.launcher.ui.components.IconShapeBottomSheet
 import com.tessera.launcher.ui.components.SearchBarStyleBottomSheet
 import com.tessera.launcher.ui.components.SearchBarTextBottomSheet
+import com.tessera.launcher.ui.components.SubscriptionMicroTag
+import com.tessera.launcher.ui.components.SubscriptionMicroTagLabel
 import com.tessera.launcher.ui.components.TypographyBottomSheet
 import com.tessera.launcher.ui.theme.ACCENT_COLOR_OPTIONS
 import androidx.compose.material.icons.outlined.AccessTime
@@ -230,16 +232,22 @@ fun CustomizationScreen(
                     )
                 }
 
-                Text(
-                    text = "CUSTOMIZATION",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.4.sp
-                    ),
-                    color = textSecondary,
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                Row(
+                    modifier = Modifier.align(Alignment.Center),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "CUSTOMIZATION",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.4.sp
+                        ),
+                        color = textSecondary
+                    )
+                    SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -260,14 +268,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Papel de Parede do Sistema",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Papel de Parede do Sistema",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Usa cores sólidas do tema quando está desligado",
@@ -688,14 +702,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Vidro na Gaveta",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Vidro na Gaveta",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Mostra o papel de parede atrás dos resultados",
@@ -750,14 +770,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Smart Dock (Previsão Contextual)",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Smart Dock (Previsão Contextual)",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Sugere apps contextuais no topo da lista com base no momento",
@@ -861,14 +887,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Categorias na Gaveta",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Categorias na Gaveta",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Agrupa apps por Produtividade, Social, Mídia, Utilitários e Jogos",
@@ -900,14 +932,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Alinhar apps à direita",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Alinhar apps à direita",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Inverte a posição dos itens para facilitar o alcance com a outra mão",
@@ -940,6 +978,8 @@ fun CustomizationScreen(
                 border = BorderStroke(1.dp, cardBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val subTag = uiState.subscriptionTagLabel
+                val isTrialTag = uiState.licenseStatus.isTrialActive
                 Column(modifier = Modifier.fillMaxWidth()) {
                     // Relógio da Tela Inicial (Editorial Clocks)
                     CustomSettingsRow(
@@ -953,7 +993,9 @@ fun CustomizationScreen(
                             else -> "Nenhum (Área Limpa)"
                         },
                         onClick = { viewModel.requirePro("Relógios Editoriais") { openModal = "clock_style" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -964,7 +1006,9 @@ fun CustomizationScreen(
                         title = "Cor de Destaque (Accent Pop)",
                         subtitle = ACCENT_COLOR_OPTIONS.firstOrNull { it.id.equals(uiState.accentColorName, ignoreCase = true) }?.displayName ?: "Monocromático",
                         onClick = { viewModel.requirePro("Cores de Destaque") { openModal = "accent_color" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -983,7 +1027,9 @@ fun CustomizationScreen(
                             else -> "Split Pill (Separate Gear)"
                         },
                         onClick = { viewModel.requirePro("Barra de Pesquisa") { openModal = "style" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -1000,7 +1046,9 @@ fun CustomizationScreen(
                             else -> "Tessera..."
                         },
                         onClick = { viewModel.requirePro("Barra de Pesquisa") { openModal = "text" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -1033,7 +1081,9 @@ fun CustomizationScreen(
                             else -> "Tessera"
                         },
                         onClick = { viewModel.requirePro("Tipografia") { openModal = "typography" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -1044,7 +1094,9 @@ fun CustomizationScreen(
                         title = "Pacote de ícones",
                         subtitle = uiState.selectedIconPack?.substringAfterLast(".") ?: "Padrão",
                         onClick = { viewModel.requirePro("Personalização de Ícones") { openModal = "pack" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -1063,7 +1115,9 @@ fun CustomizationScreen(
                             else -> "Padrão"
                         },
                         onClick = { viewModel.requirePro("Personalização de Ícones") { openModal = "shape" } },
-                        isLight = isLight
+                        isLight = isLight,
+                        badgeTag = subTag,
+                        isTrialTag = isTrialTag
                     )
 
                     CustomDivider(isLight = isLight)
@@ -1076,14 +1130,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Ícones com tema",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Ícones com tema",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Tinge os ícones na cor do seu tema.",
@@ -1115,14 +1175,20 @@ fun CustomizationScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Ocultar nomes dos apps",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 15.sp
-                                ),
-                                color = textPrimary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = "Ocultar nomes dos apps",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontWeight = FontWeight.Medium,
+                                        fontSize = 15.sp
+                                    ),
+                                    color = textPrimary
+                                )
+                                SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                            }
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Mostra só os ícones nos resultados.",
@@ -1161,14 +1227,20 @@ fun CustomizationScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 14.dp)
                     ) {
-                        Text(
-                            text = "Tela Lateral (−1)",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 15.sp
-                            ),
-                            color = textPrimary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Tela Lateral (−1)",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 15.sp
+                                ),
+                                color = textPrimary
+                            )
+                            SubscriptionMicroTag(licenseStatus = uiState.licenseStatus, isLightMode = isLight)
+                        }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = "Acesso ao deslizar para a direita a partir da tela inicial",
@@ -1251,7 +1323,9 @@ fun CustomizationScreen(
                                     viewModel.navigateToSettingsSubScreen(SettingsSubScreen.WIDGETS_CENTER)
                                 }
                             },
-                            isLight = isLight
+                            isLight = isLight,
+                            badgeTag = uiState.subscriptionTagLabel,
+                            isTrialTag = uiState.licenseStatus.isTrialActive
                         )
                     }
                 }
@@ -1268,7 +1342,9 @@ private fun CustomSettingsRow(
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    isLight: Boolean = false
+    isLight: Boolean = false,
+    badgeTag: String? = null,
+    isTrialTag: Boolean = true
 ) {
     val iconBg = if (isLight) Color(0xFFE8E4D8) else Color(0xFF191920)
     val iconTint = if (isLight) Color(0xFF1C1917) else TextPrimary
@@ -1305,14 +1381,24 @@ private fun CustomSettingsRow(
         Spacer(modifier = Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp
-                ),
-                color = titleColor
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 15.sp
+                    ),
+                    color = titleColor
+                )
+                SubscriptionMicroTagLabel(
+                    label = badgeTag,
+                    isTrial = isTrialTag,
+                    isLightMode = isLight
+                )
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,

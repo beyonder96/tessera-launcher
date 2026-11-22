@@ -28,10 +28,15 @@ fun TesseraTheme(
     visagismProfileId: String = "SERENE",
     content: @Composable () -> Unit
 ) {
+    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
     val palette = when (themeMode.uppercase()) {
         "LIGHT" -> TesseraPalette.light(accentColor)
         "CHARCOAL" -> TesseraPalette.charcoal(accentColor)
         "DARK" -> TesseraPalette.dark(accentColor)
+        "AUTO" -> {
+            val hour = runCatching { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }.getOrDefault(12)
+            if (isSystemDark || hour < 6 || hour >= 18) TesseraPalette.amoled(accentColor) else TesseraPalette.light(accentColor)
+        }
         else -> TesseraPalette.amoled(accentColor)
     }
 

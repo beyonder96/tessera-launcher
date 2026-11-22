@@ -18,6 +18,7 @@ import com.tessera.launcher.data.model.FeedSource
 import com.tessera.launcher.data.model.LicenseInfo
 import com.tessera.launcher.data.model.PlanOption
 import com.tessera.launcher.data.license.LicenseStatus
+import com.tessera.launcher.data.license.LicenseTier
 import com.tessera.launcher.data.helper.SmartGlanceBriefing
 import androidx.compose.ui.graphics.Color
 import com.tessera.launcher.data.helper.AppUpdateInfo
@@ -345,12 +346,29 @@ data class LauncherUiState(
     val checkoutMessage: String? = null,
     val isOnboardingCompleted: Boolean = true,
     val isReplayingOnboarding: Boolean = false,
+    val isReinstallDetected: Boolean = false,
+    val isAutoValidatingSubscription: Boolean = false,
+    val autoValidationFeedback: String? = null,
+    val isAutoNightNow: Boolean = false,
     val isSafeModeRecoveryOpen: Boolean = false,
     val lastCrashSummary: String? = null
 ) {
-    val isLightMode: Boolean get() = themeMode.equals("LIGHT", ignoreCase = true)
+    val effectiveThemeMode: String
+        get() = if (themeMode.equals("AUTO", ignoreCase = true)) {
+            if (isAutoNightNow) "AMOLED" else "LIGHT"
+        } else {
+            themeMode
+        }
+
+    val isLightMode: Boolean get() = effectiveThemeMode.equals("LIGHT", ignoreCase = true)
     val activeAccentColor: Color get() = getAccentColor(accentColorName, isLightMode)
     val hasProAccess: Boolean get() = licenseStatus.hasProAccess
     val isMasterAccess: Boolean get() = licenseStatus.isMasterAccess
     val shouldShowOnboarding: Boolean get() = !isOnboardingCompleted || isReplayingOnboarding
+    val subscriptionTagLabel: String?
+        get() = when {
+            licenseStatus.tier == LicenseTier.TRIAL -> "TESTE"
+            !licenseStatus.hasProAccess -> "PRO"
+            else -> null
+        }
 }

@@ -87,6 +87,8 @@ fun AppContextMenu(
     installedIconPacks: List<IconPackInfo> = emptyList(),
     currentCustomIconPack: String? = null,
     hasLinkedWidget: Boolean = false,
+    subscriptionTagLabel: String? = null,
+    isTrialTag: Boolean = true,
     onShortcutClick: (AppShortcutItem) -> Unit = {},
     onChangeIconPack: (String?) -> Unit = {},
     onLinkWidget: () -> Unit = {},
@@ -283,14 +285,24 @@ fun AppContextMenu(
                     )
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text(
-                            text = "Trocar ícone",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp
-                            ),
-                            color = TextPrimary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Trocar ícone",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                ),
+                                color = TextPrimary
+                            )
+                            SubscriptionMicroTagLabel(
+                                label = subscriptionTagLabel,
+                                isTrial = isTrialTag,
+                                isLightMode = false
+                            )
+                        }
                         Text(
                             text = "Personalizar ícone deste aplicativo",
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -327,14 +339,24 @@ fun AppContextMenu(
                     )
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text(
-                            text = if (hasLinkedWidget) "Remover widget pop-up" else "Vincular widget pop-up",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp
-                            ),
-                            color = TextPrimary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = if (hasLinkedWidget) "Remover widget pop-up" else "Vincular widget pop-up",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                ),
+                                color = TextPrimary
+                            )
+                            SubscriptionMicroTagLabel(
+                                label = subscriptionTagLabel,
+                                isTrial = isTrialTag,
+                                isLightMode = false
+                            )
+                        }
                         Text(
                             text = if (hasLinkedWidget) "Toque para desvincular o widget deste app" else "Deslize o app para a direita para abrir",
                             style = MaterialTheme.typography.bodyMedium.copy(
@@ -413,14 +435,24 @@ fun AppContextMenu(
                     )
                     Spacer(modifier = Modifier.width(14.dp))
                     Column {
-                        Text(
-                            text = "Ocultar app",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 14.sp
-                            ),
-                            color = TextPrimary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Ocultar app",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 14.sp
+                                ),
+                                color = TextPrimary
+                            )
+                            SubscriptionMicroTagLabel(
+                                label = subscriptionTagLabel,
+                                isTrial = isTrialTag,
+                                isLightMode = false
+                            )
+                        }
                         Text(
                             text = "Remover da lista e proteger com PIN",
                             style = MaterialTheme.typography.bodyMedium.copy(

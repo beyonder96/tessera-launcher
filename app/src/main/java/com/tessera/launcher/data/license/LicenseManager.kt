@@ -312,6 +312,8 @@ class LicenseManager(
         )
     }
 
+    fun hasExistingVault(): Boolean = storage.readSnapshot() != null
+
     fun getLicenseStatus(): LicenseStatus {
         val nowWall = timeProvider.currentTimeMillis()
         val nowElapsed = timeProvider.elapsedRealtimeMillis()
