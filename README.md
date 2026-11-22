@@ -61,7 +61,19 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.0.3](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.0.3)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.1.0](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.0)
+
+### 🆕 Novidades na v4.1.0
+- 🕰️ **Reformulação Completa do Modo StandBy Pro (6 Telas via Swipe Horizontal):**
+  - **Interface 100% Limpa e Imersiva:** Sem barras fixas no topo ou rodapé, navegação fluida por swipe horizontal (`HorizontalPager`) com indicadores discretos na borda direita, saída por gesto/botão Voltar ou duplo toque, suporte automático a **Paisagem** e **Retrato** e proteção OLED Anti Burn-in.
+  - **Tela 1 — Relógio Gigante Condensado:** Dígitos vetoriais alongados estilo cápsula em creme quente, data (`DOM. 22`) e pílula minimalista de clima.
+  - **Tela 2 — Dashboard Inteligente:** Card atmosférico índigo com saudação contextual, relógio, data, frase/versículo do dia e barra de horizonte solar com tempo de luz solar restante, ao lado de 4 cards rápidos (Clima, Próximo Evento, Mídia com Play/Pause e Bateria).
+  - **Tela 3 — Relógio Pastel + Card de Música:** Relógio arredondado sobreposto em paleta pastel personalizável ao lado de card de mídia com capa ao fundo, barra de progresso interativa e controle de volume.
+  - **Tela 4 — Player de Música Fullscreen:** Fundo ambiente extraído da capa do álbum, capa em destaque, controles amplos, seekbar arrastável e acesso rápido ao volume do sistema.
+  - **Tela 5 — Agenda Multi-dias Minimalista:** Próximos compromissos (hoje e próximos 14 dias, com suporte preciso a eventos de dia inteiro) com barras de cor coral/oliva e acesso ao menu rápido do StandBy.
+  - **Tela 6 — Porta-Retratos de Foto:** Exibição da foto selecionada em destaque com relógio editorial e alternância de enquadramento ao toque.
+- 🔔 **Notificações em Tela Cheia no Modo StandBy:**
+  - Ao receber uma nova notificação ou mensagem enquanto o StandBy está aberto, um alerta em **tela cheia** exibe o app, remetente e o **conteúdo completo da mensagem** (`EXTRA_BIG_TEXT` / `EXTRA_TEXT_LINES`), com ações rápidas para abrir ou dispensar e retorno automático após 10 segundos.
 
 ### 🆕 Novidades na v4.0.3
 - 🕰️ **Tessera StandBy Pro 2.0:**
