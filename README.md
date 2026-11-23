@@ -61,7 +61,14 @@
 Você pode obter o APK compilado pronto para instalação no seu Android:
 - 🚀 **APK Release (Otimizado):** [`apk/tessera-launcher-release.apk`](apk/tessera-launcher-release.apk)
 - 📦 **APK Debug:** [`apk/tessera-launcher-debug.apk`](apk/tessera-launcher-debug.apk)
-- 🏷️ **Página de Releases:** [Baixar na Release v4.1.1](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.1)
+- 🏷️ **Página de Releases:** [Baixar na Release v4.1.2](https://github.com/beyonder96/tessera-launcher/releases/tag/v4.1.2)
+
+### 🆕 Novidades na v4.1.2
+- 🕰️ **StandBy Pro — Cores por Swipe Vertical & Indicadores Sincronizados:**
+  - **Swipe Vertical para Cores do Relógio:** Deslizar para cima ou para baixo nas telas de **Relógio Condensado**, **Relógio Pastel** e **Porta-Retratos** alterna as cores/paletas do relógio com transição animada suave e feedback háptico.
+  - **Bolinhas Laterais Sincronizadas:** Os indicadores discretos na borda direita passam a acompanhar automaticamente a cor ativa do relógio em tempo real.
+- ✨ **Dashboard StandBy com Destaque Rotativo:**
+  - Os 4 cards rápidos (**Clima**, **Agenda**, **Mídia** e **Bateria**) agora alternam automaticamente em intervalos curtos (~4 segundos), trazendo sempre um novo card em destaque para o topo com borda iluminada, gradiente sutil e transição vertical fluida.
 
 ### 🆕 Novidades na v4.1.1
 - 🎬 **Onboarding Flagship em 5 Atos & Guia Animado de Permissões:**
