@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -72,6 +73,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -161,6 +163,11 @@ enum class StandByColorPreset(val key: String, val label: String) {
     fun next(): StandByColorPreset {
         val list = entries
         return list[(ordinal + 1) % list.size]
+    }
+
+    fun previous(): StandByColorPreset {
+        val list = entries
+        return list[(ordinal - 1 + list.size) % list.size]
     }
 
     companion object {
@@ -365,6 +372,7 @@ fun PhotoStandByModal(
             initialPage = activeMode.ordinal,
             pageCount = { pages.size }
         )
+        var pastelPaletteIndex by remember { mutableIntStateOf(0) }
 
         // Sincroniza mudança de página via swipe horizontal com a preferência persistida
         LaunchedEffect(pagerState) {
@@ -439,7 +447,8 @@ fun PhotoStandByModal(
                                 weatherCondition = weatherCondition,
                                 accentColor = accentColor,
                                 activeColorPreset = activeColorPreset,
-                                onCycleColorPreset = { onSelectColorPreset(activeColorPreset.next().key) }
+                                onCycleColorPreset = { onSelectColorPreset(activeColorPreset.next().key) },
+                                onPreviousColorPreset = { onSelectColorPreset(activeColorPreset.previous().key) }
                             )
                         }
 
@@ -455,7 +464,8 @@ fun PhotoStandByModal(
                                 upcomingEvents = upcomingCalendarEvents,
                                 onTogglePlayPause = onTogglePlayPause,
                                 onOpenMusicApp = onOpenMusicApp,
-                                onOpenCalendarApp = onOpenCalendarApp
+                                onOpenCalendarApp = onOpenCalendarApp,
+                                isActive = pagerState.currentPage == StandByViewMode.DASHBOARD.ordinal
                             )
                         }
 
@@ -464,6 +474,8 @@ fun PhotoStandByModal(
                                 isLandscape = isLandscape,
                                 formattedTime = formattedTime,
                                 mediaPlayback = mediaPlayback,
+                                paletteIndex = pastelPaletteIndex,
+                                onChangePaletteIndex = { pastelPaletteIndex = it },
                                 onTogglePlayPause = onTogglePlayPause,
                                 onSkipNext = onSkipNext,
                                 onSkipPrevious = onSkipPrevious,
@@ -500,7 +512,9 @@ fun PhotoStandByModal(
                                 formattedTime = formattedTime,
                                 bitmap = photoBitmap,
                                 accentColor = accentColor,
-                                activeColorPreset = activeColorPreset
+                                activeColorPreset = activeColorPreset,
+                                onNextColorPreset = { onSelectColorPreset(activeColorPreset.next().key) },
+                                onPreviousColorPreset = { onSelectColorPreset(activeColorPreset.previous().key) }
                             )
                         }
                     }
@@ -508,12 +522,22 @@ fun PhotoStandByModal(
             }
 
             // =================================================================
-            // INDICADORES DISCRETOS NA BORDA DIREITA (IGUAL AOS PRINTS 2 E 5)
+            // INDICADORES DISCRETOS NA BORDA DIREITA (SINCRONIZADOS COM A COR DO RELÓGIO)
             // =================================================================
             if (fullscreenNotification == null && !isQuickSettingsOpen && !isNotificationHistoryOpen) {
+                val currentPageMode = pages.getOrNull(pagerState.currentPage) ?: activeMode
+                val dotsColor = when {
+                    currentPageMode == StandByViewMode.PASTEL_MUSIC ->
+                        resolvePastelClockPrimaryColor(pastelPaletteIndex)
+                    activeColorPreset == StandByColorPreset.WHITE ->
+                        Color(0xFFD6C3B3)
+                    else ->
+                        themeColor
+                }
                 StandByEdgeDotsIndicator(
                     pageCount = pages.size,
                     currentPage = pagerState.currentPage,
+                    activeColor = dotsColor,
                     onSelectPage = { target ->
                         coroutineScope.launch { pagerState.animateScrollToPage(target) }
                     },
@@ -643,9 +667,20 @@ private fun notificationSignature(item: AppNotificationItem): String =
 private fun StandByEdgeDotsIndicator(
     pageCount: Int,
     currentPage: Int,
+    activeColor: Color,
     onSelectPage: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val animatedActiveColor by animateColorAsState(
+        targetValue = activeColor,
+        animationSpec = tween(250),
+        label = "StandByDotsActiveColor"
+    )
+    val animatedInactiveColor by animateColorAsState(
+        targetValue = activeColor.copy(alpha = 0.36f),
+        animationSpec = tween(250),
+        label = "StandByDotsInactiveColor"
+    )
     Column(
         modifier = modifier.padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(7.dp),
@@ -663,7 +698,7 @@ private fun StandByEdgeDotsIndicator(
                     .size(dotSize)
                     .clip(CircleShape)
                     .background(
-                        if (selected) Color(0xFFF5EBE1) else Color(0xFF7B736C).copy(alpha = 0.65f)
+                        if (selected) animatedActiveColor else animatedInactiveColor
                     )
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },

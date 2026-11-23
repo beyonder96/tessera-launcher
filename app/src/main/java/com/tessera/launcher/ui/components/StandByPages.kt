@@ -6,12 +6,24 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.media.AudioManager
 import android.text.format.DateFormat
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -72,6 +84,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,10 +106,13 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -113,6 +129,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.min
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -132,7 +149,7 @@ private val STANDBY_QUOTES_PT = listOf(
 )
 
 @Immutable
-private data class PastelClockPalette(
+internal data class PastelClockPalette(
     val h1: Color,
     val h2: Color,
     val m1: Color,
@@ -140,7 +157,7 @@ private data class PastelClockPalette(
     val colon: Color
 )
 
-private val PASTEL_CLOCK_PALETTES = listOf(
+internal val PASTEL_CLOCK_PALETTES = listOf(
     // Paleta exata do print 3: Rosa pastel, Rosa suave, Amarelo limão pastel, Lilás pastel
     PastelClockPalette(
         h1 = Color(0xFFFFD3DD),
@@ -175,6 +192,71 @@ private val PASTEL_CLOCK_PALETTES = listOf(
     )
 )
 
+internal fun resolvePastelClockPrimaryColor(index: Int): Color {
+    val safeIndex = ((index % PASTEL_CLOCK_PALETTES.size) + PASTEL_CLOCK_PALETTES.size) % PASTEL_CLOCK_PALETTES.size
+    return PASTEL_CLOCK_PALETTES[safeIndex].h1
+}
+
+@Composable
+internal fun Modifier.standByVerticalSwipeColorChange(
+    onSwipeUp: () -> Unit,
+    onSwipeDown: () -> Unit
+): Modifier {
+    val haptic = LocalHapticFeedback.current
+    val currentOnSwipeUp by rememberUpdatedState(onSwipeUp)
+    val currentOnSwipeDown by rememberUpdatedState(onSwipeDown)
+    return this.pointerInput(Unit) {
+        val touchSlop = viewConfiguration.touchSlop
+        val triggerThresholdPx = 36.dp.toPx()
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+            var totalDx = 0f
+            var totalDy = 0f
+            var isVerticalLocked = false
+            var triggered = false
+            var lastPos = down.position
+
+            while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val change = event.changes.firstOrNull { it.id == down.id } ?: break
+                if (!change.pressed) {
+                    if (isVerticalLocked) {
+                        change.consume()
+                    }
+                    break
+                }
+
+                val delta = change.position - lastPos
+                lastPos = change.position
+                totalDx += delta.x
+                totalDy += delta.y
+
+                if (!isVerticalLocked) {
+                    if (abs(totalDx) > touchSlop && abs(totalDx) >= abs(totalDy)) {
+                        break
+                    }
+                    if (abs(totalDy) > touchSlop && abs(totalDy) > abs(totalDx) * 1.25f) {
+                        isVerticalLocked = true
+                    }
+                }
+
+                if (isVerticalLocked) {
+                    change.consume()
+                    if (!triggered && abs(totalDy) >= triggerThresholdPx) {
+                        triggered = true
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        if (totalDy < 0f) {
+                            currentOnSwipeUp()
+                        } else {
+                            currentOnSwipeDown()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 // ============================================================================
 // TELA 1: RELÓGIO GIGANTE CONDENSADO + DATA E PÍLULA DE CLIMA
 // Referência: Screenshot_20261122-000017_StandBy.png
@@ -187,15 +269,21 @@ internal fun StandByTallClockPage(
     weatherCondition: String?,
     accentColor: Color,
     activeColorPreset: StandByColorPreset,
-    onCycleColorPreset: () -> Unit
+    onCycleColorPreset: () -> Unit,
+    onPreviousColorPreset: () -> Unit = onCycleColorPreset
 ) {
-    val digitColor = remember(activeColorPreset, accentColor) {
+    val targetDigitColor = remember(activeColorPreset, accentColor) {
         if (activeColorPreset == StandByColorPreset.WHITE) {
             Color(0xFFD6C3B3)
         } else {
             activeColorPreset.resolveColor(accentColor)
         }
     }
+    val digitColor by animateColorAsState(
+        targetValue = targetDigitColor,
+        animationSpec = tween(250),
+        label = "StandByTallClockDigitColor"
+    )
 
     val now = remember(formattedTime) { Date() }
     val weekdayShort = remember(now) { formatShortWeekdayPt(now) }
@@ -273,10 +361,16 @@ internal fun StandByTallClockPage(
         }
     }
 
+    val verticalSwipeModifier = Modifier.standByVerticalSwipeColorChange(
+        onSwipeUp = onCycleColorPreset,
+        onSwipeDown = onPreviousColorPreset
+    )
+
     if (isLandscape) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
+                .then(verticalSwipeModifier)
                 .padding(start = 24.dp, end = 24.dp, top = 28.dp, bottom = 24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -320,6 +414,7 @@ internal fun StandByTallClockPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .then(verticalSwipeModifier)
                 .padding(horizontal = 24.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -605,6 +700,19 @@ private fun DrawScope.drawTallCapsuleDigit(
     }
 }
 
+internal enum class DashboardCardKind {
+    WEATHER,
+    EVENT,
+    MEDIA,
+    BATTERY
+}
+
+internal fun rotatedDashboardCards(offset: Int): List<DashboardCardKind> {
+    val all = DashboardCardKind.entries
+    val safeOffset = ((offset % all.size) + all.size) % all.size
+    return List(all.size) { index -> all[(safeOffset + index) % all.size] }
+}
+
 // ============================================================================
 // TELA 2: DASHBOARD INTELIGENTE (SAUDAÇÃO, RELÓGIO, FRASE, LUZ SOLAR + 4 CARDS)
 // Referência: Screenshot_20261122-000203_StandBy.png
@@ -621,10 +729,20 @@ internal fun StandByDashboardPage(
     upcomingEvents: List<CalendarEventInfo>,
     onTogglePlayPause: () -> Unit,
     onOpenMusicApp: () -> Unit,
-    onOpenCalendarApp: () -> Unit
+    onOpenCalendarApp: () -> Unit,
+    isActive: Boolean = true
 ) {
     val context = LocalContext.current
     val is24Hour = remember(context) { DateFormat.is24HourFormat(context) }
+
+    var featuredCardOffset by remember { mutableIntStateOf(0) }
+    LaunchedEffect(isActive) {
+        if (!isActive) return@LaunchedEffect
+        while (true) {
+            delay(4_000L)
+            featuredCardOffset = (featuredCardOffset + 1) % DashboardCardKind.entries.size
+        }
+    }
 
     val nowCal = remember(formattedTime) { Calendar.getInstance() }
     val hourOfDay = nowCal.get(Calendar.HOUR_OF_DAY)
@@ -865,114 +983,157 @@ internal fun StandByDashboardPage(
     val cardsList: @Composable (Modifier) -> Unit = { mod ->
         val cleanTemp = weatherTemp?.filter { it.isDigit() || it == '-' }?.takeIf { it.isNotEmpty() }?.let { "$it°" } ?: "--°"
         val cleanCond = weatherCondition?.takeIf { it.isNotBlank() }?.replaceFirstChar { it.uppercase() } ?: "Clima indisponível"
+        val eventTitle = nextEvent?.title ?: "Agenda livre"
+        val eventSub = remember(nextEvent, formattedTime) {
+            formatDashboardEventSubtitle(nextEvent)
+        }
+        val orderedCards = remember(featuredCardOffset) {
+            rotatedDashboardCards(featuredCardOffset)
+        }
 
         Column(
             modifier = mod,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Card 1: Clima
-            DashboardInfoCard(
-                modifier = if (isLandscape) Modifier.weight(1f).fillMaxWidth() else Modifier.fillMaxWidth().height(74.dp),
-                leading = {
-                    DashboardCircleIconBadge(
-                        icon = resolveWeatherIcon(weatherCondition),
-                        background = Color(0xFF232727),
-                        tint = Color(0xFFA3A8A8)
-                    )
-                },
-                title = cleanTemp,
-                titleSizeSp = 22f,
-                subtitle = cleanCond
-            )
+            orderedCards.forEachIndexed { slotIndex, cardKind ->
+                val isFeaturedSlot = slotIndex == 0
+                val slotModifier = if (isLandscape) {
+                    Modifier
+                        .weight(if (isFeaturedSlot) 1.16f else 0.95f)
+                        .fillMaxWidth()
+                } else {
+                    Modifier
+                        .fillMaxWidth()
+                        .height(if (isFeaturedSlot) 82.dp else 72.dp)
+                }
 
-            // Card 2: Próximo Evento
-            val eventTitle = nextEvent?.title ?: "Agenda livre"
-            val eventSub = remember(nextEvent, formattedTime) {
-                formatDashboardEventSubtitle(nextEvent)
-            }
-            DashboardInfoCard(
-                modifier = if (isLandscape) Modifier.weight(1f).fillMaxWidth() else Modifier.fillMaxWidth().height(74.dp),
-                onClick = onOpenCalendarApp,
-                leading = {
-                    DashboardCircleIconBadge(
-                        icon = Icons.Outlined.CalendarToday,
-                        background = Color(0xFF212836),
-                        tint = Color(0xFF9EB7F2)
-                    )
-                },
-                title = eventTitle,
-                titleSizeSp = 17f,
-                subtitle = eventSub
-            )
-
-            // Card 3: Mídia Tocando
-            DashboardInfoCard(
-                modifier = if (isLandscape) Modifier.weight(1f).fillMaxWidth() else Modifier.fillMaxWidth().height(74.dp),
-                onClick = onOpenMusicApp,
-                leading = {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF232727)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (albumBitmap != null) {
-                            Image(
-                                bitmap = albumBitmap,
-                                contentDescription = "Capa do álbum",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                AnimatedContent(
+                    targetState = cardKind,
+                    modifier = slotModifier,
+                    transitionSpec = {
+                        (fadeIn(tween(380, easing = FastOutSlowInEasing)) +
+                            slideInVertically(tween(380, easing = FastOutSlowInEasing)) { it / 3 }) togetherWith
+                            (fadeOut(tween(260)) +
+                                slideOutVertically(tween(260)) { -it / 3 }) using
+                            SizeTransform(clip = true)
+                    },
+                    label = "StandByDashboardCardSlot$slotIndex"
+                ) { kind ->
+                    when (kind) {
+                        DashboardCardKind.WEATHER -> {
+                            DashboardInfoCard(
+                                modifier = Modifier.fillMaxSize(),
+                                isHighlighted = isFeaturedSlot,
+                                highlightColor = Color(0xFF7DD3FC),
+                                leading = {
+                                    DashboardCircleIconBadge(
+                                        icon = resolveWeatherIcon(weatherCondition),
+                                        background = if (isFeaturedSlot) Color(0xFF1E3240) else Color(0xFF232727),
+                                        tint = if (isFeaturedSlot) Color(0xFF9BE0FF) else Color(0xFFA3A8A8)
+                                    )
+                                },
+                                title = cleanTemp,
+                                titleSizeSp = if (isFeaturedSlot) 23f else 21f,
+                                subtitle = cleanCond
                             )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Rounded.MusicNote,
-                                contentDescription = null,
-                                tint = Color(0xFFA8B0B2),
-                                modifier = Modifier.size(22.dp)
+                        }
+
+                        DashboardCardKind.EVENT -> {
+                            DashboardInfoCard(
+                                modifier = Modifier.fillMaxSize(),
+                                isHighlighted = isFeaturedSlot,
+                                highlightColor = Color(0xFF9EB7F2),
+                                onClick = onOpenCalendarApp,
+                                leading = {
+                                    DashboardCircleIconBadge(
+                                        icon = Icons.Outlined.CalendarToday,
+                                        background = if (isFeaturedSlot) Color(0xFF25324D) else Color(0xFF212836),
+                                        tint = Color(0xFF9EB7F2)
+                                    )
+                                },
+                                title = eventTitle,
+                                titleSizeSp = if (isFeaturedSlot) 18f else 17f,
+                                subtitle = eventSub
+                            )
+                        }
+
+                        DashboardCardKind.MEDIA -> {
+                            DashboardInfoCard(
+                                modifier = Modifier.fillMaxSize(),
+                                isHighlighted = isFeaturedSlot,
+                                highlightColor = Color(0xFFC8BEFF),
+                                onClick = onOpenMusicApp,
+                                leading = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(CircleShape)
+                                            .background(if (isFeaturedSlot) Color(0xFF2D2548) else Color(0xFF232727)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        if (albumBitmap != null) {
+                                            Image(
+                                                bitmap = albumBitmap,
+                                                contentDescription = "Capa do álbum",
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Rounded.MusicNote,
+                                                contentDescription = null,
+                                                tint = if (isFeaturedSlot) Color(0xFFD5CEFF) else Color(0xFFA8B0B2),
+                                                modifier = Modifier.size(22.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                title = if (hasMusic) mediaPlayback.title else "Sem mídia ativa",
+                                titleSizeSp = if (isFeaturedSlot) 18f else 17.5f,
+                                subtitle = if (hasMusic) mediaPlayback.artist.ifBlank { mediaPlayback.appDisplayName } else "Toque para abrir o player",
+                                trailing = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .clickable(
+                                                interactionSource = remember { MutableInteractionSource() },
+                                                indication = null,
+                                                onClick = if (hasMusic) onTogglePlayPause else onOpenMusicApp
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = if (mediaPlayback?.isPlaying == true) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+                                            contentDescription = "Play/Pause",
+                                            tint = if (isFeaturedSlot) Color.White else Color(0xFFDCE5E8),
+                                            modifier = Modifier.size(30.dp)
+                                        )
+                                    }
+                                }
+                            )
+                        }
+
+                        DashboardCardKind.BATTERY -> {
+                            DashboardInfoCard(
+                                modifier = Modifier.fillMaxSize(),
+                                isHighlighted = isFeaturedSlot,
+                                highlightColor = if (isCharging) Color(0xFF34D399) else Color(0xFFA5B4FC),
+                                leading = {
+                                    DashboardCircleIconBadge(
+                                        icon = if (isCharging) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryStd,
+                                        background = if (isFeaturedSlot && isCharging) Color(0xFF1D3B32) else Color(0xFF232727),
+                                        tint = if (isCharging) Color(0xFF8BE2BC) else Color(0xFFDCE5E8)
+                                    )
+                                },
+                                title = "${batteryPercentage.coerceIn(0, 100)}%",
+                                titleSizeSp = if (isFeaturedSlot) 22f else 21f,
+                                subtitle = if (isCharging) "Carregando" else "Na bateria"
                             )
                         }
                     }
-                },
-                title = if (hasMusic) mediaPlayback.title else "Sem mídia ativa",
-                titleSizeSp = 17.5f,
-                subtitle = if (hasMusic) mediaPlayback.artist.ifBlank { mediaPlayback.appDisplayName } else "Toque para abrir o player",
-                trailing = {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                onClick = if (hasMusic) onTogglePlayPause else onOpenMusicApp
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = if (mediaPlayback?.isPlaying == true) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
-                            contentDescription = "Play/Pause",
-                            tint = Color(0xFFDCE5E8),
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
                 }
-            )
-
-            // Card 4: Bateria
-            DashboardInfoCard(
-                modifier = if (isLandscape) Modifier.weight(1f).fillMaxWidth() else Modifier.fillMaxWidth().height(74.dp),
-                leading = {
-                    DashboardCircleIconBadge(
-                        icon = if (isCharging) Icons.Rounded.BatteryChargingFull else Icons.Rounded.BatteryStd,
-                        background = Color(0xFF232727),
-                        tint = if (isCharging) Color(0xFF8BE2BC) else Color(0xFFDCE5E8)
-                    )
-                },
-                title = "${batteryPercentage.coerceIn(0, 100)}%",
-                titleSizeSp = 21f,
-                subtitle = if (isCharging) "Carregando" else "Na bateria"
-            )
+            }
         }
     }
 
@@ -1080,6 +1241,8 @@ private fun DashboardCircleIconBadge(
 @Composable
 private fun DashboardInfoCard(
     modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false,
+    highlightColor: Color = Color(0xFFC8BEFF),
     onClick: (() -> Unit)? = null,
     leading: @Composable () -> Unit,
     title: String,
@@ -1097,11 +1260,30 @@ private fun DashboardInfoCard(
         Modifier
     }
 
+    val shape = RoundedCornerShape(22.dp)
+    val backgroundModifier = if (isHighlighted) {
+        Modifier.background(
+            Brush.linearGradient(
+                colors = listOf(
+                    highlightColor.copy(alpha = 0.22f),
+                    Color(0xFF14161D)
+                )
+            )
+        )
+    } else {
+        Modifier.background(Color(0xFF101212))
+    }
+    val borderStroke = if (isHighlighted) {
+        BorderStroke(1.5.dp, highlightColor.copy(alpha = 0.58f))
+    } else {
+        BorderStroke(1.dp, Color(0xFF252727))
+    }
+
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color(0xFF101212))
-            .border(BorderStroke(1.dp, Color(0xFF252727)), RoundedCornerShape(22.dp))
+            .clip(shape)
+            .then(backgroundModifier)
+            .border(borderStroke, shape)
             .then(clickMod)
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1115,8 +1297,8 @@ private fun DashboardInfoCard(
             Text(
                 text = title,
                 fontSize = titleSizeSp.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFF3F4F4),
+                fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isHighlighted) Color.White else Color(0xFFF3F4F4),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1124,7 +1306,7 @@ private fun DashboardInfoCard(
                 Text(
                     text = subtitle,
                     fontSize = 13.sp,
-                    color = Color(0xFF8E9393),
+                    color = if (isHighlighted) Color(0xFFC9CDD6) else Color(0xFF8E9393),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1143,6 +1325,8 @@ internal fun StandByPastelMusicPage(
     isLandscape: Boolean,
     formattedTime: String,
     mediaPlayback: MediaPlaybackInfo?,
+    paletteIndex: Int,
+    onChangePaletteIndex: (Int) -> Unit,
     onTogglePlayPause: () -> Unit,
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
@@ -1150,8 +1334,15 @@ internal fun StandByPastelMusicPage(
     onOpenMusicApp: () -> Unit
 ) {
     val context = LocalContext.current
-    var paletteIndex by remember { mutableIntStateOf(0) }
-    val palette = PASTEL_CLOCK_PALETTES[paletteIndex % PASTEL_CLOCK_PALETTES.size]
+    val paletteCount = PASTEL_CLOCK_PALETTES.size
+    val safePaletteIndex = ((paletteIndex % paletteCount) + paletteCount) % paletteCount
+    val palette = PASTEL_CLOCK_PALETTES[safePaletteIndex]
+    val nextPalette = { onChangePaletteIndex((safePaletteIndex + 1) % paletteCount) }
+    val prevPalette = { onChangePaletteIndex((safePaletteIndex - 1 + paletteCount) % paletteCount) }
+    val verticalSwipeModifier = Modifier.standByVerticalSwipeColorChange(
+        onSwipeUp = nextPalette,
+        onSwipeDown = prevPalette
+    )
 
     val isMusicActive = mediaPlayback != null && (
         mediaPlayback.isPlaying || (mediaPlayback.hasActiveSession && mediaPlayback.title.isNotBlank())
@@ -1379,6 +1570,7 @@ internal fun StandByPastelMusicPage(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .then(verticalSwipeModifier)
                 .padding(horizontal = 20.dp, vertical = 16.dp)
         ) {
             Row(
@@ -1401,7 +1593,7 @@ internal fun StandByPastelMusicPage(
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                                onClick = { paletteIndex += 1 }
+                                onClick = nextPalette
                             )
                     )
                 }
@@ -1425,7 +1617,7 @@ internal fun StandByPastelMusicPage(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { paletteIndex += 1 }
+                        onClick = nextPalette
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -1441,6 +1633,7 @@ internal fun StandByPastelMusicPage(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .then(verticalSwipeModifier)
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(22.dp)
@@ -1455,7 +1648,7 @@ internal fun StandByPastelMusicPage(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { paletteIndex += 1 }
+                        onClick = nextPalette
                     )
             )
             musicBackdropCard(
@@ -2089,7 +2282,9 @@ internal fun StandByPhotoPage(
     formattedTime: String,
     bitmap: Bitmap?,
     accentColor: Color,
-    activeColorPreset: StandByColorPreset
+    activeColorPreset: StandByColorPreset,
+    onNextColorPreset: () -> Unit = {},
+    onPreviousColorPreset: () -> Unit = {}
 ) {
     val safeImageBitmap = remember(bitmap) {
         runCatching { bitmap?.takeIf { !it.isRecycled }?.asImageBitmap() }.getOrNull()
@@ -2102,15 +2297,24 @@ internal fun StandByPhotoPage(
         val day = SimpleDateFormat("d", Locale.getDefault()).format(now)
         "$weekday $day"
     }
-    val clockColor = remember(activeColorPreset, accentColor) {
+    val targetClockColor = remember(activeColorPreset, accentColor) {
         if (activeColorPreset == StandByColorPreset.WHITE) Color(0xFFFAF3EB)
         else activeColorPreset.resolveColor(accentColor)
     }
+    val clockColor by animateColorAsState(
+        targetValue = targetClockColor,
+        animationSpec = tween(250),
+        label = "StandByPhotoClockColor"
+    )
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .standByVerticalSwipeColorChange(
+                onSwipeUp = onNextColorPreset,
+                onSwipeDown = onPreviousColorPreset
+            )
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

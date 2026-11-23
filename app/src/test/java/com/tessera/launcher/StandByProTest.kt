@@ -1,9 +1,12 @@
 package com.tessera.launcher
 
 import androidx.compose.ui.graphics.Color
+import com.tessera.launcher.ui.components.DashboardCardKind
 import com.tessera.launcher.ui.components.StandByClockStyle
 import com.tessera.launcher.ui.components.StandByColorPreset
 import com.tessera.launcher.ui.components.StandByViewMode
+import com.tessera.launcher.ui.components.resolvePastelClockPrimaryColor
+import com.tessera.launcher.ui.components.rotatedDashboardCards
 import com.tessera.launcher.ui.state.LauncherUiState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -56,6 +59,36 @@ class StandByProTest {
 
         assertEquals(StandByColorPreset.ACCENT, StandByColorPreset.WHITE.next())
         assertEquals(StandByColorPreset.WHITE, StandByColorPreset.CYAN.next())
+        assertEquals(StandByColorPreset.CYAN, StandByColorPreset.WHITE.previous())
+        assertEquals(StandByColorPreset.EMERALD, StandByColorPreset.CYAN.previous())
+    }
+
+    @Test
+    fun testPastelClockPrimaryColorWrapAround() {
+        assertEquals(Color(0xFFFFD3DD), resolvePastelClockPrimaryColor(0))
+        assertEquals(Color(0xFFF5ECE3), resolvePastelClockPrimaryColor(-1))
+        assertEquals(Color(0xFFFFD3DD), resolvePastelClockPrimaryColor(4))
+    }
+
+    @Test
+    fun testDashboardCardsRotationOrder() {
+        assertEquals(
+            listOf(DashboardCardKind.WEATHER, DashboardCardKind.EVENT, DashboardCardKind.MEDIA, DashboardCardKind.BATTERY),
+            rotatedDashboardCards(0)
+        )
+        assertEquals(
+            listOf(DashboardCardKind.EVENT, DashboardCardKind.MEDIA, DashboardCardKind.BATTERY, DashboardCardKind.WEATHER),
+            rotatedDashboardCards(1)
+        )
+        assertEquals(
+            listOf(DashboardCardKind.MEDIA, DashboardCardKind.BATTERY, DashboardCardKind.WEATHER, DashboardCardKind.EVENT),
+            rotatedDashboardCards(2)
+        )
+        assertEquals(
+            listOf(DashboardCardKind.BATTERY, DashboardCardKind.WEATHER, DashboardCardKind.EVENT, DashboardCardKind.MEDIA),
+            rotatedDashboardCards(3)
+        )
+        assertEquals(rotatedDashboardCards(0), rotatedDashboardCards(4))
     }
 
     @Test
